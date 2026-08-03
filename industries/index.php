@@ -8,6 +8,7 @@
  */
 require_once __DIR__ . '/../config.php';
 require_once INCLUDES_DIR . '/Auth.php';
+require_once INCLUDES_DIR . '/LogoLibrary.php';
 
 $pageTitle       = 'Digital Business Cards by Industry, Banking, Oil & Gas, Real Estate, Tourism | Cardify';
 $pageDescription = 'Industry-specific digital business card solutions for teams in Oman and the GCC. Banking, logistics, oil & gas, government, construction, real estate, healthcare, tourism, restaurants.';
@@ -112,7 +113,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                         <i class="fa-solid fa-image"></i>
                     </div>
                     <div class="font-bold text-gray-900 mb-1 group-hover:text-emerald-700 transition">Omani Logo Library</div>
-                    <div class="text-sm text-gray-600">80+ verified logos, free to download.</div>
+                    <div class="text-sm text-gray-600"><?= number_format(LogoLibrary::archiveFloor()) ?>+ Omani brand logos, free to download.</div>
                 </a>
                 <a href="<?= getBasePath() ?>tools" class="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-md hover:border-purple-300 transition text-left group">
                     <div class="w-10 h-10 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center mb-3 group-hover:bg-purple-100 transition">

@@ -192,7 +192,7 @@ $benefits = [
                             <div class="w-12 h-12 rounded-lg bg-blue-100 flex items-center justify-center mx-auto mb-3">
                                 <i class="fa-solid <?php echo $benefit['icon']; ?> text-blue-600"></i>
                             </div>
-                            <h4 class="font-semibold text-gray-900 text-sm mb-1"><?= htmlspecialchars($benefit['title']) ?></h4>
+                            <h3 class="font-semibold text-gray-900 text-sm mb-1"><?= htmlspecialchars($benefit['title']) ?></h3>
                             <p class="text-gray-500 text-xs"><?= htmlspecialchars($benefit['desc']) ?></p>
                         </div>
                     <?php endforeach; ?>

@@ -260,7 +260,7 @@ HTML,
 
 <h2>What this looks like applied</h2>
 
-<p>The <a href="/logos">Omani Logo Library</a> has 79+ verified logos, most of which are bilingual. Browse <a href="/logos/government-defense">government</a>, <a href="/logos/finance">finance</a>, or <a href="/logos/telecom">telecom</a> to see bilingual brand systems in use. For your own bilingual identity rollout, <a href="/intro">start a Cardify pilot</a> to see how we render bilingual cards for your team.</p>
+<p>The <a href="/logos">Omani Logo Library</a> indexes Omani brand marks, most of which are bilingual. Browse <a href="/logos/government-defense">government</a>, <a href="/logos/finance">finance</a>, or <a href="/logos/telecom">telecom</a> to see bilingual brand systems in use. For your own bilingual identity rollout, <a href="/intro">start a Cardify pilot</a> to see how we render bilingual cards for your team.</p>
 
 <h2>Closing</h2>
 

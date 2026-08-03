@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/includes/PlatformStats.php';
+require_once __DIR__ . '/includes/LogoLibrary.php';
 /**
  * Interactive Introduction & Onboarding Page
  * An interactive journey explaining how Cardify works
@@ -1017,7 +1018,7 @@ $basePath = getBasePath();
                         <i class="fa-solid fa-bezier-curve text-xl text-teal-600"></i>
                     </div>
                     <h3 class="text-lg font-bold text-gray-900 mb-2">Omani Logo Library</h3>
-                    <p class="text-gray-600 text-sm">Download 2,400+ verified Omani company logos as SVG or PNG, free.</p>
+                    <p class="text-gray-600 text-sm">Download <?= number_format(LogoLibrary::archiveFloor()) ?>+ Omani company logos as SVG or PNG, free.</p>
                 </div>
 
                 <div class="reveal-up bg-white rounded-2xl p-6 border border-gray-100 hover:border-indigo-200 hover:shadow-xl transition-all group cursor-pointer" style="transition-delay: 0.35s;">

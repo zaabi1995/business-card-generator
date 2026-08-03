@@ -20,7 +20,7 @@ $posts = [
 
 <h2>What's in the Omani Logo Library</h2>
 
-<p>As of this writing, the library covers <strong>79+ Omani brand marks</strong> spanning:</p>
+<p>As of this writing, the library covers <strong>the Omani brand marks indexed so far</strong>, spanning:</p>
 
 <ul>
   <li><strong>19 ministries</strong> of the Sultanate of Oman — Defence, Foreign Affairs, Finance, Health, Education, Interior, Commerce Industry and Investment Promotion, Transport Communications and IT, Energy and Minerals, Heritage and Tourism, and more. Each includes the national emblem (khanjar and crossed swords) in its approved composition.</li>
@@ -222,7 +222,7 @@ HTML
 <ul>
   <li><a href="/gcc-business-index">GCC Business Index 2026</a> — full country-by-country coverage</li>
   <li><a href="/oman-business-index">Oman Business Index</a> — 2,415 Omani enterprises, free and indexed</li>
-  <li><a href="/logos">Omani Logo Library</a> — 79+ brand marks, searchable, SVG + PNG</li>
+  <li><a href="/logos">Omani Logo Library</a> — brand marks, searchable, SVG + PNG</li>
   <li><a href="/blog/download-omani-government-logos-complete-guide-2026">How to Download Omani Government Logos — 2026 Guide</a></li>
 </ul>
 HTML

@@ -37,7 +37,7 @@ elseif (!empty($minimalFooter)):
                     <p class="text-gray-400 text-sm leading-relaxed"><?= htmlspecialchars(t('footer.tagline')) ?></p>
                 </div>
                 <div>
-                    <h4 class="font-semibold mb-4"><?= htmlspecialchars(t('footer.col_product')) ?></h4>
+                    <h3 class="font-semibold mb-4"><?= htmlspecialchars(t('footer.col_product')) ?></h3>
                     <ul class="space-y-2 text-sm">
                         <li><a href="<?= $bp ?>#features" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_features')) ?></a></li>
                         <li><a href="<?= $bp ?>#pricing" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_pricing')) ?></a></li>
@@ -47,7 +47,7 @@ elseif (!empty($minimalFooter)):
                     </ul>
                 </div>
                 <div>
-                    <h4 class="font-semibold mb-4"><?= htmlspecialchars(t('footer.col_free_tools')) ?></h4>
+                    <h3 class="font-semibold mb-4"><?= htmlspecialchars(t('footer.col_free_tools')) ?></h3>
                     <ul class="space-y-2 text-sm">
                         <li><a href="<?= $bp ?>tools" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_all_tools')) ?></a></li>
                         <li><a href="<?= $bp ?>tools/vcard-qr-generator" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_vcard_qr')) ?></a></li>
@@ -57,7 +57,7 @@ elseif (!empty($minimalFooter)):
                     </ul>
                 </div>
                 <div>
-                    <h4 class="font-semibold mb-4"><?= htmlspecialchars(t('footer.col_directory')) ?></h4>
+                    <h3 class="font-semibold mb-4"><?= htmlspecialchars(t('footer.col_directory')) ?></h3>
                     <ul class="space-y-2 text-sm">
                         <li><a href="<?= $bp ?>gcc-business-index" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_gcc_index')) ?></a></li>
                         <li><a href="<?= $bp ?>oman-business-index" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_oman_index')) ?></a></li>
@@ -67,7 +67,7 @@ elseif (!empty($minimalFooter)):
                     </ul>
                 </div>
                 <div>
-                    <h4 class="font-semibold mb-4"><?= htmlspecialchars(t('footer.col_industries')) ?></h4>
+                    <h3 class="font-semibold mb-4"><?= htmlspecialchars(t('footer.col_industries')) ?></h3>
                     <ul class="space-y-2 text-sm">
                         <li><a href="<?= $bp ?>industries/banking" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_ind_banking')) ?></a></li>
                         <li><a href="<?= $bp ?>industries/oil-gas" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_ind_oil')) ?></a></li>
@@ -81,7 +81,7 @@ elseif (!empty($minimalFooter)):
                     </ul>
                 </div>
                 <div>
-                    <h4 class="font-semibold mb-4"><?= htmlspecialchars(t('footer.col_company')) ?></h4>
+                    <h3 class="font-semibold mb-4"><?= htmlspecialchars(t('footer.col_company')) ?></h3>
                     <ul class="space-y-2 text-sm">
                         <li><a href="<?= $bp ?>about" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_about')) ?></a></li>
                         <li><a href="<?= $bp ?>contact" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_contact')) ?></a></li>

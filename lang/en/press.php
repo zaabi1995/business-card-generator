@@ -17,12 +17,12 @@ return [
 
     'section_official'    => 'Official description',
     'h2_oneliner'         => 'One-line, copy-paste ready',
-    'oneliner_body'       => 'Cardify is a business-identity platform for the Gulf, built in Oman. It ships digital and printed business cards, a public library of verified Omani logos, and an open index of GCC companies, with expansion into Saudi Arabia, UAE, Qatar, Bahrain, and Kuwait rolling out through 2026.',
+    'oneliner_body'       => 'Cardify is a business-identity platform for the Gulf, built in Oman. It ships digital and printed business cards, a public library of Omani brand logos, and an open index of GCC companies, with expansion into Saudi Arabia, UAE, Qatar, Bahrain, and Kuwait rolling out through 2026.',
 
     'section_keyfacts'    => 'Key facts',
     'h2_numbers'          => 'Numbers you can quote',
     'stat_companies'      => 'Omani companies in the public index, sourced from MoCIIP.',
-    'stat_logos'          => 'Verified Omani brand logos, free to download.',
+    'stat_logos'          => 'Omani brand logos, free to download.',
     'stat_sovereign'      => 'Sovereign / ministerial entities with curated bilingual profiles.',
     'stat_gcc'            => 'GCC countries covered by the GCC Business Index roadmap.',
     'stat_bilingual'      => 'Bilingual platform, every card, page, and asset.',

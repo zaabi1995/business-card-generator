@@ -394,6 +394,47 @@ class LogoLibrary {
         return $out;
     }
 
+    /**
+     * r27-14: the archive count and the verified count are two populations,
+     * and every surface that publishes a logo number must say which one it
+     * means. "106 Verified Omani brand logos" was the archive count wearing
+     * the verified word: 94 of those rows are 'indexed', crawled by us and
+     * confirmed by nobody. One query per population, called from every
+     * surface, so a copy edit can never invent a third number.
+     */
+    public static function archiveCount(): int {
+        static $n = null;
+        if ($n === null) {
+            $db = self::dbOrNull();
+            $r  = $db ? $db->fetchOne("SELECT COUNT(*) c FROM om_companies WHERE logo_status IN ('indexed','verified')") : null;
+            $n  = $r ? (int) $r['c'] : 0;
+        }
+        return $n;
+    }
+
+    public static function verifiedCount(): int {
+        static $n = null;
+        if ($n === null) {
+            $db = self::dbOrNull();
+            $r  = $db ? $db->fetchOne("SELECT COUNT(*) c FROM om_companies WHERE logo_status = 'verified'") : null;
+            $n  = $r ? (int) $r['c'] : 0;
+        }
+        return $n;
+    }
+
+    /**
+     * A rounded floor for "N+" copy. It must stay strictly BELOW the real
+     * count, or the "+" asserts rows that do not exist (r20-32), so a count
+     * that lands exactly on a ten drops one step.
+     */
+    public static function archiveFloor(int $step = 10): int {
+        $c = self::archiveCount();
+        if ($c <= $step) return max(0, $c - 1);
+        $f = intdiv($c, $step) * $step;
+        if ($f >= $c) $f -= $step;
+        return $f;
+    }
+
     /** Singleton accessor that won't throw if DB isn't configured. */
     private static function dbOrNull(): ?Database {
         try { return Database::getInstance(); } catch (Throwable $e) { return null; }

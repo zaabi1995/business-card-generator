@@ -376,9 +376,9 @@ require_once INCLUDES_DIR . '/ui-header.php';
                             <span class="text-xs text-gray-500"><?php echo htmlspecialchars($post['author_name']); ?></span>
                             <?php endif; ?>
                         </div>
-                        <h3 class="font-bold text-gray-900 mb-2 line-clamp-2">
+                        <h2 class="font-bold text-gray-900 mb-2 line-clamp-2">
                             <?php echo htmlspecialchars($cardTitle); ?>
-                        </h3>
+                        </h2>
                         <?php if ($cardExcerpt): ?>
                         <p class="text-gray-600 text-sm line-clamp-3 mb-4">
                             <?php echo htmlspecialchars($cardExcerpt); ?>

@@ -119,7 +119,7 @@ if (count($hubLogos) < 6) {
 }
 drawCard(
     'The Omani Logo Library',
-    '2,400+ Omani brands, one archive',
+    LogoLibrary::archiveFloor() . '+ Omani brands, one archive',
     array_map(fn($r) => dirname(__DIR__) . $r['logo_png_path'], $hubLogos),
     "$outDir/hub.png"
 );

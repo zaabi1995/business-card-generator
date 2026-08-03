@@ -198,7 +198,7 @@ $libStats  = logoLibraryStats($db);
 $featured  = featuredLogos($db, 8);
 $randomSlug = randomBrandSlug($db);
 $title     = $isAr
-    ? 'مكتبة الشعارات العمانية، ' . number_format($total) . '+ علامة | كارديفاي'
-    : 'The Omani Logo Library, ' . number_format($total) . '+ Omani Brands';
+    ? 'مكتبة الشعارات العمانية، ' . number_format($total) . ' علامة | كارديفاي'
+    : 'The Omani Logo Library, ' . number_format($total) . ' Omani Brands';
 $canonical = 'https://cardify.om/logos' . ($page > 1 ? "?page=$page" : '');
 include __DIR__ . '/views/logos_hub.php';

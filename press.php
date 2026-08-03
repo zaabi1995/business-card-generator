@@ -84,7 +84,7 @@ $datasetsLd = [
         [
             '@type' => 'Dataset',
             'name'  => 'Omani Logo Library',
-            'description' => 'Verified logos of Omani companies, ministries, and sovereign entities, downloadable in SVG and PNG.',
+            'description' => 'Logos of Omani companies, ministries, and sovereign entities, downloadable in SVG and PNG.',
             'url'   => 'https://cardify.om/logos',
             'license' => 'Nominative fair-use per entry; see /logos/terms',
             'creator' => ['@type' => 'Organization', 'name' => 'Cardify'],

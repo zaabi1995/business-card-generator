@@ -511,7 +511,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                                     JD
                                 </div>
                                 <div class="flex-1">
-                                    <h3 class="font-bold text-gray-900 text-lg">John Doe</h3>
+                                    <p class="font-display font-bold text-gray-900 text-lg">John Doe</p>
                                     <p class="text-blue-600 text-sm font-semibold">Senior Developer</p>
                                     <p class="text-gray-500 text-sm">TechCorp Inc.</p>
                                 </div>
@@ -552,7 +552,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                                     SM
                                 </div>
                                 <div class="flex-1">
-                                    <h3 class="font-bold text-lg">Sarah Miller</h3>
+                                    <p class="font-display font-bold text-lg">Sarah Miller</p>
                                     <p class="text-white text-sm">Marketing Director</p>
                                 </div>
                             </div>
@@ -575,7 +575,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                                     AK
                                 </div>
                                 <div>
-                                    <h3 class="font-bold text-gray-900">Alex Kim</h3>
+                                    <p class="font-display font-bold text-gray-900">Alex Kim</p>
                                     <p class="text-gray-500 text-xs">CEO, StartupXYZ</p>
                                 </div>
                             </div>
@@ -597,21 +597,21 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     <div class="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center mb-4">
                         <i class="fa-solid fa-palette text-2xl"></i>
                     </div>
-                    <h3 class="text-lg font-bold mb-2"><?= htmlspecialchars(t('landing.vp_design_title')) ?></h3>
+                    <h2 class="text-lg font-bold mb-2"><?= htmlspecialchars(t('landing.vp_design_title')) ?></h2>
                     <p class="text-blue-100 text-sm"><?= htmlspecialchars(t('landing.vp_design_body')) ?></p>
                 </div>
                 <div class="flex flex-col items-center">
                     <div class="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center mb-4">
                         <i class="fa-solid fa-print text-2xl"></i>
                     </div>
-                    <h3 class="text-lg font-bold mb-2"><?= htmlspecialchars(t('landing.vp_print_title')) ?></h3>
+                    <h2 class="text-lg font-bold mb-2"><?= htmlspecialchars(t('landing.vp_print_title')) ?></h2>
                     <p class="text-blue-100 text-sm"><?= htmlspecialchars(t('landing.vp_print_body')) ?></p>
                 </div>
                 <div class="flex flex-col items-center">
                     <div class="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center mb-4">
                         <i class="fa-solid fa-gift text-2xl"></i>
                     </div>
-                    <h3 class="text-lg font-bold mb-2"><?= htmlspecialchars(t('landing.vp_free_title')) ?></h3>
+                    <h2 class="text-lg font-bold mb-2"><?= htmlspecialchars(t('landing.vp_free_title')) ?></h2>
                     <p class="text-blue-100 text-sm"><?= htmlspecialchars(t('landing.vp_free_body')) ?></p>
                 </div>
             </div>
@@ -1270,7 +1270,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
 
                 <!-- Product Links -->
                 <div>
-                    <h4 class="font-bold text-lg mb-6"><?= htmlspecialchars(t('footer.col_product')) ?></h4>
+                    <h3 class="font-bold text-lg mb-6"><?= htmlspecialchars(t('footer.col_product')) ?></h3>
                     <ul class="space-y-3">
                         <li><a href="#features" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_features')) ?></a></li>
                         <li><a href="#pricing" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_pricing')) ?></a></li>
@@ -1281,7 +1281,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
 
                 <!-- Free Tools -->
                 <div>
-                    <h4 class="font-bold text-lg mb-6"><?= htmlspecialchars(t('footer.col_free_tools')) ?></h4>
+                    <h3 class="font-bold text-lg mb-6"><?= htmlspecialchars(t('footer.col_free_tools')) ?></h3>
                     <ul class="space-y-3">
                         <li><a href="<?php echo getBasePath(); ?>tools/vcard-qr-generator" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_vcard_qr')) ?></a></li>
                         <li><a href="<?php echo getBasePath(); ?>tools/email-signature-generator" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_email_sig')) ?></a></li>
@@ -1293,7 +1293,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
 
                 <!-- Directory & Solutions -->
                 <div>
-                    <h4 class="font-bold text-lg mb-6"><?= htmlspecialchars(t('footer.col_directory')) ?></h4>
+                    <h3 class="font-bold text-lg mb-6"><?= htmlspecialchars(t('footer.col_directory')) ?></h3>
                     <ul class="space-y-3">
                         <li><a href="<?php echo getBasePath(); ?>oman-business-index" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_oman_index')) ?></a></li>
                         <li><a href="<?php echo getBasePath(); ?>companies" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_browse_companies')) ?></a></li>
@@ -1306,7 +1306,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
 
                 <!-- Company + Legal -->
                 <div>
-                    <h4 class="font-bold text-lg mb-6"><?= htmlspecialchars(t('footer.col_company')) ?></h4>
+                    <h3 class="font-bold text-lg mb-6"><?= htmlspecialchars(t('footer.col_company')) ?></h3>
                     <ul class="space-y-3">
                         <li><a href="<?php echo getBasePath(); ?>about" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_about')) ?></a></li>
                         <li><a href="<?php echo getBasePath(); ?>blog" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_blog')) ?></a></li>

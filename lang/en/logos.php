@@ -7,7 +7,7 @@ return [
     // Hub hero
     'hero_badge'          => 'Public archive · Omani brands',
     'hero_title'          => 'The Omani Logo Library',
-    'hero_subtitle'       => ':count+ Omani brand marks. Indexed, searchable, owner-verifiable.',
+    'hero_subtitle'       => ':count Omani brand marks. Indexed, searchable, owner-verifiable.',
 
     // Filters
     'filter_search_placeholder' => 'Search a company...',
@@ -100,7 +100,7 @@ return [
     'terms_request_takedown' => 'Request takedown',
 
     // Press
-    'press_meta_desc'     => 'Press kit for The Omani Logo Library, 2,400+ Omani brand marks indexed by Cardify. API, screenshots, contact.',
+    'press_meta_desc'     => 'Press kit for The Omani Logo Library, an open archive of Omani brand marks indexed by Cardify. API, screenshots, contact.',
     'press_breadcrumb'    => 'Press kit',
     'press_badge'         => 'Press · Media',
     'press_h1'            => 'Press Kit, Omani Logo Library',
