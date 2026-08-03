@@ -903,8 +903,16 @@ require_once INCLUDES_DIR . '/ui-header.php';
         </div>
     </section>
 
-    <!-- ========== TESTIMONIALS SECTION (Flowbite Style) ========== -->
-    <section id="testimonials" class="py-16 lg:py-24 bg-gray-50">
+    <!-- ========== WHY CARDIFY (checkable product facts) ==========
+         r28 20-23/27-54: this section used to be four fabricated customer testimonials.
+         r21 removed the invented names but left the attribution shell in place, so
+         production kept shipping quote marks, blockquote semantics, the deleted
+         people's initials (AA/FA/KH/SA) and the raw keys testimonials.tN_author /
+         testimonials.tN_role as visible text. Attribution markup is gone for good:
+         no <blockquote>, no quote glyph, no avatar, no author, no role. These are
+         product facts, not quotes. Do NOT reintroduce a quote or an attributed
+         card without a named, contactable, consenting customer on file. -->
+    <section id="why-cardify" class="py-16 lg:py-24 bg-gray-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <!-- Section Header -->
             <div class="max-w-2xl mx-auto text-center mb-16">
@@ -917,33 +925,29 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 </p>
             </div>
 
-            <!-- Testimonials Grid -->
+            <!-- Fact grid -->
             <div class="grid lg:grid-cols-2 gap-8">
                 <?php foreach ([
-                    ['n' => 1, 'initials' => 'AA', 'grad' => 'from-blue-500 to-blue-600'],
-                    ['n' => 2, 'initials' => 'FA', 'grad' => 'from-amber-400 to-amber-500'],
-                    ['n' => 3, 'initials' => 'KH', 'grad' => 'from-purple-500 to-purple-600'],
-                    ['n' => 4, 'initials' => 'SA', 'grad' => 'from-green-500 to-green-600'],
-                ] as $t): $k = 't' . $t['n']; ?>
-                <figure class="bg-white rounded-2xl p-8 shadow-sm ring-1 ring-gray-200/70 hover:ring-blue-200 hover:shadow-lg transition-all">
-                    <div class="mb-5 text-blue-500 text-2xl leading-none"><i class="fa-solid fa-quote-left"></i></div>
-                    <blockquote class="mb-6">
-                        <h3 class="text-lg font-semibold text-gray-900 mb-4"><?= htmlspecialchars(t('testimonials.' . $k . '_title')) ?></h3>
-                        <p class="text-gray-600 leading-relaxed">
-                            <?= htmlspecialchars(t('testimonials.' . $k . '_quote')) ?>
-                        </p>
-                    </blockquote>
-                    <figcaption class="flex items-center gap-4">
-                        <div class="w-12 h-12 rounded-full bg-gradient-to-br <?= htmlspecialchars($t['grad']) ?> flex items-center justify-center text-white font-bold">
-                            <?= htmlspecialchars($t['initials']) ?>
-                        </div>
-                        <div>
-                            <div class="font-semibold text-gray-900"><?= htmlspecialchars(t('testimonials.' . $k . '_author')) ?></div>
-                            <div class="text-sm text-gray-500"><?= htmlspecialchars(t('testimonials.' . $k . '_role')) ?></div>
-                        </div>
-                    </figcaption>
-                </figure>
+                    ['n' => 1, 'icon' => 'fa-language'],
+                    ['n' => 2, 'icon' => 'fa-wallet'],
+                    ['n' => 3, 'icon' => 'fa-print'],
+                    ['n' => 4, 'icon' => 'fa-users'],
+                ] as $fact): $k = 't' . $fact['n']; ?>
+                <div class="bg-white rounded-2xl p-8 shadow-sm ring-1 ring-gray-200/70 hover:ring-blue-200 hover:shadow-lg transition-all">
+                    <div class="mb-5 text-blue-600 text-2xl leading-none"><i class="fa-solid <?= htmlspecialchars($fact['icon']) ?>" aria-hidden="true"></i></div>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4"><?= htmlspecialchars(t('testimonials.' . $k . '_title')) ?></h3>
+                    <p class="text-gray-600 leading-relaxed">
+                        <?= htmlspecialchars(t('testimonials.' . $k . '_quote')) ?>
+                    </p>
+                </div>
                 <?php endforeach; ?>
+            </div>
+
+            <div class="text-center mt-10">
+                <a href="<?= getBasePath() ?>companies" class="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 font-semibold">
+                    <?= htmlspecialchars(t('testimonials.directory_cta')) ?>
+                    <i class="fa-solid fa-arrow-right rtl:fa-rotate-180" aria-hidden="true"></i>
+                </a>
             </div>
         </div>
     </section>
