@@ -17,6 +17,7 @@
 if (PHP_SAPI !== 'cli') { http_response_code(403); exit('CLI only.'); }
 require_once __DIR__ . '/../config.php';
 require_once INCLUDES_DIR . '/LogoLibrary.php';
+require_once INCLUDES_DIR . '/BrandNames.php';
 
 $db   = Database::getInstance();
 $pdo  = $db->getConnection();
@@ -93,13 +94,13 @@ $brands = [
     [
         'slug'     => 'cardify',
         'name_en'  => 'Cardify',
-        'name_ar'  => 'كاردفاي',
+        'name_ar'  => BrandNames::AR,
         'sector'   => 'technology',
         'size'     => 'medium',
         'website'  => 'https://cardify.om',
         'file'     => 'cardify.svg',
         'summary_en' => 'Cardify — digital and printed business cards platform for Omani businesses. One place for all business card needs.',
-        'summary_ar' => 'كاردفاي — منصة بطاقات الأعمال الرقمية والمطبوعة للشركات العمانية.',
+        'summary_ar' => 'كارديفاي — منصة بطاقات الأعمال الرقمية والمطبوعة للشركات العمانية.',
     ],
     [
         'slug'     => 'reachscreens',

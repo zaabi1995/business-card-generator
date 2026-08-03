@@ -64,7 +64,7 @@ def _fixture(tmp_path: Path, background_kind: str = "raster") -> dict:
             "position_en": "Product Lead",
             "email": "ali@example.test",
         },
-        "company": {"id": "company-1", "name": "Cardify", "name_ar": "كاردفاي"},
+        "company": {"id": "company-1", "name": "Cardify", "name_ar": "كارديفاي"},
         "theme": {"primary_color": "#008aa6"},
         "front_template": {
             "backgroundImage": str(background),

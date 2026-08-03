@@ -14,7 +14,7 @@ $globalThemes = [
     [
         'id' => '00000000-0000-4000-8000-000000000101',
         'name_en' => 'Cardify Teal',
-        'name_ar' => 'كاردفاي تركواز',
+        'name_ar' => 'كارديفاي تركواز',
         'style' => 'eventTicket',
         'background_color' => '#006b7d',
         'foreground_color' => '#ffffff',
