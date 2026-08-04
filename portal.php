@@ -263,6 +263,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['portal_passcode'])) 
         'position_ar' => trim($_POST['position_ar'] ?? ''),
         'position_en_2' => trim($_POST['position_en_2'] ?? ''),
         'position_ar_2' => trim($_POST['position_ar_2'] ?? ''),
+        'position_en_3' => trim($_POST['position_en_3'] ?? ''),
+        'position_ar_3' => trim($_POST['position_ar_3'] ?? ''),
         'phone' => trim($_POST['phone'] ?? ''),
         'phone_ar' => trim($_POST['phone_ar'] ?? ''),
         'mobile' => trim($_POST['mobile'] ?? ''),
@@ -497,6 +499,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['portal_passcode'])) 
                         'name_en'       => $formData['name_en'],       'name_ar'       => $formData['name_ar'],
                         'position_en'   => $formData['position_en'],   'position_ar'   => $formData['position_ar'],
                         'position_en_2' => $formData['position_en_2'], 'position_ar_2' => $formData['position_ar_2'],
+                        'position_en_3' => $formData['position_en_3'], 'position_ar_3' => $formData['position_ar_3'],
                         'mobile'        => $mob,                       'mobile_ar'     => $mobAr,
                         'email'         => $formData['email'],
                         'department_id' => $formData['department_id'] ?: null, 'status' => 'active',
@@ -1613,6 +1616,34 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                     </div>
                     <?php endif; ?>
 
+                    <!-- Third position line (English). Same template gate: only
+                         designs carrying a position_en_3 slot show it, e.g. Al Maha's
+                         2026 portrait card (role / department / sector). -->
+                    <?php if (!empty($enabledFields['position_en_3'])): ?>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2"><?= htmlspecialchars(t('portal.position_en_3')) ?></label>
+                        <input type="text" name="position_en_3" id="position_en_3"
+                               value="<?php echo htmlspecialchars($formData['position_en_3'] ?? ''); ?>"
+                               placeholder="Support Services Sector"
+                               class="form-input">
+                    </div>
+                    <?php endif; ?>
+                    <!-- Third position line (Arabic) -->
+                    <?php if (!empty($enabledFields['position_ar_3'])): ?>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">
+                            <?= htmlspecialchars(t('portal.position_ar_3')) ?>
+                            <button type="button" class="ml-2 text-xs text-blue-600 hover:text-blue-700" onclick="translateField('position_en_3', 'position_ar_3', 'position')">
+                                <i class="fa-solid fa-wand-magic-sparkles"></i> <?= htmlspecialchars(t('portal.ai_translate')) ?>
+                            </button>
+                        </label>
+                        <input type="text" name="position_ar_3" id="position_ar_3"
+                               value="<?php echo htmlspecialchars($formData['position_ar_3'] ?? ''); ?>"
+                               placeholder="قطاع خدمات الدعم"
+                               class="form-input rtl-input">
+                    </div>
+                    <?php endif; ?>
+
                     <!-- Department -->
                     <?php if (!empty($departments)): ?>
                     <div>
@@ -1803,6 +1834,7 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                     <?php
                     $handledKeys = [
                         'name_en','name_ar','position_en','position_ar','position_en_2','position_ar_2',
+                        'position_en_3','position_ar_3',
                         'phone','phone_ar','mobile','mobile_ar','fax','fax_ar',
                         'email','website','website_ar',
                         'address','address_en','address_ar','address_2_ar',

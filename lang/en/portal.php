@@ -189,6 +189,8 @@ return [
     'include_qr'        => 'Include QR code on the card',
     'position_en_2'     => 'Sub-title / 2nd line (English)',
     'position_ar_2'     => 'Sub-title / 2nd line (Arabic)',
+    'position_en_3'     => 'Third line / sector (English)',
+    'position_ar_3'     => 'Third line / sector (Arabic)',
 
     // Issuance redesign (Concept B): step-based request flow
     'issue_card_label'  => 'Your card, as it fills',
