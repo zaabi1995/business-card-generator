@@ -110,7 +110,16 @@ async function evalAudit(page: Page, a: Arch) {
     // solid, regular) and only the used ones load. Pass if ANY is loaded.
     const faFaces = (Array.from((document as any).fonts) as any[]).filter((f) => /Font Awesome/i.test(f.family));
     out.faStatus = faFaces.some((f) => f.status === 'loaded') ? 'loaded' : (faFaces[0] ? faFaces[0].status : 'absent');
-    const icon = document.querySelector('i.fa-solid, i.fa-brands, i.fa-regular') as HTMLElement | null;
+    // Probe an icon the page actually RENDERS at this viewport. The first FA node
+    // in DOM order is the `lg:hidden` mobile hamburger on every page that carries
+    // no language switcher (the switcher renders nothing where the route has no
+    // /ar/ twin, e.g. /blog, /industries, /tools/*), and a display:none element is
+    // always zero-width no matter how well the font painted. Falling back to the
+    // first node keeps the assertion real when nothing paints at all.
+    const icons = Array.from(
+      document.querySelectorAll('i.fa-solid, i.fa-brands, i.fa-regular'),
+    ) as HTMLElement[];
+    const icon = icons.find((el) => el.getBoundingClientRect().width > 0) || icons[0] || null;
     out.iconWidth = icon ? Math.round(icon.getBoundingClientRect().width) : 0;
     out.iconGlyph = icon ? getComputedStyle(icon, '::before').content : null;
     // footer
