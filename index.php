@@ -1,5 +1,19 @@
 <?php
+// llm27-29: the homepage answered on two addresses, / and /index.php, both 200
+// and both self-canonical, so the property's most-linked page had two identities.
+// Done before anything else loads, and keyed on the REQUEST path rather than on
+// SCRIPT_NAME, which is /index.php for the bare / route too and would loop.
+$reqPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?? '/';
+if (substr($reqPath, -10) === '/index.php') {
+    $target = substr($reqPath, 0, -9);
+    $qs = $_SERVER['QUERY_STRING'] ?? '';
+    header('Location: ' . $target . ($qs !== '' ? '?' . $qs : ''), true, 301);
+    exit;
+}
 require_once __DIR__ . '/includes/PlatformStats.php';
+// llm47-4: the solutions CTA renders its count from the shelf, not from a digit
+// typed into two translation files.
+require_once __DIR__ . '/includes/SolutionShelf.php';
 /**
  * Cardify - Business Cards Made Simple
  * SaaS Landing Page
@@ -1147,7 +1161,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                         </div>
                         <h3 class="text-xl font-bold text-gray-900"><?= htmlspecialchars(t('landing.res_sol_heading')) ?></h3>
                     </div>
-                    <a href="/solutions" class="text-sm font-semibold text-purple-700 hover:text-purple-800"><?= htmlspecialchars(t('landing.res_sol_cta')) ?></a>
+                    <a href="/solutions" class="text-sm font-semibold text-purple-700 hover:text-purple-800"><?= htmlspecialchars(t('landing.res_sol_cta', ['count' => solutionCount()])) ?></a>
                 </div>
                 <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                     <a href="/solutions/business-cards-oman-construction-companies" class="p-3 bg-white rounded-lg text-sm font-medium text-gray-700 hover:text-purple-700 hover:shadow transition border border-gray-100">Construction &amp; Contracting</a>

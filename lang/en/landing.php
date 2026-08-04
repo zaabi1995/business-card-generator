@@ -124,7 +124,7 @@ return [
     'res_logos_pin8'     => 'Sohar International',
 
     'res_sol_heading'    => 'Solutions for your industry',
-    'res_sol_cta'        => 'View all 20 solutions →',
+    'res_sol_cta'        => 'View all :count solutions →',
 
     // Final CTA block
     'cta_supporting'     => 'Proudly supporting Omani businesses',

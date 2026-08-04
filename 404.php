@@ -6,6 +6,11 @@
 require_once __DIR__ . '/config.php';
 
 $brandName = defined('SITE_NAME') ? SITE_NAME : 'Cardify';
+// llm27-28: this template shipped no robots meta at all, so every soft and hard
+// 404 on the property was indexable-by-default. follow, not none: the links out
+// of this page are the only route a crawler that landed here has back to a real
+// URL, and killing them turns a wrong address into a dead end.
+$metaRobots = 'noindex, follow';
 $pageTitle = t('errors.page_404_title');
 $htmlClass = 'h-full bg-white';
 $bodyClass = 'h-full';

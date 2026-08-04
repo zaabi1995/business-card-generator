@@ -32,6 +32,14 @@ $pageDescription = $isAr
     ? 'ماسح بطاقات عمل مجاني من كارديفاي لأجهزة iPhone يقرأ البطاقات العربية والإنجليزية على جهازك نفسه، دون رفع صورة البطاقة. ومنه تُصدر بطاقتك الرقمية وتطبعها.'
     : 'A free iPhone business card scanner that reads Arabic and English cards entirely on the device, with no card image ever uploaded. The same app issues and prints your own card.';
 $canonicalUrl = 'https://cardify.om/business-card-scanner';
+// llm27-34: $canonicalUrl is the ENGLISH address and is used below as the
+// locale-invariant app URL. The FAQ node is NOT locale-invariant: its questions
+// and answers are written twice, once per language, so keying both bodies to
+// one @id publishes one identifier with two contradicting payloads. The WebPage
+// pair on this same page is already namespaced this way by ui-header.
+$localeUrl = $isAr
+    ? 'https://cardify.om/ar/business-card-scanner'
+    : $canonicalUrl;
 $showNavigation = true;
 
 $faq = $isAr ? [
@@ -91,11 +99,16 @@ $ld = [
             // @id. The Arabic feature copy stays in the visible page body.
             'featureList'         => ['On-device optical recognition of Arabic and English cards', 'Field review before saving to contacts', 'NFC read and write', 'Digital card and Apple Wallet pass', 'Ordering the card in print'],
             'offers'              => ['@type' => 'Offer', 'price' => '0', 'priceCurrency' => 'OMR'],
-            'publisher'           => ['@type' => 'Organization', 'name' => 'BHD Group (Bin Haider Darwish L.L.C.)', 'url' => 'https://bhd.om/'],
+            // llm20-11: this was an anonymous Organization carrying BHD Group's
+            // name and url, i.e. a fourth unlinked body for an entity the estate
+            // already defines once at https://bhd.om/#organization. A publisher
+            // slot needs the identifier, not a copy of the entity.
+            'publisher'           => ['@id' => 'https://bhd.om/#organization'],
         ],
         [
             '@type'      => 'FAQPage',
-            '@id'        => $canonicalUrl . '#faq',
+            '@id'        => $localeUrl . '#faq',
+            'inLanguage' => $isAr ? 'ar' : 'en',
             'mainEntity' => array_map(static fn($q) => [
                 '@type'          => 'Question',
                 'name'           => $q[0],

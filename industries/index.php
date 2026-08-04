@@ -75,7 +75,8 @@ require_once INCLUDES_DIR . '/ui-header.php';
     <section class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div class="mb-8">
             <span class="text-blue-700 font-semibold text-xs uppercase tracking-wider">Solutions</span>
-            <h2 class="text-2xl sm:text-3xl font-extrabold text-gray-900 mt-2">9 industries we're tuned for</h2>
+            <!-- llm47-4: rendered from the shelf, not typed. -->
+            <h2 class="text-2xl sm:text-3xl font-extrabold text-gray-900 mt-2"><?= count($industries) ?> industries we're tuned for</h2>
         </div>
         <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
             <?php foreach ($industries as $it): ?>

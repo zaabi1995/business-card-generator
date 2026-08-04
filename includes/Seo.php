@@ -84,7 +84,22 @@ class Seo
     /** Publisher/brand once per page. */
     public static function organization(): void
     {
-        self::emit([
+        self::emit(self::organizationNode());
+    }
+
+    /**
+     * The ONE body behind https://cardify.om/#organization.
+     *
+     * llm20-11: publisherNode() used to return a second, 5-key body under this
+     * same @id, so 20 solutions pages published one identifier with two
+     * contradicting definitions. Splitting the payload out of organization()
+     * means the reference target is a single literal that both the emitter and
+     * the article graph read, and a future edit cannot move one without the
+     * other.
+     */
+    public static function organizationNode(): array
+    {
+        return [
             '@context' => 'https://schema.org',
             '@type' => 'Organization',
             '@id' => self::SITE . '/#organization',
@@ -130,7 +145,7 @@ class Seo
                 'areaServed' => ['OM', 'GCC'],
                 'availableLanguage' => ['English', 'Arabic'],
             ],
-        ]);
+        ];
     }
 
     /**
@@ -223,28 +238,25 @@ class Seo
     }
 
     /**
-     * The canonical publisher node. Every Article, NewsArticle and BlogPosting
-     * on the estate must reference this shape.
+     * The canonical publisher REFERENCE. Every Article, NewsArticle and
+     * BlogPosting on the estate must point at the organization by @id.
      *
      * r6-88: 57 publisher nodes carried a name and a logo but no url, so none of
-     * them resolved to the entity they were publishing on behalf of. url and @id
-     * are not optional here.
+     * them resolved to the entity they were publishing on behalf of. That round
+     * fixed it by spelling a name/url/logo body out here.
+     *
+     * llm20-11: spelling it out was the next defect. The body this returned was
+     * a 5-key redefinition of https://cardify.om/#organization, published on the
+     * same page that already referenced that @id bare for `author`, and
+     * contradicting the 24-key node the homepage defines for it. A resolver
+     * reading /solutions/* saw one identifier with two bodies and neither of
+     * them the real one. The slot only ever needed a reference; articleNode()
+     * now carries the real node in the same graph, so the reference resolves
+     * in-document instead of hoping a crawler merges across pages.
      */
     public static function publisherNode(): array
     {
-        return [
-            '@type' => 'Organization',
-            '@id' => self::SITE . '/#organization',
-            'name' => self::BRAND,
-            'url' => self::SITE,
-            'logo' => [
-                '@type' => 'ImageObject',
-                'url' => self::PUBLISHER_LOGO,
-                'creditText' => self::BRAND,
-                'copyrightNotice' => '© ' . date('Y') . ' ' . self::BRAND,
-                'license' => self::SITE . '/terms',
-            ],
-        ];
+        return ['@id' => self::SITE . '/#organization'];
     }
 
     /**
@@ -293,7 +305,18 @@ class Seo
         if ($published) $node['datePublished'] = $published;
         $mtime = @filemtime($sourceFile);
         if ($mtime) $node['dateModified'] = date('Y-m-d', $mtime);
-        return $node;
+
+        // llm20-11: the Article's author and publisher are both bare @id refs
+        // now, so the page must carry the node they refer to. Returned as a
+        // @graph rather than a bare Article: every caller json_encodes this
+        // value straight into one <script>, so the wrapper reaches all 20
+        // solutions pages without touching any of them.
+        $org = self::organizationNode();
+        unset($node['@context'], $org['@context']);
+        return [
+            '@context' => 'https://schema.org',
+            '@graph' => [$node, $org],
+        ];
     }
 
     /** Recorded git-add date for a page, or null when the page is not listed. */

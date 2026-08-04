@@ -187,6 +187,17 @@ if ($view === 'company' && $slug) {
     }
     $whereSql = implode(' AND ', $where);
     $totalCount = (int) $db->fetchOne("SELECT COUNT(*) AS c FROM om_companies WHERE $whereSql", $params)['c'];
+    // llm27-26: max(1, ...) clamped the floor and nothing clamped the ceiling,
+    // so ?page=999 served an empty listing under a SELF-canonical, i.e. an
+    // unbounded indexable space that a crawler has no reason to stop walking.
+    // The last real page still answers 200; the first one past it is gone.
+    $lastPage = max(1, (int) ceil($totalCount / $perPage));
+    if ($page > $lastPage) {
+        http_response_code(404);
+        header('Cache-Control: no-store');
+        include __DIR__ . '/404.php';
+        exit;
+    }
     $companies = $db->fetchAll(
         "SELECT slug, name_en, name_ar, sector, wilayat, size_bucket,
                 logo_status, logo_svg_path, logo_png_path, logo_png_512_path, logo_webp_path,

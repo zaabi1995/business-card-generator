@@ -56,6 +56,23 @@ $SECTOR_LABELS = array_map(fn($s) => $s[$lang] ?? $s['en'], $SECTORS_I18N);
 
 function esc($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
 
+/**
+ * llm27-26: ?page=N was floor-clamped and ceiling-free on both the hub and the
+ * sector view, so every integer above the last real page served an empty
+ * listing under a SELF-canonical. That is an infinite indexable space, and a
+ * self-canonical is the one thing that stops a crawler treating it as
+ * duplicate. The last real page keeps answering 200; the first one past it
+ * stops existing.
+ */
+function pageBoundOr404(int $page, int $total, int $perPage): void {
+    $lastPage = max(1, (int) ceil($total / $perPage));
+    if ($page <= $lastPage) return;
+    http_response_code(404);
+    header('Cache-Control: no-store');
+    include __DIR__ . '/404.php';
+    exit;
+}
+
 function fetchLogoRows(Database $db, array $filters, int $page = 1, int $perPage = 60): array {
     $where  = ["logo_status IN ('indexed','verified')"];
     $params = [];
@@ -174,6 +191,7 @@ if ($view === 'sector') {
         'sort'          => $_GET['sort'] ?? 'alpha',
     ];
     $data = fetchLogoRows($db, $filters, $page, 60);
+    pageBoundOr404($page, $data['total'], 60);
     $title     = $isAr
         ? "شعارات {$sectorLabel} العمانية، {$data['total']} علامة مفهرسة"
         : "Omani {$sectorLabel} Logos, {$data['total']} brands indexed";
@@ -192,6 +210,7 @@ $filters = [
     'sort'          => $_GET['sort'] ?? 'alpha',
 ];
 $data      = fetchLogoRows($db, $filters, $page, 60);
+pageBoundOr404($page, $data['total'], 60);
 $total     = totalLogos($db);
 $counts    = sectorCounts($db);
 $libStats  = logoLibraryStats($db);
