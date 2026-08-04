@@ -31,7 +31,13 @@
  */
 import { test, expect, Page } from '@playwright/test';
 
-const CYAN = 'rgb(0, 155, 193)'; // #009bc1 Cardify brand
+// A filled primary CTA carries WHITE text, so it uses #00718c, not the raw brand
+// cyan #009bc1. White on #009bc1 is 3.25:1 and fails WCAG 2.1 AA, which wants
+// 4.5:1 for normal text; #00718c is the AA-passing shade of the same hue at
+// 5.61:1. Brand cyan stays correct everywhere it is not carrying white text:
+// borders, icons, gradients, and fills sitting behind dark text. Live value comes
+// from --cf-ink in assets/css/cardify-brand-2026.css.
+const CYAN = 'rgb(0, 113, 140)'; // #00718c, the accessible Cardify cyan
 const FA_WOFF2 = /design\.bhd\.om\/fa\/.*\.woff2/i;
 
 type FooterKind = 'full' | 'inline' | 'minimal' | 'custom';

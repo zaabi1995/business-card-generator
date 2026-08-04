@@ -237,6 +237,16 @@
   .sm\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .sm\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .sm\:flex-row { flex-direction: row; }
+  /* `.hidden` above carries !important so JS adding the class reliably hides an
+     element that also has a display utility. That weight also beat Tailwind's
+     unimportant sm: display utilities, so a `hidden sm:inline-flex` element (the
+     header Sign In and Get Started Free buttons among them) stayed display:none
+     at every width. Give the sm: display utilities the same weight the lg: block
+     below already uses. */
+  .sm\:block { display: block !important; }
+  .sm\:inline { display: inline !important; }
+  .sm\:inline-block { display: inline-block !important; }
+  .sm\:inline-flex { display: inline-flex !important; }
   .sm\:text-left { text-align: left; }
   .sm\:text-5xl { font-size: 3rem; line-height: 1; }
   .sm\:px-6 { padding-left: 1.5rem; padding-right: 1.5rem; }
@@ -252,7 +262,7 @@
   .md\:flex { display: flex; }
   .md\:flex-row { flex-direction: row; }
   .md\:hidden { display: none; }
-  .md\:block { display: block; }
+  .md\:block { display: block !important; }
   .md\:w-12 { width: 3rem; }
   .md\:h-12 { height: 3rem; }
   .md\:text-base { font-size: 1rem; line-height: 1.5rem; }
