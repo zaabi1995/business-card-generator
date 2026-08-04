@@ -199,13 +199,29 @@ def _pick_font(family: str, weight: int, font_buffers: dict, text: str = '') -> 
     return best_key, candidates[best_key]
 
 
+# Fields that are identical for every employee at a tenant. Only these may
+# fall back to the design's own sample text when the employee row is blank.
+_TENANT_CONSTANT_BASES = ('website', 'company', 'address', 'fax', 'social')
+
+
+def _is_tenant_constant(field_key: str) -> bool:
+    return (field_key or '').lower().startswith(_TENANT_CONSTANT_BASES)
+
+
 def _resolve_employee_value(field_key: str, employee: dict, template_default: str = '') -> str:
     """Return the employee's value for a template field_key, trying:
     1. Exact key (e.g. 'name_en')
     2. Locale-stripped key (e.g. 'name' for 'name_en' / 'name_ar')
-    3. Fall back to the template's detected_text (source PDF sample) for
-       any field when the employee has no value. Per user direction:
-       always use the source PDF data as the default.
+    3. Fall back to the template's detected_text (source PDF sample) only
+       for tenant-constant fields (website / company / address / fax /
+       social). Those are the same for everyone, so the design's own text
+       is the right default.
+
+       Per-person fields (name, position, phone, mobile, email) must NOT
+       fall back: a blank means this employee genuinely has no value there,
+       and borrowing the template sample prints the person whose card was
+       imported. Al Maha's single-line job titles were inheriting the
+       three-line designation of the employee the design came from.
     """
     val = (employee.get(field_key) or '').strip()
     if val:
@@ -231,7 +247,9 @@ def _resolve_employee_value(field_key: str, employee: dict, template_default: st
     # text, the bbox x assumes the space character is rendered. Stripping
     # it shifts the visible glyph left by the space-width and collides
     # with the preceding field (e.g. ' www.otech.om' next to '|').
-    return template_default or ''
+    if _is_tenant_constant(field_key):
+        return template_default or ''
+    return ''
 
 
 def _hex_to_rgb(hex_color) -> tuple:
