@@ -19,6 +19,7 @@
 if (PHP_SAPI !== 'cli') { http_response_code(403); exit('CLI only.'); }
 require_once __DIR__ . '/../config.php';
 require_once INCLUDES_DIR . '/LogoLibrary.php';
+require_once INCLUDES_DIR . '/ArabicText.php';
 
 $UA      = 'Cardify-LogoIndex/1.0 (+https://cardify.om/logos; contact@cardify.om)';
 $BASE    = 'https://www.2oman.net/omani_logo_library/';
@@ -195,7 +196,9 @@ foreach ($entries as $e) {
                 // Distinct placeholders, same value bound twice (PDO emulated prepares OFF, rule 12)
                 $pdo->prepare("INSERT INTO om_companies (name_en, name_ar, slug, sector, wilayat, size_bucket, curated)
                                VALUES (:n_en, :n_ar, :s, 'other', 'muscat', 'medium', 0)")
-                    ->execute([':n_en' => $e['name'], ':n_ar' => $e['name'], ':s' => $slug]);
+                    ->execute([':n_en' => $e['name'],
+                               ':n_ar' => ArabicText::normalize($e['name']),  // r63
+                               ':s' => $slug]);
                 $companyId = (int) $pdo->lastInsertId();
                 $report['new_rows']++;
                 $sessionInserts[] = ['id' => $companyId, 'name' => $e['name']];

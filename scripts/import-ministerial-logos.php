@@ -23,6 +23,7 @@
 if (PHP_SAPI !== 'cli') { http_response_code(403); exit('CLI only.'); }
 require '/www/wwwroot/cardify.om/config.php';
 require '/www/wwwroot/cardify.om/includes/LogoLibrary.php';
+require_once '/www/wwwroot/cardify.om/includes/ArabicText.php';
 
 $catalogPath = $argv[1] ?? '/tmp/ministerial-logos-catalog.json';
 $srcDir      = rtrim($argv[2] ?? '/tmp/ministerial-logos', '/');
@@ -74,7 +75,7 @@ $stats = ['entities' => count($groups), 'auto_linked' => 0, 'new_rows' => 0, 'pr
 foreach ($groups as $name => $group) {
     $row = $group['canonical'];
     $nameEn = $row['name_en'];
-    $nameAr = $row['name_ar'] ?? '';
+    $nameAr = ArabicText::normalize($row['name_ar'] ?? '');  // r63, before matching
     $sector = $row['sector'];
     $wilayat = $row['wilayat'];
     $srcFile = $srcDir . '/' . $row['file'];

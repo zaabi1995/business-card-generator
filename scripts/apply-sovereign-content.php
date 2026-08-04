@@ -13,6 +13,7 @@
 
 if (PHP_SAPI !== 'cli') { http_response_code(403); exit('CLI only.'); }
 require '/www/wwwroot/cardify.om/config.php';
+require_once '/www/wwwroot/cardify.om/includes/ArabicText.php';
 
 $force = in_array('--force', $argv, true);
 $map = require '/www/wwwroot/cardify.om/data/logo_library/sovereign_content.php';
@@ -52,7 +53,7 @@ foreach ($rows as $r) {
     $pdo->prepare("UPDATE om_companies SET summary_en = :en, summary_ar = :ar, updated_at = NOW() WHERE id = :id")
         ->execute([
             ':en' => $data['en'],
-            ':ar' => $data['ar'],
+            ':ar' => ArabicText::normalize($data['ar']),  // r63
             ':id' => $r['id'],
         ]);
     printf("  ✓ %5d  %s\n", $r['id'], $r['name_en']);

@@ -16,6 +16,7 @@
 if (PHP_SAPI !== 'cli') { http_response_code(403); exit('CLI only.'); }
 require_once __DIR__ . '/../config.php';
 require_once INCLUDES_DIR . '/LogoLibrary.php';
+require_once INCLUDES_DIR . '/ArabicText.php';
 
 $jsonPath = $argv[1] ?? '/tmp/2oman-logos/index.json';
 if (!is_file($jsonPath)) {
@@ -64,7 +65,9 @@ $report = ['total' => count($entries), 'auto_linked' => 0, 'queued' => 0, 'new_r
 
 foreach ($entries as $i => $e) {
     $nameEn = $e['name_en'] ?? '';
-    $nameAr = $e['name_ar'] ?? '';
+    // r63: normalise BEFORE matching, not at the bind. A dirty scraped
+    // name scores ~0 against clean rows and creates a duplicate company.
+    $nameAr = ArabicText::normalize($e['name_ar'] ?? '');
     $fileSrc = $scrapeDir . '/' . $e['file'];
     if (!is_file($fileSrc)) {
         $report['errors'][] = "missing file: {$e['file']}";

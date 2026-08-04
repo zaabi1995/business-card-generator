@@ -18,6 +18,7 @@ if (PHP_SAPI !== 'cli') { http_response_code(403); exit('CLI only.'); }
 require_once __DIR__ . '/../config.php';
 require_once INCLUDES_DIR . '/LogoLibrary.php';
 require_once INCLUDES_DIR . '/BrandNames.php';
+require_once INCLUDES_DIR . '/ArabicText.php';
 
 $db   = Database::getInstance();
 $pdo  = $db->getConnection();
@@ -186,13 +187,13 @@ foreach ($brands as $b) {
             verified_at = COALESCE(verified_at, NOW())
           WHERE id = :id")->execute([
             'name_en'    => $b['name_en'],
-            'name_ar'    => $b['name_ar'],
+            'name_ar'    => ArabicText::normalize($b['name_ar']),  // r63
             'sector'     => $b['sector'],
             'size'       => $b['size'],
             'website'    => $b['website'],
             'domain'     => $domain,
             'summary_en' => $b['summary_en'],
-            'summary_ar' => $b['summary_ar'],
+            'summary_ar' => ArabicText::normalize($b['summary_ar']),  // r63
             'id'         => $id,
         ]);
         $updated++;
@@ -204,14 +205,14 @@ foreach ($brands as $b) {
           VALUES (:name_en, :name_ar, :slug, :sector, 'muscat', :size, :website, :domain,
                   :summary_en, :summary_ar, 1, NOW())")->execute([
             'name_en'    => $b['name_en'],
-            'name_ar'    => $b['name_ar'],
+            'name_ar'    => ArabicText::normalize($b['name_ar']),  // r63
             'slug'       => $slug,
             'sector'     => $b['sector'],
             'size'       => $b['size'],
             'website'    => $b['website'],
             'domain'     => $domain,
             'summary_en' => $b['summary_en'],
-            'summary_ar' => $b['summary_ar'],
+            'summary_ar' => ArabicText::normalize($b['summary_ar']),  // r63
         ]);
         $id = (int) $pdo->lastInsertId();
         $inserted++;
