@@ -216,6 +216,13 @@ if ($currentPage !== 'index' && !($currentPage === 'blog' && isset($singlePost))
                     const target = document.querySelector(href);
                     if (target) {
                         target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        // preventDefault() above also cancelled the two things the
+                        // browser would have done on its own: move keyboard focus to
+                        // the target (the entire point of the skip-to-content link)
+                        // and put the fragment in the URL. Put both back.
+                        if (typeof target.focus === 'function') target.focus({ preventScroll: true });
+                        if (window.history && typeof history.pushState === 'function') history.pushState(null, '', href);
+                        else location.hash = href;
                     }
                 }
             });

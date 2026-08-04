@@ -31,7 +31,13 @@
  */
 import { test, expect, Page } from '@playwright/test';
 
-const CYAN = 'rgb(0, 155, 193)'; // #009bc1 Cardify brand
+// A filled primary CTA carries WHITE text, so it uses #00718c, not the raw brand
+// cyan #009bc1. White on #009bc1 is 3.25:1 and fails WCAG 2.1 AA, which wants
+// 4.5:1 for normal text; #00718c is the AA-passing shade of the same hue at
+// 5.61:1. Brand cyan stays correct everywhere it is not carrying white text:
+// borders, icons, gradients, and fills sitting behind dark text. Live value comes
+// from --cf-ink in assets/css/cardify-brand-2026.css.
+const CYAN = 'rgb(0, 113, 140)'; // #00718c, the accessible Cardify cyan
 const FA_WOFF2 = /design\.bhd\.om\/fa\/.*\.woff2/i;
 
 type FooterKind = 'full' | 'inline' | 'minimal' | 'custom';
@@ -110,7 +116,16 @@ async function evalAudit(page: Page, a: Arch) {
     // solid, regular) and only the used ones load. Pass if ANY is loaded.
     const faFaces = (Array.from((document as any).fonts) as any[]).filter((f) => /Font Awesome/i.test(f.family));
     out.faStatus = faFaces.some((f) => f.status === 'loaded') ? 'loaded' : (faFaces[0] ? faFaces[0].status : 'absent');
-    const icon = document.querySelector('i.fa-solid, i.fa-brands, i.fa-regular') as HTMLElement | null;
+    // Probe an icon the page actually RENDERS at this viewport. The first FA node
+    // in DOM order is the `lg:hidden` mobile hamburger on every page that carries
+    // no language switcher (the switcher renders nothing where the route has no
+    // /ar/ twin, e.g. /blog, /industries, /tools/*), and a display:none element is
+    // always zero-width no matter how well the font painted. Falling back to the
+    // first node keeps the assertion real when nothing paints at all.
+    const icons = Array.from(
+      document.querySelectorAll('i.fa-solid, i.fa-brands, i.fa-regular'),
+    ) as HTMLElement[];
+    const icon = icons.find((el) => el.getBoundingClientRect().width > 0) || icons[0] || null;
     out.iconWidth = icon ? Math.round(icon.getBoundingClientRect().width) : 0;
     out.iconGlyph = icon ? getComputedStyle(icon, '::before').content : null;
     // footer
