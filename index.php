@@ -1383,72 +1383,18 @@ HTML;
 // hours are the canonical block bhd.om/_nap.py owns, verbatim.
 ?>
 <!-- JSON-LD Structured Data -->
-<script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": ["Organization", "LocalBusiness"],
-  "@id": "https://cardify.om/#organization",
-  "name": "Cardify",
-  "alternateName": ["Cardify Oman", "Cardify GCC"],
-  "url": "https://cardify.om",
-  "parentOrganization": { "@id": "https://bhd.om/#organization" },
-  "disambiguatingDescription": "Cardify is the digital business card platform published by BHD Group (Bin Haider Darwish L.L.C.) in Muscat, Oman. BHD Group is Bin Haider Darwish L.L.C., Commercial Registration 1334733, a family-owned printing and technology group founded in Muscat in 2018. It is not Mohsin Haider Darwish LLC (a separate and unrelated Omani company), and the initials BHD here stand for Bin Haider Darwish, not the Bahraini dinar currency code.",
-  "logo": "https://cardify.om/assets/images/logo.svg",
-  "description": "Business-identity platform for the Gulf: digital and printed business cards, public logo libraries, and the GCC Business Index. Built in Oman, expanding across Saudi Arabia, UAE, Qatar, Bahrain, and Kuwait through 2026.",
-  "address": {
-    "@type": "PostalAddress",
-    "streetAddress": "HM Tower, Ground Floor, Bousher",
-    "postOfficeBoxNumber": "2237",
-    "addressLocality": "Muscat",
-    "addressRegion": "Muscat Governorate",
-    "postalCode": "133",
-    "addressCountry": "OM"
-  },
-  "geo": { "@type": "GeoCoordinates", "latitude": 23.57176, "longitude": 58.4094427 },
-  "hasMap": "https://maps.app.goo.gl/nR785v4vyTB8edNq9",
-  "telephone": "+96898899100",
-  "priceRange": "OMR",
-  "openingHoursSpecification": [
-    { "@type": "OpeningHoursSpecification", "dayOfWeek": ["Saturday","Sunday","Monday","Tuesday","Wednesday","Thursday"], "opens": "09:00", "closes": "19:00" }
-  ],
-  "founder": { "@id": "https://bhd.om/#founder" },
-  "foundingDate": "2024",
-  "foundingLocation": {
-    "@type": "Place",
-    "address": {
-      "@type": "PostalAddress",
-      "addressCountry": "OM",
-      "addressLocality": "Muscat"
-    }
-  },
-  "areaServed": [
-    { "@type": "Country", "name": "Oman", "alternateName": "عُمان", "identifier": "OMN" },
-    { "@type": "Country", "name": "Saudi Arabia", "alternateName": "المملكة العربية السعودية", "identifier": "SAU" },
-    { "@type": "Country", "name": "United Arab Emirates", "alternateName": "الإمارات العربية المتحدة", "identifier": "ARE" },
-    { "@type": "Country", "name": "Qatar", "alternateName": "قطر", "identifier": "QAT" },
-    { "@type": "Country", "name": "Bahrain", "alternateName": "البحرين", "identifier": "BHR" },
-    { "@type": "Country", "name": "Kuwait", "alternateName": "الكويت", "identifier": "KWT" }
-  ],
-  "knowsLanguage": ["en", "ar"],
-  "sameAs": ["https://instagram.com/cardifyom"],
-  "contactPoint": {
-    "@type": "ContactPoint",
-    "contactType": "customer service",
-    "url": "https://cardify.om/contact",
-    "availableLanguage": ["en", "ar"]
-  },
-  "hasOfferCatalog": {
-    "@type": "OfferCatalog",
-    "name": "Cardify Product Catalog",
-    "itemListElement": [
-      { "@type": "OfferCatalog", "name": "Digital Business Cards", "url": "https://cardify.om/" },
-      { "@type": "OfferCatalog", "name": "Omani Logo Library", "url": "https://cardify.om/logos" },
-      { "@type": "OfferCatalog", "name": "Oman Business Index", "url": "https://cardify.om/oman-business-index" },
-      { "@type": "OfferCatalog", "name": "GCC Business Index", "url": "https://cardify.om/gcc-business-index" }
-    ]
-  }
-}
-</script>
+<?php
+// llm20-11 (r48): this node used to be a 24-key JSON literal typed here,
+// beside a SECOND, shorter hand-written body for the same @id in
+// includes/Seo.php that 20 /solutions/* pages published. Both claimed to be
+// https://cardify.om/#organization and they disagreed on @type and
+// contactPoint. The literal now lives in Seo::organizationNode() and is
+// rendered from there, so the estate has one body for one identifier.
+require_once __DIR__ . '/includes/Seo.php';
+echo '<script type="application/ld+json">'
+   . json_encode(Seo::organizationNode(), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)
+   . '</script>';
+?>
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",

@@ -99,51 +99,135 @@ class Seo
      */
     public static function organizationNode(): array
     {
+        // llm20-11 (r48): this payload is the LITERAL that used to be typed
+        // into index.php's <script> block, moved here verbatim. It was
+        // previously a second, shorter hand-written node kept "in step" by a
+        // comment, and it had already drifted on two keys: it dropped the
+        // LocalBusiness @type and published a different contactPoint (customer
+        // support / email vs customer service / url). A comment is not a
+        // constraint. index.php now RENDERS this, so there is one body for
+        // https://cardify.om/#organization on every page that carries it.
         return [
-            '@context' => 'https://schema.org',
-            '@type' => 'Organization',
-            '@id' => self::SITE . '/#organization',
-            'name' => self::BRAND,
-            'url' => self::SITE,
-            // Ownership was one-way: bhd.om named Cardify a subOrganization,
-            // Cardify named no parent, so the edge did not resolve from here.
-            'parentOrganization' => ['@id' => 'https://bhd.om/#organization'],
-            // r6-50: the group-level collision (Bahraini dinar, Mohsin Haider
-            // Darwish LLC) reaches every property that names BHD, and until now
-            // only bhd.om answered it. Stated on Cardify's own node rather than
-            // by inlining a second BHD Group node, which r6-59 already ruled out.
-            // Same two alternates index.php's live node publishes. Seo::organization()
-            // currently has no caller (index.php hand-writes the node); keeping the
-            // two in step means activating this one cannot silently change the entity.
-            'alternateName' => ['Cardify Oman', 'Cardify GCC'],
-            'disambiguatingDescription' =>
-                'Cardify is the digital business card platform published by BHD Group '
-                . '(Bin Haider Darwish L.L.C.) in Muscat, Oman. ' . self::GROUP_DISAMBIGUATION,
-            // r20-17: NO identifier / vatID here, deliberately. CR 1334733 and
-            // VATIN OM1100019343 register the LEGAL ENTITY Bin Haider Darwish
-            // L.L.C., which the estate defines once at
-            // https://bhd.om/#organization. Asserting them again on this @id
-            // (and on bhdoman.com/#business) made one registration number the
-            // key of three different nodes, which a resolver must read either as
-            // three companies sharing a registration or as an instruction to
-            // merge three entities. Cardify is a brand of that entity, so it
-            // carries parentOrganization and nothing else. index.php's live
-            // node already publishes this shape; this dormant helper is kept in
-            // step so activating it can never reintroduce the collision.
-            'logo' => self::PUBLISHER_LOGO,
-            // Live-probed 29 Jul 2026 (redirects followed, desktop UA):
-            //   https://instagram.com/cardifyom              -> 200
-            //   https://twitter.com/cardify_om               -> 404
-            //   https://www.linkedin.com/company/cardify-om  -> 404
-            // sameAs is a checkable identity assertion, so a 404 in it is
-            // worse than an omission. Only the surviving profile ships.
-            'sameAs' => ['https://instagram.com/cardifyom'],
-            'contactPoint' => [
-                '@type' => 'ContactPoint',
-                'contactType' => 'customer support',
-                'email' => 'hello@cardify.om',
-                'areaServed' => ['OM', 'GCC'],
-                'availableLanguage' => ['English', 'Arabic'],
+            "@context" => "https://schema.org",
+            "@type" => ["Organization", "LocalBusiness"],
+            "@id" => "https://cardify.om/#organization",
+            "name" => "Cardify",
+            "alternateName" => ["Cardify Oman", "Cardify GCC"],
+            "url" => "https://cardify.om",
+            "parentOrganization" => [
+                "@id" => "https://bhd.om/#organization",
+            ],
+            "disambiguatingDescription" => "Cardify is the digital business card platform published by BHD Group (Bin Haider Darwish L.L.C.) in Muscat, Oman. BHD Group is Bin Haider Darwish L.L.C., Commercial Registration 1334733, a family-owned printing and technology group founded in Muscat in 2018. It is not Mohsin Haider Darwish LLC (a separate and unrelated Omani company), and the initials BHD here stand for Bin Haider Darwish, not the Bahraini dinar currency code.",
+            "logo" => "https://cardify.om/assets/images/logo.svg",
+            "description" => "Business-identity platform for the Gulf: digital and printed business cards, public logo libraries, and the GCC Business Index. Built in Oman, expanding across Saudi Arabia, UAE, Qatar, Bahrain, and Kuwait through 2026.",
+            "address" => [
+                "@type" => "PostalAddress",
+                "streetAddress" => "HM Tower, Ground Floor, Bousher",
+                "postOfficeBoxNumber" => "2237",
+                "addressLocality" => "Muscat",
+                "addressRegion" => "Muscat Governorate",
+                "postalCode" => "133",
+                "addressCountry" => "OM",
+            ],
+            "geo" => [
+                "@type" => "GeoCoordinates",
+                "latitude" => 23.57176,
+                "longitude" => 58.4094427,
+            ],
+            "hasMap" => "https://maps.app.goo.gl/nR785v4vyTB8edNq9",
+            "telephone" => "+96898899100",
+            "priceRange" => "OMR",
+            "openingHoursSpecification" => [
+                [
+                    "@type" => "OpeningHoursSpecification",
+                    "dayOfWeek" => ["Saturday", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday"],
+                    "opens" => "09:00",
+                    "closes" => "19:00",
+                ],
+            ],
+            "founder" => [
+                "@id" => "https://bhd.om/#founder",
+            ],
+            "foundingDate" => "2024",
+            "foundingLocation" => [
+                "@type" => "Place",
+                "address" => [
+                    "@type" => "PostalAddress",
+                    "addressCountry" => "OM",
+                    "addressLocality" => "Muscat",
+                ],
+            ],
+            "areaServed" => [
+                [
+                    "@type" => "Country",
+                    "name" => "Oman",
+                    "alternateName" => "عُمان",
+                    "identifier" => "OMN",
+                ],
+                [
+                    "@type" => "Country",
+                    "name" => "Saudi Arabia",
+                    "alternateName" => "المملكة العربية السعودية",
+                    "identifier" => "SAU",
+                ],
+                [
+                    "@type" => "Country",
+                    "name" => "United Arab Emirates",
+                    "alternateName" => "الإمارات العربية المتحدة",
+                    "identifier" => "ARE",
+                ],
+                [
+                    "@type" => "Country",
+                    "name" => "Qatar",
+                    "alternateName" => "قطر",
+                    "identifier" => "QAT",
+                ],
+                [
+                    "@type" => "Country",
+                    "name" => "Bahrain",
+                    "alternateName" => "البحرين",
+                    "identifier" => "BHR",
+                ],
+                [
+                    "@type" => "Country",
+                    "name" => "Kuwait",
+                    "alternateName" => "الكويت",
+                    "identifier" => "KWT",
+                ],
+            ],
+            "knowsLanguage" => ["en", "ar"],
+            "sameAs" => ["https://instagram.com/cardifyom"],
+            "contactPoint" => [
+                "@type" => "ContactPoint",
+                "contactType" => "customer service",
+                "url" => "https://cardify.om/contact",
+                "availableLanguage" => ["en", "ar"],
+            ],
+            "hasOfferCatalog" => [
+                "@type" => "OfferCatalog",
+                "name" => "Cardify Product Catalog",
+                "itemListElement" => [
+                    [
+                        "@type" => "OfferCatalog",
+                        "name" => "Digital Business Cards",
+                        "url" => "https://cardify.om/",
+                    ],
+                    [
+                        "@type" => "OfferCatalog",
+                        "name" => "Omani Logo Library",
+                        "url" => "https://cardify.om/logos",
+                    ],
+                    [
+                        "@type" => "OfferCatalog",
+                        "name" => "Oman Business Index",
+                        "url" => "https://cardify.om/oman-business-index",
+                    ],
+                    [
+                        "@type" => "OfferCatalog",
+                        "name" => "GCC Business Index",
+                        "url" => "https://cardify.om/gcc-business-index",
+                    ],
+                ],
             ],
         ];
     }
