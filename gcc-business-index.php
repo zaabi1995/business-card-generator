@@ -11,6 +11,7 @@
  * Public, cacheable.
  */
 require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/includes/Datasets.php';
 require_once INCLUDES_DIR . '/Auth.php';
 
 $db = Database::getInstance();
@@ -195,15 +196,13 @@ $crumbLd = [
     ],
 ];
 
-$datasetLd = [
-    '@context'       => 'https://schema.org',
-    '@type'          => 'Dataset',
-    'name'           => 'GCC Business Index 2026',
+// r59/llm27-37: @id, name, licence, creator, publisher and distribution are
+// owned by includes/Datasets.php. Before r59 this node was anonymous and /press
+// described the same dataset under the shorter name "GCC Business Index", so
+// the two could not be joined.
+$datasetLd = Datasets::node('gcc', [
     'description'    => 'Federated open index of business infrastructure across the six Gulf Cooperation Council states: company registers, sovereign-entity directories, and brand logo archives.',
-    'url'            => $canonicalUrl,
     'keywords'       => 'GCC, Saudi Arabia, UAE, Qatar, Bahrain, Kuwait, Oman, business register, companies, logos, sovereign, government, MENA',
-    'license'        => 'https://creativecommons.org/licenses/by/4.0/',
-    'creator'        => ['@type' => 'Organization', 'name' => 'Cardify', 'url' => 'https://cardify.om'],
     'temporalCoverage' => '2026/..',
     'spatialCoverage'  => [
         ['@type' => 'Country', 'name' => 'Saudi Arabia', 'address' => ['@type' => 'PostalAddress', 'addressCountry' => 'SA']],
@@ -213,15 +212,8 @@ $datasetLd = [
         ['@type' => 'Country', 'name' => 'Kuwait', 'address' => ['@type' => 'PostalAddress', 'addressCountry' => 'KW']],
         ['@type' => 'Country', 'name' => 'Oman', 'address' => ['@type' => 'PostalAddress', 'addressCountry' => 'OM']],
     ],
-    'distribution'   => [
-        ['@type' => 'DataDownload', 'encodingFormat' => 'application/json', 'contentUrl' => 'https://cardify.om/api/logos/list'],
-        ['@type' => 'DataDownload', 'encodingFormat' => 'application/json', 'contentUrl' => 'https://cardify.om/api/logos/sectors'],
-        ['@type' => 'DataDownload', 'encodingFormat' => 'application/json', 'contentUrl' => 'https://cardify.om/api/logos/stats'],
-        ['@type' => 'DataDownload', 'encodingFormat' => 'text/html',        'contentUrl' => 'https://cardify.om/oman-business-index'],
-    ],
     'dateModified'   => $lastUpdated,
-    'publisher'      => ['@type' => 'Organization', 'name' => 'Cardify', 'url' => 'https://cardify.om'],
-];
+]);
 
 $orgLd = [
     '@context' => 'https://schema.org',

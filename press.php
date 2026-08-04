@@ -16,6 +16,7 @@
  * that prefer structured fact pages over marketing content.
  */
 require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/includes/Datasets.php';
 require_once INCLUDES_DIR . '/Auth.php';
 
 $pageTitle       = t('press.page_title');
@@ -72,31 +73,26 @@ $datasetsLd = [
     'name'     => 'Cardify Public Datasets',
     'description' => 'Open datasets published by Cardify for researchers, journalists, and analysts covering business identity across the GCC.',
     'url'      => $canonicalUrl,
+    // r59/llm27-37: these three were full re-definitions with no @id, under
+    // names ("Oman Business Index", "GCC Business Index") that did not match
+    // the names their own home pages published, so each dataset existed twice
+    // with nothing to join the halves. They now carry the @id of the node on
+    // the dataset's home page: one entity, described twice. The description
+    // stays local because it is written for this page's audience; every key
+    // that carries identity comes from includes/Datasets.php.
+    // r59/llm27-36: the logo-library entry declared no distribution while its
+    // own description promised SVG and PNG downloads. brief() carries the
+    // measured distribution, so the promise now resolves here too.
     'hasPart'  => [
-        [
-            '@type' => 'Dataset',
-            'name'  => 'Oman Business Index',
+        Datasets::brief('obi', [
             'description' => 'Open structured index of Omani companies with CR numbers, sector, wilayat, and trade names.',
-            'url'   => 'https://cardify.om/oman-business-index',
-            'license' => 'https://creativecommons.org/licenses/by/4.0/',
-            'creator' => ['@type' => 'Organization', 'name' => 'Cardify'],
-        ],
-        [
-            '@type' => 'Dataset',
-            'name'  => 'Omani Logo Library',
-            'description' => 'Logos of Omani companies, ministries, and sovereign entities, downloadable in SVG and PNG.',
-            'url'   => 'https://cardify.om/logos',
-            'license' => 'Nominative fair-use per entry; see /logos/terms',
-            'creator' => ['@type' => 'Organization', 'name' => 'Cardify'],
-        ],
-        [
-            '@type' => 'Dataset',
-            'name'  => 'GCC Business Index',
+        ]),
+        Datasets::brief('logos', [
+            'description' => 'Logos of Omani companies, ministries, and sovereign entities, downloadable in SVG, PNG and WebP.',
+        ]),
+        Datasets::brief('gcc', [
             'description' => 'Federated research-grade overview of business infrastructure across all six GCC states.',
-            'url'   => 'https://cardify.om/gcc-business-index',
-            'license' => 'https://creativecommons.org/licenses/by/4.0/',
-            'creator' => ['@type' => 'Organization', 'name' => 'Cardify'],
-        ],
+        ]),
     ],
 ];
 

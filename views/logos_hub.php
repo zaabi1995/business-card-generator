@@ -68,19 +68,17 @@ $jsonLdBlocks[] = [
     ], $faqQuestions),
 ];
 
-$jsonLdBlocks[] = [
-    "@context"   => "https://schema.org",
-    "@type"      => "DataCatalog",
-    "name"       => "Omani Logo Library, Public API",
-    "url"        => "https://cardify.om/logos/press",
-    "license"    => "https://cardify.om/logos/terms",
-    "isAccessibleForFree" => true,
-    "distribution" => [
-        ["@type" => "DataDownload", "encodingFormat" => "application/json", "contentUrl" => "https://cardify.om/api/logos/list"],
-        ["@type" => "DataDownload", "encodingFormat" => "application/json", "contentUrl" => "https://cardify.om/api/logos/sectors"],
-        ["@type" => "DataDownload", "encodingFormat" => "application/json", "contentUrl" => "https://cardify.om/api/logos/stats"],
-    ],
-];
+// r59/llm27-37: this node was anonymous and named "Omani Logo Library, Public
+// API" while /press published "Omani Logo Library" as a Dataset, so one library
+// existed as two entities under two @types. It is now the single node the @id
+// https://cardify.om/logos#dataset names, typed Dataset AND DataCatalog, and
+// every identity key comes from includes/Datasets.php. This page is its home,
+// so it gets the full node.
+require_once INCLUDES_DIR . '/Datasets.php';
+$jsonLdBlocks[] = Datasets::node('logos', [
+    'description' => 'Brand marks for Omani companies, ministries and sovereign entities, downloadable as SVG, PNG and WebP, with a public JSON index.',
+    'inLanguage'  => ['en', 'ar'],
+]);
 
 // ItemList of the first page of verified logos. Surfaces as image rich-results in Google.
 $itemListItems = [];

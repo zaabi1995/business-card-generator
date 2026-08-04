@@ -11,6 +11,7 @@
  */
 require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/includes/CompanyIndex.php';
+require_once __DIR__ . '/includes/Datasets.php';
 require_once INCLUDES_DIR . '/Auth.php';
 
 $db = Database::getInstance();
@@ -239,48 +240,22 @@ $htmlClass       = 'scroll-smooth';
 $bodyClass       = 'bg-white';
 
 // --- JSON-LD structured data ---
-$datasetLd = [
-    '@context'      => 'https://schema.org',
-    '@type'         => 'Dataset',
-    'name'          => 'Oman Business Index 2026',
-    'alternateName' => 'Cardify Oman Business Index',
+// r59/llm27-37: identity, name, licence, creator, publisher and distribution
+// are owned by includes/Datasets.php and are NOT restated here. This page owns
+// only the description (which carries a live count), the dates, the keywords
+// and the coverage. Before r59 this node had no @id, so /press described the
+// same dataset under a different name and nothing could join the two.
+$datasetLd = Datasets::node('obi', [
     'description'   => 'A free, bilingual, public index of ' . $stats['total']
         . ' large and medium-sized enterprises registered in the Sultanate of Oman, classified by sector and governorate. Derived from the MoCIIP public register.',
-    'url'           => $canonicalUrl,
     'keywords'      => [
         'Oman', 'Sultanate of Oman', 'business directory', 'companies',
         'MoCIIP', 'Vision 2040', 'enterprises', 'SMEs', 'large companies',
         'private sector', 'Oman economy'
     ],
-    'license'       => 'https://creativecommons.org/licenses/by/4.0/',
     'inLanguage'    => ['en', 'ar'],
-    'isAccessibleForFree' => true,
     'dateModified'  => $lastUpdatedIso,
     'datePublished' => '2026-04-01',
-    'creator'       => [
-        '@type' => 'Organization',
-        'name'  => 'Cardify',
-        'url'   => 'https://cardify.om',
-    ],
-    'publisher'     => [
-        '@type' => 'Organization',
-        'name'  => 'Cardify',
-        'url'   => 'https://cardify.om',
-        'logo'  => [
-            '@type' => 'ImageObject',
-            'url'   => 'https://cardify.om/assets/images/cardify-logo.png',
-            'creditText' => 'Cardify',
-            'copyrightNotice' => '© Cardify',
-            'license' => 'https://cardify.om/terms',
-        ],
-    ],
-    'distribution'  => [
-        [
-            '@type'       => 'DataDownload',
-            'encodingFormat' => 'text/html',
-            'contentUrl'  => $baseUrl . '/companies',
-        ],
-    ],
     'variableMeasured' => [
         ['@type' => 'PropertyValue', 'name' => 'Sector',      'value' => $stats['sector_count']  . ' sectors'],
         ['@type' => 'PropertyValue', 'name' => 'Governorate', 'value' => $stats['wilayat_count'] . ' governorates'],
@@ -290,7 +265,16 @@ $datasetLd = [
         '@type' => 'Country',
         'name'  => 'Oman',
     ],
-];
+]);
+
+// r59/llm27-36: FAQ answer 9 on this page sends the reader to the logo library
+// for downloadable SVG + PNG brand marks, and until r59 no node in this
+// document declared any such distribution, so the promise resolved to nothing.
+// This is the same entity as the node on /logos (same @id), described here so
+// the promise resolves in the document that makes it.
+$logoDatasetLd = ['@context' => 'https://schema.org'] + Datasets::brief('logos', [
+    'description' => 'Brand marks for companies covered by the Oman Business Index, downloadable as SVG, PNG and WebP, with a public JSON index.',
+]);
 
 $faq = [
     ['q' => t('obi.faq1_q'), 'a' => t('obi.faq1_a', ['sectors' => $stats['sector_count']])],
@@ -345,6 +329,7 @@ $orgLd = [
 
 $extraHead =
       '<script type="application/ld+json">' . json_encode($datasetLd, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>'
+    . '<script type="application/ld+json">' . json_encode($logoDatasetLd, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>'
     . '<script type="application/ld+json">' . json_encode($faqLd,     JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>'
     . '<script type="application/ld+json">' . json_encode($crumbLd,   JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>'
     . '<script type="application/ld+json">' . json_encode($orgLd,     JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>'
