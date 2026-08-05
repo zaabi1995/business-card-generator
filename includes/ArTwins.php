@@ -196,4 +196,41 @@ class ArTwins
         }
         return null;
     }
+
+    /** True when the request being served is the Arabic side. */
+    public static function servingArabic(): bool
+    {
+        $path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
+        return self::isArabic($path) || (($_GET['lang'] ?? '') === 'ar');
+    }
+
+    /**
+     * An internal NAV link for a bare EN slug, in the reader's language.
+     *
+     * llm78-1: the site had two footers (includes/ui-footer.php and index.php's
+     * own) that each built links as getBasePath() . '<slug>'. getBasePath()
+     * derives the app root from SCRIPT_NAME and is locale-blind, so every
+     * Arabic page linked back to the English tree: 17 of 31 footer links on
+     * /ar/careers, 9 of 49 on /ar/ after the shared footer was fixed and the
+     * homepage's private copy was not. The rule lives here so a third copy of
+     * the markup cannot carry a fourth copy of the rule.
+     *
+     * The /ar prefix is never applied blindly: arPath() returns null for
+     * /blog, /get-started, /security, /cookies and every /solutions/{slug},
+     * /tools/{slug}, /industries/{slug} and /gcc/{country} child, which have no
+     * Arabic URL and would otherwise become manufactured redirects and
+     * soft-404s. Null means "render the English link", which is the honest one.
+     */
+    public static function navLink(string $slug, string $base = '/', ?bool $isAr = null): string
+    {
+        $isAr = $isAr ?? self::servingArabic();
+        if (!$isAr) return $base . $slug;
+        // A bare anchor belongs to the HOME page, so it follows the home twin.
+        if ($slug !== '' && $slug[0] === '#') {
+            $home = self::arPath('/');
+            return $home === null ? $base . $slug : $base . ltrim($home, '/') . $slug;
+        }
+        $ar = self::arPath('/' . ltrim($slug, '/'));
+        return $ar === null ? $base . $slug : $base . ltrim($ar, '/');
+    }
 }

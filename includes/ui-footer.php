@@ -19,19 +19,11 @@ $bn = defined('SITE_NAME') ? SITE_NAME : 'Cardify';
 // null when there is no Arabic URL; null means "render the English one", which
 // is the honest link, not a fallback.
 require_once __DIR__ . '/ArTwins.php';
-$_footIsAr = ArTwins::isArabic(parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/')
-          || (($_GET['lang'] ?? '') === 'ar');
+$_footIsAr = ArTwins::servingArabic();
 
 /** A footer link for a bare EN slug, in the reader's language when one exists. */
 $footLink = static function (string $slug) use ($bp, $_footIsAr): string {
-    if (!$_footIsAr) return $bp . $slug;
-    // A bare anchor is an anchor on the HOME page, so it follows the home twin.
-    if ($slug !== '' && $slug[0] === '#') {
-        $home = ArTwins::arPath('/');
-        return $home === null ? $bp . $slug : $bp . ltrim($home, '/') . $slug;
-    }
-    $ar = ArTwins::arPath('/' . ltrim($slug, '/'));
-    return $ar === null ? $bp . $slug : $bp . ltrim($ar, '/');
+    return ArTwins::navLink($slug, $bp, $_footIsAr);
 };
 
 // r6-95: freshness. Both the visible line and the schema dateModified come

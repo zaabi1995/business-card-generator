@@ -11,6 +11,13 @@ if (substr($reqPath, -10) === '/index.php') {
     exit;
 }
 require_once __DIR__ . '/includes/PlatformStats.php';
+// llm78-1: the homepage owns its footer (ui-footer.php skips it), so it carried
+// a SECOND copy of the locale-blind getBasePath() . '<slug>' link list. After
+// the shared footer was fixed, /ar/ was still linking 9 of its 49 internal
+// footer links back to the English twin, and only the live probe saw it. Both
+// footers now call the one rule in ArTwins::navLink().
+require_once __DIR__ . '/includes/ArTwins.php';
+$_homeIsAr = ArTwins::servingArabic();
 // llm75-1: the homepage blog cards are bilingual DB records, and the class that
 // refuses an untranslated one is required HERE, beside the call site's include,
 // because this file has no autoloader: a bare `BilingualRecord::rows(...)`
@@ -1313,7 +1320,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                         <li><a href="#features" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_features')) ?></a></li>
                         <li><a href="#pricing" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_pricing')) ?></a></li>
                         <li><a href="#resources" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_all_tools')) ?></a></li>
-                        <li><a href="<?php echo getBasePath(); ?>company/register.php" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('header.get_started_free')) ?></a></li>
+                        <li><a href="<?= ArTwins::navLink('company/register.php', getBasePath(), $_homeIsAr) ?>" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('header.get_started_free')) ?></a></li>
                     </ul>
                 </div>
 
@@ -1321,11 +1328,11 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 <div>
                     <h3 class="font-bold text-lg mb-6"><?= htmlspecialchars(t('footer.col_free_tools')) ?></h3>
                     <ul class="space-y-3">
-                        <li><a href="<?php echo getBasePath(); ?>tools/vcard-qr-generator" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_vcard_qr')) ?></a></li>
-                        <li><a href="<?php echo getBasePath(); ?>tools/email-signature-generator" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_email_sig')) ?></a></li>
-                        <li><a href="<?php echo getBasePath(); ?>tools/whatsapp-qr-generator" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_whatsapp_qr')) ?></a></li>
-                        <li><a href="<?php echo getBasePath(); ?>tools/nfc-business-card-guide" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_nfc_guide')) ?></a></li>
-                        <li><a href="<?php echo getBasePath(); ?>tools" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_all_tools')) ?></a></li>
+                        <li><a href="<?= ArTwins::navLink('tools/vcard-qr-generator', getBasePath(), $_homeIsAr) ?>" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_vcard_qr')) ?></a></li>
+                        <li><a href="<?= ArTwins::navLink('tools/email-signature-generator', getBasePath(), $_homeIsAr) ?>" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_email_sig')) ?></a></li>
+                        <li><a href="<?= ArTwins::navLink('tools/whatsapp-qr-generator', getBasePath(), $_homeIsAr) ?>" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_whatsapp_qr')) ?></a></li>
+                        <li><a href="<?= ArTwins::navLink('tools/nfc-business-card-guide', getBasePath(), $_homeIsAr) ?>" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_nfc_guide')) ?></a></li>
+                        <li><a href="<?= ArTwins::navLink('tools', getBasePath(), $_homeIsAr) ?>" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_all_tools')) ?></a></li>
                     </ul>
                 </div>
 
@@ -1333,12 +1340,12 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 <div>
                     <h3 class="font-bold text-lg mb-6"><?= htmlspecialchars(t('footer.col_directory')) ?></h3>
                     <ul class="space-y-3">
-                        <li><a href="<?php echo getBasePath(); ?>oman-business-index" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_oman_index')) ?></a></li>
-                        <li><a href="<?php echo getBasePath(); ?>companies" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_browse_companies')) ?></a></li>
-                        <li><a href="<?php echo getBasePath(); ?>companies/sector/oil-gas" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_ind_oil')) ?></a></li>
-                        <li><a href="<?php echo getBasePath(); ?>companies/sector/construction" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_ind_construction')) ?></a></li>
-                        <li><a href="<?php echo getBasePath(); ?>companies/wilayat/muscat" class="text-gray-400 hover:text-white transition-colors">Muscat Companies</a></li>
-                        <li><a href="<?php echo getBasePath(); ?>solutions" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_solutions')) ?></a></li>
+                        <li><a href="<?= ArTwins::navLink('oman-business-index', getBasePath(), $_homeIsAr) ?>" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_oman_index')) ?></a></li>
+                        <li><a href="<?= ArTwins::navLink('companies', getBasePath(), $_homeIsAr) ?>" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_browse_companies')) ?></a></li>
+                        <li><a href="<?= ArTwins::navLink('companies/sector/oil-gas', getBasePath(), $_homeIsAr) ?>" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_ind_oil')) ?></a></li>
+                        <li><a href="<?= ArTwins::navLink('companies/sector/construction', getBasePath(), $_homeIsAr) ?>" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_ind_construction')) ?></a></li>
+                        <li><a href="<?= ArTwins::navLink('companies/wilayat/muscat', getBasePath(), $_homeIsAr) ?>" class="text-gray-400 hover:text-white transition-colors">Muscat Companies</a></li>
+                        <li><a href="<?= ArTwins::navLink('solutions', getBasePath(), $_homeIsAr) ?>" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_solutions')) ?></a></li>
                     </ul>
                 </div>
 
@@ -1346,12 +1353,12 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 <div>
                     <h3 class="font-bold text-lg mb-6"><?= htmlspecialchars(t('footer.col_company')) ?></h3>
                     <ul class="space-y-3">
-                        <li><a href="<?php echo getBasePath(); ?>about" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_about')) ?></a></li>
-                        <li><a href="<?php echo getBasePath(); ?>blog" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_blog')) ?></a></li>
-                        <li><a href="<?php echo getBasePath(); ?>careers" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_careers')) ?></a></li>
-                        <li><a href="<?php echo getBasePath(); ?>contact" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_contact')) ?></a></li>
-                        <li><a href="<?php echo getBasePath(); ?>privacy" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_privacy')) ?></a></li>
-                        <li><a href="<?php echo getBasePath(); ?>terms" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_terms')) ?></a></li>
+                        <li><a href="<?= ArTwins::navLink('about', getBasePath(), $_homeIsAr) ?>" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_about')) ?></a></li>
+                        <li><a href="<?= ArTwins::navLink('blog', getBasePath(), $_homeIsAr) ?>" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_blog')) ?></a></li>
+                        <li><a href="<?= ArTwins::navLink('careers', getBasePath(), $_homeIsAr) ?>" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_careers')) ?></a></li>
+                        <li><a href="<?= ArTwins::navLink('contact', getBasePath(), $_homeIsAr) ?>" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_contact')) ?></a></li>
+                        <li><a href="<?= ArTwins::navLink('privacy', getBasePath(), $_homeIsAr) ?>" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_privacy')) ?></a></li>
+                        <li><a href="<?= ArTwins::navLink('terms', getBasePath(), $_homeIsAr) ?>" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_terms')) ?></a></li>
                     </ul>
                 </div>
             </div>
