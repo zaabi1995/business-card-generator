@@ -101,24 +101,11 @@ final class BilingualRecord
 
         $key = (string)($row['slug'] ?? $row['id'] ?? '(no key)');
 
-        foreach ($whenFilled as $field) {
-            if (array_key_exists($field, $row) && trim((string)$row[$field]) !== '') {
-                $fields[] = $field;
-            }
-        }
-
-        foreach ($fields as $field) {
-            $col = $field . '_' . $locale;
-            // array_key_exists, not isset: a column absent from the SELECT is a
-            // caller bug (ask for it), a column present but NULL is missing data.
-            if (!array_key_exists($col, $row)) {
-                self::refuse($table, $key, $locale, $col . ' (not selected)');
-                return null;
-            }
-            if (trim((string)$row[$col]) === '') {
-                self::refuse($table, $key, $locale, $col);
-                return null;
-            }
+        $fields  = self::demanded($row, $fields, $whenFilled);
+        $missing = self::missingTwin($row, $fields, $locale);
+        if ($missing !== null) {
+            self::refuse($table, $key, $locale, $missing);
+            return null;
         }
 
         foreach ($fields as $field) {
@@ -126,6 +113,49 @@ final class BilingualRecord
         }
         $row['_locale'] = $locale;
         return $row;
+    }
+
+    /**
+     * Would this row survive in $locale? Same rule as row(), no side effects.
+     *
+     * row() cannot answer this question for a page it is not rendering:
+     * refuse() error_logs and, under CLI, THROWS, so a speculative
+     * "does the Arabic twin exist" probe on the English page would record a
+     * refusal that never reached a reader and would kill every gate that runs
+     * in php-cli. Callers that need to DECIDE something about the other
+     * locale (llm77-1: whether the English job page may name an Arabic URL in
+     * its hreflang set) ask here instead. The rule itself is not duplicated:
+     * both paths run demanded() + missingTwin().
+     */
+    public static function hasTwin(array $row, array $fields, ?string $locale = null, array $whenFilled = []): bool
+    {
+        $locale = $locale ?? self::currentLocale();
+        if ($locale === self::DEFAULT_LOCALE) return true;
+        return self::missingTwin($row, self::demanded($row, $fields, $whenFilled), $locale) === null;
+    }
+
+    /** The full field list a row owes in a non-default locale. */
+    private static function demanded(array $row, array $fields, array $whenFilled): array
+    {
+        foreach ($whenFilled as $field) {
+            if (array_key_exists($field, $row) && trim((string)$row[$field]) !== '') {
+                $fields[] = $field;
+            }
+        }
+        return $fields;
+    }
+
+    /** First twin column this row owes and does not have, or null. */
+    private static function missingTwin(array $row, array $fields, string $locale): ?string
+    {
+        foreach ($fields as $field) {
+            $col = $field . '_' . $locale;
+            // array_key_exists, not isset: a column absent from the SELECT is a
+            // caller bug (ask for it), a column present but NULL is missing data.
+            if (!array_key_exists($col, $row)) return $col . ' (not selected)';
+            if (trim((string)$row[$col]) === '') return $col;
+        }
+        return null;
     }
 
     /**

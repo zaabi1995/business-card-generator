@@ -10,9 +10,48 @@ require_once INCLUDES_DIR . '/Auth.php';
 // letters, zero Arabic, on a page whose MEAN Arabic share was 0.841).
 require_once INCLUDES_DIR . '/BilingualRecord.php';
 
+// llm77-1: every URL this page emitted was English, in every locale. The
+// canonical below was a hardcoded https://cardify.om/careers..., so
+// /ar/careers?job=<slug> (a real Arabic page, lang=ar, dir=rtl, Arabic title,
+// 0.947 Arabic letter share) served rel=canonical pointing at the ENGLISH job
+// URL and hreflang="en" + x-default on itself, i.e. it told Google the Arabic
+// page WAS the English one. That is verbatim the defect ArTwins.php was
+// written to kill on /ar/pricing, reappearing on a page that never got the
+// treatment. ui-header.php's repair block could not save it: that block only
+// rewrites a canonical when ArTwins::normalise($canonical) equals the served
+// path, and a HUB path serving a CHILD canonical fails that guard by design.
+// Locale-aware base, the same shape blog.php ($blogBase) and companies.php
+// ($basePrefix) already use.
+$lang    = ($_GET['lang'] ?? '') === 'ar' ? 'ar' : 'en';
+$isAr    = $lang === 'ar';
+$baseUrl = 'https://cardify.om';
+// Relative prefix for on-page links. Every link on this page pointed at
+// getBasePath() . '<file>.php', so the only job on the ARABIC careers page
+// linked to /careers.php?job=..., walking the reader out of Arabic on the
+// single highest-intent click the page has, and the Apply button did the same
+// to /contact.php while /ar/contact is a declared, live twin.
+$linkBase    = $isAr ? '/ar' : '';
+$careersBase = $linkBase . '/careers';
+
+/**
+ * The URL a job listing is served at in this locale.
+ * EN: /careers/<slug>, the pretty rule .htaccess:120 already serves and the
+ *     canonical this page already claimed, but which NOTHING linked to and no
+ *     sitemap listed, so it was an orphan.
+ * AR: /ar/careers?job=<slug>. The pretty /ar/careers/<slug> 404s (no ^ar/careers
+ *     child rule in either rewrite layer) and is deliberately NOT invented here:
+ *     ArTwins lists /careers in PATHS but not in AR_SUBTREES, so no channel
+ *     claims an Arabic child URL, and a canonical must name a URL that resolves.
+ */
+$jobUrl = static function (string $slug, bool $ar) use ($baseUrl): string {
+    return $ar
+        ? $baseUrl . '/ar/careers?job=' . rawurlencode($slug)
+        : $baseUrl . '/careers/' . rawurlencode($slug);
+};
+
 $pageTitle = t('careers.page_title');
 $pageDescription = t('careers.page_desc');
-$canonicalUrl = 'https://cardify.om/careers';
+$canonicalUrl = $baseUrl . $careersBase;
 $brandName = defined('SITE_NAME') ? SITE_NAME : 'Cardify';
 
 // Enable dynamic navigation
@@ -40,13 +79,21 @@ if ($db->tableExists('career_listings')) {
         // Arabic and half in English; on /ar/ it resolves to null and the page
         // falls through to its own "no such job" branch, exactly as it does for
         // a closed job. SELECT * already carries the _ar columns.
+        $jobTwinFields    = ['title', 'description'];
+        $jobTwinOptional  = ['requirements', 'benefits', 'location', 'department', 'salary_range'];
+        // Asked BEFORE row() resolves the columns in place, and asked of the
+        // ARABIC twin regardless of the locale being served, because the
+        // ENGLISH page has to know whether it may name an Arabic URL.
+        $jobHasArTwin = $singleJob
+            ? BilingualRecord::hasTwin($singleJob, $jobTwinFields, 'ar', $jobTwinOptional)
+            : false;
         if ($singleJob) {
             $singleJob = BilingualRecord::row(
                 $singleJob,
-                ['title', 'description'],
+                $jobTwinFields,
                 'career_listings',
                 null,
-                ['requirements', 'benefits', 'location', 'department', 'salary_range']
+                $jobTwinOptional
             );
         }
         if ($singleJob) {
@@ -55,7 +102,23 @@ if ($db->tableExists('career_listings')) {
                 'title'    => $singleJob['title'],
                 'location' => $singleJob['location'] ?? 'Muscat',
             ]) . ' ' . substr(strip_tags($singleJob['description']), 0, 100);
-            $canonicalUrl = 'https://cardify.om/careers/' . $singleJob['slug'];
+            $canonicalUrl = $jobUrl($singleJob['slug'], $isAr);
+
+            // The pair is emitted only when BOTH sides exist. A listing with no
+            // Arabic twin never renders on /ar/ at all (BilingualRecord refuses
+            // it), so an ar leg would be an hreflang aimed at a page that says
+            // "no such job", the fabricated pair Seo.php warns about. Without
+            // one, ui-header.php's default set gives en + x-default on this URL,
+            // which is the honest "English only" signal.
+            if ($jobHasArTwin) {
+                $enJob = $jobUrl($singleJob['slug'], false);
+                $arJob = $jobUrl($singleJob['slug'], true);
+                $suppressDefaultHreflang = true;
+                $extraHead = ($extraHead ?? '')
+                    . '<link rel="alternate" hreflang="en" href="' . htmlspecialchars($enJob, ENT_QUOTES) . '">'
+                    . '<link rel="alternate" hreflang="ar" href="' . htmlspecialchars($arJob, ENT_QUOTES) . '">'
+                    . '<link rel="alternate" hreflang="x-default" href="' . htmlspecialchars($enJob, ENT_QUOTES) . '">';
+            }
         }
     }
     
@@ -103,7 +166,7 @@ $benefits = [
     <!-- Single Job View -->
     <div class="bg-white pt-28 pb-12">
         <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-            <a href="<?php echo getBasePath(); ?>careers.php" class="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 mb-4">
+            <a href="<?php echo htmlspecialchars($careersBase); ?>" class="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 mb-4">
                 <i class="fa-solid fa-arrow-left"></i>
                 <?= htmlspecialchars(t('careers.back_to_careers')) ?>
             </a>
@@ -155,7 +218,7 @@ $benefits = [
 
             <div class="mt-8 pt-8 border-t border-gray-200">
                 <h3 class="font-bold text-gray-900 mb-4"><?= htmlspecialchars(t('careers.ready_to_apply')) ?></h3>
-                <a href="<?php echo getBasePath(); ?>contact.php?subject=<?= urlencode(t('careers.apply_subject', ['title' => $singleJob['title']])) ?>"
+                <a href="<?php echo htmlspecialchars($linkBase); ?>/contact?subject=<?= urlencode(t('careers.apply_subject', ['title' => $singleJob['title']])) ?>"
                    class="inline-flex items-center gap-2 px-8 py-4 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition-colors">
                     <i class="fa-solid fa-paper-plane"></i>
                     <?= htmlspecialchars(t('careers.apply_now')) ?>
@@ -164,7 +227,7 @@ $benefits = [
         </div>
 
         <div class="mt-8 text-center">
-            <a href="<?php echo getBasePath(); ?>careers.php" class="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium">
+            <a href="<?php echo htmlspecialchars($careersBase); ?>" class="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium">
                 <i class="fa-solid fa-arrow-left"></i>
                 <?= htmlspecialchars(t('careers.back_to_careers')) ?>
             </a>
@@ -252,7 +315,7 @@ $benefits = [
                     <p class="text-gray-600 mb-6">
                         <?= htmlspecialchars(t('careers.no_openings_body')) ?>
                     </p>
-                    <a href="<?php echo getBasePath(); ?>contact.php" class="text-blue-600 hover:text-blue-700 font-medium">
+                    <a href="<?php echo htmlspecialchars($linkBase); ?>/contact" class="text-blue-600 hover:text-blue-700 font-medium">
                         <?= htmlspecialchars(t('careers.send_resume_cta')) ?> <?= isRtl() ? '←' : '→' ?>
                     </a>
                 </div>
@@ -286,11 +349,11 @@ $benefits = [
                                     <p class="text-gray-600 mt-2 line-clamp-2"><?php echo htmlspecialchars($job['description']); ?></p>
                                 </div>
                                 <div class="flex-shrink-0 flex gap-2">
-                                    <a href="<?php echo getBasePath(); ?>careers.php?job=<?php echo urlencode($job['slug']); ?>"
+                                    <a href="<?php echo htmlspecialchars($jobUrl($job['slug'], $isAr)); ?>"
                                        class="inline-flex items-center gap-2 px-4 py-2 text-blue-600 bg-blue-50 font-medium rounded-lg hover:bg-blue-100 transition-colors">
                                         <?= htmlspecialchars(t('careers.view_details')) ?>
                                     </a>
-                                    <a href="<?php echo getBasePath(); ?>contact.php?subject=<?= urlencode(t('careers.apply_subject', ['title' => $job['title']])) ?>"
+                                    <a href="<?php echo htmlspecialchars($linkBase); ?>/contact?subject=<?= urlencode(t('careers.apply_subject', ['title' => $job['title']])) ?>"
                                        class="inline-flex items-center gap-2 px-6 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors">
                                         <?= htmlspecialchars(t('careers.apply_short')) ?>
                                         <i class="fa-solid fa-arrow-right"></i>
@@ -309,7 +372,7 @@ $benefits = [
             <p class="text-blue-100 mb-8 max-w-2xl mx-auto">
                 <?= htmlspecialchars(t('careers.no_role_body')) ?>
             </p>
-            <a href="<?php echo getBasePath(); ?>contact.php"
+            <a href="<?php echo htmlspecialchars($linkBase); ?>/contact"
                class="inline-flex items-center gap-2 px-8 py-4 bg-white text-blue-600 font-semibold rounded-xl hover:bg-blue-50 transition-colors">
                 <i class="fa-solid fa-paper-plane"></i>
                 <?= htmlspecialchars(t('careers.get_in_touch')) ?>
@@ -318,7 +381,7 @@ $benefits = [
 
         <!-- Back to Home -->
         <div class="mt-12 text-center">
-            <a href="<?php echo getBasePath(); ?>" class="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium">
+            <a href="<?php echo htmlspecialchars($linkBase . '/'); ?>" class="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium">
                 <i class="fa-solid fa-arrow-left"></i>
                 <?= htmlspecialchars(t('careers.back_home')) ?>
             </a>
