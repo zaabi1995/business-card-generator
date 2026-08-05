@@ -4,6 +4,36 @@ $currentPage = basename($_SERVER['SCRIPT_NAME'] ?? '', '.php');
 $bp = function_exists('getBasePath') ? getBasePath() : '/';
 $bn = defined('SITE_NAME') ? SITE_NAME : 'Cardify';
 
+// llm78-1: every footer link was $bp . '<slug>', and getBasePath() derives the
+// app root from SCRIPT_NAME, so it is locale-blind by construction. Measured on
+// the live /ar/careers footer: 31 links, 15 of them pointing at the ENGLISH URL
+// of a page that HAS a declared, live Arabic twin. The footer is on every /ar/
+// page, so the Arabic tree was internally linked almost entirely back to its
+// English side.
+//
+// The prefix is NOT applied blindly. /blog, /get-started, /security, /cookies
+// and every /solutions/{slug}, /tools/{slug}, /industries/{slug} and
+// /gcc/{country} child deliberately have no Arabic URL (two of them 301 back),
+// so a blind /ar prefix would manufacture redirects and soft-404s at estate
+// scale. ArTwins::arPath() already answers exactly this question and returns
+// null when there is no Arabic URL; null means "render the English one", which
+// is the honest link, not a fallback.
+require_once __DIR__ . '/ArTwins.php';
+$_footIsAr = ArTwins::isArabic(parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/')
+          || (($_GET['lang'] ?? '') === 'ar');
+
+/** A footer link for a bare EN slug, in the reader's language when one exists. */
+$footLink = static function (string $slug) use ($bp, $_footIsAr): string {
+    if (!$_footIsAr) return $bp . $slug;
+    // A bare anchor is an anchor on the HOME page, so it follows the home twin.
+    if ($slug !== '' && $slug[0] === '#') {
+        $home = ArTwins::arPath('/');
+        return $home === null ? $bp . $slug : $bp . ltrim($home, '/') . $slug;
+    }
+    $ar = ArTwins::arPath('/' . ltrim($slug, '/'));
+    return $ar === null ? $bp . $slug : $bp . ltrim($ar, '/');
+};
+
 // r6-95: freshness. Both the visible line and the schema dateModified come
 // from the mtime of the file that produced this page, never from today.
 require_once __DIR__ . '/Freshness.php';
@@ -20,9 +50,9 @@ elseif (!empty($minimalFooter)):
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex flex-col sm:flex-row justify-between items-center gap-2 text-sm text-gray-500">
             <p><?= htmlspecialchars(t('footer.minimal_copyright', ['year' => date('Y'), 'brand' => $bn])) ?><?php if ($freshIso): ?> <span class="text-gray-400"><?= htmlspecialchars(t('footer.last_updated', ['date' => $freshDisplay])) ?></span><?php endif; ?></p>
             <div class="flex items-center gap-5">
-                <a href="<?= $bp ?>privacy" class="hover:text-gray-700"><?= htmlspecialchars(t('footer.minimal_privacy')) ?></a>
-                <a href="<?= $bp ?>terms" class="hover:text-gray-700"><?= htmlspecialchars(t('footer.minimal_terms')) ?></a>
-                <a href="<?= $bp ?>contact" class="hover:text-gray-700"><?= htmlspecialchars(t('footer.minimal_contact')) ?></a>
+                <a href="<?= $footLink('privacy') ?>" class="hover:text-gray-700"><?= htmlspecialchars(t('footer.minimal_privacy')) ?></a>
+                <a href="<?= $footLink('terms') ?>" class="hover:text-gray-700"><?= htmlspecialchars(t('footer.minimal_terms')) ?></a>
+                <a href="<?= $footLink('contact') ?>" class="hover:text-gray-700"><?= htmlspecialchars(t('footer.minimal_contact')) ?></a>
             </div>
         </div>
     </footer>
@@ -39,57 +69,57 @@ elseif (!empty($minimalFooter)):
                 <div>
                     <h3 class="font-semibold mb-4"><?= htmlspecialchars(t('footer.col_product')) ?></h3>
                     <ul class="space-y-2 text-sm">
-                        <li><a href="<?= $bp ?>#features" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_features')) ?></a></li>
-                        <li><a href="<?= $bp ?>#pricing" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_pricing')) ?></a></li>
-                        <li><a href="<?= $bp ?>blog" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_blog')) ?></a></li>
-                        <li><a href="<?= $bp ?>faq" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_faq')) ?></a></li>
-                        <li><a href="<?= $bp ?>app" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_app')) ?></a></li>
+                        <li><a href="<?= $footLink('#features') ?>" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_features')) ?></a></li>
+                        <li><a href="<?= $footLink('#pricing') ?>" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_pricing')) ?></a></li>
+                        <li><a href="<?= $footLink('blog') ?>" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_blog')) ?></a></li>
+                        <li><a href="<?= $footLink('faq') ?>" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_faq')) ?></a></li>
+                        <li><a href="<?= $footLink('app') ?>" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_app')) ?></a></li>
                     </ul>
                 </div>
                 <div>
                     <h3 class="font-semibold mb-4"><?= htmlspecialchars(t('footer.col_free_tools')) ?></h3>
                     <ul class="space-y-2 text-sm">
-                        <li><a href="<?= $bp ?>tools" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_all_tools')) ?></a></li>
-                        <li><a href="<?= $bp ?>tools/vcard-qr-generator" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_vcard_qr')) ?></a></li>
-                        <li><a href="<?= $bp ?>tools/email-signature-generator" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_email_sig')) ?></a></li>
-                        <li><a href="<?= $bp ?>tools/whatsapp-qr-generator" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_whatsapp_qr')) ?></a></li>
-                        <li><a href="<?= $bp ?>tools/nfc-business-card-guide" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_nfc_guide')) ?></a></li>
+                        <li><a href="<?= $footLink('tools') ?>" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_all_tools')) ?></a></li>
+                        <li><a href="<?= $footLink('tools/vcard-qr-generator') ?>" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_vcard_qr')) ?></a></li>
+                        <li><a href="<?= $footLink('tools/email-signature-generator') ?>" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_email_sig')) ?></a></li>
+                        <li><a href="<?= $footLink('tools/whatsapp-qr-generator') ?>" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_whatsapp_qr')) ?></a></li>
+                        <li><a href="<?= $footLink('tools/nfc-business-card-guide') ?>" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_nfc_guide')) ?></a></li>
                     </ul>
                 </div>
                 <div>
                     <h3 class="font-semibold mb-4"><?= htmlspecialchars(t('footer.col_directory')) ?></h3>
                     <ul class="space-y-2 text-sm">
-                        <li><a href="<?= $bp ?>gcc-business-index" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_gcc_index')) ?></a></li>
-                        <li><a href="<?= $bp ?>oman-business-index" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_oman_index')) ?></a></li>
-                        <li><a href="<?= $bp ?>companies" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_browse_companies')) ?></a></li>
-                        <li><a href="<?= $bp ?>logos" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_logos')) ?></a></li>
-                        <li><a href="<?= $bp ?>solutions" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_solutions')) ?></a></li>
+                        <li><a href="<?= $footLink('gcc-business-index') ?>" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_gcc_index')) ?></a></li>
+                        <li><a href="<?= $footLink('oman-business-index') ?>" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_oman_index')) ?></a></li>
+                        <li><a href="<?= $footLink('companies') ?>" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_browse_companies')) ?></a></li>
+                        <li><a href="<?= $footLink('logos') ?>" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_logos')) ?></a></li>
+                        <li><a href="<?= $footLink('solutions') ?>" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_solutions')) ?></a></li>
                     </ul>
                 </div>
                 <div>
                     <h3 class="font-semibold mb-4"><?= htmlspecialchars(t('footer.col_industries')) ?></h3>
                     <ul class="space-y-2 text-sm">
-                        <li><a href="<?= $bp ?>industries/banking" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_ind_banking')) ?></a></li>
-                        <li><a href="<?= $bp ?>industries/oil-gas" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_ind_oil')) ?></a></li>
-                        <li><a href="<?= $bp ?>industries/logistics" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_ind_logistics')) ?></a></li>
-                        <li><a href="<?= $bp ?>industries/government" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_ind_gov')) ?></a></li>
-                        <li><a href="<?= $bp ?>industries/construction" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_ind_construction')) ?></a></li>
-                        <li><a href="<?= $bp ?>industries/real-estate" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_ind_realestate')) ?></a></li>
-                        <li><a href="<?= $bp ?>industries/healthcare" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_ind_healthcare')) ?></a></li>
-                        <li><a href="<?= $bp ?>industries/tourism" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_ind_tourism')) ?></a></li>
-                        <li><a href="<?= $bp ?>industries/restaurants" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_ind_restaurants')) ?></a></li>
+                        <li><a href="<?= $footLink('industries/banking') ?>" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_ind_banking')) ?></a></li>
+                        <li><a href="<?= $footLink('industries/oil-gas') ?>" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_ind_oil')) ?></a></li>
+                        <li><a href="<?= $footLink('industries/logistics') ?>" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_ind_logistics')) ?></a></li>
+                        <li><a href="<?= $footLink('industries/government') ?>" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_ind_gov')) ?></a></li>
+                        <li><a href="<?= $footLink('industries/construction') ?>" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_ind_construction')) ?></a></li>
+                        <li><a href="<?= $footLink('industries/real-estate') ?>" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_ind_realestate')) ?></a></li>
+                        <li><a href="<?= $footLink('industries/healthcare') ?>" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_ind_healthcare')) ?></a></li>
+                        <li><a href="<?= $footLink('industries/tourism') ?>" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_ind_tourism')) ?></a></li>
+                        <li><a href="<?= $footLink('industries/restaurants') ?>" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_ind_restaurants')) ?></a></li>
                     </ul>
                 </div>
                 <div>
                     <h3 class="font-semibold mb-4"><?= htmlspecialchars(t('footer.col_company')) ?></h3>
                     <ul class="space-y-2 text-sm">
-                        <li><a href="<?= $bp ?>about" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_about')) ?></a></li>
-                        <li><a href="<?= $bp ?>contact" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_contact')) ?></a></li>
-                        <li><a href="<?= $bp ?>careers" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_careers')) ?></a></li>
-                        <li><a href="<?= $bp ?>press-kit" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_press')) ?></a></li>
-                        <li><a href="<?= $bp ?>print-shops" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_print_shops')) ?></a></li>
-                        <li><a href="<?= $bp ?>privacy" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_privacy')) ?></a></li>
-                        <li><a href="<?= $bp ?>terms" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_terms')) ?></a></li>
+                        <li><a href="<?= $footLink('about') ?>" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_about')) ?></a></li>
+                        <li><a href="<?= $footLink('contact') ?>" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_contact')) ?></a></li>
+                        <li><a href="<?= $footLink('careers') ?>" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_careers')) ?></a></li>
+                        <li><a href="<?= $footLink('press-kit') ?>" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_press')) ?></a></li>
+                        <li><a href="<?= $footLink('print-shops') ?>" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_print_shops')) ?></a></li>
+                        <li><a href="<?= $footLink('privacy') ?>" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_privacy')) ?></a></li>
+                        <li><a href="<?= $footLink('terms') ?>" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_terms')) ?></a></li>
                     </ul>
                 </div>
             </div>
