@@ -4,7 +4,7 @@
  */
 require_once __DIR__ . '/config.php';
 require_once INCLUDES_DIR . '/Auth.php';
-// llm75-1: career_listings is a bilingual record since migration 149. An
+// llm75-1: career_listings is a bilingual record since migration 151. An
 // untranslated listing is refused on /ar/ rather than printed in English under
 // <html lang="ar">, which is what this page did (one job, 141 Latin prose
 // letters, zero Arabic, on a page whose MEAN Arabic share was 0.841).

@@ -1,6 +1,6 @@
 <?php
 /**
- * Migration 149: bilingual career listings (award ledger llm75-1).
+ * Migration 151: bilingual career listings (award ledger llm75-1).
  *
  * cardify.om/ar/careers rendered `career_listings.description` verbatim inside
  * <html lang="ar">, so an Arabic reader got a 141-letter English job listing
@@ -32,7 +32,7 @@ try {
          WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'career_listings'"
     );
     if ((int)($exists['c'] ?? 0) === 0) {
-        echo "Migration 149: career_listings table not present, skipping\n";
+        echo "Migration 151: career_listings table not present, skipping\n";
         exit(0);
     }
 
@@ -47,8 +47,8 @@ try {
     // showed up in the census; a twin now exists before someone fills it.
     addColumnIfMissing($db, 'career_listings', 'salary_range_ar VARCHAR(100) NULL');
 
-    echo "Migration 149: career_listings bilingual columns ready\n";
+    echo "Migration 151: career_listings bilingual columns ready\n";
 } catch (Exception $e) {
-    echo "Migration 149 failed: " . $e->getMessage() . "\n";
+    echo "Migration 151 failed: " . $e->getMessage() . "\n";
     exit(1);
 }
