@@ -8,6 +8,75 @@ require_once INCLUDES_DIR . '/ArTwins.php';
 $canonicalUrl    = (!empty($isAr) && ArTwins::arPath('/logos/press') !== null)
     ? 'https://cardify.om' . ArTwins::arPath('/logos/press')
     : 'https://cardify.om/logos/press';
+
+// r74 / bhd-group-seo-llm73-4. The API reference below was English under
+// <html lang="ar">: ten blocks, every parameter gloss and the CORS paragraph.
+// It survived because the rest of the page goes through t() and this one
+// section was hand-written markup, and because the page's Arabic share stays
+// high while a minority of its blocks are English (llm72-1's shape).
+//
+// A bilingual array rather than ten new t() keys, for the reason llm73-2
+// names: a t() key can be added to the English catalogue alone and the page
+// still renders, silently, in English. Here a missing 'ar' is a missing array
+// key that logos_press_gloss() refuses.
+//
+// IDENTIFIERS STAY LATIN. sort, per_page, urls.svg_dark, palette[] and the
+// header name are what a developer types; translating them would document an
+// API that does not exist. Only the prose after the em-dash moves.
+$LOGOS_PRESS_I18N = [
+    'params_label'  => ['en' => '/list query params',
+                        'ar' => 'معاملات الاستعلام في ‎/list'],
+    'result_label'  => ['en' => 'each result includes',
+                        'ar' => 'كل نتيجة تتضمن'],
+    'q'             => ['en' => 'search <code>name_en</code> / <code>name_ar</code> / <code>slug</code>',
+                        'ar' => 'بحث في <code>name_en</code> و <code>name_ar</code> و <code>slug</code>'],
+    'sort'          => ['en' => '<code>alpha</code> | <code>newest</code> | <code>verified</code>',
+                        'ar' => '<code>alpha</code> أو <code>newest</code> أو <code>verified</code>'],
+    'sector'        => ['en' => 'e.g. <code>finance</code>, <code>technology</code>',
+                        'ar' => 'مثل <code>finance</code> و <code>technology</code>'],
+    'verified'      => ['en' => '1 = verified only',
+                        'ar' => '‎1 تعني الموثّقة فقط'],
+    'page'          => ['en' => 'pagination (max 100)',
+                        'ar' => 'ترقيم الصفحات (100 كحد أقصى)'],
+    'display_url'   => ['en' => 'auto-picked (dark on light logos)',
+                        'ar' => 'يُختار تلقائياً (الداكن على الشعارات الفاتحة)'],
+    'dark'          => ['en' => 'black monochrome',
+                        'ar' => 'أحادي اللون بالأسود'],
+    'white'         => ['en' => 'white monochrome',
+                        'ar' => 'أحادي اللون بالأبيض'],
+    'palette'       => ['en' => 'up to 5 brand hex colors',
+                        'ar' => 'حتى 5 ألوان hex للعلامة'],
+    'cors'          => ['en' => 'CORS open (Access-Control-Allow-Origin: *). Every asset URL carries a',
+                        'ar' => 'CORS مفتوح (‎Access-Control-Allow-Origin: *‎). كل رابط أصل يحمل'],
+    'cachebuster'   => ['en' => 'cache-buster. Attribution to',
+                        'ar' => 'لكسر التخزين المؤقت. ذكر المصدر'],
+    'attribution'   => ['en' => 'appreciated for editorial use.',
+                        'ar' => 'موضع تقدير عند الاستخدام التحريري.'],
+];
+
+// Rows may carry <code> for API values. logos_press_gloss_html() escapes
+// everything except that one tag, so the record stays authored-content and
+// a stray < in a future gloss still cannot become markup.
+$logos_press_gloss = function (string $key) use ($LOGOS_PRESS_I18N, $isAr): string {
+    if (!isset($LOGOS_PRESS_I18N[$key])) {
+        throw new RuntimeException("logos press gloss '$key' is not defined");
+    }
+    $lang = !empty($isAr) ? 'ar' : 'en';
+    $row  = $LOGOS_PRESS_I18N[$key];
+    if (!isset($row[$lang]) || trim($row[$lang]) === '') {
+        // llm73-4: falling back to English here is exactly the defect. A page
+        // that declares lang="ar" and serves English prose is worse than a
+        // page that fails loudly in staging.
+        throw new RuntimeException("logos press gloss '$key' has no '$lang' text");
+    }
+    return $row[$lang];
+};
+
+$logos_press_gloss_html = function (string $key) use ($logos_press_gloss): string {
+    $safe = htmlspecialchars($logos_press_gloss($key), ENT_QUOTES, 'UTF-8');
+    return str_replace(['&lt;code&gt;', '&lt;/code&gt;'],
+                       ['<code dir="ltr">', '</code>'], $safe);
+};
 $bodyClass       = 'bg-white';
 $showNavigation  = true;
 
@@ -112,33 +181,33 @@ GET /api/logos/sectors
 GET /api/logos/stats
 GET /api/logos/random          # one random brand, no-cache</code></pre>
 
-            <div class="grid sm:grid-cols-2 gap-4 mt-5" dir="ltr">
+            <div class="grid sm:grid-cols-2 gap-4 mt-5" dir="<?= $isAr ? 'rtl' : 'ltr' ?>">
                 <div>
-                    <p class="text-xs font-bold text-gray-300 uppercase tracking-wide mb-2">/list query params</p>
+                    <p class="text-xs font-bold text-gray-300 uppercase tracking-wide mb-2"><?= $logos_press_gloss_html(('params_label')) ?></p>
                     <ul class="text-xs text-gray-400 space-y-1 font-mono">
-                        <li><span class="text-emerald-400">q</span> &mdash; search name_en / name_ar / slug</li>
-                        <li><span class="text-emerald-400">sort</span> &mdash; alpha | newest | verified</li>
-                        <li><span class="text-emerald-400">sector</span> &mdash; e.g. finance, technology</li>
-                        <li><span class="text-emerald-400">verified</span> &mdash; 1 = verified only</li>
-                        <li><span class="text-emerald-400">page</span> / <span class="text-emerald-400">per_page</span> &mdash; pagination (max 100)</li>
+                        <li><span class="text-emerald-400" dir="ltr">q</span> &mdash; <?= $logos_press_gloss_html(('q')) ?></li>
+                        <li><span class="text-emerald-400" dir="ltr">sort</span> &mdash; <?= $logos_press_gloss_html(('sort')) ?></li>
+                        <li><span class="text-emerald-400" dir="ltr">sector</span> &mdash; <?= $logos_press_gloss_html(('sector')) ?></li>
+                        <li><span class="text-emerald-400" dir="ltr">verified</span> &mdash; <?= $logos_press_gloss_html(('verified')) ?></li>
+                        <li><span class="text-emerald-400" dir="ltr">page</span> / <span class="text-emerald-400" dir="ltr">per_page</span> &mdash; <?= $logos_press_gloss_html(('page')) ?></li>
                     </ul>
                 </div>
                 <div>
-                    <p class="text-xs font-bold text-gray-300 uppercase tracking-wide mb-2">each result includes</p>
+                    <p class="text-xs font-bold text-gray-300 uppercase tracking-wide mb-2"><?= $logos_press_gloss_html(('result_label')) ?></p>
                     <ul class="text-xs text-gray-400 space-y-1 font-mono">
-                        <li><span class="text-blue-400">display_url</span> &mdash; auto-picked (dark on light logos)</li>
-                        <li><span class="text-blue-400">urls.{svg,png_512,png_1024,png_2048,webp}</span></li>
-                        <li><span class="text-blue-400">urls.{svg,png,webp}_dark</span> &mdash; black monochrome</li>
-                        <li><span class="text-blue-400">urls.{svg,png,webp}_white</span> &mdash; white monochrome</li>
-                        <li><span class="text-blue-400">palette[]</span> &mdash; up to 5 brand hex colors</li>
-                        <li><span class="text-blue-400">dominant_color, status, profile_url</span></li>
+                        <li><span class="text-blue-400" dir="ltr">display_url</span> &mdash; <?= $logos_press_gloss_html(('display_url')) ?></li>
+                        <li><span class="text-blue-400" dir="ltr">urls.{svg,png_512,png_1024,png_2048,webp}</span></li>
+                        <li><span class="text-blue-400" dir="ltr">urls.{svg,png,webp}_dark</span> &mdash; <?= $logos_press_gloss_html(('dark')) ?></li>
+                        <li><span class="text-blue-400" dir="ltr">urls.{svg,png,webp}_white</span> &mdash; <?= $logos_press_gloss_html(('white')) ?></li>
+                        <li><span class="text-blue-400" dir="ltr">palette[]</span> &mdash; <?= $logos_press_gloss_html(('palette')) ?></li>
+                        <li><span class="text-blue-400" dir="ltr">dominant_color, status, profile_url</span></li>
                     </ul>
                 </div>
             </div>
-            <p class="text-[11px] text-gray-500 mt-4" dir="ltr">
-                CORS open (Access-Control-Allow-Origin: *). Every asset URL carries a
-                <span class="font-mono">?v=</span> cache-buster. Attribution to
-                <span class="text-gray-300">cardify.om/logos</span> appreciated for editorial use.
+            <p class="text-[11px] text-gray-500 mt-4" dir="<?= $isAr ? 'rtl' : 'ltr' ?>">
+                <?= $logos_press_gloss_html(('cors')) ?>
+                <span class="font-mono" dir="ltr">?v=</span> <?= $logos_press_gloss_html(('cachebuster')) ?>
+                <span class="text-gray-300" dir="ltr">cardify.om/logos</span> <?= $logos_press_gloss_html(('attribution')) ?>
             </p>
         </div>
 
