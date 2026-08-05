@@ -11,6 +11,7 @@ require_once INCLUDES_DIR . '/OtpService.php';
 require_once INCLUDES_DIR . '/RateLimiter.php';
 require_once INCLUDES_DIR . '/UrlSafety.php';
 require_once INCLUDES_DIR . '/Phone.php';
+require_once INCLUDES_DIR . '/ReviewAccess.php';
 
 header('Content-Type: application/json');
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -59,8 +60,11 @@ try {
         exit;
     }
 
-    $verify = OtpService::verify($identifier, $code, 'scan_login');
-    if (empty($verify['ok'])) {
+    $reviewDecision = ReviewAccess::verificationDecision($identifier, $code);
+    $verified = $reviewDecision === null
+        ? !empty(OtpService::verify($identifier, $code, 'scan_login')['ok'])
+        : $reviewDecision;
+    if (!$verified) {
         http_response_code(401);
         echo json_encode(['success' => false, 'error' => 'invalid_code']);
         exit;

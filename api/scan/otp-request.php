@@ -26,6 +26,7 @@ require_once INCLUDES_DIR . '/RateLimiter.php';
 require_once INCLUDES_DIR . '/UrlSafety.php';
 require_once INCLUDES_DIR . '/Phone.php';
 require_once INCLUDES_DIR . '/WhatsApp.php';
+require_once INCLUDES_DIR . '/ReviewAccess.php';
 // OtpService::deliverEmail() is guarded by class_exists('Mailer'); the claim
 // flow only ever used the WhatsApp channel so it never loaded Mailer. Without
 // this, an email OTP silently returns delivery_failed.
@@ -76,6 +77,18 @@ try {
     if (!RateLimiter::check('scan_otp_request:' . $identifier, $ip, 5, 900)) {
         http_response_code(429);
         echo json_encode(['success' => false, 'error' => 'rate_limited']);
+        exit;
+    }
+
+    // Google Play reviewers cannot receive one-time codes or create personal
+    // accounts. A single server-configured review identity uses a reusable
+    // code while retaining the same endpoint, rate limits, and account model.
+    if (ReviewAccess::usesStaticCode($identifier)) {
+        echo json_encode([
+            'success' => true,
+            'channel' => $channel,
+            'identifier_masked' => $masked,
+        ]);
         exit;
     }
 
