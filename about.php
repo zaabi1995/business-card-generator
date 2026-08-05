@@ -3,6 +3,7 @@
  * Cardify - About Us
  */
 require_once __DIR__ . '/config.php';
+require_once INCLUDES_DIR . '/ArTwins.php';
 require_once INCLUDES_DIR . '/Auth.php';
 require_once INCLUDES_DIR . '/PlatformStats.php';
 
@@ -174,7 +175,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
 
         <!-- Back to Home -->
         <div class="mt-8 text-center">
-            <a href="<?php echo getBasePath(); ?>" class="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium">
+            <a href="<?php echo htmlspecialchars(ArTwins::navLink('', getBasePath())); ?>" class="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium">
                 <i class="fa-solid fa-arrow-left"></i>
                 <?= htmlspecialchars(t('about.back_home')) ?>
             </a>

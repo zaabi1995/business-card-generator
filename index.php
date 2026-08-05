@@ -990,7 +990,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
             </div>
 
             <div class="text-center mt-10">
-                <a href="<?= getBasePath() ?>companies" class="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 font-semibold">
+                <a href="<?= htmlspecialchars(ArTwins::navLink('companies', getBasePath(), $_homeIsAr)) ?>" class="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 font-semibold">
                     <?= htmlspecialchars(t('testimonials.directory_cta')) ?>
                     <i class="fa-solid fa-arrow-right rtl:fa-rotate-180" aria-hidden="true"></i>
                 </a>
@@ -1118,7 +1118,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                         </li>
                         <?php endforeach; ?>
                     </ul>
-                    <a href="/tools" class="inline-flex items-center gap-2 text-blue-700 font-semibold hover:text-blue-800">
+                    <a href="<?= htmlspecialchars(ArTwins::navLink('tools', getBasePath(), $_homeIsAr)) ?>" class="inline-flex items-center gap-2 text-blue-700 font-semibold hover:text-blue-800">
                         <?= htmlspecialchars(t('landing.res_tools_cta')) ?>
                         <i class="fa-solid fa-arrow-right text-xs"></i>
                     </a>
@@ -1147,7 +1147,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                             <a href="<?= htmlspecialchars($href) ?>" class="text-sm px-3 py-2 rounded-lg bg-white text-gray-700 hover:bg-emerald-100 hover:text-emerald-700 transition font-medium border border-gray-100"><?= htmlspecialchars(t('landing.res_obi_' . $k)) ?></a>
                         <?php endforeach; ?>
                     </div>
-                    <a href="/oman-business-index" class="inline-flex items-center gap-2 text-emerald-700 font-semibold hover:text-emerald-800">
+                    <a href="<?= htmlspecialchars(ArTwins::navLink('oman-business-index', getBasePath(), $_homeIsAr)) ?>" class="inline-flex items-center gap-2 text-emerald-700 font-semibold hover:text-emerald-800">
                         <?= htmlspecialchars(t('landing.res_obi_cta')) ?>
                         <i class="fa-solid fa-arrow-right text-xs"></i>
                     </a>
@@ -1176,7 +1176,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                             <a href="<?= htmlspecialchars($pin['href']) ?>" class="text-sm px-3 py-2 rounded-lg bg-white text-gray-700 hover:bg-amber-100 hover:text-amber-700 transition font-medium border border-gray-100"><?= htmlspecialchars(t('landing.res_logos_' . $pin['k'])) ?></a>
                         <?php endforeach; ?>
                     </div>
-                    <a href="/logos" class="inline-flex items-center gap-2 text-amber-700 font-semibold hover:text-amber-800">
+                    <a href="<?= htmlspecialchars(ArTwins::navLink('logos', getBasePath(), $_homeIsAr)) ?>" class="inline-flex items-center gap-2 text-amber-700 font-semibold hover:text-amber-800">
                         <?= htmlspecialchars(t('landing.res_logos_cta')) ?>
                         <i class="fa-solid fa-arrow-right text-xs"></i>
                     </a>
@@ -1192,7 +1192,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                         </div>
                         <h3 class="text-xl font-bold text-gray-900"><?= htmlspecialchars(t('landing.res_sol_heading')) ?></h3>
                     </div>
-                    <a href="/solutions" class="text-sm font-semibold text-purple-700 hover:text-purple-800"><?= htmlspecialchars(t('landing.res_sol_cta', ['count' => solutionCount()])) ?></a>
+                    <a href="<?= htmlspecialchars(ArTwins::navLink('solutions', getBasePath(), $_homeIsAr)) ?>" class="text-sm font-semibold text-purple-700 hover:text-purple-800"><?= htmlspecialchars(t('landing.res_sol_cta', ['count' => solutionCount()])) ?></a>
                 </div>
                 <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                     <a href="/solutions/business-cards-oman-construction-companies" class="p-3 bg-white rounded-lg text-sm font-medium text-gray-700 hover:text-purple-700 hover:shadow transition border border-gray-100">Construction &amp; Contracting</a>
