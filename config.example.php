@@ -24,7 +24,7 @@ foreach ($adminPathPrefixes as $prefix) {
 
 $publicSeoPages = [
     'blog.php', 'about.php', 'faq.php', 'contact.php', 'terms.php',
-    'privacy.php', 'security.php', 'cookies.php', 'careers.php',
+    'privacy.php', 'delete-account.php', 'security.php', 'cookies.php', 'careers.php',
     'sitemap.php', 'index.php', 'intro.php', 'get-started.php',
     'restaurants.php', 'construction.php', 'healthcare.php',
     'real-estate.php', 'tourism.php',

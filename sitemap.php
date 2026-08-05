@@ -183,6 +183,7 @@ if ($part === 'static') {
         ['/intro',        'monthly', '0.8'],
         ['/terms',        'yearly',  '0.4'],
         ['/privacy',      'yearly',  '0.4'],
+        ['/delete-account', 'yearly', '0.4'],
         ['/security',     'yearly',  '0.4'],
         ['/cookies',      'yearly',  '0.4'],
         // /print-shops is NOT here: sitemap-printshops.xml is its home, and

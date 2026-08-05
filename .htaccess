@@ -76,7 +76,7 @@
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteRule ^s/([A-Za-z0-9_-]{1,20})/?$ s.php?slug=$1 [L,QSA]
 
-    # Referral link (cardify.om/r/<code>) — BHD-234
+    # Referral link (cardify.om/r/<code>), BHD-234
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteRule ^r/([A-Za-z0-9]{4,16})/?$ r.php?code=$1 [L,QSA]
@@ -99,13 +99,13 @@
     RewriteRule ^design-showcase/?$ design-showcase.php [L,QSA]
     RewriteRule ^design/?$ design-showcase.php [L,QSA]
 
-    # Oman Business Index — directory of Omani enterprises (flagship + curated top companies)
+    # Oman Business Index, directory of Omani enterprises (flagship + curated top companies)
     RewriteRule ^oman-business-index/?$ oman-business-index.php [L,QSA]
     RewriteRule ^gcc-business-index/?$  gcc-business-index.php [L,QSA]
-    # No /ar/gcc-business-index rewrite yet — the page has no Arabic
+    # No /ar/gcc-business-index rewrite yet because the page has no Arabic
     # localization. Route (and hreflang / sitemap entries) will be added
     # when translated content lands. Do NOT expose a locale route that
-    # serves the English page — it creates a duplicate indexed as AR.
+    # serves the English page, which creates a duplicate indexed as AR.
     RewriteRule ^companies/?$ companies.php [L,QSA]
     RewriteRule ^companies/sector/([a-z0-9-]+)/?$ companies.php?view=sector&slug=$1 [L,QSA]
     RewriteRule ^companies/wilayat/([a-z0-9-]+)/?$ companies.php?view=wilayat&slug=$1 [L,QSA]
@@ -150,6 +150,8 @@
     RewriteRule ^contact/?$ contact.php [L,QSA]
     RewriteRule ^terms/?$ terms.php [L,QSA]
     RewriteRule ^privacy/?$ privacy.php [L,QSA]
+    RewriteRule ^delete-account/?$ delete-account.php [L,QSA]
+    RewriteRule ^ar/delete-account/?$ delete-account.php?lang=ar [L,QSA]
     RewriteRule ^security/?$ security.php [L,QSA]
     RewriteRule ^cookies/?$ cookies.php [L,QSA]
     RewriteRule ^app/?$ app.php [L,QSA]
@@ -189,7 +191,7 @@
     # Check if request is not for known paths and not a file
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
-    RewriteCond %{REQUEST_URI} !^/(admin|login|logout|install|share|s/|company|companies|ar|app|oman-business-index|gcc-business-index|gcc|press|press-kit|media-kit|webhooks|amwalpay|api|assets|uploads|data|printshop|industries|solutions|intro|blog|careers|about|contact|faq|terms|privacy|security|cookies|sitemap\.xml|print-shops\.php|generate_card_html\.php|download_card\.php|index\.php|router\.php|vcf\.php|profile\.php|intro\.php|design-showcase|design|logos|logo-claim|logo-takedown|logo-download|sitemap-logos\.xml)
+    RewriteCond %{REQUEST_URI} !^/(admin|login|logout|install|share|s/|company|companies|ar|app|oman-business-index|gcc-business-index|gcc|press|press-kit|media-kit|webhooks|amwalpay|api|assets|uploads|data|printshop|industries|solutions|intro|blog|careers|about|contact|faq|terms|privacy|delete-account|security|cookies|sitemap\.xml|print-shops\.php|generate_card_html\.php|download_card\.php|index\.php|router\.php|vcf\.php|profile\.php|intro\.php|design-showcase|design|logos|logo-claim|logo-takedown|logo-download|sitemap-logos\.xml)
     RewriteRule ^([a-z0-9-]+)/?$ router.php?company_slug=$1 [L,QSA]
 </IfModule>
 
@@ -259,7 +261,7 @@ Options -Indexes
     RewriteRule ^logos/press/?$                logos.php?view=press   [L,QSA]
     RewriteRule ^logos/terms/?$                logos.php?view=terms   [L,QSA]
     RewriteRule ^logos/([a-z0-9-]+)/?$         logos.php?view=sector&sector=$1 [L,QSA]
-    # Arabic variants — logos.php reads ?lang=ar for RTL + AR copy.
+    # Arabic variants. logos.php reads ?lang=ar for RTL + AR copy.
     RewriteRule ^ar/logos/?$                   logos.php?view=hub&lang=ar   [L,QSA]
     RewriteRule ^ar/logos/press/?$             logos.php?view=press&lang=ar [L,QSA]
     RewriteRule ^ar/logos/terms/?$             logos.php?view=terms&lang=ar [L,QSA]
