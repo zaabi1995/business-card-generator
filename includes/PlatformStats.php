@@ -8,14 +8,54 @@
  * the meta description repeated "Serving 500+ companies."
  *
  * Never hardcode a public number again. Everything here is COUNT(*) at read
- * time behind a 6-hour cache, so the marketing copy cannot drift from reality.
+ * time behind a cache, so the marketing copy cannot drift from reality.
  * A stat with no honest source does not get a tile.
+ *
+ * llm71-2, 5 Aug 2026: the cache used to hold for 6 hours, and `issuing` is
+ * published as an EXACT, UNDATED number on six public surfaces (index.php,
+ * intro.php, blog.php, about.php and the trust strip, in EN and AR). So every
+ * time a tenant issued its first card the estate published the previous count
+ * for up to six hours and numeric_gate went red on all six at once. r71 purged
+ * the key by hand and everything went green in a minute, which resets the
+ * window rather than closing it.
+ *
+ * Two changes close it, and the first is the one that matters:
+ *
+ *   1. WRITE-THROUGH INVALIDATION. Database::insert()/delete() drop this
+ *      snapshot whenever a row lands in or leaves a table whose COUNT(*) is
+ *      published (SOURCE_TABLES below). The hook lives in Database, not at the
+ *      four separate `$db->insert('generated_cards', ...)` call sites, because
+ *      a policy attached to one call site and not its twins is how these
+ *      regress: the fifth insert site added next month would silently reopen
+ *      the window.
+ *   2. A SHORT TTL as the backstop for writes this process never sees, a
+ *      direct SQL import or an edit made in another service. Six COUNT(*)
+ *      queries every five minutes is not a cost worth a stale public number.
+ *
+ * Never widen numeric_gate's tolerance instead. That is how "500+" survived a
+ * year.
  */
 require_once __DIR__ . '/Cache.php';
 
 class PlatformStats
 {
-    private const TTL = 21600; // 6h
+    /**
+     * Backstop only; the real freshness comes from write-through invalidation.
+     * Was 21600 (6h) until llm71-2.
+     */
+    private const TTL = 300; // 5 min
+
+    public const CACHE_KEY = 'platform:stats:v2';
+
+    /**
+     * Tables whose row count this class publishes on a public page. A write to
+     * any of them moves a live number, so the snapshot is dropped at the write.
+     * Keep this list in step with all() below: a count published from a table
+     * that is not named here goes stale for a full TTL.
+     */
+    public const SOURCE_TABLES = [
+        'companies', 'employees', 'generated_cards', 'card_events', 'om_companies',
+    ];
 
     /**
      * Tenants that are actually using the product, as opposed to tenants that
@@ -37,7 +77,7 @@ class PlatformStats
     /** @return array{companies:int,issuing:int,employees:int,cards:int,events:int,directory:int} */
     public static function all(): array
     {
-        return Cache::remember('platform:stats:v2', self::TTL, function () {
+        return Cache::remember(self::CACHE_KEY, self::TTL, function () {
             return [
                 'companies' => self::count('companies'),
                 'issuing'   => self::issuingCompanies(),
@@ -47,6 +87,21 @@ class PlatformStats
                 'directory' => self::count('om_companies'),
             ];
         });
+    }
+
+    /**
+     * Drop the snapshot. Called from Database on every write to a SOURCE_TABLE;
+     * safe to call from anywhere else that moves one of these populations.
+     */
+    public static function invalidate(): void
+    {
+        Cache::forget(self::CACHE_KEY);
+    }
+
+    /** True when a write to $table moves a number this class publishes. */
+    public static function publishes(string $table): bool
+    {
+        return in_array(strtolower(trim($table, " \t\n\r`\"'")), self::SOURCE_TABLES, true);
     }
 
     private static function issuingCompanies(): int

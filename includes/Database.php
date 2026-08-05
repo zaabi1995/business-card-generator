@@ -85,10 +85,12 @@ class Database {
         
         $sql = "INSERT INTO {$table} ({$fieldsList}) VALUES ({$placeholders})";
         $this->query($sql, $data);
-        
-        return $this->connection->lastInsertId();
+        $id = $this->connection->lastInsertId();
+        $this->notePublishedCountMoved($table);
+
+        return $id;
     }
-    
+
     public function update($table, $data, $where, $whereParams = []) {
         $setParts = [];
         foreach (array_keys($data) as $field) {
@@ -103,10 +105,47 @@ class Database {
         return $stmt->rowCount();
     }
     
+    /**
+     * llm71-2: cardify.om publishes COUNT(*) of six tables as exact, undated
+     * numbers on six public pages. Those counts are cached, so between a write
+     * and the cache expiring the site states a number that is measurably wrong,
+     * and numeric_gate correctly calls it a defect.
+     *
+     * The invalidation lives HERE, on the one method every write goes through,
+     * and not on the four separate `insert('generated_cards', ...)` call sites:
+     * a rule attached to some of its call sites and not the rest is the shape
+     * that regresses the moment a fifth one is written.
+     *
+     * Hooked on insert() and delete() only, because those are what move
+     * COUNT(*). An UPDATE can move `issuing` too, by renaming a company into or
+     * out of PlatformStats::NOT_A_CUSTOMER; that is left to the 5-minute TTL
+     * deliberately, rather than busting the snapshot on every unrelated column
+     * write.
+     *
+     * Never fatal. A cache that failed to clear is a stale number; an exception
+     * thrown out of insert() would be a lost card.
+     */
+    private function notePublishedCountMoved($table) {
+        try {
+            if (!class_exists('PlatformStats')) {
+                $f = __DIR__ . '/PlatformStats.php';
+                if (!is_file($f)) return;
+                require_once $f;
+            }
+            if (PlatformStats::publishes((string) $table)) {
+                PlatformStats::invalidate();
+            }
+        } catch (Throwable $e) {
+            error_log('PlatformStats invalidation skipped: ' . $e->getMessage());
+        }
+    }
+
     public function delete($table, $where, $params = []) {
         $sql = "DELETE FROM {$table} WHERE {$where}";
         $stmt = $this->query($sql, $params);
-        return $stmt->rowCount();
+        $rows = $stmt->rowCount();
+        if ($rows > 0) $this->notePublishedCountMoved($table);
+        return $rows;
     }
     
     public function beginTransaction() {
