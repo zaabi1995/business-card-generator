@@ -72,13 +72,39 @@ class Cache
         return @rename($tmp, $path);
     }
 
+    /**
+     * llm71-2: an entry is judged against the TTL IN FORCE NOW, not the one
+     * that was in force when it was written. Without this, shortening a TTL
+     * does nothing until the last long-lived entry expires on its own, so the
+     * deploy that fixes a stale public number leaves it stale for the length
+     * of the TTL being retired, and the only way to see the fix take effect is
+     * to clear the key by hand. Clearing by hand is what r71 already did, and
+     * why llm71-2 stayed open: a reset is not a fix.
+     */
     public static function remember(string $key, int $ttlSec, callable $producer, string $namespace = self::DEFAULT_NAMESPACE)
     {
         $hit = self::get($key, $miss = "\0__miss__\0", $namespace);
+        if ($hit !== $miss && $ttlSec > 0) {
+            $entry = self::rawEntry($key, $namespace);
+            if (is_array($entry) && isset($entry['written_at'])
+                && $entry['written_at'] + $ttlSec < time()) {
+                self::forget($key, $namespace);
+                $hit = $miss;
+            }
+        }
         if ($hit !== $miss) return $hit;
         $value = $producer();
         self::put($key, $value, $ttlSec, $namespace);
         return $value;
+    }
+
+    /** The stored envelope (key, namespace, written_at, expires_at, value), or null. */
+    private static function rawEntry(string $key, string $namespace): ?array
+    {
+        $raw = @file_get_contents(self::pathFor($key, $namespace));
+        if ($raw === false) return null;
+        $entry = @json_decode($raw, true);
+        return is_array($entry) ? $entry : null;
     }
 
     public static function forget(string $key, string $namespace = self::DEFAULT_NAMESPACE): bool
