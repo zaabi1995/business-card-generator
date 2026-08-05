@@ -38,6 +38,14 @@ return [
     'no_openings_body'    => "We don't have any openings at the moment, but we're always looking for talented people.",
     'send_resume_cta'     => 'Send us your resume via the contact form',
 
+    // employment_type is an ENUM in career_listings; these are its labels, so the
+    // chip is translated without twinning the column (llm75-1).
+    'type_full-time'      => 'Full time',
+    'type_part-time'      => 'Part time',
+    'type_contract'       => 'Contract',
+    'type_internship'     => 'Internship',
+    'type_remote'         => 'Remote',
+
     'view_details'        => 'View details',
     'apply_short'         => 'Apply',
 

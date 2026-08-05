@@ -38,6 +38,13 @@ return [
     'no_openings_body'    => 'لا توجد وظائف مفتوحة في الوقت الحالي، لكنّنا نبحث دائماً عن الموهوبين.',
     'send_resume_cta'     => 'أرسل سيرتك الذاتية عبر نموذج التواصل',
 
+    // تسميات نوع التوظيف (عمود ENUM في career_listings)
+    'type_full-time'      => 'دوام كامل',
+    'type_part-time'      => 'دوام جزئي',
+    'type_contract'       => 'عقد',
+    'type_internship'     => 'تدريب',
+    'type_remote'         => 'عن بُعد',
+
     'view_details'        => 'عرض التفاصيل',
     'apply_short'         => 'تقديم',
 

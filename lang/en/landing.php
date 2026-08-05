@@ -79,6 +79,7 @@ return [
     'blog_heading'       => 'From the blog',
     'blog_sub'           => 'Practical guides for Omani professionals and teams.',
     'blog_view_all'      => 'View all posts',
+    'blog_read_more'     => 'Read more',
 
     // Resources section (action 516)
     'res_kicker'         => 'Free for everyone',

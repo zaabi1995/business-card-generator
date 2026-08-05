@@ -11,6 +11,11 @@ if (substr($reqPath, -10) === '/index.php') {
     exit;
 }
 require_once __DIR__ . '/includes/PlatformStats.php';
+// llm75-1: the homepage blog cards are bilingual DB records, and the class that
+// refuses an untranslated one is required HERE, beside the call site's include,
+// because this file has no autoloader: a bare `BilingualRecord::rows(...)`
+// below would be a fatal on every locale, not a missing translation.
+require_once __DIR__ . '/includes/BilingualRecord.php';
 // llm47-4: the solutions CTA renders its count from the shelf, not from a digit
 // typed into two translation files.
 require_once __DIR__ . '/includes/SolutionShelf.php';
@@ -284,17 +289,27 @@ $fmt = function ($omr) use ($homeCur) {
 // Tier-based subscription pricing was removed Apr 2026. Platform is free forever,
 // revenue comes from per-order print products (see lang/en/pricing.php and /pricing).
 
-// Latest blog posts for homepage SEO (internal links + freshness signal)
+// Latest blog posts for homepage SEO (internal links + freshness signal).
+//
+// llm75-1: this section used to select `title` and `excerpt` only, so the
+// Arabic homepage printed three English headings and three English blurbs
+// inside <html lang="ar">. The posts are bilingual RECORDS (migration 087 added
+// title_ar/excerpt_ar/slug_ar); a post with no Arabic twin has no business on
+// an Arabic page, and /ar/blog is retired (301 -> /blog), so an Arabic card
+// would also link a reader out of their own language. BilingualRecord refuses
+// the untranslated rows; if none survive, the section does not render at all.
+// Translate a post (fill title_ar + excerpt_ar) and it reappears by itself.
 $latestPosts = [];
 try {
     if (isset($db) && $db->isConnected() && $db->tableExists('blog_posts')) {
         $latestPosts = $db->fetchAll(
-            "SELECT slug, title, excerpt, featured_image, published_at
+            "SELECT slug, slug_ar, title, title_ar, excerpt, excerpt_ar, featured_image, published_at
              FROM blog_posts
              WHERE status='published'
              ORDER BY published_at DESC
              LIMIT 3"
         );
+        $latestPosts = BilingualRecord::rows($latestPosts, ['title', 'excerpt'], 'blog_posts');
     }
 } catch (Exception $e) {
     $latestPosts = [];
@@ -989,7 +1004,11 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 <?php foreach ($latestPosts as $post): ?>
                 <?php
                     $postUrl = getBasePath() . 'blog/' . $post['slug'];
-                    $postDate = date('M j, Y', strtotime($post['published_at']));
+                    // llm75-1: date('M j, Y') prints 'Apr 19, 2026' in every locale, so
+                    // a card that survives BilingualRecord would still carry an English
+                    // month on an Arabic page. I18n::formatDate is the estate's one
+                    // locale-aware formatter and already renders Arabic month + digits.
+                    $postDate = I18n::formatDate(strtotime($post['published_at']));
                     $excerpt = $post['excerpt'] ?? '';
                     if (strlen($excerpt) > 140) $excerpt = substr($excerpt, 0, 140) . '…';
                     $img = !empty($post['featured_image']) ? htmlspecialchars($post['featured_image']) : 'assets/images/cardify-og.png';
@@ -1007,7 +1026,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                         <p class="mt-3 text-gray-600 text-sm leading-relaxed"><?= htmlspecialchars($excerpt) ?></p>
                         <?php endif; ?>
                         <a href="<?= htmlspecialchars($postUrl) ?>" class="mt-4 inline-flex items-center gap-1 text-blue-600 hover:text-blue-700 text-sm font-semibold">
-                            Read more
+                            <?= htmlspecialchars(t('landing.blog_read_more')) ?>
                             <i class="fa-solid fa-arrow-right text-xs"></i>
                         </a>
                     </div>
@@ -1272,8 +1291,13 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     <div class="flex items-center gap-3 mb-6">
                         <img src="<?php echo assetUrl('images/logo-light.svg'); ?>" alt="<?php echo $brandName; ?>" class="h-10 w-auto">
                     </div>
+                    <!-- llm75-1: this blurb was hardcoded English and shipped inside
+                         <html lang="ar">, alone among its siblings, which all read from
+                         t('footer.*'). It now reads the SAME key includes/ui-footer.php
+                         renders on every other page, so the brand line has one source in
+                         both languages instead of a translated copy and an English one. -->
                     <p class="text-gray-400 mb-4 leading-relaxed text-sm">
-                        The modern way to create and share professional business cards. Built for teams of all sizes.
+                        <?= htmlspecialchars(t('footer.tagline')) ?>
                     </p>
                     <div class="flex gap-3 mb-6">
                         <a href="https://instagram.com/cardifyom" target="_blank" rel="noopener noreferrer" class="w-10 h-10 rounded-lg bg-gray-800 hover:bg-pink-600 flex items-center justify-center transition-colors" aria-label="Instagram">

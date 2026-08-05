@@ -4,6 +4,11 @@
  */
 require_once __DIR__ . '/config.php';
 require_once INCLUDES_DIR . '/Auth.php';
+// llm75-1: career_listings is a bilingual record since migration 149. An
+// untranslated listing is refused on /ar/ rather than printed in English under
+// <html lang="ar">, which is what this page did (one job, 141 Latin prose
+// letters, zero Arabic, on a page whose MEAN Arabic share was 0.841).
+require_once INCLUDES_DIR . '/BilingualRecord.php';
 
 $pageTitle = t('careers.page_title');
 $pageDescription = t('careers.page_desc');
@@ -31,6 +36,19 @@ if ($db->tableExists('career_listings')) {
             "SELECT * FROM career_listings WHERE slug = ? AND status = 'open'",
             [$jobSlug]
         );
+        // A single-job URL for an untranslated listing must not render half in
+        // Arabic and half in English; on /ar/ it resolves to null and the page
+        // falls through to its own "no such job" branch, exactly as it does for
+        // a closed job. SELECT * already carries the _ar columns.
+        if ($singleJob) {
+            $singleJob = BilingualRecord::row(
+                $singleJob,
+                ['title', 'description'],
+                'career_listings',
+                null,
+                ['requirements', 'benefits', 'location', 'department', 'salary_range']
+            );
+        }
         if ($singleJob) {
             $pageTitle = t('careers.single_page_title', ['title' => $singleJob['title']]);
             $pageDescription = t('careers.single_page_desc', [
@@ -41,13 +59,34 @@ if ($db->tableExists('career_listings')) {
         }
     }
     
-    // Get all open listings
-    $jobs = $db->fetchAll(
-        "SELECT * FROM career_listings WHERE status = 'open' ORDER BY created_at DESC"
+    // Get all open listings. On a non-default locale, listings without a
+    // complete twin drop out and the page renders its existing empty state
+    // ("no open roles right now" + the speculative-application CTA), which is
+    // true copy in Arabic rather than an English job ad on an Arabic page.
+    $jobs = BilingualRecord::rows(
+        $db->fetchAll("SELECT * FROM career_listings WHERE status = 'open' ORDER BY created_at DESC"),
+        ['title', 'description'],
+        'career_listings',
+        null,
+        ['requirements', 'benefits', 'location', 'department', 'salary_range']
     );
 }
 
 require_once INCLUDES_DIR . '/ui-header.php';
+
+// llm75-1: employment_type is an ENUM, so its chip was rendered by
+// ucfirst(str_replace('-',' ')) and printed "Full time" in every locale. It is
+// the one displayed job field that is a fixed vocabulary rather than prose, so
+// it belongs in the lang files, not in a twinned column. Unknown values (a new
+// ENUM member added before its keys) fall back to the old formatting rather
+// than printing a raw key at a reader.
+$jobType = static function ($value): string {
+    $value = trim((string)$value);
+    if ($value === '') return '';
+    $key   = 'careers.type_' . $value;
+    $label = t($key);
+    return ($label === $key) ? ucfirst(str_replace('-', ' ', $value)) : $label;
+};
 
 $benefits = [
     ['icon' => 'fa-laptop-house',    'title' => t('careers.ben_flex_title'),   'desc' => t('careers.ben_flex_desc')],
@@ -85,7 +124,7 @@ $benefits = [
                 <?php if ($singleJob['employment_type']): ?>
                 <span class="flex items-center gap-2">
                     <i class="fa-solid fa-clock"></i>
-                    <?php echo ucfirst(str_replace('-', ' ', $singleJob['employment_type'])); ?>
+                    <?php echo htmlspecialchars($jobType($singleJob['employment_type'])); ?>
                 </span>
                 <?php endif; ?>
             </div>
@@ -240,7 +279,7 @@ $benefits = [
                                         <?php if ($job['employment_type']): ?>
                                         <span class="flex items-center gap-1 text-gray-600">
                                             <i class="fa-solid fa-clock text-gray-400"></i>
-                                            <?php echo ucfirst(str_replace('-', ' ', $job['employment_type'])); ?>
+                                            <?php echo htmlspecialchars($jobType($job['employment_type'])); ?>
                                         </span>
                                         <?php endif; ?>
                                     </div>
