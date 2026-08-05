@@ -10,11 +10,12 @@ require_once __DIR__ . '/includes/PlatformStats.php';
 require_once __DIR__ . '/config.php';
 require_once INCLUDES_DIR . '/Auth.php';
 require_once INCLUDES_DIR . '/BlogSlugRedirects.php';
+require_once INCLUDES_DIR . '/ArTwins.php';
 
 $lang  = ($_GET['lang'] ?? '') === 'ar' ? 'ar' : 'en';
 $isAr  = $lang === 'ar';
 $baseUrl = 'https://cardify.om';
-$blogBase = $baseUrl . ($isAr ? '/ar' : '') . '/blog';
+$blogBase = $baseUrl . ArTwins::navLink('blog', '/', $isAr);
 
 /** Pick locale-preferred column on a post row, EN fallback. */
 $L = function(array $row, string $field) use ($isAr) {
@@ -192,7 +193,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
     <!-- Single Post View -->
     <div class="bg-white pt-28 pb-12">
         <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-            <a href="<?= htmlspecialchars(($isAr ? "/ar" : "") . "/blog") ?>" class="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 mb-4">
+            <a href="<?= htmlspecialchars(ArTwins::navLink('blog', '/', $isAr)) ?>" class="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 mb-4">
                 <i class="fa-solid fa-arrow-left"></i>
                 <?= htmlspecialchars(t('blog.back_to_blog')) ?>
             </a>
@@ -301,7 +302,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
         <?php endif; ?>
 
         <div class="mt-8 text-center">
-            <a href="<?= htmlspecialchars(($isAr ? "/ar" : "") . "/blog") ?>" class="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium">
+            <a href="<?= htmlspecialchars(ArTwins::navLink('blog', '/', $isAr)) ?>" class="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium">
                 <i class="fa-solid fa-arrow-left"></i>
                 <?= htmlspecialchars(t('blog.back_to_blog')) ?>
             </a>

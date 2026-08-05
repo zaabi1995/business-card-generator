@@ -13,6 +13,7 @@
 require_once __DIR__ . '/config.php';
 require_once INCLUDES_DIR . '/Auth.php';
 require_once INCLUDES_DIR . '/Seo.php';
+require_once INCLUDES_DIR . '/ArTwins.php';
 
 $baseUrl   = 'https://cardify.om';
 $lang      = ($_GET['lang'] ?? '') === 'ar' ? 'ar' : 'en';
@@ -195,7 +196,7 @@ if ($activeCase) {
             <h2 class="text-3xl font-extrabold mb-3"><?= htmlspecialchars(t('case_studies.closing_h')) ?></h2>
             <p class="text-blue-100 max-w-xl mx-auto mb-6"><?= htmlspecialchars(t('case_studies.closing_b')) ?></p>
             <div class="flex flex-col sm:flex-row gap-3 justify-center">
-                <a href="<?= ($isAr ? '/ar' : '') ?>/get-started" class="inline-flex items-center justify-center gap-2 px-6 py-3 bg-white text-blue-700 font-semibold rounded-xl hover:bg-blue-50 transition">
+                <a href="<?= htmlspecialchars(ArTwins::navLink('get-started', '/', $isAr)) ?>" class="inline-flex items-center justify-center gap-2 px-6 py-3 bg-white text-blue-700 font-semibold rounded-xl hover:bg-blue-50 transition">
                     <?= htmlspecialchars(t('case_studies.closing_cta')) ?>
                     <i class="fa-solid fa-arrow-<?= $isAr ? 'left' : 'right' ?>"></i>
                 </a>

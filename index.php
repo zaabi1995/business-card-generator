@@ -455,12 +455,17 @@ $extraHead = $homeHreflang . $homeJsonLd . $scannerJsonLd . $homeFaqJsonLd . $ap
 
 // Enable dynamic navigation with auth awareness
 $showNavigation = true;
+// r79: the homepage owns a SECOND copy of the nav list, exactly as it owned a
+// second copy of the footer in r78. Both copies now ask ArTwins::navLink()
+// instead of gluing getBasePath() to a slug, which is locale-blind.
+// Bare '#features' resolves to /ar/#features on the Arabic home, not to the
+// English home's anchor.
 $navLinks = [
-    ['href' => '#features',                             'label' => function_exists('t') ? t('footer.link_features')   : 'Features'],
-    ['href' => '#pricing',                              'label' => function_exists('t') ? t('footer.link_pricing')    : 'Pricing'],
-    ['href' => getBasePath() . 'tools',                 'label' => function_exists('t') ? t('footer.link_all_tools')  : 'Free Tools'],
-    ['href' => getBasePath() . 'oman-business-index',   'label' => function_exists('t') ? t('footer.link_oman_index') : 'Oman Business Index'],
-    ['href' => getBasePath() . 'blog',                  'label' => function_exists('t') ? t('footer.link_blog')       : 'Blog'],
+    ['href' => ArTwins::navLink('#features',            getBasePath(), $_homeIsAr), 'label' => function_exists('t') ? t('footer.link_features')   : 'Features'],
+    ['href' => ArTwins::navLink('#pricing',             getBasePath(), $_homeIsAr), 'label' => function_exists('t') ? t('footer.link_pricing')    : 'Pricing'],
+    ['href' => ArTwins::navLink('tools',                getBasePath(), $_homeIsAr), 'label' => function_exists('t') ? t('footer.link_all_tools')  : 'Free Tools'],
+    ['href' => ArTwins::navLink('oman-business-index',  getBasePath(), $_homeIsAr), 'label' => function_exists('t') ? t('footer.link_oman_index') : 'Oman Business Index'],
+    ['href' => ArTwins::navLink('blog',                 getBasePath(), $_homeIsAr), 'label' => function_exists('t') ? t('footer.link_blog')       : 'Blog'],
 ];
 
 // Include Auth for navigation state

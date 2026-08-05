@@ -13,6 +13,7 @@
 require_once __DIR__ . '/config.php';
 require_once INCLUDES_DIR . '/Auth.php';
 require_once INCLUDES_DIR . '/Seo.php';
+require_once INCLUDES_DIR . '/ArTwins.php';
 
 $baseUrl = 'https://cardify.om';
 $lang    = ($_GET['lang'] ?? '') === 'ar' ? 'ar' : 'en';
@@ -52,7 +53,7 @@ $waMsg   = $isAr ? 'مرحباً، أرغب بعرض توضيحي لكارديف
 // keep the separate BHD line 96899999100 on purpose.
 $waUrl   = 'https://api.whatsapp.com/send?phone=96898899100&text=' . rawurlencode($waMsg);
 $arrow   = $isAr ? 'left' : 'right';
-$regUrl  = ($isAr ? '/ar' : '') . '/company/register.php';
+$regUrl  = ArTwins::navLink('company/register.php', '/', $isAr);
 
 // Product catalogue driver
 $products = [

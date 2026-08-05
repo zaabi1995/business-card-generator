@@ -9,6 +9,7 @@
 require_once __DIR__ . '/config.php';
 require_once INCLUDES_DIR . '/Auth.php';
 require_once INCLUDES_DIR . '/Seo.php';
+require_once INCLUDES_DIR . '/ArTwins.php';
 
 $lang   = ($_GET['lang'] ?? '') === 'ar' ? 'ar' : 'en';
 $isAr   = $lang === 'ar';
@@ -78,7 +79,7 @@ Seo::breadcrumbs([
 
         <p class="text-center text-xs text-gray-400 mt-12">
             <?= htmlspecialchars(t('changelog.rss_note')) ?>
-            <a href="<?= ($isAr ? '/ar' : '') ?>/feed" class="text-blue-600 hover:text-blue-700">RSS</a>
+            <a href="<?= htmlspecialchars(ArTwins::navLink('feed', '/', $isAr)) ?>" class="text-blue-600 hover:text-blue-700">RSS</a>
         </p>
     </div>
 </main>

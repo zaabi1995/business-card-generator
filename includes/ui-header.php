@@ -497,16 +497,31 @@ if (!function_exists('renderNavigation')) {
             }
         }
         
-        // Default navigation links (used on all non-homepage pages)
+        // Default navigation links (used on all non-homepage pages).
+        //
+        // r79: these were `$basePath . '<slug>'`, and getBasePath() derives the
+        // app root from SCRIPT_NAME, which is locale-blind. That is llm78-1
+        // exactly, one region over: every Arabic page's nav carried Arabic
+        // labels pointing at the ENGLISH tree (6 leaks per page, twice over,
+        // because the desktop and mobile menus render the same array). The
+        // footer was fixed in r78 and the nav was never measured.
+        //
+        // ArTwins::navLink() is the same one rule the footers use, so a third
+        // copy of this markup cannot carry a fourth copy of the rule. It also
+        // refuses to invent a prefix: /blog has no Arabic twin and stays
+        // English rather than becoming a manufactured 301.
+        require_once __DIR__ . '/ArTwins.php';
         $basePath = function_exists('getBasePath') ? getBasePath() : '/';
+        $isAr = ArTwins::servingArabic();
+        $nav = static fn(string $slug): string => ArTwins::navLink($slug, $basePath, $isAr);
         $defaultLinks = [
-            ['href' => $basePath . '#features', 'label' => function_exists('t') ? t('footer.link_features') : 'Features'],
-            ['href' => $basePath . '#pricing', 'label' => function_exists('t') ? t('footer.link_pricing') : 'Pricing'],
-            ['href' => $basePath . 'tools', 'label' => function_exists('t') ? t('footer.link_all_tools') : 'Free Tools'],
-            ['href' => $basePath . 'app', 'label' => (class_exists('I18n') && I18n::getLocale() === 'ar') ? 'التطبيق' : 'Mobile App'],
-            ['href' => $basePath . 'logos', 'label' => function_exists('t') ? t('footer.link_logos') : 'Logo Library'],
-            ['href' => $basePath . 'oman-business-index', 'label' => function_exists('t') ? t('footer.link_oman_index') : 'Oman Business Index'],
-            ['href' => $basePath . 'blog', 'label' => function_exists('t') ? t('footer.link_blog') : 'Blog'],
+            ['href' => $nav('#features'), 'label' => function_exists('t') ? t('footer.link_features') : 'Features'],
+            ['href' => $nav('#pricing'), 'label' => function_exists('t') ? t('footer.link_pricing') : 'Pricing'],
+            ['href' => $nav('tools'), 'label' => function_exists('t') ? t('footer.link_all_tools') : 'Free Tools'],
+            ['href' => $nav('app'), 'label' => (class_exists('I18n') && I18n::getLocale() === 'ar') ? 'التطبيق' : 'Mobile App'],
+            ['href' => $nav('logos'), 'label' => function_exists('t') ? t('footer.link_logos') : 'Logo Library'],
+            ['href' => $nav('oman-business-index'), 'label' => function_exists('t') ? t('footer.link_oman_index') : 'Oman Business Index'],
+            ['href' => $nav('blog'), 'label' => function_exists('t') ? t('footer.link_blog') : 'Blog'],
         ];
         
         $navLinks = $customLinks ?? $defaultLinks;
@@ -526,7 +541,7 @@ if (!function_exists('renderNavigation')) {
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex justify-between items-center gap-6 h-16 lg:h-20">
                     <!-- Logo -->
-                    <a href="<?php echo getBasePath(); ?>" class="flex items-center gap-3">
+                    <a href="<?php echo htmlspecialchars($nav('')); ?>" class="flex items-center gap-3">
                         <img src="<?php echo assetUrl('images/logo.svg'); ?>" alt="<?php echo $brandName; ?>" class="h-10 w-auto">
                     </a>
 

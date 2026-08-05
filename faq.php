@@ -9,6 +9,7 @@
 require_once __DIR__ . '/config.php';
 require_once INCLUDES_DIR . '/Auth.php';
 require_once INCLUDES_DIR . '/Seo.php';
+require_once INCLUDES_DIR . '/ArTwins.php';
 
 $baseUrl = 'https://cardify.om';
 $lang    = ($_GET['lang'] ?? '') === 'ar' ? 'ar' : 'en';
@@ -90,7 +91,7 @@ Seo::faqPage($faqPairs);
             <h2 class="text-3xl font-bold mb-4"><?= htmlspecialchars(t('faq.cta_h')) ?></h2>
             <p class="text-blue-100 mb-8 max-w-2xl mx-auto"><?= htmlspecialchars(t('faq.cta_b')) ?></p>
             <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                <a href="<?= ($isAr ? '/ar' : '') ?>/get-started"
+                <a href="<?= htmlspecialchars(ArTwins::navLink('get-started', '/', $isAr)) ?>"
                    class="inline-flex items-center justify-center gap-2 px-8 py-4 bg-white text-blue-600 font-semibold rounded-xl hover:bg-blue-50 transition-colors">
                     <?= htmlspecialchars(t('faq.cta_start')) ?>
                     <i class="fa-solid fa-arrow-<?= $isAr ? 'left' : 'right' ?>"></i>
