@@ -76,10 +76,12 @@ foreach ($jsonLdBlocks as $block) {
                . json_encode($block, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)
                . '</script>';
 }
-// Hreflang alternates
-$extraHead .= '<link rel="alternate" hreflang="en" href="https://cardify.om/logos/' . htmlspecialchars($sectorSlug, ENT_QUOTES) . '">';
-$extraHead .= '<link rel="alternate" hreflang="ar" href="https://cardify.om/ar/logos/' . htmlspecialchars($sectorSlug, ENT_QUOTES) . '">';
-$extraHead .= '<link rel="alternate" hreflang="x-default" href="https://cardify.om/logos/' . htmlspecialchars($sectorSlug, ENT_QUOTES) . '">';
+// Hreflang alternates, from the ArTwins oracle rather than a hand-written
+// triple: this file used to concatenate the '/ar' prefix itself, which made it
+// a fourth independent source of truth for the same fact and is why the
+// sitemap and this page disagreed about /logos/{sector} (r80, llm27-46).
+require_once INCLUDES_DIR . '/ArTwins.php';
+$extraHead .= ArTwins::pairLinks('/logos/' . $sectorSlug);
 $suppressDefaultHreflang = true;
 require_once INCLUDES_DIR . '/ui-header.php';
 

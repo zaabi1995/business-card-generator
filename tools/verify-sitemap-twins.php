@@ -54,17 +54,37 @@ if (!$children) {
     exit(1);
 }
 
-$locs = [];
+// Every declaration, not a set of paths. A set cannot see a URL declared
+// twice, and that was the defect: 106 /companies/{slug} were declared once in
+// sitemap-companies.xml WITH the hreflang block and again in
+// sitemap-logos.xml at a different priority WITHOUT it, so the index carried
+// two contradicting claims for the busiest URLs on the site (r80, llm27-46).
+$locs  = [];
+$decls = [];
 foreach ($children as $child) {
-    preg_match_all('#<loc>([^<]+)</loc>#', fetch($child), $cm);
-    foreach ($cm[1] as $loc) {
-        $p = parse_url($loc, PHP_URL_PATH);
-        if ($p !== null && $p !== false) $locs[rtrim($p, '/') ?: '/'] = true;
+    $body = fetch($child);
+    preg_match_all('#<url>(.*?)</url>#s', $body, $em);
+    foreach ($em[1] as $entry) {
+        if (!preg_match('#<loc>([^<]+)</loc>#', $entry, $lm)) continue;
+        $loc = $lm[1];
+        $p   = parse_url($loc, PHP_URL_PATH);
+        if ($p === null || $p === false) continue;
+        $locs[rtrim($p, '/') ?: '/'] = true;
+        preg_match_all(
+            '#<xhtml:link[^>]*hreflang="([^"]+)"[^>]*href="([^"]+)"#',
+            $entry, $am, PREG_SET_ORDER);
+        $alts = [];
+        foreach ($am as $a) $alts[$a[1]] = $a[2];
+        ksort($alts);
+        preg_match('#<priority>([^<]+)</priority>#', $entry, $pm);
+        $decls[$loc][] = ['child' => $child, 'alts' => $alts,
+                          'priority' => $pm[1] ?? null];
     }
 }
 
 echo "child sitemaps:   " . count($children) . "\n";
 echo "sitemapped URLs:  " . count($locs) . "\n";
+echo "declarations:     " . array_sum(array_map('count', $decls)) . "\n";
 
 $missing = [];
 foreach (ArTwins::paths() as $en) {
@@ -80,6 +100,42 @@ if ($missing) {
     $ok = false;
     echo "\nFAIL: in ArTwins::PATHS but in no sitemap (Google is never told the URL exists):\n";
     foreach (array_unique($missing) as $p) echo "  {$p}\n";
+}
+
+// A URL belongs to exactly one child sitemap.
+$dupes = array_filter($decls, fn($d) => count($d) > 1);
+if ($dupes) {
+    $ok = false;
+    echo "\nFAIL: " . count($dupes) . " URL(s) declared in more than one child sitemap:\n";
+    foreach (array_slice($dupes, 0, 20, true) as $loc => $d) {
+        echo "  {$loc}\n";
+        foreach ($d as $x) {
+            echo "      " . basename($x['child']) . "  prio=" . ($x['priority'] ?? '-')
+               . "  alts=" . (implode(',', array_keys($x['alts'])) ?: 'NONE') . "\n";
+        }
+    }
+}
+
+// The sitemap's alternate block must be the SAME claim the page head makes,
+// and both now come from ArTwins::alternates(). Asking the oracle here is
+// what makes this a cross-check rather than a restatement of the emitter.
+$mismatch = [];
+foreach ($decls as $loc => $d) {
+    $want = [];
+    foreach (ArTwins::alternates($loc) as [$hl, $href]) $want[$hl] = $href;
+    if (count($want) < 3) $want = [];   // monolingual: no xhtml:link expected
+    ksort($want);
+    if ($d[0]['alts'] !== $want) $mismatch[$loc] = [$d[0]['alts'], $want];
+}
+if ($mismatch) {
+    $ok = false;
+    echo "\nFAIL: " . count($mismatch) . " URL(s) whose sitemap alternates differ "
+       . "from ArTwins::alternates():\n";
+    foreach (array_slice($mismatch, 0, 20, true) as $loc => [$got, $want]) {
+        echo "  {$loc}\n";
+        echo "      sitemap: " . (implode(',', array_keys($got)) ?: 'NONE') . "\n";
+        echo "      oracle:  " . (implode(',', array_keys($want)) ?: 'NONE') . "\n";
+    }
 }
 
 // Self-falsification. If the collected set were empty, or if lookups always

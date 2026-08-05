@@ -40,34 +40,45 @@ require_once __DIR__ . '/includes/CompanyIndex.php';
  * Repeat <loc>s are dropped: the directory section already calls this once
  * per twin, and a duplicated <loc> inside one urlset is an invalid sitemap.
  */
-function smUrl($loc, $lastmod, $changefreq = 'monthly', $priority = '0.5') {
+function smUrl($loc, $lastmod, $changefreq = 'monthly', $priority = '0.5', $imageXml = '') {
     static $seen = [];
 
-    $emit = function ($url) use ($lastmod, $changefreq, $priority, &$seen) {
+    // The image extension is attached to the EN declaration only. Repeating it
+    // on the Arabic twin would be a second claim about the same asset, and one
+    // claim per fact is the whole point of this round's change.
+    $emit = function ($url, $imageXml = '') use ($lastmod, $changefreq, $priority, &$seen) {
         if (isset($seen[$url])) return;
         $seen[$url] = true;
-        $twinEn = ArTwins::en($url);
-        $twinAr = ArTwins::ar($url);
         echo "    <url>\n";
         echo "        <loc>" . smX($url) . "</loc>\n";
         echo "        <lastmod>{$lastmod}</lastmod>\n";
         echo "        <changefreq>{$changefreq}</changefreq>\n";
         echo "        <priority>{$priority}</priority>\n";
-        if ($twinAr !== null) {
-            echo "        <xhtml:link rel=\"alternate\" hreflang=\"en\" href=\"" . smX($twinEn) . "\" />\n";
-            echo "        <xhtml:link rel=\"alternate\" hreflang=\"ar\" href=\"" . smX($twinAr) . "\" />\n";
-            echo "        <xhtml:link rel=\"alternate\" hreflang=\"x-default\" href=\"" . smX($twinEn) . "\" />\n";
+        // ONE oracle, the same one the page head asks. ar() was asked here and
+        // covers only the enumerated PATHS, so every /logos/{sector} shipped
+        // with no alternate in the sitemap while its own page declared an
+        // Arabic twin, and the Arabic twin was never listed at all (r80).
+        // A monolingual URL emits no xhtml:link at all: the page's honest
+        // en+x-default self-pair is already the whole claim, and repeating it
+        // here would add a second declaration that can drift.
+        $alts = ArTwins::alternates($url);
+        if (count($alts) === 3) {
+            foreach ($alts as [$hrefLang, $hrefUrl]) {
+                echo "        <xhtml:link rel=\"alternate\" hreflang=\"" . $hrefLang
+                   . "\" href=\"" . smX($hrefUrl) . "\" />\n";
+            }
         }
+        if ($imageXml !== '') echo $imageXml;
         echo "    </url>\n";
     };
 
-    $twin = ArTwins::ar($loc);
-    if ($twin !== null) {
-        $emit(ArTwins::en($loc));
-        $emit($twin);
+    $ar = ArTwins::arPath($loc);
+    if ($ar !== null) {
+        $emit(ArTwins::en($loc), $imageXml);
+        $emit(ArTwins::SITE . $ar);
         return;
     }
-    $emit($loc);
+    $emit($loc, $imageXml);
 }
 
 /**
@@ -100,26 +111,57 @@ if ($part === 'index') {
 echo '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1" xmlns:xhtml="http://www.w3.org/1999/xhtml">' . "\n";
 
 /**
- * Render a <url> with EN + AR <xhtml:link> hreflang alternates. Call for
- * pages that exist in both /path and /ar/path. Google uses these pairs
- * as reciprocal confirmation before treating them as true alternates.
+ * RETIRED (r80). smUrlBilingual() built the Arabic URL by concatenating '/ar'
+ * onto the path, which is the one construction that cannot return null, so it
+ * asserted a twin for whatever it was handed and its callers had to know, out
+ * of band, which paths were safe. smUrl() now asks ArTwins::arPath() and emits
+ * the pair itself, so there is one function, one oracle, and one declaration
+ * per URL. Kept as a shim only so a stale caller fails loudly rather than
+ * silently emitting a second, contradicting <url>.
  */
 function smUrlBilingual($path, $lastmod, $changefreq = 'monthly', $priority = '0.5') {
     global $baseUrl;
-    $path  = '/' . ltrim($path, '/');
-    $en    = $baseUrl . $path;
-    $ar    = $baseUrl . '/ar' . ($path === '/' ? '/' : $path);
-    foreach ([$en, $ar] as $loc) {
-        echo "    <url>\n";
-        echo "        <loc>" . smX($loc) . "</loc>\n";
-        echo "        <lastmod>{$lastmod}</lastmod>\n";
-        echo "        <changefreq>{$changefreq}</changefreq>\n";
-        echo "        <priority>{$priority}</priority>\n";
-        echo "        <xhtml:link rel=\"alternate\" hreflang=\"en\" href=\"" . smX($en) . "\" />\n";
-        echo "        <xhtml:link rel=\"alternate\" hreflang=\"ar\" href=\"" . smX($ar) . "\" />\n";
-        echo "        <xhtml:link rel=\"alternate\" hreflang=\"x-default\" href=\"" . smX($en) . "\" />\n";
-        echo "    </url>\n";
+    smUrl($baseUrl . '/' . ltrim($path, '/'), $lastmod, $changefreq, $priority);
+}
+
+/**
+ * slug => the <image:image> block for that company's logo, ready to nest
+ * inside its <url>. Returns [] when the columns or table are absent.
+ *
+ * One query, one place, so the image extension can be attached to the URL's
+ * single declaration instead of justifying a second one.
+ */
+function logoImageXml($db, $baseUrl) {
+    $out = [];
+    try {
+        $logos = $db->fetchAll(
+            "SELECT slug, name_en, logo_svg_path, logo_png_path,
+                    logo_png_2048_path, logo_webp_path
+               FROM om_companies
+              WHERE logo_status IN ('indexed','verified')"
+        );
+    } catch (Throwable $e) {
+        return $out; // om_companies may lack logo_status until migration runs
     }
+    $licenseUrl = "{$baseUrl}/logos/terms";
+    foreach ($logos as $l) {
+        // Highest-fidelity public URL for the image loc.
+        $rel = $l['logo_svg_path']
+            ?: $l['logo_png_2048_path']
+            ?: $l['logo_png_path']
+            ?: $l['logo_webp_path'];
+        if (!$rel) continue;
+        $caption = trim(($l['name_en'] ?? '') . ' logo');
+        $title   = trim(($l['name_en'] ?? '') . ' logo, Omani Logo Library');
+        $out[$l['slug']] =
+              "        <image:image>\n"
+            . "            <image:loc>" . smX($baseUrl . $rel) . "</image:loc>\n"
+            . "            <image:title>" . smX($title) . "</image:title>\n"
+            . "            <image:caption>" . smX($caption) . "</image:caption>\n"
+            . "            <image:license>" . smX($licenseUrl) . "</image:license>\n"
+            . "        </image:image>\n";
+    }
+    return $out;
 }
 
 try {
@@ -143,7 +185,8 @@ if ($part === 'static') {
         ['/privacy',      'yearly',  '0.4'],
         ['/security',     'yearly',  '0.4'],
         ['/cookies',      'yearly',  '0.4'],
-        ['/print-shops',  'weekly',  '0.8'],
+        // /print-shops is NOT here: sitemap-printshops.xml is its home, and
+        // listing it in both put the same two URLs in the index twice (r80).
         ['/app',          'monthly', '0.8'],
         // These four were body-translated, nginx-routed and hreflang-tagged,
         // and named in ArTwins::PATHS, yet listed in no sitemap at all, in
@@ -245,22 +288,31 @@ if ($part === 'static') {
     // alternates so Google treats /companies/slug and /ar/companies/slug
     // as a confirmed bilingual pair (hreflang reciprocity).
     if ($db) {
+        // The logo image extension rides on THIS declaration. It used to be a
+        // second <url> for the same /companies/{slug} emitted from
+        // sitemap-logos.xml, so 106 company pages were declared twice across
+        // the index with different priorities and only one copy carrying the
+        // hreflang block (r80). All 106 are in this list, measured, so nothing
+        // is lost by moving the image here.
+        $logoXml = logoImageXml($db, $baseUrl);
         try {
             // r6-99: one definition of the index population, shared with the
             // Dataset count on /oman-business-index. See includes/CompanyIndex.php.
             $rows = CompanyIndex::rows($db);
             foreach ($rows as $c) {
                 $lastmod = date('Y-m-d', strtotime($c['updated_at']));
-                smUrlBilingual('/companies/' . $c['slug'], $lastmod, 'monthly', '0.5');
+                smUrl("{$baseUrl}/companies/" . $c['slug'], $lastmod, 'monthly', '0.5',
+                      $logoXml[$c['slug']] ?? '');
             }
         } catch (Throwable $e) { /* table may not exist */ }
     }
 
 } elseif ($part === 'companies-ar') {
-    // Retained for backward compat with the index. Companies sitemap
-    // now emits bilingual pairs inline, so this child is intentionally
-    // a short stub pointing to the Arabic hub only.
-    smUrl("{$baseUrl}/ar/companies", $today, 'weekly', '0.7');
+    // Intentionally EMPTY. It used to re-declare /companies and /ar/companies,
+    // which sitemap-directory.xml already declares at priority 0.9, so the
+    // index shipped two contradicting claims for the estate's two busiest hub
+    // URLs (r80). The child stays in the index so an already-crawled child
+    // URL keeps answering valid XML rather than 404ing.
 
 } elseif ($part === 'blog') {
     // Blog posts (with image metadata) + career listings.
@@ -342,47 +394,10 @@ if ($part === 'static') {
             }
         } catch (Throwable $e) { /* om_companies may lack logo_status until migration runs */ }
 
-        // Per-logo entries with Google Image sitemap extensions.
-        // /companies/{slug} is the canonical logo page; the image extension
-        // tells Google the logo URL + title + license so Image Search can
-        // surface it.
-        try {
-            $logos = $db->fetchAll(
-                "SELECT slug, name_en, name_ar, logo_svg_path, logo_png_path,
-                        logo_png_2048_path, logo_webp_path, logo_updated_at, logo_status
-                   FROM om_companies
-                  WHERE logo_status IN ('indexed','verified')
-                  ORDER BY logo_updated_at DESC"
-            );
-            $licenseUrl = "{$baseUrl}/logos/terms";
-            foreach ($logos as $l) {
-                // Pick the highest-fidelity public URL for the image loc.
-                $rel = $l['logo_svg_path']
-                    ?: $l['logo_png_2048_path']
-                    ?: $l['logo_png_path']
-                    ?: $l['logo_webp_path'];
-                if (!$rel) continue;
-                $imgUrl = $baseUrl . $rel;
-                $pageUrl = "{$baseUrl}/companies/{$l['slug']}";
-                $lastmod = $l['logo_updated_at']
-                    ? date('Y-m-d', strtotime($l['logo_updated_at']))
-                    : $today;
-                $caption = trim(($l['name_en'] ?? '') . ' logo');
-                $title   = trim(($l['name_en'] ?? '') . ' logo, Omani Logo Library');
-                echo "    <url>\n";
-                echo "        <loc>" . smX($pageUrl) . "</loc>\n";
-                echo "        <lastmod>{$lastmod}</lastmod>\n";
-                echo "        <changefreq>monthly</changefreq>\n";
-                echo "        <priority>0.6</priority>\n";
-                echo "        <image:image>\n";
-                echo "            <image:loc>" . smX($imgUrl) . "</image:loc>\n";
-                echo "            <image:title>" . smX($title) . "</image:title>\n";
-                echo "            <image:caption>" . smX($caption) . "</image:caption>\n";
-                echo "            <image:license>" . smX($licenseUrl) . "</image:license>\n";
-                echo "        </image:image>\n";
-                echo "    </url>\n";
-            }
-        } catch (Throwable $e) { /* fields may be missing */ }
+        // The per-logo <image:image> blocks used to be emitted HERE, as a
+        // second <url> for /companies/{slug}. They now ride on the single
+        // declaration in sitemap-companies.xml (see logoImageXml()). A URL
+        // belongs to exactly one child sitemap.
     }
 
 } elseif ($part === 'printshops') {

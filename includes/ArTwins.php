@@ -144,12 +144,35 @@ class ArTwins
      */
     public static function tags(string $currentUrlOrPath): array
     {
-        $en = self::en($currentUrlOrPath);
-        $ar = self::ar($currentUrlOrPath);
+        return self::alternates($currentUrlOrPath);
+    }
+
+    /**
+     * THE alternate set for a path. One oracle, both populations.
+     *
+     * tags() used to answer from PATHS alone while arPath() answered from
+     * PATHS *and* AR_SUBTREES, so the same URL got two different answers
+     * depending on who asked. Measured on the live site (r80): every
+     * /logos/{sector} page emitted hreflang="ar" while sitemap.php, asking
+     * ar(), emitted no alternate for it and never listed the Arabic twin at
+     * all. Four emitters of this one fact existed, and they disagreed:
+     * tags() here, pairTags() below, a hand-written triple in
+     * views/logos_sector.php, and sitemap.php's own smUrl()/smUrlBilingual()
+     * pair. Everything now resolves through this method.
+     *
+     * arPath() is the right source because it is the one that covers the
+     * parameterised children nginx really serves; it returns null rather
+     * than inventing an /ar/ URL, so a page with no Arabic twin still gets
+     * the honest en + x-default self-pair.
+     */
+    public static function alternates(string $urlOrPath): array
+    {
+        $en = self::en($urlOrPath);
+        $ar = self::arPath($urlOrPath);
         if ($ar === null) {
             return [['en', $en], ['x-default', $en]];
         }
-        return [['en', $en], ['ar', $ar], ['x-default', $en]];
+        return [['en', $en], ['ar', self::SITE . $ar], ['x-default', $en]];
     }
 
     /**
