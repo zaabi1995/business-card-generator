@@ -105,12 +105,25 @@ function smRouteDate($path) {
     $path = '/' . ltrim(parse_url($path, PHP_URL_PATH) ?? '', '/');
     if (isset($cache[$path])) return $cache[$path];
     $rel = trim($path, '/');
-    $roots = [__DIR__ . '/' . $rel . '.php', __DIR__ . '/' . $rel . '/index.php'];
-    if (str_contains($rel, '/')) {
-        // /gcc/uae is rendered by gcc.php?country=uae on this site, so the
-        // parent file is the thing whose bytes decide what the page says.
-        $roots[] = __DIR__ . '/' . explode('/', $rel)[0] . '.php';
-    }
+    // Routes whose renderer is not <path>.php. Read out of .htaccess, not
+    // guessed: without these seven entries /press-kit and the six /gcc/*
+    // pages resolved to nothing and took the fallback SILENTLY, which is the
+    // same shape as the defect this function exists to fix. A route that
+    // cannot find its renderer should be a short list somebody has to edit,
+    // not a date nobody can question.
+    static $RENDERER = [
+        'press-kit'         => 'press.php',
+        'gcc/saudi-arabia'  => 'gcc/country.php',
+        'gcc/uae'           => 'gcc/country.php',
+        'gcc/qatar'         => 'gcc/country.php',
+        'gcc/bahrain'       => 'gcc/country.php',
+        'gcc/kuwait'        => 'gcc/country.php',
+        'gcc/oman'          => 'gcc/country.php',
+    ];
+    $roots = [];
+    if (isset($RENDERER[$rel])) $roots[] = __DIR__ . '/' . $RENDERER[$rel];
+    $roots[] = __DIR__ . '/' . ($rel === '' ? 'index.php' : $rel . '.php');
+    $roots[] = __DIR__ . '/' . ($rel === '' ? 'index.php' : $rel . '/index.php');
     $t = 0;
     foreach ($roots as $f) {
         if (is_file($f)) { $t = (int) filemtime($f); break; }
