@@ -429,23 +429,54 @@ class Seo
         return $out;
     }
 
-    /** Product schema for a pricing plan / tier. */
-    public static function product(string $name, string $description, string $priceOMR, ?string $url = null): void
+    /**
+     * Product schema for a pricing plan / tier.
+     *
+     * r81 / llm20-21. These four nodes were anonymous AND carried no url and
+     * no sku, so nothing on the estate could address them and, worse, the
+     * Arabic page published four MORE of them under translated names. Eight
+     * unaddressable Products describing four products, with no property a
+     * consumer could use to merge "Standard Cards" with "بطاقات قياسية".
+     *
+     * $key is the locale-invariant handle. Everything under the resulting @id
+     * is locale-invariant on purpose, the same rule AppEntity enforces for the
+     * app: a shared identifier whose payload changes with the request locale
+     * asserts one entity and then contradicts itself about it. The Arabic name
+     * is alternateName, never a replacement for name, and the offer URL is the
+     * English canonical because the offer is the same offer on both pages.
+     */
+    public static function product(string $key, string $nameKey, string $descKey, string $priceOMR): void
     {
-        self::emit([
+        $en = static fn(string $k): string => class_exists('I18n')
+            ? I18n::t($k, [], 'en') : $k;
+        $ar = static fn(string $k): string => class_exists('I18n')
+            ? I18n::t($k, [], 'ar') : $k;
+        $id = self::SITE . '/pricing#product-' . $key;
+        $names = [$en($nameKey), $ar($nameKey)];
+        // A null alternateName has to be REMOVED, not emitted: `"x": null` is
+        // a published claim that the property is empty, and emit() does not
+        // strip it.
+        self::emit(array_filter([
             '@context' => 'https://schema.org',
             '@type' => 'Product',
-            'name' => $name,
-            'description' => $description,
+            '@id' => $id,
+            'sku' => 'CARDIFY-' . strtoupper($key),
+            'name' => $names[0],
+            // Only when the dictionary really has a distinct Arabic string.
+            // Echoing the English back as an alternateName would assert a
+            // translation that does not exist.
+            'alternateName' => $names[1] !== $names[0] ? $names[1] : null,
+            'description' => $en($descKey),
+            'url' => self::SITE . '/pricing',
             'brand' => ['@type' => 'Brand', 'name' => self::BRAND],
             'offers' => [
                 '@type' => 'Offer',
                 'priceCurrency' => 'OMR',
                 'price' => number_format((float)$priceOMR, 3, '.', ''),
                 'availability' => 'https://schema.org/InStock',
-                'url' => $url ?: self::SITE . '/pricing',
+                'url' => self::SITE . '/pricing',
             ],
-        ]);
+        ], static fn($v) => $v !== null));
     }
 
     private static function emit(array $data): void

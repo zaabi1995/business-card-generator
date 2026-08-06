@@ -34,10 +34,14 @@ Seo::breadcrumbs([
     [$isAr ? 'الرئيسية' : 'Home', '/'],
     [t('pricing.hero_eyebrow'), $canonicalUrl],
 ]);
-Seo::product(t('pricing.product_standard_name'), t('pricing.product_standard_spec'), '6',  $canonicalUrl);
-Seo::product(t('pricing.product_premium_name'),  t('pricing.product_premium_spec'),  '8',  $canonicalUrl);
-Seo::product(t('pricing.product_luxury_name'),   t('pricing.product_luxury_spec'),   '15', $canonicalUrl);
-Seo::product(t('pricing.product_nfc_name'),      t('pricing.product_nfc_spec'),      '25', $canonicalUrl);
+// r81 / llm20-21: the keys, not the RENDERED strings. Passing t() meant this
+// page published four Products in whatever locale the request arrived in, each
+// anonymous and each carrying no url and no sku, so /pricing and /ar/pricing
+// described the same four products as eight unmergeable things.
+Seo::product('standard', 'pricing.product_standard_name', 'pricing.product_standard_spec', '6');
+Seo::product('premium',  'pricing.product_premium_name',  'pricing.product_premium_spec',  '8');
+Seo::product('luxury',   'pricing.product_luxury_name',   'pricing.product_luxury_spec',   '15');
+Seo::product('nfc',      'pricing.product_nfc_name',      'pricing.product_nfc_spec',      '25');
 Seo::faqPage([
     [t('pricing.faq_q1'), t('pricing.faq_a1')],
     [t('pricing.faq_q2'), t('pricing.faq_a2')],
