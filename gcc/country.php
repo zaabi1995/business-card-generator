@@ -34,7 +34,15 @@ $countries = [
         'registry_name'  => 'Saudi Business Center',
         'company_count_approx' => '1,200,000',
         'hero_headline'  => 'Digital business cards for Saudi Arabia, from Riyadh to Jeddah',
-        'hero_sub'       => 'Cardify is building the first GCC-wide digital business card platform. Saudi launch is next, register your company for the Saudi Business Index and get early access to bilingual EN/AR cards tuned for KSA regulations, NFC-ready and Apple Wallet compatible.',
+        // bhd-group-seo-llm27-44: was "building the first GCC-wide digital
+        // business card platform", a first-claim with nothing behind it, on
+        // four surfaces of this page (meta description, og, twitter, hero).
+        // superlative_gate has been RED on it, not blind to it. Replaced with
+        // the estate's own already-published Organization description, so the
+        // page repeats a claim the graph makes rather than inventing a
+        // stronger one: "Built in Oman, expanding across Saudi Arabia, UAE,
+        // Qatar, Bahrain, and Kuwait through 2026."
+        'hero_sub'       => 'Cardify is a bilingual Arabic and English digital business card platform, built in Oman and expanding across the GCC. Saudi launch is next, register your company for the Saudi Business Index and get early access to bilingual EN/AR cards tuned for KSA regulations, NFC-ready and Apple Wallet compatible.',
         'sectors'        => ['Oil & Gas', 'Banking (SAMA-licensed)', 'Real Estate', 'Retail', 'Technology', 'Healthcare', 'Construction', 'Hospitality'],
         'majors'         => ['Saudi Aramco', 'SABIC', 'Al Rajhi Bank', 'STC', 'SABB', 'Ma\'aden', 'NEOM', 'ROSHN'],
         'value_props'    => [
