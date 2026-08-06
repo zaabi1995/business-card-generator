@@ -908,7 +908,15 @@ def parse_pdf(pdf_path, output_dir, installed_fonts_path=None):
                 x0, y0, x1, y1 = bb
                 rect = fitz.Rect(x0 - 0.3, y0 - 0.3, x1 + 0.3, y1 + 0.3)
                 page_for_redaction.add_redact_annot(rect, fill=None)
-            page_for_redaction.apply_redactions(images=0)
+            # graphics defaults to PDF_REDACT_LINE_ART_REMOVE_IF_TOUCHED, which
+            # deletes any vector art the text bbox touches. On patterned artwork
+            # that strips the pattern under every text line and leaves flat
+            # rectangles in the bg (Otech: 123k halftone pixels wiped, read by
+            # the client as "a blue box behind the names"). We only ever want
+            # the glyphs gone, never the design under them.
+            page_for_redaction.apply_redactions(
+                images=0, graphics=fitz.PDF_REDACT_LINE_ART_NONE
+            )
 
             redacted_rendered = False
             try:
