@@ -21,9 +21,15 @@
  */
 require_once __DIR__ . '/config.php';
 require_once INCLUDES_DIR . '/Auth.php';
+require_once INCLUDES_DIR . '/AppEntity.php';
 
 $isAr = (class_exists('I18n') && I18n::getLocale() === 'ar') || (($_GET['lang'] ?? '') === 'ar');
-$appStoreUrl = 'https://apps.apple.com/app/id6790749589';
+// r81 / r6-99: app.php's copy of this fourth spelling (no country segment, no
+// slug) was replaced by the record; this one survived because it feeds the
+// visible CTA rather than the graph, and the probe only read ld+json. The
+// store link a reader clicks and the store link the graph asserts are the
+// same claim about the same listing, so they read the same constant.
+$appStoreUrl = AppEntity::APPSTORE_URL;
 
 $pageTitle = $isAr
     ? 'ماسح بطاقات العمل: قراءة عربية وإنجليزية على الجهاز | كارديفاي'
@@ -77,34 +83,14 @@ $features = $isAr ? [
 $ld = [
     '@context' => 'https://schema.org',
     '@graph'   => [
-        [
-            '@type'               => 'MobileApplication',
-            // r6-99: ONE app, ONE @id, locale-invariant identity. The Arabic
-            // name is alternateName; swapping name per locale under a shared
-            // @id is what made one app read as three entities.
-            '@id'                 => 'https://cardify.om/#app',
-            'name'                => 'Cardify: Business Card Scanner',
-            'alternateName'       => 'Cardify، ماسح بطاقات العمل',
-            'sameAs'              => $appStoreUrl,
-            'identifier'          => '6790749589',
-            'operatingSystem'     => 'iOS 16.4 or later',
-            'applicationCategory' => 'BusinessApplication',
-            'applicationSubCategory' => 'Business card scanner',
-            'inLanguage'          => ['en', 'ar'],
-            'url'                 => $canonicalUrl,
-            'downloadUrl'         => $appStoreUrl,
-            'installUrl'          => $appStoreUrl,
-            'softwareHelp'        => 'https://cardify.om/app',
-            // r6-99: locale-invariant, because both locales publish this same
-            // @id. The Arabic feature copy stays in the visible page body.
-            'featureList'         => ['On-device optical recognition of Arabic and English cards', 'Field review before saving to contacts', 'NFC read and write', 'Digital card and Apple Wallet pass', 'Ordering the card in print'],
-            'offers'              => ['@type' => 'Offer', 'price' => '0', 'priceCurrency' => 'OMR'],
-            // llm20-11: this was an anonymous Organization carrying BHD Group's
-            // name and url, i.e. a fourth unlinked body for an entity the estate
-            // already defines once at https://bhd.om/#organization. A publisher
-            // slot needs the identifier, not a copy of the entity.
-            'publisher'           => ['@id' => 'https://bhd.om/#organization'],
-        ],
+        // r81 / r6-99 + llm20-21: this block used to be the SECOND
+        // definition of the app, under @id https://cardify.om/#app, while
+        // index.php published https://cardify.om/app#ios-app. Both cited
+        // r6-99, both asserted uniqueness, and nothing compared them. One
+        // record now, in includes/AppEntity.php. The publisher stays the
+        // group node, which is the one thing this surface said that the
+        // home page did not.
+        AppEntity::node('https://bhd.om/#organization'),
         [
             '@type'      => 'FAQPage',
             '@id'        => $localeUrl . '#faq',

@@ -11,7 +11,19 @@ $canonicalUrl = 'https://cardify.om/app';
 $showNavigation = true;
 $openUrl = normalizeCardifyUrl((string) ($_GET['url'] ?? '')) ?? '';
 $nativeUrl = $openUrl !== '' ? 'cardifyscan://app/open?url=' . rawurlencode($openUrl) : 'cardifyscan://';
-$appStoreUrl = 'https://apps.apple.com/app/id6790749589';
+require_once INCLUDES_DIR . '/AppEntity.php';
+// r81 / r6-99: this page named a FOURTH App Store URL, with no country
+// segment and no slug, while /business-card-scanner and bhd.om named the
+// full one. A redirect chain is not an identifier.
+$appStoreUrl = AppEntity::APPSTORE_URL;
+// r81 / r6-99 + llm20-21: /app is the app's page and the document BOTH
+// competing @ids were a fragment of, and it published no app node at all.
+// Now it defines the entity its own URL identifies, so a consumer that
+// dereferences https://cardify.om/app#ios-app lands on the thing.
+$extraHead = '<script type="application/ld+json">'
+    . json_encode(['@context' => 'https://schema.org'] + AppEntity::node(),
+                  JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)
+    . '</script>';
 require_once INCLUDES_DIR . '/ui-header.php';
 ?>
 <style>

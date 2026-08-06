@@ -16,6 +16,10 @@ $canonicalUrl = 'https://cardify.om/tools/vcard-qr-generator';
 $softwareLd = [
     '@context' => 'https://schema.org',
     '@type' => 'SoftwareApplication',
+    // r81 / llm20-21: anonymous, so nothing on the estate could link
+    // to this tool as an entity. A fragment of its own canonical URL,
+    // which is the document that describes it.
+    '@id' => $canonicalUrl . '#tool',
     'name' => 'Cardify vCard QR Code Generator',
     'description' => 'Free online tool to generate a vCard QR code from your contact details. Download as PNG and print on business cards, email signatures, or office signage.',
     'url' => $canonicalUrl,
@@ -27,11 +31,11 @@ $softwareLd = [
         'price' => '0',
         'priceCurrency' => 'OMR',
     ],
-    'creator' => [
-        '@type' => 'Organization',
-        'name' => 'Cardify',
-        'url' => 'https://cardify.om/',
-    ],
+    // r81 / llm20-21: this was a fresh anonymous Organization carrying
+    // Cardify's name and url, i.e. a second body for an entity THIS SAME
+    // DOCUMENT already resolves by reference in its WebPage publisher slot.
+    // A creator slot takes the identifier, never a copy.
+    'creator' => ['@id' => 'https://cardify.om/#organization'],
     'featureList' => [
         'vCard 3.0 export',
         'Real-time QR preview',

@@ -17,6 +17,7 @@ require_once __DIR__ . '/includes/PlatformStats.php';
 // footer links back to the English twin, and only the live probe saw it. Both
 // footers now call the one rule in ArTwins::navLink().
 require_once __DIR__ . '/includes/ArTwins.php';
+require_once __DIR__ . '/includes/AppEntity.php';
 $_homeIsAr = ArTwins::servingArabic();
 // llm75-1: the homepage blog cards are bilingual DB records, and the class that
 // refuses an untranslated one is required HERE, beside the call site's include,
@@ -350,38 +351,11 @@ $siteLd = [
     ],
 ];
 $homeJsonLd = '<script type="application/ld+json">' . json_encode($siteLd, JSON_UNESCAPED_SLASHES) . '</script>';
-$scannerLd = [
-    '@context' => 'https://schema.org',
-    '@type' => 'MobileApplication',
-    '@id' => 'https://cardify.om/app#ios-app',
-    'name' => 'Cardify: Business Card Scanner',
-    // r6-99: the app was findable under three names (App Store title, the
-    // short name on the home screen, and the Arabic transliteration the AR
-    // pages use) and asserted only one, so two of the three never resolved
-    // to this node.
-    'alternateName' => ['Cardify Scan', 'Cardify Business Card Scanner', 'كارديفاي'],
-    'url' => 'https://cardify.om/app',
-    'downloadUrl' => 'https://apps.apple.com/om/app/cardify-business-card-scanner/id6790749589',
-    'installUrl' => 'https://apps.apple.com/om/app/cardify-business-card-scanner/id6790749589',
-    'applicationCategory' => 'BusinessApplication',
-    // r20-21: the web app and the Product node were both anonymous, so the
-    // three Cardify entities on this page never resolved to each other. Each
-    // now has an @id and the pair is reciprocal.
-    'applicationSuite' => 'Cardify',
-    'isRelatedTo' => ['@id' => 'https://cardify.om/#webapp'],
-    'operatingSystem' => 'iOS 16.4 or later, iPadOS 16.4 or later',
-    'description' => 'Free Arabic and English business card scanner for iPhone and iPad with on-device OCR, contact cleanup, QR and NFC sharing, digital cards and Apple Wallet.',
-    'inLanguage' => ['en', 'ar'],
-    'isAccessibleForFree' => true,
-    'offers' => [
-        '@type' => 'Offer',
-        'price' => '0',
-        'priceCurrency' => 'OMR',
-        'availability' => 'https://schema.org/InStock',
-    ],
-    'sameAs' => ['https://apps.apple.com/om/app/cardify-business-card-scanner/id6790749589'],
-    'publisher' => ['@id' => 'https://cardify.om/#organization'],
-];
+// r81 / r6-99 + llm20-21: this literal WAS one of the two competing
+// definitions of the app. It is now the ONE record in includes/AppEntity.php,
+// read by this page, /app and /business-card-scanner, so a fourth spelling
+// cannot be typed into a fourth file.
+$scannerLd = ['@context' => 'https://schema.org'] + AppEntity::node();
 $scannerJsonLd = '<script type="application/ld+json">' . json_encode($scannerLd, JSON_UNESCAPED_SLASHES) . '</script>';
 $appDiscoveryHead = '<meta name="apple-itunes-app" content="app-id=6790749589, app-argument=cardifyscan://">'
     . '<meta property="al:ios:app_store_id" content="6790749589">'
@@ -1440,7 +1414,7 @@ echo '<script type="application/ld+json">'
   "alternateName": "Cardify Web App",
   "applicationSuite": "Cardify",
   "publisher": { "@id": "https://cardify.om/#organization" },
-  "isRelatedTo": { "@id": "https://cardify.om/app#ios-app" },
+  "isRelatedTo": { "@id": "<?= AppEntity::ID ?>" },
   "applicationCategory": "BusinessApplication",
   "operatingSystem": "Web browser on iOS, Android, macOS, Windows and Linux",
   "url": "https://cardify.om",
