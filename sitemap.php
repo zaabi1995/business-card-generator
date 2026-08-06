@@ -15,7 +15,6 @@ header('Content-Type: application/xml; charset=UTF-8');
 require_once __DIR__ . '/config.php';
 
 $baseUrl = 'https://cardify.om';
-$today   = date('Y-m-d');
 $part    = (string) ($_GET['part'] ?? 'index');
 
 echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
@@ -82,6 +81,90 @@ function smUrl($loc, $lastmod, $changefreq = 'monthly', $priority = '0.5', $imag
 }
 
 /**
+ * r82 / llm81-1. The honest lastmod for a route: the mtime of the file that
+ * renders it.
+ *
+ * Every static/tools/solutions/directory/logos/printshops URL was stamped
+ * $today = date('Y-m-d'), so 192 URLs and all 9 index children told crawlers
+ * they had changed TODAY, on every request, forever. Measured 2026-08-06
+ * before this change: static 50/50, directory 74/74, logos 38/38,
+ * solutions 22/22, tools 6/6, printshops 2/2. The DB-driven parts already do
+ * this correctly (companies 0/5004 and blog 0/36 stamped today, because they
+ * read updated_at), which is why this is a gap and not a design.
+ *
+ * Same family as llm66-1 (a page publishing date('c') as dateModified) and
+ * llm71-3 (a sitemap re-dating a URL a regen did not change). A freshness
+ * claim nothing can falsify is worth less than no claim.
+ *
+ * Falls back to sitemap.php's own mtime, which is honest rather than
+ * convenient: if no file renders the route, the newest thing that can have
+ * changed the claim is the generator that emits it.
+ */
+function smRouteDate($path) {
+    static $cache = [];
+    $path = '/' . ltrim(parse_url($path, PHP_URL_PATH) ?? '', '/');
+    if (isset($cache[$path])) return $cache[$path];
+    $rel = trim($path, '/');
+    $roots = [__DIR__ . '/' . $rel . '.php', __DIR__ . '/' . $rel . '/index.php'];
+    if (str_contains($rel, '/')) {
+        // /gcc/uae is rendered by gcc.php?country=uae on this site, so the
+        // parent file is the thing whose bytes decide what the page says.
+        $roots[] = __DIR__ . '/' . explode('/', $rel)[0] . '.php';
+    }
+    $t = 0;
+    foreach ($roots as $f) {
+        if (is_file($f)) { $t = (int) filemtime($f); break; }
+    }
+    if ($t === 0) $t = (int) filemtime(__FILE__);
+    return $cache[$path] = date('Y-m-d', $t);
+}
+
+/**
+ * r82 / llm81-1. A child sitemap's lastmod is the newest lastmod it contains.
+ *
+ * Computed, not stamped. For the DB-backed children that is a MAX(updated_at)
+ * the child's own rows already agree with; for the file-backed ones it is the
+ * newest mtime among the files that render them. companies-ar is deliberately
+ * empty (see its branch below), so the only thing that can change it is this
+ * file.
+ */
+function smChildDate($part, $db) {
+    $newest = function (array $globs) {
+        $t = (int) filemtime(__FILE__);
+        foreach ($globs as $g) {
+            foreach (glob(__DIR__ . '/' . $g) ?: [] as $f) {
+                $t = max($t, (int) filemtime($f));
+            }
+        }
+        return date('Y-m-d', $t);
+    };
+    $maxCol = function ($table, $col, $where = '') use ($db) {
+        if (!$db) return null;
+        try {
+            $r = $db->fetchOne("SELECT MAX({$col}) AS m FROM {$table} {$where}");
+            return ($r && $r['m']) ? date('Y-m-d', strtotime($r['m'])) : null;
+        } catch (Throwable $e) { return null; }
+    };
+    switch ($part) {
+        case 'companies':
+            return $maxCol('om_companies', 'updated_at') ?? smRouteDate('/companies');
+        case 'blog':
+            return $maxCol('blog_posts', 'updated_at', "WHERE status = 'published'")
+                   ?? smRouteDate('/blog');
+        case 'companies-ar':
+            return date('Y-m-d', (int) filemtime(__FILE__));
+        case 'static':
+            return $newest(['*.php', 'gcc/*.php', 'industries/*.php']);
+        case 'tools':      return $newest(['tools.php', 'tools/*.php']);
+        case 'solutions':  return $newest(['solutions.php', 'solutions/*.php']);
+        case 'directory':  return $newest(['companies.php', 'directory/*.php']);
+        case 'logos':      return $newest(['logos.php', 'logos/*.php']);
+        case 'printshops': return $newest(['print-shops.php', 'printshop/*.php']);
+    }
+    return date('Y-m-d', (int) filemtime(__FILE__));
+}
+
+/**
  * Render a single <sitemap> entry in the index.
  */
 function smChild($loc, $lastmod) {
@@ -91,18 +174,29 @@ function smChild($loc, $lastmod) {
     echo "    </sitemap>\n";
 }
 
+// r82: opened BEFORE the index branch, not after it. It used to sit below the
+// child-sitemap dispatch, so smChildDate('companies', $db) in the index would
+// have been handed an undefined $db, silently taken the null path and dated
+// the companies and blog children off a file mtime instead of MAX(updated_at)
+// — a degradation with no error and no way to see it in the output.
+try {
+    $db = Database::getInstance();
+} catch (Throwable $e) {
+    $db = null;
+}
+
 // --- Sitemap index -----------------------------------------------------
 if ($part === 'index') {
     echo '<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
-    smChild("{$baseUrl}/sitemap-static.xml",       $today);
-    smChild("{$baseUrl}/sitemap-tools.xml",        $today);
-    smChild("{$baseUrl}/sitemap-solutions.xml",    $today);
-    smChild("{$baseUrl}/sitemap-directory.xml",    $today);
-    smChild("{$baseUrl}/sitemap-companies.xml",    $today);
-    smChild("{$baseUrl}/sitemap-companies-ar.xml", $today);
-    smChild("{$baseUrl}/sitemap-blog.xml",         $today);
-    smChild("{$baseUrl}/sitemap-logos.xml",        $today);
-    smChild("{$baseUrl}/sitemap-printshops.xml",   $today);
+    smChild("{$baseUrl}/sitemap-static.xml", smChildDate('static', $db));
+    smChild("{$baseUrl}/sitemap-tools.xml", smChildDate('tools', $db));
+    smChild("{$baseUrl}/sitemap-solutions.xml", smChildDate('solutions', $db));
+    smChild("{$baseUrl}/sitemap-directory.xml", smChildDate('directory', $db));
+    smChild("{$baseUrl}/sitemap-companies.xml", smChildDate('companies', $db));
+    smChild("{$baseUrl}/sitemap-companies-ar.xml", smChildDate('companies-ar', $db));
+    smChild("{$baseUrl}/sitemap-blog.xml", smChildDate('blog', $db));
+    smChild("{$baseUrl}/sitemap-logos.xml", smChildDate('logos', $db));
+    smChild("{$baseUrl}/sitemap-printshops.xml", smChildDate('printshops', $db));
     echo '</sitemapindex>' . "\n";
     exit;
 }
@@ -164,12 +258,6 @@ function logoImageXml($db, $baseUrl) {
     return $out;
 }
 
-try {
-    $db = Database::getInstance();
-} catch (Throwable $e) {
-    $db = null;
-}
-
 if ($part === 'static') {
     // Top-level product, legal, marketing pages + industry landings.
     $staticPages = [
@@ -218,11 +306,11 @@ if ($part === 'static') {
         ['/industries/government',   'monthly', '0.75'],
     ];
     foreach ($staticPages as [$path, $freq, $prio]) {
-        smUrl($baseUrl . $path, $today, $freq, $prio);
+        smUrl($baseUrl . $path, smRouteDate($path), $freq, $prio);
     }
 
 } elseif ($part === 'tools') {
-    smUrl("{$baseUrl}/tools", $today, 'monthly', '0.9');
+    smUrl("{$baseUrl}/tools", smRouteDate('/tools'), 'monthly', '0.9');
     $tools = [
         'vcard-qr-generator',
         'email-signature-generator',
@@ -230,11 +318,11 @@ if ($part === 'static') {
         'nfc-business-card-guide',
     ];
     foreach ($tools as $t) {
-        smUrl("{$baseUrl}/tools/{$t}", $today, 'monthly', '0.8');
+        smUrl("{$baseUrl}/tools/{$t}", smRouteDate("/tools/{$t}"), 'monthly', '0.8');
     }
 
 } elseif ($part === 'solutions') {
-    smUrl("{$baseUrl}/solutions", $today, 'monthly', '0.9');
+    smUrl("{$baseUrl}/solutions", smRouteDate('/solutions'), 'monthly', '0.9');
     $solutions = [
         'digital-business-cards-oman-sales-teams',
         'bilingual-arabic-english-business-cards',
@@ -258,15 +346,15 @@ if ($part === 'static') {
         'business-cards-duqm-free-zone',
     ];
     foreach ($solutions as $s) {
-        smUrl("{$baseUrl}/solutions/{$s}", $today, 'monthly', '0.7');
+        smUrl("{$baseUrl}/solutions/{$s}", smRouteDate("/solutions/{$s}"), 'monthly', '0.7');
     }
 
 } elseif ($part === 'directory') {
     // Flagship + directory hubs (indexes, sector hubs, wilayat hubs), NOT individual companies.
     // Map-backed hubs: smUrl emits both twins with their alternates.
-    smUrl("{$baseUrl}/oman-business-index",    $today, 'monthly', '0.9');
-    smUrl("{$baseUrl}/gcc-business-index",     $today, 'weekly',  '0.95');
-    smUrl("{$baseUrl}/companies",              $today, 'weekly',  '0.9');
+    smUrl("{$baseUrl}/oman-business-index", smRouteDate('/oman-business-index'), 'monthly', '0.9');
+    smUrl("{$baseUrl}/gcc-business-index", smRouteDate('/gcc-business-index'), 'weekly',  '0.95');
+    smUrl("{$baseUrl}/companies", smRouteDate('/companies'), 'weekly',  '0.9');
 
     // Parameterised hubs cannot live in the map, so they go through
     // smUrlBilingual(), which emits the same EN/AR/x-default alternate block.
@@ -276,10 +364,10 @@ if ($part === 'static') {
     if ($db) {
         try {
             foreach ($db->fetchAll("SELECT DISTINCT sector FROM om_companies ORDER BY sector ASC") as $s) {
-                smUrlBilingual("/companies/sector/{$s['sector']}", $today, 'weekly', '0.7');
+                smUrlBilingual("/companies/sector/{$s['sector']}", smRouteDate('/companies'), 'weekly', '0.7');
             }
             foreach ($db->fetchAll("SELECT DISTINCT wilayat FROM om_companies ORDER BY wilayat ASC") as $w) {
-                smUrlBilingual("/companies/wilayat/{$w['wilayat']}", $today, 'weekly', '0.7');
+                smUrlBilingual("/companies/wilayat/{$w['wilayat']}", smRouteDate('/companies'), 'weekly', '0.7');
             }
         } catch (Throwable $e) { /* table may not exist */ }
     }
@@ -379,9 +467,9 @@ if ($part === 'static') {
     // Omani Logo Library, hub + terms/press + 23 sector pages + image entries
     // for every indexed/verified logo (Google Images surfaces them from
     // <image:image> blocks, not just <img> tags on a page).
-    smUrl("{$baseUrl}/logos",       $today, 'daily',   '0.9');
-    smUrl("{$baseUrl}/logos/press", $today, 'monthly', '0.5');
-    smUrl("{$baseUrl}/logos/terms", $today, 'yearly',  '0.3');
+    smUrl("{$baseUrl}/logos", smRouteDate('/logos'), 'daily',   '0.9');
+    smUrl("{$baseUrl}/logos/press", smRouteDate('/logos/press'), 'monthly', '0.5');
+    smUrl("{$baseUrl}/logos/terms", smRouteDate('/logos/terms'), 'yearly',  '0.3');
 
     if ($db) {
         try {
@@ -391,7 +479,7 @@ if ($part === 'static') {
                   ORDER BY sector ASC"
             );
             foreach ($sectors as $s) {
-                smUrl("{$baseUrl}/logos/{$s['sector']}", $today, 'weekly', '0.7');
+                smUrl("{$baseUrl}/logos/{$s['sector']}", smRouteDate('/logos'), 'weekly', '0.7');
             }
         } catch (Throwable $e) { /* om_companies may lack logo_status until migration runs */ }
 
@@ -405,7 +493,7 @@ if ($part === 'static') {
     // Public-facing print shop surfaces. Individual shops don't have
     // public profile URLs yet; adding the listing hub + per-shop
     // slug pages whenever they ship is tracked in action 788.
-    smUrlBilingual('/print-shops', $today, 'weekly', '0.8');
+    smUrlBilingual('/print-shops', smRouteDate('/print-shops'), 'weekly', '0.8');
     // Per-shop detail URLs (/print-shops/{slug}) are not yet built; the
     // /print-shops index page is the only public surface. Skip emitting
     // detail URLs so Google doesn't crawl them as 404s.
