@@ -35,6 +35,40 @@ if (!function_exists('seo_has_brand')) {
     }
 }
 
+if (!function_exists('seo_cut_words')) {
+    /**
+     * Cut to $budget characters WITHOUT ending inside a word.
+     *
+     * r103 / llm98-1: seo_fit_title had three separate mb_substr() calls and
+     * none of them looked for a space, so /oman-business-index published
+     * "…2,500+ Large and Medium Ente… | Cardify" -- a front door whose own
+     * title cannot say what it indexes. seo_fit_desc has cut on a word
+     * boundary since it was written; this is the same rule, in one place, so
+     * the two cannot drift apart again.
+     *
+     * The floor is the point. A budget with no space in its second half means
+     * the segment is one long token (a legal name in a single word, a URL),
+     * and there is no boundary to honour -- a hard cut is then the honest
+     * answer, not a bug. Cutting at the FIRST space instead would leave a
+     * one-word title and lose the population the page exists to name.
+     */
+    function seo_cut_words(string $s, int $budget): string
+    {
+        if ($budget <= 0) {
+            return '';
+        }
+        $cut = mb_substr($s, 0, $budget, 'UTF-8');
+        if (mb_strlen($s, 'UTF-8') <= $budget) {
+            return rtrim($cut);
+        }
+        $sp = mb_strrpos($cut, ' ', 0, 'UTF-8');
+        if ($sp !== false && $sp >= (int) ($budget * 0.5)) {
+            $cut = mb_substr($cut, 0, $sp, 'UTF-8');
+        }
+        return rtrim($cut, " ،,.-:");
+    }
+}
+
 if (!function_exists('seo_fit_title')) {
     /**
      * Shorten a title to $max characters by trimming the FIRST comma segment
@@ -56,8 +90,7 @@ if (!function_exists('seo_fit_title')) {
             $tail = mb_substr($title, $commaPos, null, 'UTF-8'); // includes ", "
             $budget = $max - mb_strlen($tail, 'UTF-8') - 1;      // -1 for the ellipsis
             if ($budget >= 12) {
-                $head = rtrim(mb_substr($head, 0, $budget, 'UTF-8'));
-                return $head . '…' . $tail;
+                return seo_cut_words($head, $budget) . '…' . $tail;
             }
         }
 
@@ -70,11 +103,11 @@ if (!function_exists('seo_fit_title')) {
             $tail = mb_substr($title, $pipePos, null, 'UTF-8');
             $budget = $max - mb_strlen($tail, 'UTF-8') - 1;
             if ($budget >= 12) {
-                return rtrim(mb_substr($head, 0, $budget, 'UTF-8')) . '…' . $tail;
+                return seo_cut_words($head, $budget) . '…' . $tail;
             }
         }
 
-        return rtrim(mb_substr($title, 0, $max - 1, 'UTF-8')) . '…';
+        return seo_cut_words($title, $max - 1) . '…';
     }
 }
 
