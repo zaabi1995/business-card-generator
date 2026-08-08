@@ -1,4 +1,4 @@
-name: PHP Syntax Check
+name: PHP + Python unit tests
 
 on:
   push:
@@ -9,7 +9,7 @@ on:
 jobs:
   syntax-check:
     runs-on: ubuntu-latest
-    
+
     steps:
     - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
@@ -18,14 +18,119 @@ jobs:
       with:
         php-version: '7.4'
         coverage: none
-    
+
     - name: Check PHP syntax
       run: |
         find . -name "*.php" -not -path "./vendor/*" -exec php -l {} \;
-    
+
     - name: Check for config.php
       run: |
         if [ -f "config.php" ]; then
           echo "ERROR: config.php should not be committed!"
           exit 1
         fi
+
+  # ---------------------------------------------------------------------------
+  # tests/php/ existed for months and NOTHING RAN IT. The workflow above only
+  # ever ran `php -l`, which proves a file parses and nothing else.
+  #
+  # That cost something real. tests/php/scan_identity_contract_test.php was RED,
+  # asserting two contracts api/scan/refine.php stopped satisfying, and because
+  # no job ran it nobody found out. refine.php was migrated to the account model
+  # on 9 Aug 2026 and the suite is green; this job is what keeps it that way.
+  #
+  # 35 of the 37 suites need no database, no config.php and no network: they
+  # require_once the class under test and assert on it. They run in a couple of
+  # seconds in total, so there is no reason for them not to gate every push.
+  # ---------------------------------------------------------------------------
+  php-unit:
+    name: PHP unit + contract tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@383a511d0ed762f8bdb060ec71ff6cbefc41f73a # v2.37.0
+        with:
+          # 8.2 matches i18n.yml. The syntax job above stays on 7.4 because that
+          # is the floor the product supports; these suites use 8.x syntax.
+          php-version: '8.2'
+          coverage: none
+
+      - name: Run tests/php
+        run: |
+          set -uo pipefail
+
+          # EXCLUDED, with the reason, rather than silently skipped:
+          #
+          #   scan_account_deletion_db_integration_test.php
+          #     Boots `php -S` and connects to a real MySQL as an admin user to
+          #     create and drop a scratch database. It needs a MySQL service and
+          #     a config.php (which is gitignored and must never be committed),
+          #     so it cannot run in this job. To run it, give this job a
+          #     `services: mysql:` block and write a config.php from secrets.
+          #
+          # Nothing else is excluded. scan_identity_contract_test.php in
+          # particular stays in: it was red here for three real contracts, all
+          # on api/scan/refine.php, and hiding that is how it stayed unnoticed.
+          #   - "account lock covers native mutation refine.php"
+          #     it called ScanAuth::requireEmployee() rather than
+          #     requireEmployeeMutation(), the only mutating scan endpoint with
+          #     no per-account GET_LOCK and no re-auth after the wait.
+          #   - "paid refinement follows account entitlement and account rate limits"
+          #     it read Pro from the employees.scan_pro_until MIRROR instead of
+          #     the account-scoped scan_account_entitlements authority.
+          #   - "paid refinement budgets through the shared account-keyed limiter"
+          #     it keyed its 30/hr AI limit on employee_id, so an account with N
+          #     profiles got N times the paid-AI budget from one subscription.
+          # All three are green as of 9 Aug 2026. If one goes red, fix the
+          # endpoint; do not delete the assertion.
+          EXCLUDE='scan_account_deletion_db_integration_test.php'
+
+          failed=0
+          for f in tests/php/*_test.php; do
+            base=$(basename "$f")
+            if [ "$base" = "$EXCLUDE" ]; then
+              echo "::notice title=Skipped::$base needs a MySQL service + config.php"
+              continue
+            fi
+            echo "--- $base"
+            if ! php "$f"; then
+              echo "::error title=PHP test failed::$base"
+              failed=1
+            fi
+          done
+          exit $failed
+
+  # ---------------------------------------------------------------------------
+  # tests/python/ was in no workflow either. It covers the two renderers the
+  # 8 Aug deploy changed: scripts/render-card-images.py (canvas/anchor) and
+  # scripts/render-card-pdf.py (static w_pt, font preflight).
+  #
+  # test_render_card_pdf.py used to hard-code OTECH_DIR='/tmp/otech-pdf' and
+  # ERROR with FileNotFoundError on any machine that had not populated it by
+  # hand, which is a large part of why it was never wired up. It now reads
+  # CARDIFY_OTECH_PDF_DIR and SKIPS with an actionable reason when the fixture
+  # is absent, so a clean runner reports 6 passed / 6 skipped rather than
+  # 6 passed / 6 errors.
+  # ---------------------------------------------------------------------------
+  python-unit:
+    name: Python renderer tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5.3.0
+        with:
+          python-version: '3.11'
+
+      - name: Install deps
+        # pymupdf: render-card-pdf assertions. opencv + pillow: render-card-images.
+        run: python3 -m pip install --quiet pytest pymupdf opencv-python-headless pillow
+
+      - name: Run tests/python
+        # test_invalidation.py already self-skips when it cannot SSH to the VPS,
+        # and no GitHub runner can, so those stay skipped here by design.
+        run: python3 -m pytest tests/python -v -p no:warnings

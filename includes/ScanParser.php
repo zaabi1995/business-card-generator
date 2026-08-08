@@ -92,11 +92,22 @@ class ScanParser {
     // server stores it verbatim and never interprets it.
     //
     // Returns the storable string, or null when the value must not be stored.
-    // Deliberately REJECTS oversized input rather than truncating: cutting a valid
-    // JSON array at the column limit yields one with no closing bracket, which then
-    // fails to parse on every pull forever, and no validity check downstream can
-    // catch it because the server itself would have created the broken value after
-    // validating a good one. The client trims oldest entries to fit before sending.
+    //
+    // Oversized input is REJECTED rather than truncated. Note what does and does
+    // not protect that: cutting a valid JSON array at the column limit yields one
+    // with no closing bracket, and the is_array(json_decode()) guard on the last
+    // line WOULD catch that, because it runs on the final string whatever produced
+    // it. So a truncating variant of this function does not write a broken value,
+    // it writes null, which on UPDATE means "skip the column" and silently drops a
+    // history the client believed it had saved. Rejecting is better because it is
+    // honest about that, not because it is the only thing standing between us and
+    // a corrupt row. (An earlier version of this comment claimed the latter; a
+    // mutation that truncated instead of rejecting turned out to be an equivalent
+    // mutant, which is what showed the claim was wrong.)
+    //
+    // The length check also keeps the refusal cheap, no decoding a 64KB+ string,
+    // and states the client's side of the contract: it trims oldest entries to fit
+    // before sending.
     //
     // Callers decide what null MEANS for them. On INSERT there is no prior value,
     // so null is simply "store nothing". On UPDATE the caller must skip the column

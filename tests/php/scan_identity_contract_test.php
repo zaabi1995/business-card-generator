@@ -12,13 +12,52 @@ function contractCheck(string $label, bool $condition): void
     }
 }
 
+/**
+ * Every contractCheck below greps SOURCE TEXT, which means a comment mentioning
+ * the token satisfies the check just as well as the code doing the thing. That
+ * is not hypothetical: on 9 Aug 2026 api/scan/refine.php was migrated to the
+ * account model, and a docblock written to explain the migration named
+ * requireEmployeeMutation and scan_account_entitlements. Both of the checks that
+ * exist to pin that endpoint then passed on the PROSE. Reverting the code to
+ * requireEmployee() and to employees.scan_pro_until left the suite green.
+ *
+ * So the source these checks see is the code with comments removed. No assertion
+ * changed; the assertions now just cannot be answered by a comment. Absence
+ * checks (=== false) are only ever made easier by this, presence checks only
+ * harder, so the sole thing it can newly turn red is a check that was being
+ * satisfied by prose, which is the bug.
+ */
 function source(string $path): string
 {
     $value = file_get_contents($path);
     if ($value === false) {
         throw new RuntimeException('Unable to read ' . $path);
     }
-    return $value;
+    return stripPhpComments($value);
+}
+
+/**
+ * Strip // , # and block comments via the PHP tokenizer, keeping the newline
+ * count so multi-line /s regexes still span roughly what they used to.
+ */
+function stripPhpComments(string $php): string
+{
+    if (strpos($php, '<?php') === false) {
+        return $php;
+    }
+    $out = '';
+    foreach (token_get_all($php) as $token) {
+        if (!is_array($token)) {
+            $out .= $token;
+            continue;
+        }
+        if ($token[0] === T_COMMENT || $token[0] === T_DOC_COMMENT) {
+            $out .= str_repeat("\n", substr_count($token[1], "\n"));
+            continue;
+        }
+        $out .= $token[1];
+    }
+    return $out;
 }
 
 $scanAuth = source($root . '/includes/ScanAuth.php');
@@ -560,6 +599,19 @@ contractCheck(
     'paid refinement follows account entitlement and account rate limits',
     strpos($refine, 'scan_account_entitlements') !== false
         && strpos($refine, "\$ctx['account_id']") !== false
+);
+// The check above names account rate limits but only the ENTITLEMENT half of it
+// was pinned: putting the old employee-keyed RateLimiter::check() back left it
+// green, because the entitlement query alone carries $ctx['account_id']. So the
+// limiter gets its own check. refine.php must budget through the shared helper,
+// which the '_ratelimit' check further up already proves is keyed on account_id
+// and never on employee_id, and must not reach for an employee id itself. That
+// is the money bug: one subscription, N profiles, N times the paid-AI budget.
+contractCheck(
+    'paid refinement budgets through the shared account-keyed limiter',
+    strpos($refine, "scanRateLimit(\$ctx, 'refine'") !== false
+        && strpos($refine, 'RateLimiter::check') === false
+        && strpos($refine, "\$ctx['employee_id']") === false
 );
 
 echo $failures === 0 ? "ALL PASS\n" : "$failures FAILED\n";

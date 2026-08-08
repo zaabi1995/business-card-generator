@@ -118,3 +118,10 @@ storage/og/
 # Local pitch-video masters (33MB, referenced by nothing on the site).
 # They live on the box only so the deploy clean-tree assert stays green.
 promo/cardify-yc-demo*.mp4
+
+# Python bytecode. Nine .pyc files were TRACKED, so any pytest run rewrote them
+# and dirtied the tree, which matters here because the deploy asserts a clean
+# tree. They are build output of scripts/*.py and tests/python/*.py and nothing
+# reads them from the repo.
+__pycache__/
+*.py[cod]

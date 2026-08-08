@@ -15,6 +15,26 @@
  * attacker cannot enumerate accounts. api/scan/otp-verify.php does the
  * find-or-create.
  *
+ * Status codes (fixed 9 Aug 2026). Three rejection branches used to `echo` a
+ * success:false body with NO http_response_code(), so a refusal shipped as an
+ * HTTP 200, while the method check, the rate limit and the server-error path in
+ * this same file all set a status correctly. A refusal on a 200 is invisible to
+ * every monitor, proxy, retry policy and error budget in the stack. The three
+ * are now 400:
+ *
+ *   - empty identifier        -> 400 identifier_required
+ *   - '@' present, not a valid email -> 400 invalid_identifier
+ *   - no '@', not a normalisable phone -> 400 invalid_identifier
+ *
+ * This does NOT create an enumeration oracle, and the distinction is the whole
+ * point. All three fire on the SYNTAX of the string the caller supplied, before
+ * any lookup: they answer "is this a well-formed identifier", never "does this
+ * identifier have an account". The anti-enumeration property lives further down,
+ * where a WELL-FORMED identifier always gets the same 200 {success:true,
+ * channel, identifier_masked} whether or not an account exists. That path is
+ * untouched. An attacker learns exactly what they already knew before sending
+ * the request, that "not-an-email!!!" is not an email address.
+ *
  * Reuses:
  *   - OtpService::send()   includes/OtpService.php (hashed codes, throttles)
  *   - Phone::normalize()   includes/Phone.php (E.164, +968 default)
@@ -43,6 +63,8 @@ try {
     $body = json_decode(file_get_contents('php://input'), true) ?: [];
     $raw = trim((string)($body['identifier'] ?? ''));
     if ($raw === '') {
+        // Malformed request, not a refusal to answer. See "Status codes" above.
+        http_response_code(400);
         echo json_encode(['success' => false, 'error' => 'identifier_required']);
         exit;
     }
@@ -56,6 +78,8 @@ try {
     if ($isEmail) {
         $identifier = strtolower($raw);
         if (!filter_var($identifier, FILTER_VALIDATE_EMAIL)) {
+            // Syntax, not existence: no lookup has happened yet. See above.
+            http_response_code(400);
             echo json_encode(['success' => false, 'error' => 'invalid_identifier']);
             exit;
         }
@@ -64,6 +88,8 @@ try {
     } else {
         $identifier = Phone::normalize($raw); // E.164, +968 default
         if ($identifier === null) {
+            // Syntax, not existence: no lookup has happened yet. See above.
+            http_response_code(400);
             echo json_encode(['success' => false, 'error' => 'invalid_identifier']);
             exit;
         }

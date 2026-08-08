@@ -11,7 +11,16 @@ import subprocess
 import fitz
 import pytest
 
-OTECH_DIR = '/tmp/otech-pdf'
+# The Otech import dir (source.pdf assets + extracted Lato/Sora fonts) is a
+# SNAPSHOT OF LIVE TENANT DATA, so it is not in the repo and cannot be. It used
+# to be hard-coded to '/tmp/otech-pdf', which meant these six tests raised
+# FileNotFoundError on every machine that had not happened to run the extractor
+# by hand, and errored rather than skipped, so nobody could tell "fixture absent"
+# from "renderer broken". That is also why this file was never put in CI.
+#
+# Now: overridable, and ABSENT is a documented skip, not an error.
+# Populate it with:  python3 scripts/extract_template_fonts.py <source.pdf> /tmp/otech-pdf
+OTECH_DIR = os.environ.get('CARDIFY_OTECH_PDF_DIR', '/tmp/otech-pdf')
 
 EMPLOYEE = {
     'id': 'muhammed.ali',
@@ -51,8 +60,20 @@ TEMPLATE_FIXTURE = {
 
 @pytest.fixture
 def otech_dir(tmp_path):
-    """Snapshot the live Otech import dir + fonts into a tmp path."""
+    """Snapshot the live Otech import dir + fonts into a tmp path.
+
+    Skips with a reason that names the env var and the command to populate it,
+    so a clean machine (and CI) reports "fixture not present" instead of an
+    opaque FileNotFoundError that reads like the renderer is broken.
+    """
     import shutil
+    if not os.path.isdir(OTECH_DIR):
+        pytest.skip(
+            f"Otech PDF fixture dir not found at {OTECH_DIR}. It is a snapshot of "
+            "live tenant data and is deliberately not in the repo. Set "
+            "CARDIFY_OTECH_PDF_DIR, or create it with: python3 "
+            "scripts/extract_template_fonts.py <source.pdf> /tmp/otech-pdf"
+        )
     dst = tmp_path / 'otech'
     shutil.copytree(OTECH_DIR, dst)
     return str(dst)
