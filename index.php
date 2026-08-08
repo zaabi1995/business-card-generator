@@ -357,11 +357,15 @@ $homeJsonLd = '<script type="application/ld+json">' . json_encode($siteLd, JSON_
 // cannot be typed into a fourth file.
 $scannerLd = ['@context' => 'https://schema.org'] + AppEntity::node();
 $scannerJsonLd = '<script type="application/ld+json">' . json_encode($scannerLd, JSON_UNESCAPED_SLASHES) . '</script>';
-$appDiscoveryHead = '<meta name="apple-itunes-app" content="app-id=6790749589, app-argument=cardifyscan://">'
-    . '<meta property="al:ios:app_store_id" content="6790749589">'
-    . '<meta property="al:ios:app_name" content="Cardify: Business Card Scanner">'
+// r116 / bhd-r6-99: these five meta tags used to hand-type the App Store id
+// twice, the app's name once and its page once, four lines under a comment
+// promising a fourth spelling could not be typed into a fourth file. They
+// read AppEntity now, so the promise is structural instead of stated.
+$appDiscoveryHead = '<meta name="apple-itunes-app" content="app-id=' . AppEntity::APPSTORE_ID . ', app-argument=cardifyscan://">'
+    . '<meta property="al:ios:app_store_id" content="' . AppEntity::APPSTORE_ID . '">'
+    . '<meta property="al:ios:app_name" content="' . htmlspecialchars(AppEntity::NAME, ENT_QUOTES) . '">'
     . '<meta property="al:ios:url" content="cardifyscan://">'
-    . '<meta property="al:web:url" content="https://cardify.om/app">';
+    . '<meta property="al:web:url" content="' . AppEntity::PAGE . '">';
 
 // r20-47: the hub carried no question-shaped heading and no FAQPage, so the
 // one page every model lands on first answered none of the questions it is
