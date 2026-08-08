@@ -1,7 +1,12 @@
 <?php
 return [
     // Meta
-    'page_title' => 'Oman Business Index 2026: 2,500+ Large and Medium Enterprises | Cardify',
+    // r103/llm98-1: :count, from the same query the Dataset node and the
+    // description are built from. The authored string used to hard-code
+    // '2,500+' and ran to 71 characters, so the shared fitter cut it to
+    // '...Large and Medium Ente...' and the index's front door stopped
+    // naming what it indexes. Interpolated, it fits the 65 band untruncated.
+    'page_title' => 'Oman Business Index 2026: :count Enterprises | Cardify',
     'page_desc'  => 'Free public directory of :count large and medium-sized enterprises in Oman, classified by sector and governorate, sourced from the MoCIIP public register.',
 
     // Hero

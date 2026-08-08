@@ -225,7 +225,11 @@ $lastUpdatedIso   = date('c', $lastUpdatedTs);
 
 // --- Page metadata ---
 $baseUrl         = 'https://cardify.om';
-$pageTitle       = t('obi.page_title');
+// r103 / llm98-1. The <title> now carries the SAME $totalFmt the description
+// and the Dataset node carry. It used to be a hard-coded "2,500+", a second
+// author for the one number this page exists to publish, and long enough that
+// the shared fitter cut it mid-word ("Large and Medium Ente…").
+$pageTitle       = t('obi.page_title', ['count' => $totalFmt]);
 $pageDescription = t('obi.page_desc', ['count' => $totalFmt]);
 // Ensure under 165 chars; trim if needed. Must be mb-safe: byte-level substr()
 // cuts an Arabic string mid-codepoint and publishes a replacement character.
