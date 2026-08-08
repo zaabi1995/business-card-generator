@@ -3,6 +3,8 @@
  * VCF (vCard) Generator Helper Class
  * Generates vCard 3.0 format files for employee contact information
  */
+require_once __DIR__ . '/VCardRfc.php';
+
 class VCF {
     
     /**
@@ -18,130 +20,167 @@ class VCF {
         $lines[] = 'BEGIN:VCARD';
         $lines[] = 'VERSION:3.0';
         
-        // Full name (required) - English version
+        // NOTE ON CHARSET: this file emits none. CHARSET is a vCard 2.1
+        // parameter and is undefined in RFC 2426, which this file declares in
+        // VERSION:3.0, where UTF-8 is already the default. Measured on a booted
+        // iPhone 17 through CNContactVCardSerialization: an Arabic card with and
+        // without CHARSET=UTF-8 parses to byte-identical CNContact fields. So it
+        // buys nothing and would add a non-conformant parameter to the bytes
+        // behind every QR code already in print.
+        //
+        // Every guard below is a strict "!== ''" test, never !empty(). empty()
+        // is true for the literal string "0", which silently dropped a building
+        // number, a floor, an extension, a note or a street of "0".
+
+        // Full name. Emitted for the platforms that read it; iOS does NOT, it
+        // discards FN and renders from N alone (see VCardRfc::splitName()).
         $fullName = self::getFullName($employee);
         $lines[] = 'FN:' . self::escape($fullName);
-        
-        // Structured name: N:LastName;FirstName;MiddleName;Prefix;Suffix
+
+        // Structured name: N:LastName;FirstName;MiddleName;Prefix;Suffix.
+        // This is the property Apple actually reads.
         $nameParts = self::parseNameParts($employee);
-        $lines[] = 'N:' . self::escape($nameParts['last']) . ';' . 
+        $lines[] = 'N:' . self::escape($nameParts['last']) . ';' .
                    self::escape($nameParts['first']) . ';' .
                    self::escape($nameParts['middle']) . ';;';
-        
-        // Arabic name as alternate (X-property for compatibility)
-        if (!empty($employee['name_ar'])) {
-            $lines[] = 'X-PHONETIC-LAST-NAME;LANGUAGE=ar:' . self::escape($employee['name_ar']);
-            $lines[] = 'X-ALT-NAME;LANGUAGE=ar:' . self::escape($employee['name_ar']);
+
+        // Arabic name as an extra, and ONLY when it is not already the FN above,
+        // otherwise the same string ships twice.
+        //
+        // X-PHONETIC-LAST-NAME was removed deliberately: iOS maps the phonetic
+        // fields to the SORT key, so stuffing a whole Arabic name in there filed
+        // the contact under that string in the Latin address book.
+        $nameAr = self::firstNonEmpty($employee['name_ar'] ?? null);
+        if ($nameAr !== '' && $nameAr !== $fullName) {
+            $lines[] = 'X-ALT-NAME;LANGUAGE=ar:' . self::escape($nameAr);
         }
-        
-        // Organization (English)
-        $orgName = $company['name'] ?? $company['name_en'] ?? $employee['company_name'] ?? $employee['company_en'] ?? '';
-        if (!empty($orgName)) {
-            $lines[] = 'ORG:' . self::escape($orgName);
+
+        // Organization. English wins when present; an Arabic-only card puts the
+        // Arabic company name in ORG rather than emitting no ORG at all.
+        $orgName = self::firstNonEmpty(
+            $company['name'] ?? null, $company['name_en'] ?? null,
+            $employee['company_name'] ?? null, $employee['company_en'] ?? null
+        );
+        $orgNameAr = self::firstNonEmpty($company['name_ar'] ?? null, $employee['company_ar'] ?? null);
+        $orgPrimary = $orgName !== '' ? $orgName : $orgNameAr;
+        if ($orgPrimary !== '') {
+            $lines[] = 'ORG:' . self::escape($orgPrimary);
         }
-        
-        // Organization (Arabic) as X-property
-        $orgNameAr = $company['name_ar'] ?? $employee['company_ar'] ?? '';
-        if (!empty($orgNameAr)) {
+        // Arabic organisation as X-property, only when it is not already ORG.
+        if ($orgNameAr !== '' && $orgNameAr !== $orgPrimary) {
             $lines[] = 'X-ORG;LANGUAGE=ar:' . self::escape($orgNameAr);
         }
-        
-        // Title/Position (English)
-        $title = $employee['position_en'] ?? $employee['position'] ?? $employee['title'] ?? '';
-        if (!empty($title)) {
-            $lines[] = 'TITLE:' . self::escape($title);
+
+        // Title/Position, same rule: Arabic-only card gets a real TITLE.
+        $title = self::firstNonEmpty(
+            $employee['position_en'] ?? null, $employee['position'] ?? null, $employee['title'] ?? null
+        );
+        $titleAr = self::firstNonEmpty($employee['position_ar'] ?? null);
+        $titlePrimary = $title !== '' ? $title : $titleAr;
+        if ($titlePrimary !== '') {
+            $lines[] = 'TITLE:' . self::escape($titlePrimary);
         }
-        
-        // Title/Position (Arabic) as X-property
-        if (!empty($employee['position_ar'])) {
-            $lines[] = 'X-TITLE;LANGUAGE=ar:' . self::escape($employee['position_ar']);
+        // Arabic title as X-property, only when it is not already TITLE.
+        if ($titleAr !== '' && $titleAr !== $titlePrimary) {
+            $lines[] = 'X-TITLE;LANGUAGE=ar:' . self::escape($titleAr);
         }
-        
+
         // Department
-        $department = $employee['department_en'] ?? $employee['department'] ?? '';
-        if (!empty($department)) {
+        $department = self::firstNonEmpty(
+            $employee['department_en'] ?? null, $employee['department'] ?? null,
+            $employee['department_ar'] ?? null
+        );
+        if ($department !== '') {
             $lines[] = 'X-DEPARTMENT:' . self::escape($department);
         }
-        
+
         // Phone numbers (English/Western numerals). De-dupe: if phone and
         // mobile are the same number in different formats, emit it once so the
         // saved contact doesn't show two identical numbers.
-        $__pDig = preg_replace('/\D+/', '', (string) ($employee['phone'] ?? ''));
-        $__mDig = preg_replace('/\D+/', '', (string) ($employee['mobile'] ?? ''));
+        $phone  = self::firstNonEmpty($employee['phone'] ?? null);
+        $mobile = self::firstNonEmpty($employee['mobile'] ?? null);
+        $fax    = self::firstNonEmpty($employee['fax'] ?? null);
+        $__pDig = preg_replace('/\D+/', '', $phone);
+        $__mDig = preg_replace('/\D+/', '', $mobile);
         $__samePhoneMobile = ($__pDig !== '' && $__pDig === $__mDig);
-        if (!empty($employee['phone']) && !$__samePhoneMobile) {
-            $lines[] = 'TEL;TYPE=WORK,VOICE:' . self::escape($employee['phone']);
+        if ($phone !== '' && !$__samePhoneMobile) {
+            $lines[] = 'TEL;TYPE=WORK,VOICE:' . self::escape($phone);
         }
-        if (!empty($employee['mobile'])) {
-            $lines[] = 'TEL;TYPE=CELL,VOICE:' . self::escape($employee['mobile']);
+        if ($mobile !== '') {
+            $lines[] = 'TEL;TYPE=CELL,VOICE:' . self::escape($mobile);
         }
-        if (!empty($employee['fax'])) {
-            $lines[] = 'TEL;TYPE=FAX:' . self::escape($employee['fax']);
+        if ($fax !== '') {
+            $lines[] = 'TEL;TYPE=FAX:' . self::escape($fax);
         }
-        
+
         // Phone numbers (Arabic numerals) - stored as X-properties for reference
-        if (!empty($employee['phone_ar'])) {
-            $lines[] = 'X-TEL-AR;TYPE=WORK:' . self::escape($employee['phone_ar']);
+        $phoneAr  = self::firstNonEmpty($employee['phone_ar'] ?? null);
+        $mobileAr = self::firstNonEmpty($employee['mobile_ar'] ?? null);
+        if ($phoneAr !== '') {
+            $lines[] = 'X-TEL-AR;TYPE=WORK:' . self::escape($phoneAr);
         }
-        if (!empty($employee['mobile_ar'])) {
-            $lines[] = 'X-TEL-AR;TYPE=CELL:' . self::escape($employee['mobile_ar']);
+        if ($mobileAr !== '') {
+            $lines[] = 'X-TEL-AR;TYPE=CELL:' . self::escape($mobileAr);
         }
-        
+
         // Email
-        if (!empty($employee['email'])) {
-            $lines[] = 'EMAIL;TYPE=INTERNET,WORK:' . self::escape($employee['email']);
+        $email = self::firstNonEmpty($employee['email'] ?? null);
+        if ($email !== '') {
+            $lines[] = 'EMAIL;TYPE=INTERNET,WORK:' . self::escape($email);
         }
-        
+
         // Website (English)
-        $website = $employee['website'] ?? $company['website'] ?? '';
-        if (!empty($website)) {
+        $website = self::firstNonEmpty($employee['website'] ?? null, $company['website'] ?? null);
+        if ($website !== '') {
             // Ensure URL has protocol
             if (!preg_match('/^https?:\/\//i', $website)) {
                 $website = 'https://' . $website;
             }
             $lines[] = 'URL:' . self::escape($website);
         }
-        
+
         // Website (Arabic)
-        if (!empty($employee['website_ar'])) {
-            $websiteAr = $employee['website_ar'];
+        $websiteAr = self::firstNonEmpty($employee['website_ar'] ?? null);
+        if ($websiteAr !== '') {
             if (!preg_match('/^https?:\/\//i', $websiteAr)) {
                 $websiteAr = 'https://' . $websiteAr;
             }
             $lines[] = 'X-URL;LANGUAGE=ar:' . self::escape($websiteAr);
         }
-        
+
         // Address (English)
         $address = self::buildAddress($employee, $company, 'en');
-        if (!empty($address)) {
+        if ($address !== '') {
             // ADR: PO Box;Extended;Street;City;Region;Postal;Country
             $lines[] = 'ADR;TYPE=WORK:;;' . $address;
         }
-        
+
         // Address (Arabic)
         $addressAr = self::buildAddress($employee, $company, 'ar');
-        if (!empty($addressAr)) {
+        if ($addressAr !== '') {
             $lines[] = 'ADR;TYPE=WORK;LANGUAGE=ar:;;' . $addressAr;
         }
-        
+
         // Photo (if available as URL)
-        $photo = $employee['photo'] ?? $employee['photo_url'] ?? '';
-        if (!empty($photo) && filter_var($photo, FILTER_VALIDATE_URL)) {
+        $photo = self::firstNonEmpty($employee['photo'] ?? null, $employee['photo_url'] ?? null);
+        if ($photo !== '' && filter_var($photo, FILTER_VALIDATE_URL)) {
             $lines[] = 'PHOTO;VALUE=URI:' . $photo;
         }
-        
+
         // Note
-        $note = $employee['note'] ?? $employee['bio'] ?? '';
-        if (!empty($note)) {
+        $note = self::firstNonEmpty($employee['note'] ?? null, $employee['bio'] ?? null);
+        if ($note !== '') {
             $lines[] = 'NOTE:' . self::escape($note);
         }
-        
+
         // Social media as X- properties
-        if (!empty($employee['linkedin'])) {
-            $lines[] = 'X-SOCIALPROFILE;TYPE=linkedin:' . self::escape($employee['linkedin']);
+        $linkedin = self::firstNonEmpty($employee['linkedin'] ?? null);
+        $twitter  = self::firstNonEmpty($employee['twitter'] ?? null);
+        if ($linkedin !== '') {
+            $lines[] = 'X-SOCIALPROFILE;TYPE=linkedin:' . self::escape($linkedin);
         }
-        if (!empty($employee['twitter'])) {
-            $lines[] = 'X-SOCIALPROFILE;TYPE=twitter:' . self::escape($employee['twitter']);
+        if ($twitter !== '') {
+            $lines[] = 'X-SOCIALPROFILE;TYPE=twitter:' . self::escape($twitter);
         }
         
         // Revision timestamp
@@ -153,8 +192,33 @@ class VCF {
         
         // vCard footer
         $lines[] = 'END:VCARD';
-        
-        return implode("\r\n", $lines);
+
+        // Fold AFTER escaping, never before: escaping adds octets (a comma
+        // becomes "\,"), so folding first would leave over-length lines behind.
+        // RFC 2426 section 2.6. Arabic runs 2 octets per letter, so an Omani
+        // address crosses 75 octets in about 37 characters.
+        return implode("\r\n", VCardRfc::foldAll($lines, "\r\n"));
+    }
+
+    /**
+     * First value that is a non-empty string, after casting.
+     *
+     * Deliberately NOT empty(): empty() is false for the literal string "0", so
+     * a building number, floor or PO box of "0" would vanish. Deliberately not
+     * ?? either: ?? only falls through on null, so an explicit empty-string
+     * column would win over a populated fallback.
+     */
+    private static function firstNonEmpty(...$values) {
+        foreach ($values as $value) {
+            if ($value === null || is_array($value) || is_object($value)) {
+                continue;
+            }
+            $value = (string) $value;
+            if ($value !== '') {
+                return $value;
+            }
+        }
+        return '';
     }
     
     /**
@@ -162,21 +226,26 @@ class VCF {
      */
     private static function getFullName($employee) {
         // Try English name first
-        if (!empty($employee['name_en'])) {
-            return $employee['name_en'];
-        }
-        // Try generic name field
-        if (!empty($employee['name'])) {
-            return $employee['name'];
+        $nameEn = self::firstNonEmpty($employee['name_en'] ?? null, $employee['name'] ?? null);
+        if ($nameEn !== '') {
+            return $nameEn;
         }
         // Construct from first/last
-        $first = $employee['first_name'] ?? $employee['first_name_en'] ?? '';
-        $last = $employee['last_name'] ?? $employee['last_name_en'] ?? '';
-        if (!empty($first) || !empty($last)) {
+        $first = self::firstNonEmpty($employee['first_name'] ?? null, $employee['first_name_en'] ?? null);
+        $last  = self::firstNonEmpty($employee['last_name'] ?? null, $employee['last_name_en'] ?? null);
+        if ($first !== '' || $last !== '') {
             return trim($first . ' ' . $last);
         }
-        // Fallback to email
-        return $employee['email'] ?? 'Contact';
+        // Arabic-only card: the Arabic name IS the name. This has to sit ABOVE
+        // the email fallback. Below it, an Arabic-only contact landed in iOS and
+        // Google Contacts named "someone@example.om" while the real name sat in
+        // an X- property neither app reads.
+        $nameAr = self::firstNonEmpty($employee['name_ar'] ?? null);
+        if ($nameAr !== '') {
+            return $nameAr;
+        }
+        // Last resort
+        return self::firstNonEmpty($employee['email'] ?? null) ?: 'Contact';
     }
     
     /**
@@ -189,30 +258,26 @@ class VCF {
             'last' => ''
         ];
         
-        // Check if explicit fields exist
-        if (!empty($employee['first_name']) || !empty($employee['last_name'])) {
-            $parts['first'] = $employee['first_name'] ?? '';
-            $parts['last'] = $employee['last_name'] ?? '';
-            $parts['middle'] = $employee['middle_name'] ?? '';
+        // Explicit columns are authoritative. If the record actually carries a
+        // first_name/last_name we never guess.
+        $explicitFirst = self::firstNonEmpty($employee['first_name'] ?? null);
+        $explicitLast  = self::firstNonEmpty($employee['last_name'] ?? null);
+        if ($explicitFirst !== '' || $explicitLast !== '') {
+            $parts['first']  = $explicitFirst;
+            $parts['last']   = $explicitLast;
+            $parts['middle'] = self::firstNonEmpty($employee['middle_name'] ?? null);
             return $parts;
         }
-        
-        // Parse from full name
-        $fullName = self::getFullName($employee);
-        $namePieces = preg_split('/\s+/', trim($fullName));
-        
-        if (count($namePieces) === 1) {
-            $parts['first'] = $namePieces[0];
-        } elseif (count($namePieces) === 2) {
-            $parts['first'] = $namePieces[0];
-            $parts['last'] = $namePieces[1];
-        } else {
-            $parts['first'] = $namePieces[0];
-            $parts['last'] = array_pop($namePieces);
-            array_shift($namePieces);
-            $parts['middle'] = implode(' ', $namePieces);
-        }
-        
+
+        // Otherwise derive N from the printed name under the shared policy: last
+        // token is the family name (what Apple's own fallback splitter does, and
+        // right for Omani names, which run 3-4 tokens ending in the family name),
+        // except for explicit patronymic chains. See VCardRfc::splitName().
+        $split = VCardRfc::splitName(self::getFullName($employee));
+        $parts['first']  = $split['given'];
+        $parts['middle'] = $split['middle'];
+        $parts['last']   = $split['family'];
+
         return $parts;
     }
     
@@ -228,46 +293,61 @@ class VCF {
         
         // Street address - check language-specific fields first
         if ($lang === 'ar') {
-            $street = $employee['address_ar'] ?? $company['address_ar'] ?? '';
+            $street = self::firstNonEmpty($employee['address_ar'] ?? null, $company['address_ar'] ?? null);
         } else {
-            $street = $employee['address_en'] ?? $employee['address'] ?? $company['address_en'] ?? $company['address'] ?? '';
+            $street = self::firstNonEmpty(
+                $employee['address_en'] ?? null, $employee['address'] ?? null,
+                $company['address_en'] ?? null, $company['address'] ?? null
+            );
         }
         $parts[] = self::escape($street);
-        
+
         // City
         if ($lang === 'ar') {
-            $city = $employee['city_ar'] ?? $company['city_ar'] ?? '';
+            $city = self::firstNonEmpty($employee['city_ar'] ?? null, $company['city_ar'] ?? null);
         } else {
-            $city = $employee['city'] ?? $company['city'] ?? '';
+            $city = self::firstNonEmpty($employee['city'] ?? null, $company['city'] ?? null);
         }
         $parts[] = self::escape($city);
-        
+
         // State/Region
         if ($lang === 'ar') {
-            $state = $employee['state_ar'] ?? $company['state_ar'] ?? '';
+            $state = self::firstNonEmpty($employee['state_ar'] ?? null, $company['state_ar'] ?? null);
         } else {
-            $state = $employee['state'] ?? $company['state'] ?? '';
+            $state = self::firstNonEmpty($employee['state'] ?? null, $company['state'] ?? null);
         }
         $parts[] = self::escape($state);
-        
+
         // Postal code (same for both languages)
-        $postal = $employee['postal_code'] ?? $company['postal_code'] ?? '';
+        $postal = self::firstNonEmpty($employee['postal_code'] ?? null, $company['postal_code'] ?? null);
         $parts[] = self::escape($postal);
-        
+
         // Country
         if ($lang === 'ar') {
-            $country = $employee['country_ar'] ?? $company['country_ar'] ?? '';
+            $country = self::firstNonEmpty($employee['country_ar'] ?? null, $company['country_ar'] ?? null);
         } else {
-            $country = $employee['country'] ?? $company['country'] ?? '';
+            $country = self::firstNonEmpty($employee['country'] ?? null, $company['country'] ?? null);
         }
         $parts[] = self::escape($country);
-        
-        // Return only if we have at least one non-empty part
-        $filtered = array_filter($parts);
+
+        // The postal code is language-neutral and shared by both blocks, so on
+        // its own it must not conjure an Arabic address onto a card that carries
+        // no Arabic data at all. Before "0" was allowed to survive escape() this
+        // was masked, because a postal code of "0" got dropped anyway and the
+        // all-empty check below caught it.
+        if ($lang === 'ar' && $street === '' && $city === '' && $state === '' && $country === '') {
+            return '';
+        }
+
+        // Return only if we have at least one non-empty part. Strict compare,
+        // not array_filter()'s default truthiness test, which discards "0" and
+        // would drop an address whose only populated component is a PO box,
+        // floor or building number of "0".
+        $filtered = array_filter($parts, function ($part) { return $part !== ''; });
         if (empty($filtered)) {
             return '';
         }
-        
+
         return implode(';', $parts);
     }
     
@@ -275,10 +355,14 @@ class VCF {
      * Escape special characters for vCard format
      */
     private static function escape($value) {
-        if (empty($value)) {
+        // Strict, not empty(): empty() is false for the literal string "0", so a
+        // building number, floor or PO box of "0" was silently dropped from the
+        // emitted vCard.
+        $value = (string) ($value ?? '');
+        if ($value === '') {
             return '';
         }
-        
+
         // vCard escaping rules
         $value = str_replace('\\', '\\\\', $value);  // Backslash first
         $value = str_replace(',', '\\,', $value);

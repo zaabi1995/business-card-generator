@@ -62,6 +62,27 @@ if (array_key_exists('met_where', $body)) {
     $sets[] = 'met_where = ?';
     $vals[] = substr(trim((string)$body['met_where']), 0, 255) ?: null;
 }
+// What a merge kept, replaced, and what the losing value was. The app writes it
+// as JSON and renders it in the user's own language, so nothing here is prose.
+// Without this the record of what a merge destroyed never left the device: the
+// `merged` tag synced while the explanation did not, leaving a second device
+// showing a contact flagged as merged with no way to see what it lost.
+// Stored verbatim as an opaque string; the server never interprets it. Only a
+// syntactically valid JSON object or array is accepted, so a malformed write
+// cannot poison the column the app parses on every pull.
+if (array_key_exists('merge_provenance', $body)) {
+    $raw = trim((string)$body['merge_provenance']);
+    if ($raw === '') {
+        // An EXPLICIT empty value clears the column, matching met_at's behaviour.
+        $sets[] = 'merge_provenance = ?';
+        $vals[] = null;
+    } elseif (($clean = ScanParser::mergeProvenanceOrNull($raw)) !== null) {
+        $sets[] = 'merge_provenance = ?';
+        $vals[] = $clean;
+    }
+    // Malformed or oversized: SKIP, never null. A bad write must not be able to
+    // erase a good history, the same stance this file takes for an invalid met_at.
+}
 // Same regex + checkdate() combination as upload.php: a syntactically
 // matching but calendar-invalid date (e.g. 2026-02-30) never reaches the
 // DATE column. An invalid met_at is skipped, not nulled out, so a bad date

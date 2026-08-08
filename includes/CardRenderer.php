@@ -446,9 +446,24 @@ class CardRenderer
         return $cache[$companyId] = ['front' => $front, 'back' => $back];
     }
 
+    /**
+     * Bump whenever scripts/render-card-images.py can place the same field
+     * somewhere else for identical inputs. It is part of the freshness
+     * signature, so a bump makes every previously rendered WebP read as stale
+     * to every consumer (digital_card.php, printshop/client.php,
+     * admin/order_print.php, the Scan app) without deleting a single file.
+     * Deliberately NOT a call to invalidateForCompany, which is tenant-wide and
+     * has wiped card rows before.
+     * v2 (Aug 2026): canvas taken from the template's real size instead of a
+     *   hard-coded 1050x600, and right/centre-aligned fields anchored from
+     *   x + width like Fabric and the vector PDF already do.
+     */
+    const IMAGE_RENDERER_VERSION = 2;
+
     private static function signature(array $employee, array $company, ?array $theme, ?array $card, ?string $frontFs, ?string $backFs): string
     {
         $parts = [
+            self::IMAGE_RENDERER_VERSION,
             $employee['id']         ?? '',
             $employee['updated_at'] ?? '',
             $company['id']          ?? '',

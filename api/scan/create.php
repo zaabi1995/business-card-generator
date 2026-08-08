@@ -67,6 +67,12 @@ try {
         'tags' => substr(trim((string)($body['tags'] ?? '')), 0, 500) ?: null,
         'met_where' => substr(trim((string)($body['met_where'] ?? '')), 0, 255) ?: null,
         'met_at' => $metAt,
+        // A contact can be merged BEFORE its first push (an address-book import
+        // merged with a scan on an offline device), and that first push comes here,
+        // not through update.php. Without this the merge record was created and then
+        // silently never left the device. On INSERT there is no prior value, so an
+        // invalid payload storing null is correct rather than merely tolerable.
+        'merge_provenance' => ScanParser::mergeProvenanceOrNull($body['merge_provenance'] ?? null),
         'shadow_profile_id' => $shadowId,
     ];
 
@@ -75,10 +81,12 @@ try {
         // Photo-less update: never clears an existing image_path (a text resync
         // must not wipe a photo the row already has on the server).
         $db->getConnection()->prepare(
-            "UPDATE scans SET parsed=?, parse_tier=?, status=?, tags=?, met_where=?, met_at=?, shadow_profile_id=? WHERE id=?"
+            "UPDATE scans SET parsed=?, parse_tier=?, status=?, tags=?, met_where=?, met_at=?,
+                 merge_provenance=COALESCE(?, merge_provenance), shadow_profile_id=? WHERE id=?"
         )->execute([
             $fields['parsed'], $fields['parse_tier'], $fields['status'], $fields['tags'],
-            $fields['met_where'], $fields['met_at'], $fields['shadow_profile_id'], (int)$existing['id'],
+            $fields['met_where'], $fields['met_at'], $fields['merge_provenance'],
+            $fields['shadow_profile_id'], (int)$existing['id'],
         ]);
         $scanId = (int)$existing['id'];
     } else {
@@ -93,10 +101,12 @@ try {
             );
             if (!$existing) throw $e;
             $db->getConnection()->prepare(
-                "UPDATE scans SET parsed=?, parse_tier=?, status=?, tags=?, met_where=?, met_at=?, shadow_profile_id=? WHERE id=?"
+                "UPDATE scans SET parsed=?, parse_tier=?, status=?, tags=?, met_where=?, met_at=?,
+                 merge_provenance=COALESCE(?, merge_provenance), shadow_profile_id=? WHERE id=?"
             )->execute([
                 $fields['parsed'], $fields['parse_tier'], $fields['status'], $fields['tags'],
-                $fields['met_where'], $fields['met_at'], $fields['shadow_profile_id'], (int)$existing['id'],
+                $fields['met_where'], $fields['met_at'], $fields['merge_provenance'],
+            $fields['shadow_profile_id'], (int)$existing['id'],
             ]);
             $scanId = (int)$existing['id'];
         }
