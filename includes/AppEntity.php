@@ -107,14 +107,23 @@ class AppEntity
      * which is what lets entity_gate.py assert payload agreement per @id
      * rather than merely counting identifiers.
      *
-     * @param string $publisherId the Organization @id this surface resolves
-     *        the publisher to. cardify.om resolves it to its own
-     *        #organization; bhd.om resolves it to the group node. Both are
-     *        references, never a fresh anonymous copy of an entity the estate
-     *        already defines once.
+     * The publisher is NOT a per-surface choice and is no longer a parameter.
+     * r125 / bhd-r6-99 approach #17: the estate was asked which of its two
+     * answers was right, and it cannot know. The registry that OWNS the fact
+     * was asked instead. itunes.apple.com/lookup?id=6790749589 returns
+     * sellerName "Bin Haider Darwish L.L.C." (artistName "Ali Adnan Haider
+     * Darwish Al-Zaabi", sellerUrl https://cardify.om, bundleId
+     * om.cardify.scan). The legal seller of record is BHD, so the publisher
+     * edge resolves to the group node on EVERY surface. cardify.om is the
+     * seller URL, which is what `url` already says; it is not the seller.
+     * entity_gate.py APP-PUBLISHER-REGISTRY re-asks Apple each round, so this
+     * constant cannot silently drift away from the record it quotes.
      */
-    public static function node(string $publisherId = 'https://cardify.om/#organization'): array
+    public const PUBLISHER_ID = 'https://bhd.om/#organization';
+
+    public static function node(): array
     {
+        $publisherId = self::PUBLISHER_ID;
         return [
             '@type' => 'MobileApplication',
             '@id' => self::ID,
