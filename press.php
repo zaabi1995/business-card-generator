@@ -29,13 +29,21 @@ $db = Database::getInstance();
 // hardcoded 79/80+ against a real 106. A fallback literal IS a hardcoded
 // public stat, so both start null and the copy loses the number if the
 // query cannot run.
+// r103: the sovereign tile was the third stat on this grid and the only one
+// still typed into the markup as a literal 31, against a real 26. Two counts
+// beside it were already live, which is what made the literal invisible: the
+// row reads as a set of measured figures. Same null-not-fallback rule -- if
+// the query cannot run the copy loses the number rather than inventing one.
 $companiesCount = null;
 $logosCount     = null;
+$sovereignCount = null;
 try {
     $r = $db->fetchOne("SELECT COUNT(*) c FROM om_companies");
     if ($r) $companiesCount = (int) $r['c'];
     $l = $db->fetchOne("SELECT COUNT(*) c FROM om_companies WHERE logo_status IN ('indexed','verified')");
     if ($l) $logosCount = (int) $l['c'];
+    $s = $db->fetchOne("SELECT COUNT(*) c FROM om_companies WHERE sector='government-defense' AND summary_en <> '' AND summary_ar <> ''");
+    if ($s) $sovereignCount = (int) $s['c'];
 } catch (Throwable $e) {}
 
 $esc = fn($s) => htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8');
@@ -168,7 +176,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     <div class="text-sm text-gray-600 mt-1.5 leading-relaxed"><?= htmlspecialchars(t('press.stat_logos')) ?></div>
                 </div>
                 <div class="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm hover:shadow-md hover:border-blue-200 transition">
-                    <div class="text-3xl font-extrabold text-gray-900">31</div>
+                    <div class="text-3xl font-extrabold text-gray-900"><?= $sovereignCount !== null ? number_format($sovereignCount) : '&mdash;' ?></div>
                     <div class="text-sm text-gray-600 mt-1.5 leading-relaxed"><?= htmlspecialchars(t('press.stat_sovereign')) ?></div>
                 </div>
                 <div class="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm hover:shadow-md hover:border-blue-200 transition">
