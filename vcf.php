@@ -35,13 +35,28 @@ try {
     }
 
     if (empty($companySlug) || empty($employeeEmail)) {
-        throw new Exception('Missing parameters');
+        // A malformed request is the caller's error, not ours. Throwing here
+        // reached the catch-all below and answered 500, which tells a monitor
+        // the server is broken when nothing is.
+        while (ob_get_level()) { ob_end_clean(); }
+        http_response_code(400);
+        header('Content-Type: text/plain; charset=utf-8');
+        echo 'Missing company or contact';
+        exit;
     }
     
     // Find company
     $company = findCompanyBySlug($companySlug);
     if (!$company) {
-        throw new Exception('Company not found: ' . $companySlug);
+        // Not-found is 404, not 500, exactly as the employee branch below
+        // already does. This one was missed: an unknown slug threw into the
+        // catch-all and every crawler hitting a dead tenant link logged a
+        // server error. (8 Aug 2026.)
+        while (ob_get_level()) { ob_end_clean(); }
+        http_response_code(404);
+        header('Content-Type: text/plain; charset=utf-8');
+        echo 'Contact not found';
+        exit;
     }
     
     // Find employee; fall back to (a) lookup by id/slug when the URL token
