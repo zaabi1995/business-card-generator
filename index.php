@@ -1404,10 +1404,16 @@ HTML;
 // https://cardify.om/#organization and they disagreed on @type and
 // contactPoint. The literal now lives in Seo::organizationNode() and is
 // rendered from there, so the estate has one body for one identifier.
+//
+// r154: measured on the origin, this page served the owner TWICE, two
+// byte-identical 24-key bodies. ui-header.php (required at line 456) now
+// emits it, and this block sits ~950 lines further down, so the guard could
+// not have been set yet: an ordering fact, not a design choice. Routing this
+// call through the same once-emitter makes whichever runs first win and the
+// second a no-op, which is the only shape that survives a page moving its
+// header include.
 require_once __DIR__ . '/includes/Seo.php';
-echo '<script type="application/ld+json">'
-   . json_encode(Seo::organizationNode(), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)
-   . '</script>';
+echo Seo::organizationScriptOnce();
 ?>
 <script type="application/ld+json">
 {
