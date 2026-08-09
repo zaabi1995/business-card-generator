@@ -107,20 +107,56 @@ class AppEntity
      * which is what lets entity_gate.py assert payload agreement per @id
      * rather than merely counting identifiers.
      *
-     * @param string $publisherId the Organization @id this surface resolves
-     *        the publisher to. cardify.om resolves it to its own
-     *        #organization; bhd.om resolves it to the group node. Both are
-     *        references, never a fresh anonymous copy of an entity the estate
-     *        already defines once.
+     * The publisher is NOT a per-surface choice and is no longer a parameter.
+     * It used to be one, with a default, and that is what let ONE @id publish
+     * TWO publishers on main depending on which page you fetched: app.php and
+     * index.php took the default (cardify.om/#organization) while
+     * business-card-scanner.php passed 'https://bhd.om/#organization'
+     * explicitly. A caller-supplied identity fact is the bhd-r6-99 defect
+     * shape, not a feature.
+     *
+     * The estate cannot arbitrate its own two answers, so the registry that
+     * OWNS the record was asked instead. itunes.apple.com/lookup?id=6790749589
+     * (re-read 10 Aug 2026) returns sellerName "Bin Haider Darwish L.L.C.",
+     * artistName "Ali Adnan Haider Darwish Al-Zaabi", sellerUrl
+     * https://cardify.om, bundleId om.cardify.scan. The legal seller of record
+     * is BHD, so the publisher edge resolves to the group node on EVERY
+     * surface. cardify.om is the seller URL, which is what `url` already says;
+     * it is not the seller.
+     *
+     * This also removes a source/production split rather than creating one:
+     * all three live surfaces (/app, /business-card-scanner, /) already serve
+     * publisher https://bhd.om/#organization, so main's default was a value
+     * production never emitted.
      */
-    public static function node(string $publisherId = 'https://cardify.om/#organization'): array
+    public const PUBLISHER_ID = 'https://bhd.om/#organization';
+
+    /**
+     * r149 / bhd-r6-99, shipped to main in r151. This fact used to live ONLY
+     * on bhd.om's brand hub, inside a full second body of this @id whose own
+     * comment said "datePublished is the one fact this surface adds rather
+     * than restates, so it stays". That reasoning is what kept a foreign body
+     * alive: a copy earns its place by carrying one fact the owner lacks, so
+     * the owner is never made whole and the copy is never reducible. The fact
+     * lives HERE, on the node that owns the @id.
+     *
+     * Value is Apple's, not ours: the same lookup returns releaseDate
+     * 2026-07-26T07:00:00Z. currentVersionReleaseDate is a DIFFERENT fact
+     * (2026-08-08T17:27:54Z, version 1.0.1) and is not what datePublished
+     * means.
+     */
+    public const RELEASE_DATE = '2026-07-26';
+
+    public static function node(): array
     {
+        $publisherId = self::PUBLISHER_ID;
         return [
             '@type' => 'MobileApplication',
             '@id' => self::ID,
             'name' => self::NAME,
             'alternateName' => self::ALTERNATE_NAMES,
             'identifier' => self::APPSTORE_ID,
+            'datePublished' => self::RELEASE_DATE,
             'url' => self::PAGE,
             'downloadUrl' => self::APPSTORE_URL,
             'installUrl' => self::APPSTORE_URL,
