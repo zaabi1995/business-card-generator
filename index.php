@@ -1417,7 +1417,14 @@ echo '<script type="application/ld+json">'
   "name": "Cardify",
   "alternateName": "Cardify Web App",
   "applicationSuite": "Cardify",
-  "publisher": { "@id": "https://cardify.om/#organization" },
+  <?php /* r139 / bhd-r6-99: this literal named cardify.om/#organization while
+     the iOS body it links to names AppEntity::PUBLISHER_ID, so one page
+     answered "who publishes Cardify" twice. Apple's seller of record decides
+     it for the store-backed node (entity_gate APP-PUBLISHER-REGISTRY) and no
+     registry can rule on a web app, so the web app follows it. The brand
+     relationship is already carried one hop up by cardify.om/#organization ->
+     parentOrganization -> bhd.om/#organization. */ ?>
+  "publisher": { "@id": "<?= AppEntity::PUBLISHER_ID ?>" },
   "isRelatedTo": { "@id": "<?= AppEntity::ID ?>" },
   "applicationCategory": "BusinessApplication",
   "operatingSystem": "Web browser on iOS, Android, macOS, Windows and Linux",
