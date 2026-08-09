@@ -121,6 +121,23 @@ class AppEntity
      */
     public const PUBLISHER_ID = 'https://bhd.om/#organization';
 
+    /**
+     * r149 / bhd-r6-99 approach #17. This fact used to live ONLY on bhd.om's
+     * brand hub, inside a full second body of this @id whose own comment said
+     * "datePublished is the one fact this surface adds rather than restates,
+     * so it stays". That reasoning is what kept a foreign body alive: a copy
+     * earns its place by carrying one fact the owner lacks, so the owner is
+     * never made whole and the copy is never reducible. The fact moves HERE,
+     * to the node that owns the @id, and the hub drops to {@type, @id}.
+     *
+     * Value is Apple's, not ours: itunes.apple.com/lookup?id=6790749589
+     * returns releaseDate 2026-07-26T07:00:00Z (re-read 9 Aug 2026, alongside
+     * sellerName "Bin Haider Darwish L.L.C." which PUBLISHER_ID quotes).
+     * currentVersionReleaseDate is a DIFFERENT fact (2026-08-08) and is not
+     * what datePublished means.
+     */
+    public const RELEASE_DATE = '2026-07-26';
+
     public static function node(): array
     {
         $publisherId = self::PUBLISHER_ID;
@@ -130,6 +147,7 @@ class AppEntity
             'name' => self::NAME,
             'alternateName' => self::ALTERNATE_NAMES,
             'identifier' => self::APPSTORE_ID,
+            'datePublished' => self::RELEASE_DATE,
             'url' => self::PAGE,
             'downloadUrl' => self::APPSTORE_URL,
             'installUrl' => self::APPSTORE_URL,
