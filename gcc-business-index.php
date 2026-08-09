@@ -201,7 +201,6 @@ $crumbLd = [
 // described the same dataset under the shorter name "GCC Business Index", so
 // the two could not be joined.
 $datasetLd = Datasets::node('gcc', [
-    'description'    => 'Federated open index of business infrastructure across the six Gulf Cooperation Council states: company registers, sovereign-entity directories, and brand logo archives.',
     'keywords'       => 'GCC, Saudi Arabia, UAE, Qatar, Bahrain, Kuwait, Oman, business register, companies, logos, sovereign, government, MENA',
     'temporalCoverage' => '2026/..',
     'spatialCoverage'  => [

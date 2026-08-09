@@ -8,7 +8,25 @@ ok(($obi['@id'] ?? '') === 'https://cardify.om/oman-business-index#dataset', 'ob
 ok(($obi['@type'] ?? '') === 'Dataset', 'obi node is a Dataset');
 ok(count($obi['distribution']) === 2, 'obi declares 2 measured distributions, got ' . count($obi['distribution']));
 ok(isset($obi['publisher']['logo']), 'obi node keeps the publisher logo');
-ok($obi['description'] === 'x' && $obi['dateModified'] === '2026-08-04', 'page-owned keys survive');
+ok($obi['dateModified'] === '2026-08-04', 'page-owned keys survive');
+// r148 / bhd-r6-99. description is OWNED here now. These three arms were
+// confirmed RED against the previous Datasets.php before the change landed:
+// the old node() returned the caller's 'x', and node()/brief() returned two
+// different sentences for one @id, which is what /press-kit was serving live.
+ok(!isset($obi['description']) || $obi['description'] !== 'x',
+   'a page cannot supply its own description');
+$obiN = Datasets::node('obi', [], 2502);
+$obiB = Datasets::brief('obi', [], 2502);
+ok(($obiN['description'] ?? null) === ($obiB['description'] ?? null)
+   && str_contains($obiN['description'] ?? '', '2502'),
+   'node and brief serve ONE description, count included');
+ok(!isset(Datasets::brief('obi')['description']),
+   'no count means NO description, never a second wording');
+$gccN = Datasets::node('gcc');
+$gccB = Datasets::brief('gcc');
+ok(($gccN['description'] ?? null) === ($gccB['description'] ?? null)
+   && ($gccN['description'] ?? '') !== '',
+   'a countless dataset still serves ONE description everywhere');
 
 $logos = Datasets::node('logos');
 $brief = Datasets::brief('logos', ['description' => 'y']);

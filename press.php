@@ -92,15 +92,13 @@ $datasetsLd = [
     // own description promised SVG and PNG downloads. brief() carries the
     // measured distribution, so the promise now resolves here too.
     'hasPart'  => [
-        Datasets::brief('obi', [
-            'description' => 'Open structured index of Omani companies with CR numbers, sector, wilayat, and trade names.',
-        ]),
-        Datasets::brief('logos', [
-            'description' => 'Logos of Omani companies, ministries, and sovereign entities, downloadable in SVG, PNG and WebP.',
-        ]),
-        Datasets::brief('gcc', [
-            'description' => 'Federated research-grade overview of business infrastructure across all six GCC states.',
-        ]),
+        // r148: this page typed a SECOND description for each of the three
+        // @id above. The sentence is Datasets::describe()'s now; this page
+        // passes the live company count and no wording at all. If the count
+        // query failed, obi ships NO description here rather than a rival one.
+        Datasets::brief('obi', [], $companiesCount),
+        Datasets::brief('logos'),
+        Datasets::brief('gcc'),
     ],
 ];
 

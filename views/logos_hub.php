@@ -76,7 +76,6 @@ $jsonLdBlocks[] = [
 // so it gets the full node.
 require_once INCLUDES_DIR . '/Datasets.php';
 $jsonLdBlocks[] = Datasets::node('logos', [
-    'description' => 'Brand marks for Omani companies, ministries and sovereign entities, downloadable as SVG, PNG and WebP, with a public JSON index.',
     'inLanguage'  => ['en', 'ar'],
 ]);
 
