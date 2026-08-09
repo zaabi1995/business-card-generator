@@ -314,27 +314,16 @@ $crumbLd = [
     ],
 ];
 
-$orgLd = [
-    '@context'    => 'https://schema.org',
-    '@type'       => 'Organization',
-    'name'        => 'Cardify',
-    'url'         => 'https://cardify.om',
-    'logo'        => 'https://cardify.om/assets/images/cardify-logo.png',
-    'sameAs'      => [
-    ],
-    'address'     => [
-        '@type'          => 'PostalAddress',
-        'addressCountry' => 'OM',
-        'addressLocality'=> 'Muscat',
-    ],
-];
+// r154 / llm153-2: this page hand-wrote a SIXTH Cardify identity, with no
+// @id, an empty sameAs and cardify-logo.png where the owner publishes
+// logo.svg. ui-header now emits Seo::organizationNode() once per page, so the
+// page neither needs nor may keep its own.
 
 $extraHead =
       '<script type="application/ld+json">' . json_encode($datasetLd, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>'
     . '<script type="application/ld+json">' . json_encode($logoDatasetLd, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>'
     . '<script type="application/ld+json">' . json_encode($faqLd,     JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>'
     . '<script type="application/ld+json">' . json_encode($crumbLd,   JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>'
-    . '<script type="application/ld+json">' . json_encode($orgLd,     JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>'
     . '<link rel="alternate" hreflang="en" href="' . $baseUrl . '/oman-business-index">'
     . '<link rel="alternate" hreflang="ar" href="' . $baseUrl . '/ar/oman-business-index">'
     . '<link rel="alternate" hreflang="x-default" href="' . $baseUrl . '/oman-business-index">'

@@ -274,11 +274,9 @@ $benefits = [
                 'addressCountry' => 'OM'
             ]
         ],
-        'hiringOrganization' => [
-            '@type' => 'Organization',
-            'name' => 'Cardify',
-            'sameAs' => 'https://cardify.om'
-        ]
+        // r154 / llm153-2: a reference; the owner body is emitted by
+        // ui-header. This slot asserted a company with a sameAs and no @id.
+        'hiringOrganization' => ['@id' => 'https://cardify.om/#organization']
     ], JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) ?>
     </script>
     <?php endif; ?>

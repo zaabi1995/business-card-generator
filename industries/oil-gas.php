@@ -22,7 +22,8 @@ $faq = [
 $serviceLd = [
     '@context' => 'https://schema.org', '@type' => 'Service',
     'name' => 'Cardify, Digital Business Cards for Oil & Gas',
-    'provider' => ['@type' => 'Organization', 'name' => 'Cardify', 'url' => 'https://cardify.om'],
+    // r154 / llm153-2: a reference; the owner body is emitted by ui-header.
+    'provider' => ['@id' => 'https://cardify.om/#organization'],
     'areaServed' => [['@type' => 'Country', 'name' => 'Oman'], ['@type' => 'Country', 'name' => 'Saudi Arabia'], ['@type' => 'Country', 'name' => 'UAE']],
     'serviceType' => 'Digital Business Card Platform',
     'audience' => ['@type' => 'BusinessAudience', 'name' => 'Upstream, midstream, downstream operators, oilfield service companies, contractors'],

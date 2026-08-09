@@ -47,8 +47,8 @@ $serviceLd = [
     '@type'    => 'Service',
     'name'     => 'Cardify, Digital Business Cards for Banks & Finance',
     'description' => 'Bank-grade digital business cards for relationship managers, advisors, and finance teams in Oman and the GCC. Bilingual EN/AR, brand-locked templates, bulk provisioning.',
-    'provider' => ['@type' => 'Organization', 'name' => 'Cardify', 'url' => 'https://cardify.om',
-        'address' => ['@type' => 'PostalAddress', 'addressLocality' => 'Muscat', 'addressCountry' => 'OM']],
+    // r154 / llm153-2: a reference; the owner body is emitted by ui-header.
+    'provider' => ['@id' => 'https://cardify.om/#organization'],
     'areaServed' => [
         ['@type' => 'Country', 'name' => 'Oman'],
         ['@type' => 'Country', 'name' => 'Saudi Arabia'],

@@ -42,10 +42,21 @@ final class Datasets
         'gcc'   => 'https://cardify.om/gcc-business-index#dataset',
     ];
 
+    /**
+     * r154 / llm153-2: a REFERENCE, not a body.
+     *
+     * This constant used to be a three-key anonymous Organization naming
+     * Cardify, and it is published on every dataset page and inside every
+     * brief(), so it was the single highest-leverage copy of the identity in
+     * the tree: one edit here removes four of the eleven anonymous bodies the
+     * r153 arm found. No @id is not a smaller claim than a wrong @id, it is
+     * the same claim with nothing to join it to.
+     *
+     * The edge resolves in-document because includes/ui-header.php now emits
+     * Seo::organizationScriptOnce() on every page (r154).
+     */
     private const CREATOR = [
-        '@type' => 'Organization',
-        'name'  => 'Cardify',
-        'url'   => 'https://cardify.om',
+        '@id' => 'https://cardify.om/#organization',
     ];
 
     /**
@@ -226,15 +237,12 @@ final class Datasets
             + ($desc === null ? [] : ['description' => $desc])
             + [
                 'creator'   => self::CREATOR,
-                'publisher' => self::CREATOR + [
-                    'logo' => [
-                        '@type'           => 'ImageObject',
-                        'url'             => 'https://cardify.om/assets/images/cardify-logo.png',
-                        'creditText'      => 'Cardify',
-                        'copyrightNotice' => '© Cardify',
-                        'license'         => 'https://cardify.om/terms',
-                    ],
-                ],
+                // r154: publisher used to be CREATOR plus an ImageObject logo,
+                // i.e. a FOURTH shape for the same company, disagreeing with
+                // the owner's logo (cardify-logo.png vs logo.svg) on the same
+                // page that referenced it. The owner carries a logo; a
+                // reference does not restate one.
+                'publisher' => self::CREATOR,
             ]
             + $own;
     }

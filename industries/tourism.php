@@ -20,16 +20,8 @@ $extraHead = '<script type="application/ld+json">' . json_encode([
     '@type' => 'Service',
     'name' => 'Cardify, Business Cards for Hotels & Tourism',
     'description' => 'Professional digital and printed business cards for hotels, tour operators, and travel agencies in Oman.',
-    'provider' => [
-        '@type' => 'Organization',
-        'name' => 'Cardify',
-        'url' => 'https://cardify.om',
-        'address' => [
-            '@type' => 'PostalAddress',
-            'addressLocality' => 'Muscat',
-            'addressCountry' => 'OM',
-        ],
-    ],
+    // r154 / llm153-2: a reference; the owner body is emitted by ui-header.
+    'provider' => ['@id' => 'https://cardify.om/#organization'],
     'areaServed' => [
         '@type' => 'Country',
         'name' => 'Oman',

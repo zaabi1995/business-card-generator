@@ -279,7 +279,8 @@ $serviceLd = [
     '@type'    => 'Service',
     'name'     => 'Cardify, Digital Business Cards for ' . $c['name'],
     'description' => 'Bilingual Arabic/English digital business card platform for companies and professionals in ' . $c['name'] . '. NFC, QR, Apple Wallet, Google Wallet compatible. Bulk provisioning for enterprises.',
-    'provider' => ['@type' => 'Organization', 'name' => 'Cardify', 'url' => 'https://cardify.om'],
+    // r154 / llm153-2: a reference; the owner body is emitted by ui-header.
+    'provider' => ['@id' => 'https://cardify.om/#organization'],
     'areaServed' => [
         '@type' => 'Country',
         'name'  => $c['name'],
@@ -307,12 +308,8 @@ $webPageLd = [
         'name' => 'Cardify',
         'url' => 'https://cardify.om',
     ],
-    'publisher' => [
-        '@type' => 'Organization',
-        'name' => 'Cardify',
-        'url' => 'https://cardify.om',
-        'logo' => 'https://cardify.om/assets/images/logo.svg',
-    ],
+    // r154 / llm153-2: a reference; the owner body is emitted by ui-header.
+    'publisher' => ['@id' => 'https://cardify.om/#organization'],
 ];
 
 $extraHead = ''

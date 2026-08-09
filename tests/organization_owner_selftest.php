@@ -60,9 +60,20 @@ function authorsOrgBody(string $src): array
         }
     }
     // 2. an anonymous Organization array literal that names Cardify.
-    if (preg_match_all("~'@type'\s*=>\s*'Organization'~", $src, $m2)) {
-        foreach ($m2[0] as $_) {
-            if (preg_match("~'@type'\s*=>\s*'Organization',\s*\n\s*'name'\s*=>\s*'Cardify'~", $src)) {
+    //
+    // r154: this used to require the two keys on CONSECUTIVE LINES, so the
+    // SAME defect written on one line was invisible to it. Five slots hid
+    // there (industries/logistics, government, oil-gas, banking and
+    // gcc/country.php's provider), which is why r153's census reported ten
+    // offenders where there were fifteen. A shape test that depends on where
+    // the author pressed return is a formatting test. Whitespace is now
+    // collapsed first, and the two keys must be adjacent in the SAME literal:
+    // the window stops at the next '@type', so a nested PostalAddress or a
+    // sibling node cannot supply the name.
+    $flat = preg_replace('~\s+~', ' ', $src);
+    if (preg_match_all("~'@type'\s*=>\s*'Organization'\s*,((?:(?!'@type').){0,160})~s", $flat, $m2)) {
+        foreach ($m2[1] as $tail) {
+            if (preg_match("~'name'\s*=>\s*'Cardify'~", $tail)) {
                 $found[] = 'anonymous Organization body naming Cardify';
                 break;
             }
@@ -111,6 +122,25 @@ ok(authorsOrgBody($fixture) !== [],
 $anon = "\$orgLd = [\n    '@type' => 'Organization',\n    'name' => 'Cardify',\n];";
 ok(authorsOrgBody($anon) !== [],
    'RED-BY-CONSTRUCTION: an anonymous Organization naming Cardify is detected');
+
+// r154 RED-BY-CONSTRUCTION: the SAME defect on one line. This arm was green on
+// this string until r154, and five live slots were written exactly this way.
+$anon1 = "'provider' => ['@type' => 'Organization', 'name' => 'Cardify', 'url' => 'https://cardify.om'],";
+ok(authorsOrgBody($anon1) !== [],
+   'RED-BY-CONSTRUCTION: a SINGLE-LINE anonymous Organization is detected too');
+
+// ...and the nested-address shape, where the name follows a PostalAddress.
+$anonNested = "'provider' => ['@type' => 'Organization', 'name' => 'Cardify', 'address' => ['@type' => 'PostalAddress', 'addressLocality' => 'Muscat']],";
+ok(authorsOrgBody($anonNested) !== [],
+   'RED-BY-CONSTRUCTION: an anonymous Organization with a nested address is detected');
+
+// NEGATIVE CONTROL for the widened window: a THIRD PARTY named by an adjacent
+// node must not be read as Cardify. companies.php and digital_card.php both
+// publish this shape legitimately, and turning them red would be the
+// loosening-in-reverse that makes a test unusable.
+$thirdParty = "'creator' => ['@type' => 'Organization', 'name' => \$company['name_en']], 'brand' => ['@type' => 'Brand', 'name' => 'Cardify'],";
+ok(authorsOrgBody($thirdParty) === [],
+   'a third-party Organization beside a Cardify mention is NOT flagged');
 
 // ...and the negative control, so the test is not simply always red.
 $ref = "'publisher' => ['@id' => 'https://cardify.om/#organization'],";

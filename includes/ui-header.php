@@ -385,6 +385,16 @@ $cardifyOgLocale = ($cardifyLocale === 'ar') ? 'ar_OM' : 'en_US';
     </script>
     <?php endif; ?>
     <?php if (!empty($extraHead)) echo $extraHead; ?>
+    <?php
+    // r154 / llm153-2: ONE body for https://cardify.om/#organization on every
+    // page that renders this header, emitted AFTER $extraHead so a page that
+    // already built the owner into its own @graph wins and this is a no-op.
+    // Without it, every creator/publisher/provider/hiringOrganization slot off
+    // the four owner-emitting pages had to spell out an anonymous Organization
+    // naming Cardify, because a bare @id would not have resolved in-document.
+    require_once INCLUDES_DIR . '/Seo.php';
+    echo Seo::organizationScriptOnce();
+    ?>
 
     <!-- BHD-Group shared design layer (design.bhd.om).
          Cardify keeps its own brand tokens + Tailwind theme; design.bhd.om

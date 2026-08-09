@@ -22,7 +22,8 @@ $faq = [
 $serviceLd = [
     '@context' => 'https://schema.org', '@type' => 'Service',
     'name' => 'Cardify, Digital Business Cards for Government Teams',
-    'provider' => ['@type' => 'Organization', 'name' => 'Cardify', 'url' => 'https://cardify.om'],
+    // r154 / llm153-2: a reference; the owner body is emitted by ui-header.
+    'provider' => ['@id' => 'https://cardify.om/#organization'],
     'areaServed' => [['@type' => 'Country', 'name' => 'Oman'], ['@type' => 'Country', 'name' => 'Saudi Arabia'], ['@type' => 'Country', 'name' => 'UAE'], ['@type' => 'Country', 'name' => 'Qatar'], ['@type' => 'Country', 'name' => 'Bahrain'], ['@type' => 'Country', 'name' => 'Kuwait']],
     'serviceType' => 'Digital Business Card Platform',
     'audience' => ['@type' => 'BusinessAudience', 'name' => 'Ministries, authorities, municipalities, sovereign entities, regulators, public-sector departments'],

@@ -128,11 +128,15 @@ if ($singlePost) {
         'url' => $canonicalUrl,
         'datePublished' => $published,
         'dateModified' => $modified,
-        'author' => [
-            '@type' => 'Organization',
-            'name' => $singlePost['author_name'] ?? 'Cardify Team',
-            'url' => 'https://cardify.om/about',
-        ],
+        // r154 / llm153-2: with no byline this said there is an Organization
+        // called "Cardify Team" at cardify.om/about, a SEVENTH company name
+        // for one publisher, with no @id to join it to the six others. A post
+        // with no named author is written by the organisation, so the slot
+        // takes the owner's @id; a post WITH a byline names a Person, which
+        // is what a byline is and what an Organization never was.
+        'author' => empty($singlePost['author_name'])
+            ? ['@id' => 'https://cardify.om/#organization']
+            : ['@type' => 'Person', 'name' => $singlePost['author_name']],
         // r153 / llm148-1: a REFERENCE, not a fourth body. This slot used to
         // spell out a 5-key Organization under the same @id that
         // includes/Seo.php owns with 24 keys, and it disagreed on three of
@@ -181,11 +185,10 @@ if ($singlePost) {
         'name' => 'Cardify Blog',
         'description' => 'Business card tips, networking advice, and industry guides for Omani professionals.',
         'url' => 'https://cardify.om/blog',
-        'publisher' => [
-            '@type' => 'Organization',
-            'name' => 'Cardify',
-            'url' => 'https://cardify.om/',
-        ],
+        // r154 / llm153-2: a reference. This body disagreed with the owner
+        // on url (trailing slash) and carried no @id, which is the same
+        // divergence r153 removed from the BlogPosting three lines up.
+        'publisher' => Seo::publisherNode(),
     ];
     $extraHead .= '<script type="application/ld+json">' . json_encode($blogLd, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>' . "\n";
 }

@@ -107,6 +107,11 @@ class Seo
         // support / email vs customer service / url). A comment is not a
         // constraint. index.php now RENDERS this, so there is one body for
         // https://cardify.om/#organization on every page that carries it.
+        //
+        // r154: a caller taking this payload IS the page's owner body, so the
+        // shared header must not add a second one. organizationScriptOnce()
+        // reads this flag.
+        self::$ownerEmitted = true;
         return [
             "@context" => "https://schema.org",
             "@type" => ["Organization", "LocalBusiness"],
@@ -361,6 +366,39 @@ class Seo
     public static function publisherNode(): array
     {
         return ['@id' => self::SITE . '/#organization'];
+    }
+
+    /**
+     * r154 / llm153-2: the owner body, emitted at most once per request.
+     *
+     * publisherNode() returns a bare @id, and the r37 rule is that an edge
+     * must resolve inside the document that makes it. Before this, only four
+     * pages emitted the owner, so eleven creator/publisher/provider/
+     * hiringOrganization slots on the other pages could not be reduced to a
+     * reference without stranding it: each one therefore kept spelling out a
+     * SECOND anonymous Organization naming Cardify, with no @id to join it to
+     * anything. That is llm153-2, and it is one missing emitter, not eleven
+     * page defects.
+     *
+     * ui-header.php calls this after $extraHead, so every page that renders
+     * the shared header carries exactly one https://cardify.om/#organization
+     * body. The guard is set by organizationNode() itself, so a page that has
+     * already built the owner into its own @graph (index.php, press.php,
+     * blog.php, gcc-business-index.php) does NOT get a second copy: those
+     * pages assemble $extraHead before requiring the header, so the flag is
+     * already true by the time this runs.
+     */
+    private static bool $ownerEmitted = false;
+
+    public static function organizationScriptOnce(): string
+    {
+        if (self::$ownerEmitted) {
+            return '';
+        }
+        self::$ownerEmitted = true;
+        return '<script type="application/ld+json">'
+            . json_encode(self::organizationNode(), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)
+            . '</script>' . "\n";
     }
 
     /**
