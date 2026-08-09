@@ -7,34 +7,17 @@
  */
 require_once __DIR__ . '/../config.php';
 require_once INCLUDES_DIR . '/Auth.php';
+// r150 / bhd-r6-99 clause 2: the join to the app family is written
+// once, in ToolEntity, so a tool page cannot omit it.
+require_once INCLUDES_DIR . '/ToolEntity.php';
 
 $pageTitle = 'Free WhatsApp QR Code Generator';
 $pageDescription = 'Generate a free WhatsApp QR code that opens a chat with a pre-filled message. Perfect for shop signs, menus, and business cards. No sign-up.';
 $canonicalUrl = 'https://cardify.om/tools/whatsapp-qr-generator';
 
-$softwareLd = [
-    '@context' => 'https://schema.org',
-    '@type' => 'SoftwareApplication',
-    // r81 / llm20-21: anonymous, so nothing on the estate could link
-    // to this tool as an entity. A fragment of its own canonical URL,
-    // which is the document that describes it.
-    '@id' => $canonicalUrl . '#tool',
+$softwareLd = ToolEntity::node('whatsapp-qr-generator', [
     'name' => 'Cardify WhatsApp QR Code Generator',
     'description' => 'Free online tool to create a WhatsApp QR code that opens a pre-filled chat. Includes Oman country code defaults and high-resolution PNG export.',
-    'url' => $canonicalUrl,
-    'applicationCategory' => 'BusinessApplication',
-    'operatingSystem' => 'Web',
-    'browserRequirements' => 'Requires JavaScript. Works in Chrome, Safari, Firefox, Edge.',
-    'offers' => [
-        '@type' => 'Offer',
-        'price' => '0',
-        'priceCurrency' => 'OMR',
-    ],
-    // r81 / llm20-21: this was a fresh anonymous Organization carrying
-    // Cardify's name and url, i.e. a second body for an entity THIS SAME
-    // DOCUMENT already resolves by reference in its WebPage publisher slot.
-    // A creator slot takes the identifier, never a copy.
-    'creator' => ['@id' => 'https://cardify.om/#organization'],
     'featureList' => [
         'wa.me click-to-chat URL',
         'Pre-filled message support',
@@ -42,7 +25,7 @@ $softwareLd = [
         'PNG download at 1024×1024',
         'No sign-up required',
     ],
-];
+]);
 
 $breadcrumbLd = [
     '@context' => 'https://schema.org',
