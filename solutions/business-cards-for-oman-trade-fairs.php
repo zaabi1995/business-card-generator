@@ -75,7 +75,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
 
         <h2>Booth Design Around NFC, The New Standard</h2>
         <p>
-            Leading exhibitors at OCEC have started redesigning their booths around NFC and QR. Instead of a visible stack of printed brochures, the booth has a single prominent "Tap here for brochure" NFC disc on the counter. The visitor taps, they receive the full brochure PDF, the relevant product specs, the company's digital card, and an invitation to book a post-show demo call. This is clean, measurable, and, importantly in Oman's summer heat, doesn't require your team to stand all day under booth lights holding paper. Cardify provides the NFC discs (each programmed with a unique ID so scan-count is attributable to specific booth positions), the backend lead capture, and the brochure hosting with PDF analytics so you see which pages visitors read.
+            Exhibitors at OCEC have started redesigning their booths around NFC and QR. Instead of a visible stack of printed brochures, the booth has a single prominent "Tap here for brochure" NFC disc on the counter. The visitor taps, they receive the full brochure PDF, the relevant product specs, the company's digital card, and an invitation to book a post-show demo call. This is clean, measurable, and, importantly in Oman's summer heat, doesn't require your team to stand all day under booth lights holding paper. Cardify provides the NFC discs (each programmed with a unique ID so scan-count is attributable to specific booth positions), the backend lead capture, and the brochure hosting with PDF analytics so you see which pages visitors read.
         </p>
 
         <h2>Coordinating Multi-Person Booths at OFEX, OIF, and IDEX Oman</h2>

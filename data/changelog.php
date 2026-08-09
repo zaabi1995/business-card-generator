@@ -28,9 +28,9 @@ return [
         'date'     => '2026-04-16',
         'tag'      => 'feature',
         'title_en' => 'Oman Business Index live, 2,414 companies',
-        'body_en'  => 'Free public directory of the largest Omani enterprises, bilingual, sourced from the MoCIIP register. Sector + wilayat filters. 4,974 indexable URLs, each with canonical logo hero + Save contact + JSON-LD organisation schema.',
+        'body_en'  => 'Free public directory of large and medium Omani enterprises, bilingual, sourced from the MoCIIP register. Sector + wilayat filters. 4,974 indexable URLs, each with canonical logo hero + Save contact + JSON-LD organisation schema.',
         'title_ar' => 'دليل الأعمال العُماني، 2,414 شركة',
-        'body_ar'  => 'دليل عام مجاني لأكبر الشركات العُمانية، ثنائي اللغة، من سجل وزارة التجارة والصناعة. فلاتر القطاع والولاية. 4,974 رابطاً قابلاً للفهرسة، كل منها مع شعار رسمي وحفظ جهة الاتصال وسكيما JSON-LD.',
+        'body_ar'  => 'دليل عام مجاني للشركات العُمانية الكبيرة والمتوسطة، ثنائي اللغة، من سجل وزارة التجارة والصناعة. فلاتر القطاع والولاية. 4,974 رابطاً قابلاً للفهرسة، كل منها مع شعار رسمي وحفظ جهة الاتصال وسكيما JSON-LD.',
     ],
     [
         'date'     => '2026-04-06',
