@@ -205,25 +205,30 @@ class Seo
             ],
             "hasOfferCatalog" => [
                 "@type" => "OfferCatalog",
+                "@id" => "https://cardify.om/#catalog-cardify-product-catalog",
                 "name" => "Cardify Product Catalog",
                 "itemListElement" => [
                     [
                         "@type" => "OfferCatalog",
+                        "@id" => "https://cardify.om/#catalog-digital-business-cards",
                         "name" => "Digital Business Cards",
                         "url" => "https://cardify.om/",
                     ],
                     [
                         "@type" => "OfferCatalog",
+                        "@id" => "https://cardify.om/#catalog-omani-logo-library",
                         "name" => "Omani Logo Library",
                         "url" => "https://cardify.om/logos",
                     ],
                     [
                         "@type" => "OfferCatalog",
+                        "@id" => "https://cardify.om/#catalog-oman-business-index",
                         "name" => "Oman Business Index",
                         "url" => "https://cardify.om/oman-business-index",
                     ],
                     [
                         "@type" => "OfferCatalog",
+                        "@id" => "https://cardify.om/#catalog-gcc-business-index",
                         "name" => "GCC Business Index",
                         "url" => "https://cardify.om/gcc-business-index",
                     ],

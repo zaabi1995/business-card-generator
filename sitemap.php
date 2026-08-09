@@ -206,7 +206,16 @@ if ($part === 'index') {
     smChild("{$baseUrl}/sitemap-solutions.xml", smChildDate('solutions', $db));
     smChild("{$baseUrl}/sitemap-directory.xml", smChildDate('directory', $db));
     smChild("{$baseUrl}/sitemap-companies.xml", smChildDate('companies', $db));
-    smChild("{$baseUrl}/sitemap-companies-ar.xml", smChildDate('companies-ar', $db));
+    // r145 / sitemap_index_gate: sitemap-companies-ar.xml is NOT listed here.
+    // r80 emptied it for a good reason and then kept it in the index "so an
+    // already-crawled child URL keeps answering valid XML rather than 404ing".
+    // Those are two separate things and only the first needed the route: the
+    // branch below still answers 200 with a well-formed empty urlset for any
+    // crawler that already knows the URL. Listing it as well published a
+    // pointer to nothing, and measured worse than nothing, because the file
+    // NAMED for Arabic company pages carried zero of them while
+    // sitemap-companies.xml carried all 2,502 — so anything partitioning the
+    // estate by the sitemap a URL was listed in read 2,502 EN and 0 AR.
     smChild("{$baseUrl}/sitemap-blog.xml", smChildDate('blog', $db));
     smChild("{$baseUrl}/sitemap-logos.xml", smChildDate('logos', $db));
     smChild("{$baseUrl}/sitemap-printshops.xml", smChildDate('printshops', $db));

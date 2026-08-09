@@ -250,8 +250,8 @@ $bodyClass       = 'bg-white';
 // and the coverage. Before r59 this node had no @id, so /press described the
 // same dataset under a different name and nothing could join the two.
 $datasetLd = Datasets::node('obi', [
-    'description'   => 'A free, bilingual, public index of ' . $stats['total']
-        . ' large and medium-sized enterprises registered in the Sultanate of Oman, classified by sector and governorate. Derived from the MoCIIP public register.',
+    // r148: the sentence moved to Datasets::describe(); the page supplies the
+    // count and nothing else, so /press-kit can no longer word it differently.
     'keywords'      => [
         'Oman', 'Sultanate of Oman', 'business directory', 'companies',
         'MoCIIP', 'Vision 2040', 'enterprises', 'SMEs', 'large companies',
@@ -269,16 +269,14 @@ $datasetLd = Datasets::node('obi', [
         '@type' => 'Country',
         'name'  => 'Oman',
     ],
-]);
+], (int) $stats['total']);
 
 // r59/llm27-36: FAQ answer 9 on this page sends the reader to the logo library
 // for downloadable SVG + PNG brand marks, and until r59 no node in this
 // document declared any such distribution, so the promise resolved to nothing.
 // This is the same entity as the node on /logos (same @id), described here so
 // the promise resolves in the document that makes it.
-$logoDatasetLd = ['@context' => 'https://schema.org'] + Datasets::brief('logos', [
-    'description' => 'Brand marks for companies covered by the Oman Business Index, downloadable as SVG, PNG and WebP, with a public JSON index.',
-]);
+$logoDatasetLd = ['@context' => 'https://schema.org'] + Datasets::brief('logos');
 
 $faq = [
     ['q' => t('obi.faq1_q'), 'a' => t('obi.faq1_a', ['sectors' => $stats['sector_count']])],

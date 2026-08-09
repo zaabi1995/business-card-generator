@@ -27,6 +27,7 @@ try {
     require_once INCLUDES_DIR . '/EmployeeSocials.php';
     require_once INCLUDES_DIR . '/CardAnalytics.php';
     require_once INCLUDES_DIR . '/ColorContrast.php';
+    require_once INCLUDES_DIR . '/AppEntity.php';  // r116: the smart-banner app id is the entity's, not a literal
 
     /**
      * Normalize asset path, ensure uploaded/theme assets resolve from site root, not
@@ -504,7 +505,7 @@ $switchThirdUrl = ($thirdCode !== '' && $thirdLabel !== '')
             : ($__ogScheme . '://' . $__ogHost . strtok($_SERVER['REQUEST_URI'] ?? '/', '?'));
     ?>
     <link rel="canonical" href="<?php echo htmlspecialchars($__shareUrl, ENT_QUOTES); ?>">
-    <meta name="apple-itunes-app" content="app-id=6790749589, app-argument=<?php echo htmlspecialchars('https://cardify.om/app/open?url=' . rawurlencode($__shareUrl), ENT_QUOTES); ?>">
+    <meta name="apple-itunes-app" content="app-id=<?php echo AppEntity::APPSTORE_ID; ?>, app-argument=<?php echo htmlspecialchars('https://cardify.om/app/open?url=' . rawurlencode($__shareUrl), ENT_QUOTES); ?>">
     <meta property="og:url" content="<?php echo htmlspecialchars($__shareUrl, ENT_QUOTES); ?>">
     <?php if ($__ogImage): ?>
     <meta property="og:image" content="<?php echo htmlspecialchars($__ogImage, ENT_QUOTES); ?>">

@@ -90,7 +90,7 @@ $ld = [
         // record now, in includes/AppEntity.php. The publisher stays the
         // group node, which is the one thing this surface said that the
         // home page did not.
-        AppEntity::node('https://bhd.om/#organization'),
+        AppEntity::node(),
         [
             '@type'      => 'FAQPage',
             '@id'        => $localeUrl . '#faq',

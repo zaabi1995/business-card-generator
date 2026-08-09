@@ -153,6 +153,47 @@ final class Datasets
         ],
     ];
 
+    /**
+     * r148 / bhd-r6-99. description was LEFT to the page by the rule above
+     * ("a description carrying a live count"), and that exemption is how the
+     * defect this file exists to prevent survived inside it. MEASURED on the
+     * live bytes 9 Aug 2026 by evidence/probe_r148_graph_population.py: all
+     * three @id below serve TWO OR THREE different descriptions.
+     *
+     *   obi:   "...index of 2502 large and medium-sized enterprises..." on its
+     *          own page vs "Open structured index of Omani companies with CR
+     *          numbers, sector, wilayat, and trade names." on /press-kit.
+     *   logos: three wordings across /logos, /oman-business-index, /press-kit.
+     *   gcc:   two wordings across /gcc-business-index and /press-kit.
+     *
+     * A live count does not make the SENTENCE page-owned; it makes one NUMBER
+     * page-supplied. So the sentence moves here and the count is passed in.
+     * A page that cannot supply the count gets NO description rather than a
+     * second wording: saying less is a weak copy, saying something else is the
+     * estate contradicting itself on its own join key.
+     */
+    private const DESCRIBE = [
+        'obi'   => 'A free, bilingual, public index of %d large and medium-sized enterprises registered in the Sultanate of Oman, classified by sector and governorate. Derived from the MoCIIP public register.',
+        'logos' => 'Brand marks for Omani companies, ministries and sovereign entities, downloadable as SVG, PNG and WebP, with a public JSON index.',
+        'gcc'   => 'Federated open index of business infrastructure across the six Gulf Cooperation Council states: company registers, sovereign-entity directories, and brand logo archives.',
+    ];
+
+    /**
+     * The one description of a dataset. Null when the sentence needs a count
+     * and the caller has none, which is an omission, not a second statement.
+     */
+    public static function describe(string $key, ?int $count = null): ?string
+    {
+        if (!isset(self::DESCRIBE[$key])) {
+            throw new InvalidArgumentException("Datasets: unknown dataset '$key'");
+        }
+        $tpl = self::DESCRIBE[$key];
+        if (!str_contains($tpl, '%d')) {
+            return $tpl;
+        }
+        return $count === null ? null : sprintf($tpl, $count);
+    }
+
     /** The @id of a dataset. Fails loudly rather than inventing an identity. */
     public static function id(string $key): string
     {
@@ -165,19 +206,24 @@ final class Datasets
     /**
      * The full node for the page that is this dataset's home.
      *
-     * @param array $own Keys the PAGE legitimately owns (description with a
-     *                   live count, dateModified, datePublished, keywords,
-     *                   variableMeasured, spatialCoverage, temporalCoverage,
-     *                   inLanguage). Any key this class owns is ignored, so a
-     *                   page cannot silently re-mint a second name.
+     * @param array $own Keys the PAGE legitimately owns (dateModified,
+     *                   datePublished, keywords, variableMeasured,
+     *                   spatialCoverage, temporalCoverage, inLanguage). Any
+     *                   key this class owns is ignored, so a page cannot
+     *                   silently re-mint a second name.
+     * @param int|null $count r148: the ONE number a page supplies. The
+     *                   sentence around it belongs to describe().
      */
-    public static function node(string $key, array $own = []): array
+    public static function node(string $key, array $own = [], ?int $count = null): array
     {
         $core = self::CORE[$key] ?? throw new InvalidArgumentException("Datasets: unknown dataset '$key'");
-        $own  = array_diff_key($own, $core, ['@id' => 1, 'creator' => 1, 'publisher' => 1]);
+        $own  = array_diff_key($own, $core,
+            ['@id' => 1, 'creator' => 1, 'publisher' => 1, 'description' => 1]);
+        $desc = self::describe($key, $count);
 
         return ['@context' => 'https://schema.org', '@id' => self::id($key)]
             + $core
+            + ($desc === null ? [] : ['description' => $desc])
             + [
                 'creator'   => self::CREATOR,
                 'publisher' => self::CREATOR + [
@@ -204,16 +250,19 @@ final class Datasets
      * a bare {"@id": ...} ref on purpose: the r37 rule is that an edge must
      * resolve in the document it appears in.
      */
-    public static function brief(string $key, array $own = []): array
+    public static function brief(string $key, array $own = [], ?int $count = null): array
     {
         $core = self::CORE[$key] ?? throw new InvalidArgumentException("Datasets: unknown dataset '$key'");
-        $own  = array_diff_key($own, $core, ['@id' => 1, 'creator' => 1]);
+        $own  = array_diff_key($own, $core,
+            ['@id' => 1, 'creator' => 1, 'description' => 1]);
+        $desc = self::describe($key, $count);
 
         return ['@id' => self::id($key)]
             + array_intersect_key($core, array_flip([
                 '@type', 'name', 'alternateName', 'url', 'license',
                 'isAccessibleForFree', 'encodingFormat', 'distribution',
             ]))
+            + ($desc === null ? [] : ['description' => $desc])
             + ['creator' => self::CREATOR]
             + $own;
     }

@@ -75,6 +75,29 @@ if ($db->tableExists('career_listings')) {
             "SELECT * FROM career_listings WHERE slug = ? AND status = 'open'",
             [$jobSlug]
         );
+
+        // r97 / bhd-group-seo-llm91-1. An unknown slug used to fall straight
+        // through to the HUB: /careers/<anything> answered 200 with the
+        // careers listing and rel=canonical https://cardify.om/careers, so
+        // .htaccess:120's pretty child rule handed every invented suffix a
+        // 200 and the crawlable set under /careers was unbounded. blog.php:98
+        // has answered this shape correctly since it was written; this is the
+        // same three lines, and the only reason careers did not have them is
+        // that nobody asked careers the question.
+        //
+        // The test is the RAW row, deliberately, and it is asked before
+        // BilingualRecord::row() resolves anything: a REAL job with no Arabic
+        // twin resolves to null further down and renders the page's own "no
+        // such job" body on /ar/, which is a decision r-earlier made on
+        // purpose (a half-Arabic job ad is worse than none). 404ing that would
+        // be a different change to a different question. Only a slug NO open
+        // listing carries in ANY locale is a path that is not a page.
+        if (!$singleJob) {
+            http_response_code(404);
+            header('Cache-Control: no-store');
+            include __DIR__ . '/404.php';
+            exit;
+        }
         // A single-job URL for an untranslated listing must not render half in
         // Arabic and half in English; on /ar/ it resolves to null and the page
         // falls through to its own "no such job" branch, exactly as it does for
