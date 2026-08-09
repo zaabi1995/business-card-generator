@@ -17,6 +17,7 @@
  */
 require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/includes/Datasets.php';
+require_once __DIR__ . '/includes/Seo.php';
 require_once INCLUDES_DIR . '/Auth.php';
 
 $pageTitle       = t('press.page_title');
@@ -48,32 +49,17 @@ try {
 
 $esc = fn($s) => htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8');
 
-$orgLd = [
-    '@context' => 'https://schema.org',
-    '@type'    => 'Organization',
-    'name'     => 'Cardify',
-    'url'      => 'https://cardify.om/',
-    'logo'     => 'https://cardify.om/assets/images/logo.svg',
-    'description' => 'Business-identity platform for the GCC: digital and printed business cards, public logo libraries, and the GCC Business Index. Built in Oman, expanding across Saudi Arabia, UAE, Qatar, Bahrain, and Kuwait.',
-    'foundingDate' => '2024',
-    'foundingLocation' => [
-        '@type' => 'Place',
-        'address' => ['@type' => 'PostalAddress', 'addressCountry' => 'OM', 'addressLocality' => 'Muscat'],
-    ],
-    'contactPoint' => [
-        '@type' => 'ContactPoint',
-        'contactType' => 'public relations',
-        'email' => 'press@cardify.om',
-        'url' => 'https://cardify.om/contact',
-        'availableLanguage' => ['en', 'ar'],
-    ],
-    'sameAs' => ['https://instagram.com/cardifyom'],
-    // Same entity as the homepage node, so it carries the same @id and the
-    // same parent edge. Two unlinked Organization nodes for one company read
-    // as two companies.
-    '@id' => 'https://cardify.om/#organization',
-    'parentOrganization' => ['@id' => 'https://bhd.om/#organization'],
-];
+$orgLd = ['@context' => 'https://schema.org'] + Seo::organizationNode();
+// r153 / llm148-1: this page used to hand-type a 12-key Organization under
+// https://cardify.om/#organization while includes/Seo.php owned a 24-key one.
+// Measured on the live bytes before the fix (evidence/probe_r153_context_phantom.py):
+// four bodies under that one @id, disagreeing on @type (Organization vs
+// [Organization, LocalBusiness]), on logo (a URL vs an ImageObject) and on
+// description ("for the GCC" vs "for the Gulf ... through 2026"). The @id is
+// the estate's only join key, so three of those four told a resolver the wrong
+// thing about the same company. There is one owner now and this page renders it
+// rather than describing it; the public-relations contact point it alone
+// carried moved into that owner, so nothing this page said is lost.
 
 $datasetsLd = [
     '@context' => 'https://schema.org',

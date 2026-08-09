@@ -197,11 +197,26 @@ class Seo
             ],
             "knowsLanguage" => ["en", "ar"],
             "sameAs" => ["https://instagram.com/cardifyom"],
+            // r153 / llm148-1: a LIST, because press.php used to publish the
+            // public-relations point inside a rival 12-key body under this same
+            // @id. One contact route was the only thing that page said which
+            // this node did not, so it moves here and the page keeps nothing.
+            // A key that exists to be reachable is worse than useless when two
+            // bodies disagree about which route is the real one.
             "contactPoint" => [
-                "@type" => "ContactPoint",
-                "contactType" => "customer service",
-                "url" => "https://cardify.om/contact",
-                "availableLanguage" => ["en", "ar"],
+                [
+                    "@type" => "ContactPoint",
+                    "contactType" => "customer service",
+                    "url" => "https://cardify.om/contact",
+                    "availableLanguage" => ["en", "ar"],
+                ],
+                [
+                    "@type" => "ContactPoint",
+                    "contactType" => "public relations",
+                    "email" => "press@cardify.om",
+                    "url" => "https://cardify.om/contact",
+                    "availableLanguage" => ["en", "ar"],
+                ],
             ],
             "hasOfferCatalog" => [
                 "@type" => "OfferCatalog",

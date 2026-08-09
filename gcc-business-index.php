@@ -12,6 +12,7 @@
  */
 require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/includes/Datasets.php';
+require_once __DIR__ . '/includes/Seo.php';
 require_once INCLUDES_DIR . '/Auth.php';
 
 $db = Database::getInstance();
@@ -164,8 +165,22 @@ foreach ($countries as $c) {
     if (!empty($c['companies_approx'])) $totalCompanies += $c['companies_approx'];
     if ($c['status'] === 'live') $liveCountries++;
 }
-$lastUpdated = date('c');
-$lastUpdatedHuman = date('M j, Y');
+// r153 / llm148-1: this was date('c'), the wall clock at request time. Two
+// things were wrong with it and one of them is measurable from outside. (a)
+// Two fetches of this @id four seconds apart published two different
+// dateModified values, which is how entity_graph_gate found it: one entity,
+// one join key, two answers to "when did this change". (b) It asserted a
+// modification at the instant a crawler happened to ask, so the dataset
+// claimed to be fresh every time it was read and could never be stale, which
+// is the same fabricated-freshness shape freshness_gate exists to stop.
+// $countries is a literal in THIS file, so the file's own mtime is the
+// measured answer: it changes when the data changes and not otherwise. Same
+// rule Seo::articleNode already applies, and the sibling page
+// (oman-business-index.php) already derives its date from MAX(updated_at)
+// because its data lives in a table. Fall back to nothing rather than to now().
+$lastUpdatedTs = @filemtime(__FILE__) ?: null;
+$lastUpdated = $lastUpdatedTs ? date('c', $lastUpdatedTs) : null;
+$lastUpdatedHuman = $lastUpdatedTs ? date('M j, Y', $lastUpdatedTs) : '';
 
 $faq = [
     ['q' => t('gccbi.faq1_q'), 'a' => t('gccbi.faq1_a')],
@@ -212,25 +227,19 @@ $datasetLd = Datasets::node('gcc', [
         ['@type' => 'Country', 'name' => 'Kuwait', 'address' => ['@type' => 'PostalAddress', 'addressCountry' => 'KW']],
         ['@type' => 'Country', 'name' => 'Oman', 'address' => ['@type' => 'PostalAddress', 'addressCountry' => 'OM']],
     ],
-    'dateModified'   => $lastUpdated,
-]);
+    // null-not-fallback: no measurable modification date means the node ships
+    // WITHOUT the key rather than with a guessed one.
+] + ($lastUpdated ? ['dateModified' => $lastUpdated] : []));
 
-$orgLd = [
-    '@context' => 'https://schema.org',
-    '@type'    => 'Organization',
-    'name'     => 'Cardify',
-    'url'      => 'https://cardify.om',
-    'logo'     => 'https://cardify.om/assets/images/cardify-logo.png',
-    'areaServed' => [
-        ['@type' => 'Country', 'name' => 'Oman'],
-        ['@type' => 'Country', 'name' => 'Saudi Arabia'],
-        ['@type' => 'Country', 'name' => 'United Arab Emirates'],
-        ['@type' => 'Country', 'name' => 'Qatar'],
-        ['@type' => 'Country', 'name' => 'Bahrain'],
-        ['@type' => 'Country', 'name' => 'Kuwait'],
-    ],
-    'knowsAbout' => ['GCC business infrastructure', 'Omani company register', 'Brand logos', 'Business identity', 'Sovereign entities'],
-];
+$orgLd = ['@context' => 'https://schema.org'] + Seo::organizationNode();
+// r153 / llm148-1, found while fixing this page's dateModified and worse than
+// the defect that led here: this was a SIXTH Organization body for Cardify
+// carrying NO @id at all. Anonymous, so entity_graph_gate's divergent-@id arm
+// could never see it however wide the population got, while it contradicted the
+// owner on logo (cardify-logo.png vs logo.svg) and on url (no trailing slash)
+// and added a knowsAbout list no other body carried. An identity with no
+// address is not a smaller claim than a wrong one; it is the same claim with
+// nothing to join it to. It renders the owner now, like press.php.
 
 $extraHead =
       '<script type="application/ld+json">' . json_encode($faqLd,     JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>'
