@@ -88,8 +88,11 @@ $ld = [
         // index.php published https://cardify.om/app#ios-app. Both cited
         // r6-99, both asserted uniqueness, and nothing compared them. One
         // record now, in includes/AppEntity.php. The publisher stays the
-        // group node, which is the one thing this surface said that the
-        // home page did not.
+        // group node, and r151 stopped this surface from being the one that
+        // says so: it was passing the group @id while app.php and index.php
+        // took a cardify.om default, i.e. one @id with two publishers chosen
+        // by which page you fetched. AppEntity::PUBLISHER_ID owns it now and
+        // node() takes no argument, so a caller cannot disagree.
         AppEntity::node(),
         [
             '@type'      => 'FAQPage',

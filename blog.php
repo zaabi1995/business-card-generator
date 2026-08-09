@@ -11,6 +11,7 @@ require_once __DIR__ . '/config.php';
 require_once INCLUDES_DIR . '/Auth.php';
 require_once INCLUDES_DIR . '/BlogSlugRedirects.php';
 require_once INCLUDES_DIR . '/ArTwins.php';
+require_once INCLUDES_DIR . '/Seo.php';
 
 $lang  = ($_GET['lang'] ?? '') === 'ar' ? 'ar' : 'en';
 $isAr  = $lang === 'ar';
@@ -132,19 +133,17 @@ if ($singlePost) {
             'name' => $singlePost['author_name'] ?? 'Cardify Team',
             'url' => 'https://cardify.om/about',
         ],
-        'publisher' => [
-            '@type' => 'Organization',
-            '@id' => 'https://cardify.om/#organization',
-            'name' => 'Cardify',
-            'url' => 'https://cardify.om',
-            'logo' => [
-                '@type' => 'ImageObject',
-                'url' => 'https://cardify.om/assets/images/logo.svg',
-                'creditText' => 'Cardify',
-                'copyrightNotice' => '© Cardify',
-                'license' => 'https://cardify.om/terms',
-            ],
-        ],
+        // r153 / llm148-1: a REFERENCE, not a fourth body. This slot used to
+        // spell out a 5-key Organization under the same @id that
+        // includes/Seo.php owns with 24 keys, and it disagreed on three of
+        // them: @type (Organization, dropping LocalBusiness), logo (an
+        // ImageObject where the owner publishes a URL) and url (no trailing
+        // slash). Seo::articleNode already made exactly this correction for
+        // /solutions/* under llm20-11; the blog post was the copy nobody
+        // carried it to. The owner node is emitted alongside this graph below,
+        // so the reference still resolves inside the document that makes it
+        // (the r37 rule), which is why this is a ref and not a deletion.
+        'publisher' => Seo::publisherNode(),
         'mainEntityOfPage' => [
             '@type' => 'WebPage',
             '@id' => $canonicalUrl,
@@ -167,6 +166,12 @@ if ($singlePost) {
             $baseUrl . ($isAr ? '' : '/ar') . '/blog/' . $altSlug
         );
     }
+    // r153: the owner body for the @id the BlogPosting now references bare, so
+    // author and publisher resolve in this document rather than across pages.
+    $extraHead .= '<script type="application/ld+json">'
+        . json_encode(['@context' => 'https://schema.org'] + Seo::organizationNode(),
+                      JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)
+        . '</script>' . "\n";
     $extraHead .= '<script type="application/ld+json">' . json_encode($articleLd, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>' . "\n";
     $extraHead .= '<script type="application/ld+json">' . json_encode($breadcrumbLd, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>' . "\n";
 } else {
