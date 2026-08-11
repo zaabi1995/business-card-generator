@@ -1,0 +1,25 @@
+{
+  "name": "cardify-web-react",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite build --watch",
+    "build": "tsc -b --noEmit && vite build"
+  },
+  "dependencies": {
+    "glimm": "^0.3.0",
+    "iconoir-react": "^7.11.1",
+    "liveline": "^0.0.7",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.1.0",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "@vitejs/plugin-react": "^5.0.0",
+    "tailwindcss": "^4.1.0",
+    "typescript": "^5.7.0",
+    "vite": "^7.0.0"
+  }
+}

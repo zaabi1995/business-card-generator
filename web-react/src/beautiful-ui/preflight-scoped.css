@@ -1,0 +1,158 @@
+/* ─────────────────────────────────────────────────────────
+ * SCOPED PREFLIGHT — Tailwind's base reset, confined to the island
+ *
+ * WHY THIS FILE EXISTS. Beautiful UI is authored against Tailwind's preflight:
+ * its buttons carry no background/border of their own because preflight already
+ * stripped the UA ones, and its headings set exact px sizes because preflight
+ * already flattened h1..h6. Ship the components without preflight and every
+ * control reverts to UA styling -- measured, not guessed: buttons computed to
+ * background rgb(239,239,239), border 2px outset, font-family Arial.
+ *
+ * But stock preflight is GLOBAL and cannot be scoped by configuration, and this
+ * stylesheet loads on a page whose other 13 views are legacy CSS. Global
+ * preflight there flattens every heading and restyles every button in the rest
+ * of the app.
+ *
+ * So this is preflight's rules, each one re-anchored under [data-bui-root] --
+ * the wrapper the mount bridge puts around every React route. Inside the
+ * island: exactly Tailwind's baseline. Outside: not one selector matches.
+ *
+ * Lives in layer(base) so utilities still win. Keep in sync with Tailwind's
+ * preflight when upgrading v4 minors.
+ * ───────────────────────────────────────────────────────── */
+
+@layer base {
+  [data-bui-root],
+  [data-bui-root] *,
+  [data-bui-root] *::before,
+  [data-bui-root] *::after,
+  [data-bui-root] *::backdrop {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    border: 0 solid;
+  }
+
+  [data-bui-root] hr {
+    height: 0;
+    color: inherit;
+    border-top-width: 1px;
+  }
+
+  [data-bui-root] h1,
+  [data-bui-root] h2,
+  [data-bui-root] h3,
+  [data-bui-root] h4,
+  [data-bui-root] h5,
+  [data-bui-root] h6 {
+    font-size: inherit;
+    font-weight: inherit;
+  }
+
+  [data-bui-root] a {
+    color: inherit;
+    -webkit-text-decoration: inherit;
+    text-decoration: inherit;
+  }
+
+  [data-bui-root] b,
+  [data-bui-root] strong {
+    font-weight: bolder;
+  }
+
+  [data-bui-root] code,
+  [data-bui-root] kbd,
+  [data-bui-root] samp,
+  [data-bui-root] pre {
+    font-family: var(--default-mono-font-family, ui-monospace, monospace);
+    font-size: 1em;
+  }
+
+  [data-bui-root] small {
+    font-size: 80%;
+  }
+
+  [data-bui-root] sub,
+  [data-bui-root] sup {
+    font-size: 75%;
+    line-height: 0;
+    position: relative;
+    vertical-align: baseline;
+  }
+  [data-bui-root] sub { bottom: -0.25em; }
+  [data-bui-root] sup { top: -0.5em; }
+
+  [data-bui-root] table {
+    text-indent: 0;
+    border-color: inherit;
+    border-collapse: collapse;
+  }
+
+  /* The one that actually broke: without this, every control in the kit falls
+   * back to UA chrome (grey fill, outset border, Arial). */
+  [data-bui-root] button,
+  [data-bui-root] input,
+  [data-bui-root] optgroup,
+  [data-bui-root] select,
+  [data-bui-root] textarea,
+  [data-bui-root] ::file-selector-button {
+    font: inherit;
+    font-feature-settings: inherit;
+    font-variation-settings: inherit;
+    letter-spacing: inherit;
+    color: inherit;
+    opacity: 1;
+    background-color: transparent;
+    border-radius: 0;
+  }
+
+  [data-bui-root] ::placeholder {
+    opacity: 1;
+    color: color-mix(in oklab, currentcolor 50%, transparent);
+  }
+
+  [data-bui-root] textarea {
+    resize: vertical;
+  }
+
+  [data-bui-root] button,
+  [data-bui-root] input:where([type="button"], [type="reset"], [type="submit"]),
+  [data-bui-root] ::file-selector-button {
+    -webkit-appearance: button;
+    appearance: button;
+  }
+
+  [data-bui-root] ::-webkit-inner-spin-button,
+  [data-bui-root] ::-webkit-outer-spin-button {
+    height: auto;
+  }
+  [data-bui-root] ::-webkit-search-decoration {
+    -webkit-appearance: none;
+  }
+
+  [data-bui-root] :where(select:is([multiple], [size])) optgroup {
+    font-weight: bolder;
+  }
+
+  [data-bui-root] img,
+  [data-bui-root] svg,
+  [data-bui-root] video,
+  [data-bui-root] canvas,
+  [data-bui-root] audio,
+  [data-bui-root] iframe,
+  [data-bui-root] embed,
+  [data-bui-root] object {
+    display: block;
+    vertical-align: middle;
+  }
+
+  [data-bui-root] img,
+  [data-bui-root] video {
+    max-width: 100%;
+    height: auto;
+  }
+
+  [data-bui-root] [hidden]:where(:not([hidden="until-found"])) {
+    display: none !important;
+  }
+}
