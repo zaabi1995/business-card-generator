@@ -59,4 +59,18 @@ return [
     'btn_cancel'        => 'إلغاء',
     'btn_save_changes'  => 'حفظ التغييرات',
     'btn_create'        => 'إنشاء الشركة',
+
+    // Beautiful UI companies grid (web-react/src/surfaces/CompaniesGrid.tsx).
+    // Passed through data-props; the grid holds no strings of its own.
+    'grid_search_ph' => 'ابحث بالاسم أو المعرّف أو بريد المسؤول',
+    'grid_col_people' => 'الموظفون',
+    'grid_col_orders' => 'الطلبات',
+    'grid_col_spend' => 'الإنفاق',
+    'grid_filter_all' => 'الكل',
+    'grid_billing' => 'الفوترة',
+    'grid_empty' => 'لا توجد شركات بعد',
+    'grid_no_matches' => 'لا نتائج مطابقة لهذا التصفية',
+    'grid_of' => 'من',
+    'grid_companies' => 'شركات',
+    'grid_mixed_cur' => 'عملات مختلطة',
 ];

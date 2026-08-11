@@ -6,6 +6,7 @@ require_once __DIR__ . '/../config.php';
 require_once INCLUDES_DIR . '/Auth.php';
 require_once INCLUDES_DIR . '/Currency.php';
 require_once INCLUDES_DIR . '/admin-layout.php';
+require_once INCLUDES_DIR . '/react_island.php';
 
 Auth::requireRole('super_admin');
 
@@ -212,7 +213,49 @@ adminHeader(t('adminchrome.companies'), 'companies');
     </div>
 <?php endif; ?>
 
-    <!-- Companies Table -->
+    <!-- Companies Table
+         Wrapped in the React island's mount point. On mount the island REPLACES
+         the children below with the Beautiful UI grid (search, plan filter,
+         sortable columns, tabular figures). With JS off, or if the bundle
+         404s, the server-rendered table below is what the admin gets -- which
+         is why the fallback is the real table and not a placeholder.
+         Read side only: every mutation stays on the POST forms further down. -->
+    <?php
+    cardify_react_island();
+    $reactCompanyRows = array_map(static function (array $c): array {
+        return [
+            'id'             => $c['id'],
+            'name'           => (string) ($c['name'] ?? ''),
+            'slug'           => (string) ($c['slug'] ?? ''),
+            'admin_email'    => $c['admin_email'] ?? null,
+            'billing_email'  => $c['billing_email'] ?? null,
+            'plan'           => $c['plan'] ?? 'free',
+            'currency'       => $c['currency'] ?? null,
+            'status'         => $c['status'] ?? null,
+            'employee_count' => (int) ($c['employee_count'] ?? 0),
+            'order_count'    => (int) ($c['order_count'] ?? 0),
+            // Money crosses to JS as a float in the company's OWN currency; the
+            // grid formats per row and never sums across currencies.
+            'total_spend'    => (float) ($c['total_spend'] ?? 0),
+        ];
+    }, $companies);
+    $reactLabels = [];
+    foreach ([
+        'grid_search_ph', 'grid_col_people', 'grid_col_orders', 'grid_col_spend',
+        'grid_filter_all', 'grid_billing', 'grid_empty', 'grid_no_matches',
+        'grid_of', 'grid_companies', 'grid_mixed_cur', 'col_company', 'col_admin',
+    ] as $k) {
+        // t() returns the key itself when a string is missing, so the grid's own
+        // fallback only kicks in for a genuinely absent key.
+        $reactLabels[$k] = t('companiesmgmt.' . $k);
+    }
+    ?>
+    <div data-cardify-react="companies" data-props="<?= htmlspecialchars((string) json_encode([
+        'rows'     => $reactCompanyRows,
+        'labels'   => $reactLabels,
+        'rtl'      => currentDir() === 'rtl',
+        'editBase' => '',
+    ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE), ENT_QUOTES, 'UTF-8') ?>">
     <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
         <div class="overflow-x-auto">
             <table class="w-full">
@@ -331,6 +374,7 @@ adminHeader(t('adminchrome.companies'), 'companies');
             </table>
         </div>
     </div>
+    </div><!-- /data-cardify-react="companies" -->
 
     <!-- Add/Edit Modal -->
     <div x-show="showModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4" @keydown.escape.window="showModal = false">

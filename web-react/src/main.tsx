@@ -18,12 +18,14 @@
 import { createRoot, type Root } from "react-dom/client";
 import { StrictMode, type ComponentType } from "react";
 import Kit from "./Kit";
+import CompaniesGrid from "./surfaces/CompaniesGrid";
 import "./styles.css";
 
 export type SurfaceProps = { props: Record<string, unknown> };
 
 const SURFACES: Record<string, ComponentType<SurfaceProps>> = {
   kit: Kit,
+  companies: CompaniesGrid,
 };
 
 const roots = new WeakMap<Element, Root>();
