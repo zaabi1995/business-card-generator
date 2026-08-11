@@ -1,0 +1,63 @@
+/* Beautiful UI theme layer. Imports Tailwind v4 itself on its first line, so
+ * this is the only stylesheet entry the island needs.
+ *
+ * Scoped nothing: the island owns whole routes inside #view, and index.php
+ * still ships tokens.css for the legacy routes. Where both are on the page the
+ * legacy CSS is loaded first, so these tokens win inside React-owned subtrees. */
+/* Tailwind WITHOUT preflight, deliberately.
+ *
+ * The stock `@import "tailwindcss"` pulls preflight, whose reset is global and
+ * unscopable: it sets h1..h6 { font-size: inherit; font-weight: inherit },
+ * restyles every button/input, and flips * to border-box. This stylesheet is
+ * loaded on /app, a page whose other 13 views are legacy CSS -- preflight there
+ * flattens every heading and button in the app outside the island. Verified on
+ * the built bundle before this was changed, not assumed.
+ *
+ * So: theme layer + utilities only. The island's own components never relied on
+ * preflight (they set their own type sizes in exact px and style every control
+ * explicitly), which is why dropping it costs nothing here. */
+@layer theme, base, components, utilities;
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities);
+
+/* Preflight's rules, re-anchored under [data-bui-root]. The components DO need
+ * that reset (without it every control falls back to UA chrome), they just must
+ * not impose it on the legacy views sharing this page. See the file header. */
+@import "./beautiful-ui/preflight-scoped.css";
+
+@import "./beautiful-ui/theme.css";
+
+/* The island renders inside index.php's <main id="view">, which already has
+ * page padding. Beautiful UI expects to sit on --page, not on the striped body. */
+/* The island states its own type stack rather than inheriting the page's.
+ * scoped-preflight sets `font: inherit` on every control, so whatever lands
+ * here is what every button, input and label inside the island renders in --
+ * inheriting meant Times in a bare harness and Splitty's stack in the app, i.e.
+ * the kit never actually rendering in the type it was designed for.
+ *
+ * Families come from fonts.bhd.om (linked in index.php), never Google Fonts. */
+[data-bui-root] {
+  --font-inter: "Inter";
+  --font-mono-face: "JetBrains Mono";
+  font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  background-color: var(--page);
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.5;
+  font-feature-settings: "cv11", "ss01";
+  letter-spacing: -0.01em;
+}
+[data-bui-root] .font-mono {
+  font-family: var(--font-mono-face), ui-monospace, "SF Mono", monospace;
+}
+
+/* Splitty is bilingual and ships 16 locales. Beautiful UI is built LTR, so
+ * mirror the primitives that carry direction rather than letting them flip. */
+[dir="rtl"] [data-bui-root] {
+  direction: rtl;
+}
+[dir="rtl"] [data-bui-root] .font-mono,
+[dir="rtl"] [data-bui-root] .tabular-nums {
+  direction: ltr;
+  unicode-bidi: isolate;
+}
