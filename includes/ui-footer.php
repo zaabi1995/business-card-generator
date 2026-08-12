@@ -1,10 +1,4 @@
 <?php
-// r214 (ledger bhd-r6-83): close the <main id="main-content"> ui-header.php
-// opened, BEFORE any footer markup, so <footer> is a sibling of <main> and not
-// a child of it. cardify_close_main() is idempotent and is also registered as a
-// shutdown handler, so a page that renders no footer still emits balanced HTML.
-if (function_exists('cardify_close_main')) { cardify_close_main(); }
-
 // Site-wide footer (skip on homepage which has its own footer)
 $currentPage = basename($_SERVER['SCRIPT_NAME'] ?? '', '.php');
 $bp = function_exists('getBasePath') ? getBasePath() : '/';
