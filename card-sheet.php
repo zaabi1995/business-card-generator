@@ -124,10 +124,16 @@ try {
         file_put_contents($tmpCmyk, json_encode($cmykCfg, JSON_UNESCAPED_UNICODE));
     }
 
-    // The magenta rounded CutContour (round-corner die line) is a per-client
-    // option, OFF by default (plain straight guillotine cut). Add &round=1 for
-    // clients whose cards are die-cut with rounded corners.
-    $roundCut = (($_GET['round'] ?? '') === '1');
+    // The magenta rounded CutContour (round-corner die line) is ON by default for
+    // any tenant whose press config declares a corner radius, because that radius
+    // only exists when their cards are actually die-cut with rounded corners
+    // (Otech: 4.259mm, per their Illustrator cutting-mark file). Tenants with no
+    // corner_radius_mm keep the plain straight guillotine cut. ?round=0 forces
+    // square corners, ?round=1 forces the die line, both override the default.
+    $roundDefault = is_array($cmykCfg) && !empty($cmykCfg['corner_radius_mm']);
+    $roundCut = isset($_GET['round'])
+        ? ($_GET['round'] === '1')
+        : $roundDefault;
 
     // Bleed-tile mode: the finished cards butt together and each card's design
     // bleeds `inset` mm past every cut line (no flat colour margin), so 5x2 = 10
