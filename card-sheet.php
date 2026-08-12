@@ -73,6 +73,23 @@ try {
         exit;
     }
 
+    // UV screen-print mode (?uv=1): impose the tenant's spot-UV separation
+    // (solid black = UV, the screen printer's convention) instead of the card
+    // artwork, with the SAME layout ladder, die line and registration marks so
+    // the UV film registers with the printed sheet. The mask is a per-tenant
+    // asset (see CardPDFRenderer::uvMaskPathFor); the sheet stays white.
+    $uvMode = (($_GET['uv'] ?? '') === '1');
+    $uvMask = null;
+    if ($uvMode) {
+        $uvMask = CardPDFRenderer::uvMaskPathFor((string) ($company['id'] ?? ''), (string) ($company['slug'] ?? ''));
+        if ($uvMask === null) {
+            http_response_code(404);
+            header('Content-Type: text/plain; charset=utf-8');
+            echo 'No UV layer is configured for this company';
+            exit;
+        }
+    }
+
     $paper = ($_GET['paper'] ?? 'A4') === 'A3' ? 'A3' : 'A4';
     // Auto-fit unless an explicit rows/cols was requested. Landscape cards on
     // portrait A4 typically yield 4x2 = 8-up; densest-that-fits is chosen.
@@ -83,19 +100,25 @@ try {
     // All-vector per-card render (original vector source.pdf as bg, designer
     // sample redacted, full-font overlay). Scalable + clean, type matches the
     // design. Falls back to the raster 'print' render if vector is unavailable.
-    $rendered = CardPDFRenderer::render((string) $employee['id'], 'vector');
-    if (empty($rendered['success']) || empty($rendered['path']) || !is_file($rendered['path'])) {
-        $rendered = CardPDFRenderer::render((string) $employee['id'], 'print');
-    }
-    // Raster fallback: templates imported from an uploaded image (has_vector_
-    // source=0, e.g. OHB) can't produce a vector PDF, so build a card-sized
-    // 2-page PDF from the saved Fabric render PNGs. The imposition step tiles
-    // whatever single-card PDF it's given, so a raster card images the same.
+    // UV mode skips the artwork render entirely: the mask PDF (same page box
+    // as the vector card PDF) IS the card the imposition tiles.
     $rasterTmp = '';
-    if (empty($rendered['success']) || empty($rendered['path']) || !is_file($rendered['path'])) {
-        $rasterTmp = cardsheet_build_raster_card_pdf($employee, $company);
-        if ($rasterTmp !== '') {
-            $rendered = ['success' => true, 'path' => $rasterTmp];
+    if ($uvMode) {
+        $rendered = ['success' => true, 'path' => $uvMask];
+    } else {
+        $rendered = CardPDFRenderer::render((string) $employee['id'], 'vector');
+        if (empty($rendered['success']) || empty($rendered['path']) || !is_file($rendered['path'])) {
+            $rendered = CardPDFRenderer::render((string) $employee['id'], 'print');
+        }
+        // Raster fallback: templates imported from an uploaded image (has_vector_
+        // source=0, e.g. OHB) can't produce a vector PDF, so build a card-sized
+        // 2-page PDF from the saved Fabric render PNGs. The imposition step tiles
+        // whatever single-card PDF it's given, so a raster card images the same.
+        if (empty($rendered['success']) || empty($rendered['path']) || !is_file($rendered['path'])) {
+            $rasterTmp = cardsheet_build_raster_card_pdf($employee, $company);
+            if ($rasterTmp !== '') {
+                $rendered = ['success' => true, 'path' => $rasterTmp];
+            }
         }
     }
     if (empty($rendered['success']) || empty($rendered['path']) || !is_file($rendered['path'])) {
@@ -123,6 +146,9 @@ try {
         $tmpCmyk = tempnam(sys_get_temp_dir(), 'sheetcmyk_') . '.json';
         file_put_contents($tmpCmyk, json_encode($cmykCfg, JSON_UNESCAPED_UNICODE));
     }
+    // The UV separation prints black on a WHITE sheet: no brand-colour
+    // underlay, or the film would carry the background as UV.
+    if ($uvMode) $sheetBg = 'none';
 
     // The magenta rounded CutContour (round-corner die line) is ON by default for
     // any tenant whose press config declares a corner radius, because that radius
@@ -149,7 +175,7 @@ try {
     $outDir = BASE_DIR . '/data/print-sheets';
     if (!is_dir($outDir)) @mkdir($outDir, 0775, true);
     $slug = preg_replace('/[^a-z0-9]+/i', '-', (string) $employee['id']);
-    $outPath = $outDir . '/cutsheet-' . $slug . '-' . $paper . '-' . date('Ymd-His') . '.pdf';
+    $outPath = $outDir . '/' . ($uvMode ? 'uvsheet' : 'cutsheet') . '-' . $slug . '-' . $paper . '-' . date('Ymd-His') . '.pdf';
 
     $py = trim((string) @shell_exec('command -v python3 2>/dev/null')) ?: 'python3';
     $timeoutPrefix = (trim((string) @shell_exec('command -v timeout 2>/dev/null')) !== '') ? 'timeout 60 ' : '';
@@ -192,7 +218,8 @@ try {
 
     while (ob_get_level()) { ob_end_clean(); }
     $name = trim((string) ($employee['name_en'] ?? $employee['name'] ?? '')) ?: 'card';
-    $downloadName = preg_replace('/[^A-Za-z0-9._-]+/', '-', $name) . '-A4-cutting-sheet.pdf';
+    $downloadName = preg_replace('/[^A-Za-z0-9._-]+/', '-', $name)
+        . ($uvMode ? '-UV-print-file.pdf' : '-A4-cutting-sheet.pdf');
     header('Content-Type: application/pdf');
     header('Content-Disposition: attachment; filename="' . $downloadName . '"');
     header('Content-Length: ' . filesize($outPath));

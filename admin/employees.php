@@ -1000,9 +1000,13 @@ $ext = (defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slug'])) ? ''
 
 // Does this tenant's press download produce CMYK + a cut layer? (vs RGB bleed)
 $pressHasCmyk = false;
+$pressHasUv   = false;
 if (class_exists('CardPDFRenderer') || is_file(INCLUDES_DIR . '/CardPDFRenderer.php')) {
     require_once INCLUDES_DIR . '/CardPDFRenderer.php';
     $pressHasCmyk = CardPDFRenderer::companyHasPressCmyk((string)$companyId, (string)($_SESSION['company_slug'] ?? ''));
+    // Spot-UV separation download: only for tenants with a UV mask on file
+    // (e.g. Otech, whose press screen-prints UV over the logo + dot).
+    $pressHasUv = CardPDFRenderer::uvMaskPathFor((string)$companyId, (string)($_SESSION['company_slug'] ?? '')) !== null;
 }
 
 // Start admin layout
@@ -1264,6 +1268,7 @@ adminHeader(t('employees.page_title'), 'employees');
         $publicUrl  = 'https://' . ($company['slug'] ?? 'app') . '.' . $publicHost . '/' . $__urlPath;
         $printReadyUrl = '/card-pdf.php?i=' . urlencode($emp['id']) . '&print=1';
         $cutSheetUrl   = '/card-sheet.php?i=' . urlencode($emp['id']);
+        $uvSheetUrl    = '/card-sheet.php?i=' . urlencode($emp['id']) . '&uv=1';
         ?>
         <div x-data="{ showMenu:false, showMore:false }"
              x-show="matchesSearch('<?php echo addslashes($emp['email'] ?? ''); ?>', '<?php echo addslashes($emp['name_en'] ?? ''); ?>', '<?php echo addslashes($emp['name_ar'] ?? ''); ?>', '<?php echo addslashes($emp['department_id'] ?? ''); ?>', <?php echo $cardCount > 0 ? 'true' : 'false'; ?>)"
@@ -1371,6 +1376,14 @@ adminHeader(t('employees.page_title'), 'employees');
                                             <i class="fa-solid fa-scissors text-blue-600 w-4 mt-0.5"></i>
                                             <span><?= htmlspecialchars(t('employees.dl_a4_sheet')) ?><span class="block text-[11px] text-gray-400"><?= htmlspecialchars(t('employees.dl_a4_sheet_desc')) ?></span></span>
                                         </a>
+                                        <?php if ($pressHasUv): ?>
+                                        <!-- Spot-UV separation sheet (black = UV, same layout + cut marks) -->
+                                        <a href="<?= htmlspecialchars($uvSheetUrl, ENT_QUOTES) ?>"
+                                           class="flex items-start gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                                            <i class="fa-solid fa-droplet text-purple-600 w-4 mt-0.5"></i>
+                                            <span><?= htmlspecialchars(t('employees.dl_uv_file')) ?><span class="block text-[11px] text-gray-400"><?= htmlspecialchars(t('employees.dl_uv_file_desc')) ?></span></span>
+                                        </a>
+                                        <?php endif; ?>
                                         <hr class="my-1 border-gray-100">
                                         <!-- Send to production Kanban (against the PO) -->
                                         <a href="javascript:void(0)"

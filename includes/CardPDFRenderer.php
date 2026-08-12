@@ -469,6 +469,37 @@ class CardPDFRenderer
         return self::pressCmykConfig($companyId, $companySlug);
     }
 
+    /**
+     * Absolute path to the tenant's spot-UV separation card PDF, or null when
+     * none is configured. The mask is a 2-page PDF (front, back) with the SAME
+     * page box as the tenant's vector card PDF, where solid black marks the
+     * areas the press coats with UV ("black = UV", per the screen printer's
+     * file convention). It is a per-DESIGN asset: UV covers static brand
+     * elements (logo, dot), never per-employee text, so one mask serves every
+     * employee on the template.
+     *
+     * Resolution order:
+     *   1. settings.print_cmyk.uv_mask_pdf (path relative to BASE_DIR), so a
+     *      tenant/template can override without code.
+     *   2. The conventional uploads/companies/<id>/press/uv-mask.pdf when the
+     *      file exists (drop a mask there to enable the UV download for a
+     *      tenant, no code change).
+     */
+    public static function uvMaskPathFor(string $companyId, string $companySlug = ''): ?string
+    {
+        $cfg = self::pressCmykConfig($companyId, $companySlug);
+        if (is_array($cfg) && !empty($cfg['uv_mask_pdf'])) {
+            $p   = (string) $cfg['uv_mask_pdf'];
+            $abs = ($p !== '' && $p[0] === '/') ? $p : BASE_DIR . '/' . ltrim($p, '/');
+            if (is_file($abs)) return $abs;
+        }
+        if ($companyId !== '') {
+            $abs = BASE_DIR . '/uploads/companies/' . $companyId . '/press/uv-mask.pdf';
+            if (is_file($abs)) return $abs;
+        }
+        return null;
+    }
+
     private static function pageSpec(?array $tpl, string $side): array
     {
         if (!is_array($tpl)) {

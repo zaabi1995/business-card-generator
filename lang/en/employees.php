@@ -104,6 +104,8 @@ return [
     'dl_print_ready_desc' => 'The card front + back, high-res, fonts embedded, no watermark',
     'dl_a4_sheet'         => 'A4 cutting sheet',
     'dl_a4_sheet_desc'    => '10-up A4 (front + back) with crop marks, cut lines + registration',
+    'dl_uv_file'          => 'UV print file',
+    'dl_uv_file_desc'     => 'Spot-UV layer (black = UV) with the same cutting marks + registration',
     'dl_send_print'       => 'Send to print',
     'dl_send_print_desc'  => 'Create a production job on the print shop queue (billed on the PO)',
     'dl_pdf_preview'      => 'Download PDF (preview)',
