@@ -633,5 +633,25 @@ if (isset($showNavigation) && $showNavigation === true) {
     ]);
 }
 
-echo '<div id="main-content" tabindex="-1"></div>';
+// r214 (ledger bhd-r6-83, 5th reopen): this used to be an EMPTY
+// <div id="main-content" tabindex="-1"></div>. Measured live on cardify.om and
+// /ar/ with Chromium: the element had 0 children, 0 height and sat at y=0 under
+// the 81px fixed nav, and the site published no <main> landmark at all. Every
+// previous round checked that the id EXISTED and that focus MOVED to it, which
+// it did, so the item kept closing and reopening while the promise "skip to
+// main content" still pointed at nothing. The target is now the real container.
+// Balance is guaranteed twice over: ui-footer.php closes it before the footer
+// (semantically correct, <footer> outside <main>), and a shutdown handler closes
+// it for the pages that render no footer (portal.php is the only one).
+echo '<main id="main-content" tabindex="-1">';
+$GLOBALS['cardify_main_open'] = true;
+if (!function_exists('cardify_close_main')) {
+    function cardify_close_main() {
+        if (!empty($GLOBALS['cardify_main_open'])) {
+            $GLOBALS['cardify_main_open'] = false;
+            echo '</main>';
+        }
+    }
+    register_shutdown_function('cardify_close_main');
+}
 ?>
