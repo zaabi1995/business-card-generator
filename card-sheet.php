@@ -100,11 +100,15 @@ try {
     // All-vector per-card render (original vector source.pdf as bg, designer
     // sample redacted, full-font overlay). Scalable + clean, type matches the
     // design. Falls back to the raster 'print' render if vector is unavailable.
-    // UV mode skips the artwork render entirely: the mask PDF (same page box
-    // as the vector card PDF) IS the card the imposition tiles.
+    // UV mode prefers the bleed-inclusive 'print' page (trim centred) so the
+    // artwork runs past the die line on the sheet, like the printer's own file;
+    // the trim-cropped 'vector' page is the fallback and registers the same.
     $rasterTmp = '';
     if ($uvMode) {
-        $rendered = ['success' => true, 'path' => $uvMask];
+        $rendered = CardPDFRenderer::render((string) $employee['id'], 'print');
+        if (empty($rendered['success']) || empty($rendered['path']) || !is_file($rendered['path'])) {
+            $rendered = CardPDFRenderer::render((string) $employee['id'], 'vector');
+        }
     } else {
         $rendered = CardPDFRenderer::render((string) $employee['id'], 'vector');
         if (empty($rendered['success']) || empty($rendered['path']) || !is_file($rendered['path'])) {
@@ -146,9 +150,6 @@ try {
         $tmpCmyk = tempnam(sys_get_temp_dir(), 'sheetcmyk_') . '.json';
         file_put_contents($tmpCmyk, json_encode($cmykCfg, JSON_UNESCAPED_UNICODE));
     }
-    // The UV separation prints black on a WHITE sheet: no brand-colour
-    // underlay, or the film would carry the background as UV.
-    if ($uvMode) $sheetBg = 'none';
 
     // The magenta rounded CutContour (round-corner die line) is ON by default for
     // any tenant whose press config declares a corner radius, because that radius
@@ -179,6 +180,45 @@ try {
 
     $py = trim((string) @shell_exec('command -v python3 2>/dev/null')) ?: 'python3';
     $timeoutPrefix = (trim((string) @shell_exec('command -v timeout 2>/dev/null')) !== '') ? 'timeout 60 ' : '';
+
+    // UV mode: not the A4 imposition. Rebuild the screen printer's own sheet
+    // format (225x320 mm 8-up, artwork + black UV layer on top, red die lines,
+    // crosshair targets), per their "UV SCREEN PRINT- FILE SET UP" reference.
+    // Same exec + escapeshellarg discipline as the imposition call below.
+    if ($uvMode) {
+        $cmd = $timeoutPrefix . escapeshellarg($py)
+             . ' ' . escapeshellarg(BASE_DIR . '/scripts/uv-print-file.py')
+             . ' --card ' . escapeshellarg($rendered['path'])
+             . ' --uv-mask ' . escapeshellarg($uvMask)
+             . ' --cut-radius-mm ' . escapeshellarg((string) $cutRadius)
+             . (is_array($cmykCfg) && !empty($cmykCfg['uv_sheet'])
+                 ? ' --grid-json ' . escapeshellarg(json_encode($cmykCfg['uv_sheet']))
+                 : '')
+             . ' --out ' . escapeshellarg($outPath)
+             . ' 2>&1';
+        $out = []; $rc = 0;
+        exec($cmd, $out, $rc);
+        if ($tmpCmyk !== '' && is_file($tmpCmyk)) @unlink($tmpCmyk);
+        if ($rc !== 0 || !is_file($outPath) || filesize($outPath) < 1024) {
+            error_log('card-sheet uv build failed rc=' . $rc . ' out=' . implode("\n", $out));
+            http_response_code(500);
+            header('Content-Type: text/plain; charset=utf-8');
+            echo 'Could not build the UV print file';
+            exit;
+        }
+        @chmod($outPath, 0644);
+        while (ob_get_level()) { ob_end_clean(); }
+        $name = trim((string) ($employee['name_en'] ?? $employee['name'] ?? '')) ?: 'card';
+        $downloadName = preg_replace('/[^A-Za-z0-9._-]+/', '-', $name) . '-UV-print-file.pdf';
+        header('Content-Type: application/pdf');
+        header('Content-Disposition: attachment; filename="' . $downloadName . '"');
+        header('Content-Length: ' . filesize($outPath));
+        header('Cache-Control: private, no-store');
+        readfile($outPath);
+        @unlink($outPath);
+        exit;
+    }
+
     // Densest-first layouts that fit a landscape card on portrait A4 (10-up first).
     $layouts = $autoFit ? [[5, 2], [4, 2], [4, 1], [3, 2], [3, 1], [2, 2], [2, 1], [1, 1]] : [[$rows, $cols]];
     $out = []; $rc = -1;
@@ -218,8 +258,7 @@ try {
 
     while (ob_get_level()) { ob_end_clean(); }
     $name = trim((string) ($employee['name_en'] ?? $employee['name'] ?? '')) ?: 'card';
-    $downloadName = preg_replace('/[^A-Za-z0-9._-]+/', '-', $name)
-        . ($uvMode ? '-UV-print-file.pdf' : '-A4-cutting-sheet.pdf');
+    $downloadName = preg_replace('/[^A-Za-z0-9._-]+/', '-', $name) . '-A4-cutting-sheet.pdf';
     header('Content-Type: application/pdf');
     header('Content-Disposition: attachment; filename="' . $downloadName . '"');
     header('Content-Length: ' . filesize($outPath));
