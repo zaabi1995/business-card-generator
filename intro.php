@@ -228,6 +228,28 @@ $basePath = getBasePath();
             transform: scaleX(0);
         }
     </style>
+<?php
+// r252 / bhd-r6-95. /intro was the one cardify URL in the sitemap that
+// published NO machine date at all while its sitemap leg published one: a
+// claim with an author on one side and silence on the other. It renders its
+// own <head> and never includes ui-footer.php, which is where every other page
+// emits this node, so it never got one. Same node shape, same oracle, and the
+// date is the route closure sitemap.php reads for the same URL.
+require_once __DIR__ . '/includes/Freshness.php';
+$introIso = Freshness::isoDate();
+if ($introIso):
+?>
+<script type="application/ld+json"><?php echo json_encode([
+    '@context' => 'https://schema.org',
+    '@type' => 'WebPage',
+    '@id' => 'https://cardify.om/intro#webpage',
+    'url' => 'https://cardify.om/intro',
+    'inLanguage' => 'en',
+    'dateModified' => $introIso,
+    'isPartOf' => ['@id' => 'https://cardify.om/#website'],
+    'publisher' => ['@id' => 'https://cardify.om/#organization'],
+], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE); ?></script>
+<?php endif; ?>
 </head>
 <body class="bg-white antialiased overflow-x-hidden">
     <!-- Scroll Progress Bar -->
