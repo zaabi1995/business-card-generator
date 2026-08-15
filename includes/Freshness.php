@@ -142,9 +142,33 @@ class Freshness
         return $newest;
     }
 
+    /**
+     * Pure: a page's DECLARED content date, or null. A row-backed page (a
+     * company, a post) knows the instant its content changed, and that instant
+     * is what the sitemap publishes for the same URL; a render closure cannot
+     * see it and would answer the shared layout date for every row alike.
+     * Accepts an epoch int or a 'Y-m-d' string, and refuses anything else
+     * rather than guessing.
+     */
+    public static function declaredTimestamp($declared): ?int
+    {
+        if (is_int($declared) && $declared > 0) {
+            return $declared;
+        }
+        if (is_string($declared) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $declared)) {
+            $t = strtotime($declared . ' 00:00:00 UTC');
+            return $t ?: null;
+        }
+        return null;
+    }
+
     /** Unix mtime that dates this page, or null if nothing is readable. */
     public static function timestamp(): ?int
     {
+        $declared = self::declaredTimestamp($GLOBALS['pageContentDate'] ?? null);
+        if ($declared !== null) {
+            return $declared;
+        }
         $newest = self::newestMtime(self::renderDependencies());
         if ($newest !== null) {
             return $newest;
