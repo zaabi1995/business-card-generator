@@ -129,7 +129,42 @@ function smRouteDate($path) {
         if (is_file($f)) { $t = (int) filemtime($f); break; }
     }
     if ($t === 0) $t = (int) filemtime(__FILE__);
-    return $cache[$path] = date('Y-m-d', $t);
+    return $cache[$path] = smMtimeDay($t);
+}
+
+/**
+ * r231 / bhd-r6-95, change of approach #44. THE CALENDAR, not the source.
+ *
+ * Four rounds fixed WHERE the date comes from (clock -> mtime -> content
+ * hash) and the estate still diverged, because a date is not a number: it is
+ * a number read in a calendar, and cardify had two.
+ *
+ * MEASURED LIVE 13 Aug 2026. index.php mtime is 1786319347, one instant, and
+ * both channels read it correctly:
+ *
+ *   includes/Freshness.php:38        gmdate('Y-m-d', $mtime)  -> 2026-08-09
+ *   includes/SitemapFreshness.php:119 gmdate('Y-m-d', $mtime) -> 2026-08-09
+ *   sitemap.php:132 (before this)     date('Y-m-d', $mtime)   -> 2026-08-10
+ *
+ * config.php:133 sets Asia/Muscat, so date() is +04 and the mtime at
+ * 2026-08-09 23:49 UTC lands on the 10th for one reader and the 9th for the
+ * other. That is the whole of the SITEMAP-AHEAD-OF-PAGE finding freshness_gate
+ * has been reporting on cardify.om/: not a stale date, not a missing caller,
+ * a one-day calendar split between two functions reading one mtime.
+ *
+ * THE RULE, and it is a rule about the TIMESTAMP not about the file:
+ *
+ *   filemtime() is an absolute instant (UTC epoch) -> format with gmdate()
+ *   a DB `updated_at` is a wall-clock string already written in Asia/Muscat
+ *   -> strtotime()+date() round-trips it in its own calendar, and gmdate()
+ *   would shift a 02:00 Muscat row back a day. Those sites stay date().
+ *
+ * So this function is the ONLY calendar for mtime, and every mtime-derived
+ * lastmod in this file goes through it. The DB sites are deliberately left
+ * alone and are marked as such.
+ */
+function smMtimeDay($ts) {
+    return gmdate('Y-m-d', (int) $ts);
 }
 
 /**
@@ -149,12 +184,15 @@ function smChildDate($part, $db) {
                 $t = max($t, (int) filemtime($f));
             }
         }
-        return date('Y-m-d', $t);
+        return smMtimeDay($t);
     };
     $maxCol = function ($table, $col, $where = '') use ($db) {
         if (!$db) return null;
         try {
             $r = $db->fetchOne("SELECT MAX({$col}) AS m FROM {$table} {$where}");
+            // DB calendar, deliberately date() not smMtimeDay(): updated_at is
+            // a wall-clock string written in Asia/Muscat, so gmdate would move
+            // an early-morning row back a day. See smMtimeDay().
             return ($r && $r['m']) ? date('Y-m-d', strtotime($r['m'])) : null;
         } catch (Throwable $e) { return null; }
     };
@@ -165,7 +203,7 @@ function smChildDate($part, $db) {
             return $maxCol('blog_posts', 'updated_at', "WHERE status = 'published'")
                    ?? smRouteDate('/blog');
         case 'companies-ar':
-            return date('Y-m-d', (int) filemtime(__FILE__));
+            return smMtimeDay(filemtime(__FILE__));
         case 'static':
             return $newest(['*.php', 'gcc/*.php', 'industries/*.php']);
         case 'tools':      return $newest(['tools.php', 'tools/*.php']);
@@ -174,7 +212,7 @@ function smChildDate($part, $db) {
         case 'logos':      return $newest(['logos.php', 'logos/*.php']);
         case 'printshops': return $newest(['print-shops.php', 'printshop/*.php']);
     }
-    return date('Y-m-d', (int) filemtime(__FILE__));
+    return smMtimeDay(filemtime(__FILE__));
 }
 
 /**
@@ -411,7 +449,7 @@ if ($part === 'static') {
             // Dataset count on /oman-business-index. See includes/CompanyIndex.php.
             $rows = CompanyIndex::rows($db);
             foreach ($rows as $c) {
-                $lastmod = date('Y-m-d', strtotime($c['updated_at']));
+                $lastmod = /* DB calendar, see smMtimeDay() */ date('Y-m-d', strtotime($c['updated_at']));
                 smUrl("{$baseUrl}/companies/" . $c['slug'], $lastmod, 'monthly', '0.5',
                       $logoXml[$c['slug']] ?? '');
             }
@@ -436,7 +474,7 @@ if ($part === 'static') {
                   ORDER BY updated_at DESC"
             );
             foreach ($posts as $post) {
-                $lastmod = date('Y-m-d', strtotime($post['updated_at']));
+                $lastmod = /* DB calendar, see smMtimeDay() */ date('Y-m-d', strtotime($post['updated_at']));
                 // If an AR translation ships (slug_ar populated), emit the
                 // AR URL too and mark both with xhtml:link alternates so
                 // Google treats them as one post in two languages.
@@ -479,7 +517,7 @@ if ($part === 'static') {
         try {
             $careers = $db->fetchAll("SELECT slug, updated_at FROM career_listings WHERE status = 'open' ORDER BY updated_at DESC");
             foreach ($careers as $c) {
-                $lastmod = date('Y-m-d', strtotime($c['updated_at']));
+                $lastmod = /* DB calendar, see smMtimeDay() */ date('Y-m-d', strtotime($c['updated_at']));
                 smUrl("{$baseUrl}/careers/" . $c['slug'], $lastmod, 'weekly', '0.6');
             }
         } catch (Throwable $e) { /* career_listings may not exist */ }
