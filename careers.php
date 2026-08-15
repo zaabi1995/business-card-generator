@@ -120,6 +120,16 @@ if ($db->tableExists('career_listings')) {
             );
         }
         if ($singleJob) {
+            // r254 / bhd-r6-95 #67. Same shape as blog.php one file over, and
+            // it cost one live URL: /careers/full-stack-developer published
+            // 2026-08-12 (the render closure) against its own sitemap leg of
+            // 2026-08-05 (career_listings.updated_at, sitemap.php:497). The row
+            // that renders the route is the row that dates it.
+            $jobLastMod = strtotime((string) ($singleJob['updated_at']
+                ?? $singleJob['created_at'] ?? ''));
+            if ($jobLastMod) {
+                $GLOBALS['pageContentDate'] = $jobLastMod;
+            }
             $pageTitle = t('careers.single_page_title', ['title' => $singleJob['title']]);
             $pageDescription = t('careers.single_page_desc', [
                 'title'    => $singleJob['title'],

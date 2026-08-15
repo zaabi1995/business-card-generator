@@ -71,6 +71,30 @@ if ($db->tableExists('blog_posts')) {
 
             // Conditional crawl support: respect If-Modified-Since from Googlebot
             $lastMod = strtotime($singlePost['updated_at'] ?? $singlePost['published_at'] ?? $singlePost['created_at']);
+            // r254 / bhd-r6-95, change of approach #67. THE ROW IS THE AUTHOR.
+            //
+            // sitemap.php:472-487 writes this URL's <lastmod> from
+            // blog_posts.updated_at and never calls smRouteDate, so approach
+            // #66's route closure cannot reach this family BY CONSTRUCTION.
+            // The cost, censused live on 15 Aug: 35 of 35 /blog/<slug> URLs
+            // published THREE dates in one response -- BlogPosting.dateModified
+            // 2026-04-25 (row), WebPage.dateModified 2026-08-12 (include
+            // closure) and a visible "Last updated 12 August 2026" -- against a
+            // sitemap leg of 2026-04-25. Widest gap 109 days, on
+            // /blog/business-card-etiquette-oman-dos-donts.
+            //
+            // This is llm230's root cause, three authors for one fact, and the
+            // fix is the one companies.php:117 already runs: when a route is
+            // rendered FROM A ROW, the row's own timestamp is the date, and
+            // every channel reads it. Freshness::isDeclared() then formats it
+            // with date() rather than gmdate(), because updated_at is a
+            // wall-clock string already written in Asia/Muscat.
+            //
+            // Only when the row actually carries a date. A post with none must
+            // fall back to the closure rather than publish epoch 0.
+            if ($lastMod) {
+                $GLOBALS['pageContentDate'] = $lastMod;
+            }
             if ($lastMod) {
                 $lastModHttp = gmdate('D, d M Y H:i:s \G\M\T', $lastMod);
                 header('Last-Modified: ' . $lastModHttp);

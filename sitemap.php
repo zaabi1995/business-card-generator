@@ -114,6 +114,17 @@ function smRouteDate($path) {
     // not a date nobody can question.
     static $RENDERER = [
         'press-kit'         => 'press.php',
+        // r254 / bhd-r6-95 #67. Read out of .htaccess:260-267, same as the
+        // rows below it. Without these four, /logos/press and /logos/terms and
+        // their AR twins resolved to no file and took the fallback, so editing
+        // this generator on 15 Aug moved four live URLs to 2026-08-15 with
+        // nothing about them changed -- while each page's own closure still
+        // said 2026-08-12. Exactly the silent-fallback shape the docblock above
+        // warns about, three rounds after it was written.
+        'logos/press'       => 'logos.php',
+        'logos/terms'       => 'logos.php',
+        'ar/logos/press'    => 'logos.php',
+        'ar/logos/terms'    => 'logos.php',
         'gcc/saudi-arabia'  => 'gcc/country.php',
         'gcc/uae'           => 'gcc/country.php',
         'gcc/qatar'         => 'gcc/country.php',
@@ -137,8 +148,37 @@ function smRouteDate($path) {
     foreach ($roots as $f) {
         if (is_file($f)) { $t = (int) (Freshness::routeTimestamp($f, __DIR__) ?: filemtime($f)); break; }
     }
-    if ($t === 0) $t = (int) (Freshness::routeTimestamp(__FILE__, __DIR__) ?: filemtime(__FILE__));
+    if ($t === 0) {
+        // r254 / bhd-r6-95, change of approach #67. THE FALLBACK IS A FINDING.
+        //
+        // The docblock above already demanded this: "A route that cannot find
+        // its renderer should be a short list somebody has to edit, not a date
+        // nobody can question." It was still a date. A route that resolves to
+        // no file gets this generator's own mtime, which means every edit to
+        // sitemap.php re-dates it, which means the claim tracks the wrong
+        // artifact and nothing can ever falsify it. That is how four live URLs
+        // sat one calendar ahead of their own pages until somebody censused
+        // them by hand.
+        //
+        // The date still ships -- withholding <lastmod> would trade a wrong
+        // claim for no claim -- but the route is now RECORDED and the document
+        // names it in a comment at the end of the urlset, so the fallback is
+        // visible on the wire to any reader instead of only in this function.
+        smRouteUnresolved($path);
+        $t = (int) (Freshness::routeTimestamp(__FILE__, __DIR__) ?: filemtime(__FILE__));
+    }
     return $cache[$path] = smMtimeDay($t);
+}
+
+/**
+ * Routes smRouteDate() could not resolve to a renderer, recorded so the
+ * document can publish its own blind spot. Call with no argument to read.
+ */
+function smRouteUnresolved($path = null) {
+    static $seen = [];
+    if ($path === null) return array_keys($seen);
+    $seen[$path] = true;
+    return null;
 }
 
 /**
@@ -583,4 +623,12 @@ if ($part === 'static') {
     // Unknown part, empty urlset (Google will just see no URLs; still valid XML).
 }
 
+// r254 / bhd-r6-95 #67: publish the denominator of this document's own
+// confidence. Any route whose renderer smRouteDate() could not find took this
+// generator's mtime instead of its page's, so its lastmod is unfalsifiable.
+// Naming them here puts the finding on the wire where a gate reads bytes.
+foreach (smRouteUnresolved() as $u) {
+    echo '    <!-- UNRESOLVED-ROUTE ' . smX($u) . ' : lastmod fell back to the '
+       . 'generator mtime because no renderer resolved; add it to $RENDERER -->' . "\n";
+}
 echo '</urlset>' . "\n";
