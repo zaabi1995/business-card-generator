@@ -179,6 +179,20 @@ class Freshness
         return $own ?: null;
     }
 
+    /**
+     * True when this page's date came from a DECLARED row timestamp rather
+     * than a file mtime. r231's rule, and it is a rule about the timestamp:
+     * filemtime() is an absolute instant, so gmdate(); a DB updated_at is a
+     * wall-clock string already written in Asia/Muscat, so date() round-trips
+     * it in its own calendar and gmdate() would shift a 02:00 Muscat row back
+     * a day. MEASURED: /companies/aramex-muscat read 2026-05-30 under gmdate
+     * while its own sitemap leg said 2026-05-31.
+     */
+    public static function isDeclared(): bool
+    {
+        return self::declaredTimestamp($GLOBALS['pageContentDate'] ?? null) !== null;
+    }
+
     /** ISO-8601 date (YYYY-MM-DD) of the page, or null if unreadable. */
     public static function isoDate(): ?string
     {
@@ -186,7 +200,7 @@ class Freshness
         if (!$mtime) {
             return null;
         }
-        return gmdate('Y-m-d', $mtime);
+        return self::isDeclared() ? date('Y-m-d', $mtime) : gmdate('Y-m-d', $mtime);
     }
 
     /** Human date for the visible line, in the current locale's numerals. */
@@ -196,7 +210,7 @@ class Freshness
         if (!$mtime) {
             return null;
         }
-        $en = gmdate('j F Y', $mtime);
+        $en = self::isDeclared() ? date('j F Y', $mtime) : gmdate('j F Y', $mtime);
         // An Arabic page carrying an English month name is the same
         // half-translated surface r6-74 was raised for, one line further down.
         if (function_exists('currentLocale') && currentLocale() === 'ar') {

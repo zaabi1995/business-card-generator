@@ -60,7 +60,16 @@ touch($qPage, $d('2026-07-01'));
 touch($qInc,  $d('2026-06-01'));
 $quiet = Freshness::newestMtime(Freshness::keepRendering([$qPage, $qInc], $quietRoot));
 
+// r231's calendar rule: a declared row date is a Muscat wall-clock instant.
+date_default_timezone_set('Asia/Muscat');
+$rowNight = (int) strtotime('2026-05-31 02:00:00 +04:00');   // 30 May 22:00 UTC
+$GLOBALS['pageContentDate'] = $rowNight;
+$declaredIso = Freshness::isoDate();
+unset($GLOBALS['pageContentDate']);
+
 $arms = [
+    'a 02:00 Muscat row keeps its own day (r231: date(), not gmdate())'
+        => $declaredIso === '2026-05-31' && gmdate('Y-m-d', $rowNight) === '2026-05-30',
     'the newest RENDERING file dates the page (12th, not the 5th)'
         => $newest === $d('2026-08-12'),
     'the page source alone would have published the stale date'
