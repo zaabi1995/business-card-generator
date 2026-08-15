@@ -83,6 +83,15 @@ $arms = [
         => $nothing === null,
     'a quiet page keeps its own older date, movement is not invented'
         => $quiet === $d('2026-07-01'),
+    'a declared row date wins over the closure (epoch)'
+        => Freshness::declaredTimestamp($d('2026-05-28')) === $d('2026-05-28'),
+    'a declared row date wins over the closure (Y-m-d string)'
+        => Freshness::declaredTimestamp('2026-05-28') === $d('2026-05-28') - 12 * 3600,
+    'garbage is not a date: null, never today'
+        => Freshness::declaredTimestamp('yesterday') === null
+           && Freshness::declaredTimestamp('') === null
+           && Freshness::declaredTimestamp(0) === null
+           && Freshness::declaredTimestamp(null) === null,
 ];
 
 $fail = 0;

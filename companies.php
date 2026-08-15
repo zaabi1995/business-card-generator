@@ -106,6 +106,17 @@ if ($view === 'company' && $slug) {
     }
     // Conditional crawl support
     $lastMod = strtotime($company['updated_at'] ?? 'now');
+    // r250, bhd-r6-95: this row's own date is what the sitemap publishes for
+    // this URL, so it is what the page must publish too. Without this the page
+    // channel reports companies.php's render closure for every company alike,
+    // which after r250 is the shared layout date and therefore AHEAD of the
+    // row date on 57 of 60 sampled URLs. r66 settled which way that goes:
+    // behind is stale and honest, ahead is the lie. Only set when the row
+    // actually carries a date; 'now' above is a fallback for the header, not
+    // a freshness claim.
+    if (!empty($company['updated_at'])) {
+        $GLOBALS['pageContentDate'] = $lastMod;
+    }
     $lastModHttp = gmdate('D, d M Y H:i:s \G\M\T', $lastMod);
     header('Last-Modified: ' . $lastModHttp);
     $ifModSince = $_SERVER['HTTP_IF_MODIFIED_SINCE'] ?? '';
