@@ -36,7 +36,12 @@ touch($config, $d('2026-08-14'));   // credentials touched later: must not date
 touch($vendor, $d('2026-08-13'));   // third party: must not date
 touch($outside, $d('2026-08-30'));  // another tree entirely: must not date
 
-$closure = [$page, $header, $footer, $config, $vendor, $outside];
+// The instrument itself: in every closure, and must never date a page.
+$self = $root . '/includes/Freshness.php';
+file_put_contents($self, "<?php\n");
+touch($self, $d('2026-08-15'));   // deployed today
+
+$closure = [$page, $header, $footer, $config, $vendor, $outside, $self];
 $kept    = Freshness::keepRendering($closure, $root);
 $newest  = Freshness::newestMtime($kept);
 
@@ -60,6 +65,8 @@ $arms = [
         => $newest === $d('2026-08-12'),
     'the page source alone would have published the stale date'
         => Freshness::newestMtime([$page]) === $d('2026-08-05'),
+    'deploying Freshness.php itself does not re-date the estate'
+        => !in_array($self, $kept, true) && $newest === $d('2026-08-12'),
     'config.php renders nothing, so touching it does not re-date'
         => !in_array($config, $kept, true),
     'vendor/ renders nothing, so touching it does not re-date'
@@ -84,7 +91,7 @@ foreach ($arms as $name => $ok) {
     $fail += $ok ? 0 : 1;
 }
 
-foreach ([$page, $footer, $header, $config, $vendor, $outside, $qPage, $qInc] as $f) {
+foreach ([$page, $footer, $header, $config, $vendor, $outside, $self, $qPage, $qInc] as $f) {
     @unlink($f);
 }
 @rmdir($root . '/includes'); @rmdir($root . '/vendor/lib'); @rmdir($root . '/vendor');

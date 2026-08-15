@@ -43,6 +43,14 @@ class Freshness
      * directory down, by hiding a file that does render.
      */
     private const NON_RENDERING = [
+        // The instrument does not date the thing it measures. Freshness.php is
+        // in every page's closure by construction, so leaving it in makes the
+        // date self-referential: MEASURED on the box 15 Aug 2026, deploying
+        // this very file moved /about from the honest 2026-08-12 (when its
+        // header and footer were last rewritten) to the deploy date. The only
+        // bytes this file contributes ARE the date, so it cannot be evidence
+        // that the content changed.
+        '/includes/Freshness.php',
         '/config.php',        // credentials + constants, no output
         '/config.local.php',
         '/vendor/',           // third-party, not our content
