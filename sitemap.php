@@ -25,6 +25,7 @@ echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
 function smX($s) { return htmlspecialchars((string) $s, ENT_XML1 | ENT_QUOTES, 'UTF-8'); }
 
 require_once __DIR__ . '/includes/ArTwins.php';
+require_once __DIR__ . '/includes/Freshness.php';
 require_once __DIR__ . '/includes/CompanyIndex.php';
 
 /**
@@ -124,11 +125,19 @@ function smRouteDate($path) {
     if (isset($RENDERER[$rel])) $roots[] = __DIR__ . '/' . $RENDERER[$rel];
     $roots[] = __DIR__ . '/' . ($rel === '' ? 'index.php' : $rel . '.php');
     $roots[] = __DIR__ . '/' . ($rel === '' ? 'index.php' : $rel . '/index.php');
+    // r252 / bhd-r6-95, change of approach #66: ONE author for one fact. This
+    // used to read the renderer's own mtime, while the page it points at had
+    // been dated by its whole include closure since r250 -- so the sitemap
+    // contradicted the page it advertises on 14 of 20 sampled URLs, /get-started
+    // by 105 days. Both channels now call Freshness::routeTimestamp() with the
+    // same renderer path, so the two claims are the same computation and cannot
+    // drift. The bare filemtime() stays only as the answer when the closure is
+    // unreadable, which is the pre-r250 behaviour and still honest.
     $t = 0;
     foreach ($roots as $f) {
-        if (is_file($f)) { $t = (int) filemtime($f); break; }
+        if (is_file($f)) { $t = (int) (Freshness::routeTimestamp($f, __DIR__) ?: filemtime($f)); break; }
     }
-    if ($t === 0) $t = (int) filemtime(__FILE__);
+    if ($t === 0) $t = (int) (Freshness::routeTimestamp(__FILE__, __DIR__) ?: filemtime(__FILE__));
     return $cache[$path] = smMtimeDay($t);
 }
 
@@ -177,13 +186,25 @@ function smMtimeDay($ts) {
  * file.
  */
 function smChildDate($part, $db) {
+    // r252: the instrument does not date what it measures, r250's commit
+    // 6b856b3 one level up. This seeded $t with sitemap.php's OWN mtime, so
+    // editing the generator moved all nine children to today even when not one
+    // URL inside them had changed -- measured 15 Aug 2026, every child read
+    // 2026-08-15 within a minute of this file being saved. The generator's mtime
+    // is now the FALLBACK for a child that contains nothing datable (companies-ar
+    // is deliberately empty), never the floor under one that does.
     $newest = function (array $globs) {
-        $t = (int) filemtime(__FILE__);
+        $t = 0;
         foreach ($globs as $g) {
             foreach (glob(__DIR__ . '/' . $g) ?: [] as $f) {
-                $t = max($t, (int) filemtime($f));
+                // ... and the 'static' child globs '*.php', which is the whole
+                // webroot root, THIS FILE INCLUDED. Excluded by name, not by a
+                // pattern, so the exclusion cannot quietly widen.
+                if (realpath($f) === realpath(__FILE__)) continue;
+                $t = max($t, (int) (Freshness::routeTimestamp($f, __DIR__) ?: filemtime($f)));
             }
         }
+        if ($t === 0) $t = (int) filemtime(__FILE__);
         return smMtimeDay($t);
     };
     $maxCol = function ($table, $col, $where = '') use ($db) {

@@ -103,17 +103,83 @@ $arms = [
            && Freshness::declaredTimestamp(null) === null,
 ];
 
+// ---------------------------------------------------------------------------
+// r252, CHANGE OF APPROACH #66: the closure is keyed to the ROUTE, so the
+// channel that is NOT inside the request (sitemap.php) computes the same
+// answer. These arms drive routeFiles()/routeTimestamp() over a tree with real
+// require statements, from outside any request.
+// ---------------------------------------------------------------------------
+$r2 = sys_get_temp_dir() . '/freshness_route_' . getmypid();
+@mkdir($r2 . '/includes', 0777, true);
+@mkdir($r2 . '/lang/en', 0777, true);
+@mkdir($r2 . '/lang/ar', 0777, true);
+
+$rPage   = $r2 . '/about.php';
+$rHeader = $r2 . '/includes/ui-header.php';
+$rDeep   = $r2 . '/includes/deep.php';        // reached only THROUGH the header
+$rSelf   = $r2 . '/includes/Freshness.php';   // the instrument, in every closure
+$rLangEn = $r2 . '/lang/en/about.php';
+$rLangAr = $r2 . '/lang/ar/about.php';
+
+file_put_contents($rPage,
+    "<?php require_once __DIR__ . '/includes/ui-header.php';\n"
+  . "require_once INCLUDES_DIR . '/Freshness.php';\n"
+  . "echo t('about.title');\n");
+file_put_contents($rHeader, "<?php require_once INCLUDES_DIR . '/deep.php';\n");
+file_put_contents($rDeep,   "<?php\n");
+file_put_contents($rSelf,   "<?php\n");
+file_put_contents($rLangEn, "<?php return [];\n");
+file_put_contents($rLangAr, "<?php return [];\n");
+
+touch($rPage,   $d('2026-08-05'));
+touch($rHeader, $d('2026-08-09'));
+touch($rDeep,   $d('2026-08-12'));   // the newest RENDERING byte, two hops down
+touch($rSelf,   $d('2026-08-20'));   // newer than everything, must not count
+touch($rLangEn, $d('2026-08-07'));
+touch($rLangAr, $d('2026-08-08'));
+
+$routeFiles = Freshness::routeFiles($rPage, $r2);
+$routeTs    = Freshness::routeTimestamp($rPage, $r2);
+$rel = static function (array $files) use ($r2): array {
+    return array_map(static fn($f) => substr($f, strlen($r2)), $files);
+};
+$names = $rel($routeFiles);
+
+$arms2 = [
+    'the walk reaches a file the page never names, two hops down'
+        => in_array('/includes/deep.php', $names, true),
+    'INCLUDES_DIR resolves the same as __DIR__ does'
+        => in_array('/includes/ui-header.php', $names, true),
+    'a lang namespace named by t() is part of the route'
+        => in_array('/lang/en/about.php', $names, true),
+    'both language editions of a route are one claim (twin rule)'
+        => in_array('/lang/ar/about.php', $names, true),
+    'the instrument is still excluded when the walk finds it by require'
+        => !in_array('/includes/Freshness.php', $names, true),
+    'the route dates from its newest rendering byte, from OUTSIDE a request'
+        => $routeTs === $d('2026-08-12'),
+    'and that is NOT what the page file alone says: the pre-r252 sitemap answer'
+        => (int) filemtime($rPage) === $d('2026-08-05') && $routeTs !== (int) filemtime($rPage),
+    'a renderer that does not exist decides nothing, never today'
+        => Freshness::routeTimestamp($r2 . '/no-such-page.php', $r2) === null,
+];
+
+foreach ($arms2 as $k => $v) { $arms[$k] = $v; }
+
 $fail = 0;
 foreach ($arms as $name => $ok) {
     echo ($ok ? '  ok   ' : '  FAIL ') . $name . PHP_EOL;
     $fail += $ok ? 0 : 1;
 }
 
-foreach ([$page, $footer, $header, $config, $vendor, $outside, $self, $qPage, $qInc] as $f) {
+foreach ([$page, $footer, $header, $config, $vendor, $outside, $self, $qPage, $qInc,
+          $rPage, $rHeader, $rDeep, $rSelf, $rLangEn, $rLangAr] as $f) {
     @unlink($f);
 }
 @rmdir($root . '/includes'); @rmdir($root . '/vendor/lib'); @rmdir($root . '/vendor');
 @rmdir($quietRoot . '/includes'); @rmdir($quietRoot); @rmdir($root);
+@rmdir($r2 . '/includes'); @rmdir($r2 . '/lang/en'); @rmdir($r2 . '/lang/ar');
+@rmdir($r2 . '/lang'); @rmdir($r2);
 
 echo sprintf("freshness_closure_selftest: %d/%d arms pass\n",
     count($arms) - $fail, count($arms));

@@ -84,16 +84,103 @@ class Freshness
     }
 
     /**
-     * Every file that composed this response: the page source plus the include
-     * closure PHP actually read, minus the files that render nothing.
+     * r252, CHANGE OF APPROACH #66. The closure is keyed to the ROUTE, not to
+     * the running request, because a route has TWO readers and only one of them
+     * is ever inside the request.
+     *
+     * r250 dated the page by get_included_files(), which is the truth of THIS
+     * request and is unavailable to sitemap.php, whose whole job is to date
+     * OTHER routes. So the composition rule reached the page channel and not the
+     * sitemap channel, and the two disagreed: measured on the wire 15 Aug 2026,
+     * 14 of 20 cardify URLs published a page date the sitemap contradicted, and
+     * /about (page 2026-08-05 = sitemap 2026-08-05 before r250) was broken BY the
+     * fix. That is bhd-r6-95's own root cause, one fact with two authors, moved
+     * one channel along.
+     *
+     * So the closure is now computed from the renderer path alone, by code both
+     * channels call: a static walk of the require/include statements (this tree
+     * writes them as __DIR__ / INCLUDES_DIR / BASE_DIR plus a literal, 1,922 of
+     * 1,922 of them), plus the lang namespaces those files ask for by name. The
+     * page passes its own renderer, the sitemap passes the route's renderer, and
+     * the same function answers both, so the two claims cannot drift apart.
+     *
+     * MEASURED against the runtime closure on six pages (about, index, pricing,
+     * faq, contact, careers): the static answer is a SUPERSET of what PHP
+     * actually read, every time, and the newest mtime is identical. A superset is
+     * the safe direction: it can only see a change earlier, never later.
      */
     public static function renderDependencies(): array
     {
-        $files = [self::sourceFile()];
-        if (function_exists('get_included_files')) {
-            $files = array_merge($files, get_included_files());
+        return self::routeFiles(self::sourceFile(), self::siteRoot());
+    }
+
+    /**
+     * Pure given the filesystem: every file that can put bytes on the wire for
+     * the route rendered by $entry. Same answer inside a request and outside
+     * one, which is the whole point.
+     */
+    public static function routeFiles(string $entry, ?string $root = null): array
+    {
+        $root = rtrim($root ?? self::siteRoot(), '/');
+        $reInclude = '/\\b(?:require|include)(?:_once)?\\s*\\(?\\s*(__DIR__|INCLUDES_DIR|BASE_DIR)\\s*\\.\\s*([\'"])([^\'"]+)\\2/';
+        $reLangNs  = '/\\bt\\(\\s*([\'"])([a-zA-Z0-9_]+)\\./';
+        $seen = [];
+        $files = [];
+        $namespaces = [];
+        $queue = [$entry];
+        // A tree this size closes in well under 200 nodes; the cap is a
+        // backstop against a cycle in a future include graph, not a budget.
+        $guard = 0;
+        while ($queue && $guard++ < 500) {
+            $path = realpath(array_shift($queue));
+            if ($path === false || isset($seen[$path])) {
+                continue;
+            }
+            $seen[$path] = true;
+            $files[] = $path;
+            if (substr($path, -4) !== '.php') {
+                continue;
+            }
+            $src = @file_get_contents($path);
+            if ($src === false) {
+                continue;
+            }
+            if (preg_match_all($reInclude, $src, $m, PREG_SET_ORDER)) {
+                foreach ($m as $hit) {
+                    $base = $hit[1] === '__DIR__' ? dirname($path)
+                          : ($hit[1] === 'INCLUDES_DIR' ? $root . '/includes' : $root);
+                    $queue[] = $base . $hit[3];
+                }
+            }
+            if (preg_match_all($reLangNs, $src, $m2, PREG_SET_ORDER)) {
+                foreach ($m2 as $hit) {
+                    $namespaces[$hit[2]] = true;
+                }
+            }
         }
-        return self::keepRendering($files, self::siteRoot());
+        // Both locales, deliberately. The sitemap publishes ONE lastmod for a
+        // twin pair (smUrl emits /x and /ar/x from one call), so dating the two
+        // editions differently would re-open the same disagreement one row down.
+        // A route's content is both of its language editions; the claim "this
+        // route last changed on X" stays true of the pair.
+        foreach (array_keys($namespaces) as $ns) {
+            foreach (['en', 'ar'] as $locale) {
+                $lang = $root . '/lang/' . $locale . '/' . $ns . '.php';
+                if (is_file($lang)) {
+                    $files[] = $lang;
+                }
+            }
+        }
+        return self::keepRendering($files, $root);
+    }
+
+    /**
+     * The route's timestamp, for a caller that is not inside that route's
+     * request. sitemap.php's only entry point.
+     */
+    public static function routeTimestamp(string $entry, ?string $root = null): ?int
+    {
+        return self::newestMtime(self::routeFiles($entry, $root));
     }
 
     /**
