@@ -92,6 +92,8 @@ return [
     'paper_silk'            => 'تغليف لامع',
     'paper_glossy'          => 'تغليف لامع',
     'paper_soft_touch'      => 'ناعم الملمس 350 جرام (بريميوم)',
+    'paper_luxury_450'      => 'فاخر 450 جرام، UV موضعي أو فويل',
+    'paper_nfc'             => 'بطاقة NFC باللمس (تُسعّر للبطاقة)',
     'field_finish'          => 'التشطيب',
     'finish_standard'       => 'قياسي',
     'finish_rounded'        => 'زوايا مدوّرة (+10%)',

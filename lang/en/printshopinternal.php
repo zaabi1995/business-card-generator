@@ -92,6 +92,8 @@ return [
     'paper_silk'            => 'Silk / glossy lamination',
     'paper_glossy'          => 'Glossy lamination',
     'paper_soft_touch'      => 'Soft-touch 350gsm (Premium)',
+    'paper_luxury_450'      => 'Luxury 450gsm, spot UV or foil',
+    'paper_nfc'             => 'NFC tap card (priced per card)',
     'field_finish'          => 'Finish',
     'finish_standard'       => 'Standard',
     'finish_rounded'        => 'Rounded corners (+10%)',
