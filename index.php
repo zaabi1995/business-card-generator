@@ -1526,7 +1526,23 @@ echo Seo::organizationScriptOnce();
     "lowPrice": "0",
     "highPrice": "25",
     "offerCount": "5",
-    "availability": "https://schema.org/InStock"
+    "availability": "https://schema.org/InStock",
+    "hasMerchantReturnPolicy": {
+      "@type": "MerchantReturnPolicy",
+      "@id": "https://cardify.om/#returnpolicy",
+      "applicableCountry": "OM",
+      "returnPolicyCategory": "https://schema.org/MerchantReturnNotPermitted"
+    },
+    "shippingDetails": {
+      "@type": "OfferShippingDetails",
+      "@id": "https://cardify.om/#shipping-oman",
+      "shippingDestination": { "@type": "DefinedRegion", "addressCountry": "OM" },
+      "deliveryTime": {
+        "@type": "ShippingDeliveryTime",
+        "handlingTime": { "@type": "QuantitativeValue", "minValue": 0, "maxValue": 1, "unitCode": "DAY" },
+        "transitTime": { "@type": "QuantitativeValue", "minValue": 2, "maxValue": 4, "unitCode": "DAY" }
+      }
+    }
   }
 }
 </script>

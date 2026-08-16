@@ -503,7 +503,69 @@ class Seo
      * is alternateName, never a replacement for name, and the offer URL is the
      * English canonical because the offer is the same offer on both pages.
      */
-    public static function product(string $key, string $nameKey, string $descKey, string $priceOMR): void
+    /**
+     * Merchant listing policy, published on every print Offer.
+     *
+     * GSC WNC-10030322, 16 Aug 2026, reported three Merchant listings issues on
+     * cardify.om: a CRITICAL missing 'image' plus a missing
+     * 'hasMerchantReturnPolicy' and 'shippingDetails' inside 'offers'. All four
+     * pricing Products were affected, on /pricing and on /ar/pricing.
+     *
+     * Both facts below are already published on the site in visible copy or in
+     * the Terms. Nothing here is inferred:
+     *
+     *   - No returns: the Terms say "Print fees are non-refundable once the
+     *     order has been sent to production" (lang/en/legal.php and its Arabic
+     *     twin, under Payment terms).
+     *     Cards carry the customer's own branding, so MerchantReturnNotPermitted
+     *     is the accurate category and Google needs no window or fee with it.
+     *     Confirmed by Ali, 16 Aug 2026.
+     *   - Delivery time: "Delivery across Oman in 2 to 4 working days. Pickup
+     *     from Muscat is same-day" (pricing.products_note).
+     *
+     * shippingRate is deliberately ABSENT. The delivery fee is set per order by
+     * the print shop the customer picks (PrintShop::getEffectivePricing,
+     * shipping_base, which is 2.000 on the default and 10.000 on BHD) and is
+     * shown before confirming. There is no one rate to publish, and inventing
+     * one would misprice the offer for every shop that charges something else.
+     */
+    private static function offerPolicy(): array
+    {
+        return [
+            'hasMerchantReturnPolicy' => [
+                '@type' => 'MerchantReturnPolicy',
+                '@id' => self::SITE . '/#returnpolicy',
+                'applicableCountry' => 'OM',
+                'returnPolicyCategory' => 'https://schema.org/MerchantReturnNotPermitted',
+            ],
+            'shippingDetails' => [
+                '@type' => 'OfferShippingDetails',
+                '@id' => self::SITE . '/#shipping-oman',
+                'shippingDestination' => [
+                    '@type' => 'DefinedRegion',
+                    'addressCountry' => 'OM',
+                ],
+                'deliveryTime' => [
+                    '@type' => 'ShippingDeliveryTime',
+                    'handlingTime' => [
+                        '@type' => 'QuantitativeValue',
+                        'minValue' => 0, 'maxValue' => 1, 'unitCode' => 'DAY',
+                    ],
+                    'transitTime' => [
+                        '@type' => 'QuantitativeValue',
+                        'minValue' => 2, 'maxValue' => 4, 'unitCode' => 'DAY',
+                    ],
+                ],
+            ],
+        ];
+    }
+
+    /**
+     * @param string $imageFile Basename under /assets/images/products. Required,
+     *   not optional: a missing image is the CRITICAL half of WNC-10030322, and
+     *   an optional parameter is how the next tier gets added without one.
+     */
+    public static function product(string $key, string $nameKey, string $descKey, string $priceOMR, string $imageFile): void
     {
         $en = static fn(string $k): string => class_exists('I18n')
             ? I18n::t($k, [], 'en') : $k;
@@ -520,6 +582,10 @@ class Seo
             '@id' => $id,
             'sku' => 'CARDIFY-' . strtoupper($key),
             'name' => $names[0],
+            // 1200x1200 photograph of the actual stock this tier names. Locale
+            // invariant like everything else under this @id: the paper does not
+            // change between /pricing and /ar/pricing.
+            'image' => self::SITE . '/assets/images/products/' . $imageFile,
             // Only when the dictionary really has a distinct Arabic string.
             // Echoing the English back as an alternateName would assert a
             // translation that does not exist.
@@ -527,13 +593,13 @@ class Seo
             'description' => $en($descKey),
             'url' => self::SITE . '/pricing',
             'brand' => ['@type' => 'Brand', 'name' => self::BRAND],
-            'offers' => [
+            'offers' => array_merge([
                 '@type' => 'Offer',
                 'priceCurrency' => 'OMR',
                 'price' => number_format((float)$priceOMR, 3, '.', ''),
                 'availability' => 'https://schema.org/InStock',
                 'url' => self::SITE . '/pricing',
-            ],
+            ], self::offerPolicy()),
         ], static fn($v) => $v !== null));
     }
 
