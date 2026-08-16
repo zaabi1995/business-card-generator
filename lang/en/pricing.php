@@ -1,7 +1,7 @@
 <?php
 return [
     'page_title' => 'Pricing, Cardify, Free platform plus pay-per-print',
-    'page_desc'  => 'Cardify is free forever. Unlimited employees, templates and digital cards. You only pay when you order printed cards, from OMR 6.000 per 100 cards.',
+    'page_desc'  => 'Cardify is free forever. Unlimited employees, templates and digital cards. You only pay when you order printed cards, from OMR 5.000 per 100 cards.',
 
     'hero_eyebrow' => 'Simple pricing',
     'hero_heading' => 'Free platform, pay only for prints.',
@@ -29,12 +29,12 @@ return [
 
     'product_standard_name'  => 'Standard Cards',
     'product_standard_spec'  => '300gsm matt, full colour both sides',
-    'product_standard_price' => 'OMR 6.000',
+    'product_standard_price' => 'OMR 5.000',
     'product_standard_unit'  => 'per 100 cards',
 
     'product_premium_name'   => 'Premium Cards',
     'product_premium_spec'   => '350gsm soft-touch, full colour both sides',
-    'product_premium_price'  => 'OMR 8.000',
+    'product_premium_price'  => 'OMR 6.000',
     'product_premium_unit'   => 'per 100 cards',
 
     'product_luxury_name'    => 'Luxury Cards',

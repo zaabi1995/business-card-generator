@@ -1450,6 +1450,21 @@ echo Seo::organizationScriptOnce();
     {
       "@type": "Offer",
       "name": "Standard Printed Cards",
+      "price": "5.000",
+      "priceCurrency": "OMR",
+      "priceSpecification": {
+        "@type": "UnitPriceSpecification",
+        "price": "5.000",
+        "priceCurrency": "OMR",
+        "referenceQuantity": { "@type": "QuantitativeValue", "value": "100", "unitText": "cards" }
+      },
+      "description": "300gsm matt, full colour both sides. From OMR 5.000 per 100 cards, printed by verified Omani shops.",
+      "availability": "https://schema.org/InStock",
+      "url": "https://cardify.om/pricing"
+    },
+    {
+      "@type": "Offer",
+      "name": "Premium Printed Cards",
       "price": "6.000",
       "priceCurrency": "OMR",
       "priceSpecification": {
@@ -1458,22 +1473,7 @@ echo Seo::organizationScriptOnce();
         "priceCurrency": "OMR",
         "referenceQuantity": { "@type": "QuantitativeValue", "value": "100", "unitText": "cards" }
       },
-      "description": "300gsm matt, full colour both sides. From OMR 6.000 per 100 cards, printed by verified Omani shops.",
-      "availability": "https://schema.org/InStock",
-      "url": "https://cardify.om/pricing"
-    },
-    {
-      "@type": "Offer",
-      "name": "Premium Printed Cards",
-      "price": "8.000",
-      "priceCurrency": "OMR",
-      "priceSpecification": {
-        "@type": "UnitPriceSpecification",
-        "price": "8.000",
-        "priceCurrency": "OMR",
-        "referenceQuantity": { "@type": "QuantitativeValue", "value": "100", "unitText": "cards" }
-      },
-      "description": "350gsm soft-touch, full colour both sides. From OMR 8.000 per 100 cards.",
+      "description": "350gsm soft-touch, full colour both sides. From OMR 6.000 per 100 cards.",
       "availability": "https://schema.org/InStock",
       "url": "https://cardify.om/pricing"
     },

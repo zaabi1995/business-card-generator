@@ -91,7 +91,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
 
         <h2>Pricing That Fits Oman SME Budgets</h2>
         <p>
-            The platform is free forever for unlimited reps. You only pay when you order printed cards, from OMR 6.000 per 100 Standard cards, OMR 8.000 Premium, OMR 15.000 Luxury, or OMR 25.000 per NFC tap card, fulfilled by our verified Muscat print shops and delivered within 3 working days to any address in Oman, including Duqm and Salalah. Every card includes bilingual Arabic/English profiles, custom subdomain (yourcompany.cardify.om), and a branded QR that matches your corporate colours.
+            The platform is free forever for unlimited reps. You only pay when you order printed cards, from OMR 5.000 per 100 Standard cards, OMR 6.000 Premium, OMR 15.000 Luxury, or OMR 25.000 per NFC tap card, fulfilled by our verified Muscat print shops and delivered within 3 working days to any address in Oman, including Duqm and Salalah. Every card includes bilingual Arabic/English profiles, custom subdomain (yourcompany.cardify.om), and a branded QR that matches your corporate colours.
         </p>
 
         <div class="not-prose bg-blue-50 border-l-4 border-blue-500 rounded-lg p-6 my-8">
