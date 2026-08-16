@@ -38,10 +38,14 @@ Seo::breadcrumbs([
 // page published four Products in whatever locale the request arrived in, each
 // anonymous and each carrying no url and no sku, so /pricing and /ar/pricing
 // described the same four products as eight unmergeable things.
-Seo::product('standard', 'pricing.product_standard_name', 'pricing.product_standard_spec', '6');
-Seo::product('premium',  'pricing.product_premium_name',  'pricing.product_premium_spec',  '8');
-Seo::product('luxury',   'pricing.product_luxury_name',   'pricing.product_luxury_spec',   '15');
-Seo::product('nfc',      'pricing.product_nfc_name',      'pricing.product_nfc_spec',      '25');
+// The image argument closes the CRITICAL half of GSC WNC-10030322: these four
+// Products published no image at all, because the page renders each tier as a
+// FontAwesome icon and no photograph of the stock existed. One photo per tier
+// now lives in assets/images/products.
+Seo::product('standard', 'pricing.product_standard_name', 'pricing.product_standard_spec', '6',  'card-standard.jpg');
+Seo::product('premium',  'pricing.product_premium_name',  'pricing.product_premium_spec',  '8',  'card-premium.jpg');
+Seo::product('luxury',   'pricing.product_luxury_name',   'pricing.product_luxury_spec',   '15', 'card-luxury.jpg');
+Seo::product('nfc',      'pricing.product_nfc_name',      'pricing.product_nfc_spec',      '25', 'card-nfc.jpg');
 Seo::faqPage([
     [t('pricing.faq_q1'), t('pricing.faq_a1')],
     [t('pricing.faq_q2'), t('pricing.faq_a2')],
