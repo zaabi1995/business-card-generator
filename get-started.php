@@ -56,6 +56,88 @@ require_once INCLUDES_DIR . '/ui-header.php';
         </div>
     </div>
 
+    <!-- ===================== INSTANT CARD DEMO =====================
+         Paid traffic used to land on a hero and a signup button with nothing
+         to try, while instant_card.php sat there as a complete, working
+         endpoint that no page in the codebase called. It mints a REAL card
+         under the `demo` tenant and emails a verify link, which is the one
+         thing a landing page for this product should let you do before you
+         commit to an account. -->
+    <section id="instant-demo" class="bg-white py-16 px-4 border-b border-gray-100" aria-labelledby="instant-demo-h2">
+        <div class="max-w-3xl mx-auto">
+            <div class="text-center mb-8">
+                <span class="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-blue-700 bg-blue-50 rounded-full px-3 py-1 mb-3">
+                    <i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i>
+                    <?= htmlspecialchars(t('getstarted.demo_eyebrow')) ?>
+                </span>
+                <h2 id="instant-demo-h2" class="text-3xl sm:text-4xl font-bold text-gray-900 mb-3"><?= htmlspecialchars(t('getstarted.demo_h2')) ?></h2>
+                <p class="text-gray-600 max-w-xl mx-auto"><?= htmlspecialchars(t('getstarted.demo_sub')) ?></p>
+            </div>
+
+            <form id="instant-form" class="bg-gray-50 rounded-3xl border border-gray-200 p-6 sm:p-8" novalidate>
+                <div id="instant-error" class="hidden mb-5 rounded-xl bg-red-50 border border-red-200 text-red-800 text-sm px-4 py-3" role="alert"></div>
+
+                <div class="grid sm:grid-cols-2 gap-4">
+                    <div>
+                        <label for="ic-name" class="block text-sm font-semibold text-gray-700 mb-1"><?= htmlspecialchars(t('getstarted.demo_name')) ?></label>
+                        <input id="ic-name" name="name" type="text" required autocomplete="name" maxlength="120"
+                               placeholder="<?= htmlspecialchars(t('getstarted.demo_name_ph')) ?>"
+                               class="w-full rounded-xl border border-gray-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label for="ic-title" class="block text-sm font-semibold text-gray-700 mb-1"><?= htmlspecialchars(t('getstarted.demo_title')) ?></label>
+                        <input id="ic-title" name="title" type="text" autocomplete="organization-title" maxlength="120"
+                               placeholder="<?= htmlspecialchars(t('getstarted.demo_title_ph')) ?>"
+                               class="w-full rounded-xl border border-gray-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label for="ic-company" class="block text-sm font-semibold text-gray-700 mb-1"><?= htmlspecialchars(t('getstarted.demo_company')) ?></label>
+                        <input id="ic-company" name="company" type="text" autocomplete="organization" maxlength="120"
+                               placeholder="<?= htmlspecialchars(t('getstarted.demo_company_ph')) ?>"
+                               class="w-full rounded-xl border border-gray-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label for="ic-email" class="block text-sm font-semibold text-gray-700 mb-1"><?= htmlspecialchars(t('getstarted.demo_email')) ?></label>
+                        <input id="ic-email" name="email" type="email" required autocomplete="email" maxlength="190"
+                               placeholder="<?= htmlspecialchars(t('getstarted.demo_email_ph')) ?>"
+                               class="w-full rounded-xl border border-gray-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                </div>
+
+                <div class="mt-5 flex items-center gap-3">
+                    <label for="ic-color" class="text-sm font-semibold text-gray-700"><?= htmlspecialchars(t('getstarted.demo_color')) ?></label>
+                    <input id="ic-color" name="color" type="color" value="#2d13ea"
+                           class="h-10 w-16 rounded-lg border border-gray-300 cursor-pointer p-1">
+                </div>
+
+                <button id="ic-submit" type="submit"
+                        class="mt-6 w-full bg-blue-700 text-white font-bold px-8 py-4 rounded-xl text-lg hover:bg-blue-800 transition-all disabled:opacity-60 disabled:cursor-not-allowed">
+                    <?= htmlspecialchars(t('getstarted.demo_submit')) ?>
+                </button>
+                <p class="mt-3 text-xs text-gray-500 text-center"><?= htmlspecialchars(t('getstarted.demo_privacy')) ?></p>
+            </form>
+
+            <!-- Success state, swapped in place of the form. -->
+            <div id="instant-done" class="hidden bg-white rounded-3xl border-2 border-green-200 p-8 text-center" role="status">
+                <div class="w-14 h-14 rounded-full bg-green-50 flex items-center justify-center mx-auto mb-4">
+                    <i class="fa-solid fa-circle-check text-2xl text-green-600" aria-hidden="true"></i>
+                </div>
+                <h3 class="text-2xl font-bold text-gray-900 mb-2"><?= htmlspecialchars(t('getstarted.demo_done_h3')) ?></h3>
+                <p class="text-gray-600 mb-6"><?= htmlspecialchars(t('getstarted.demo_done_sub')) ?></p>
+                <div class="flex flex-col sm:flex-row gap-3 justify-center">
+                    <a id="ic-card-url" href="#" target="_blank" rel="noopener"
+                       class="bg-blue-700 text-white font-bold px-8 py-3 rounded-xl hover:bg-blue-800 transition-all">
+                        <?= htmlspecialchars(t('getstarted.demo_view')) ?>
+                    </a>
+                    <a href="<?= getBasePath() ?>login.php?action=register"
+                       class="border-2 border-gray-300 text-gray-700 font-semibold px-8 py-3 rounded-xl hover:bg-gray-50 transition-all">
+                        <?= htmlspecialchars(t('getstarted.demo_signup')) ?>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <!-- Trust strip -->
     <div class="bg-gray-50 py-8 px-4 border-b border-gray-100">
         <div class="max-w-5xl mx-auto flex flex-wrap items-center justify-center gap-8 md:gap-16 text-center text-gray-700">
@@ -195,5 +277,80 @@ require_once INCLUDES_DIR . '/ui-header.php';
         </div>
     </div>
 </div>
+
+<script>
+/* Instant-card demo. Posts to instant_card.php, which enforces its own
+   same-origin check, rate limits and email validation, so this side stays
+   thin: collect, post, swap in the result or say why not. */
+(function () {
+  var form = document.getElementById('instant-form');
+  if (!form) return;
+
+  var btn     = document.getElementById('ic-submit');
+  var errBox  = document.getElementById('instant-error');
+  var done    = document.getElementById('instant-done');
+  var cardUrl = document.getElementById('ic-card-url');
+
+  /* The endpoint answers with slugs, not sentences, so the copy lives in the
+     lang files on both sides and is chosen here. An unrecognised slug falls
+     back to the generic line rather than printing the slug at the user. */
+  var MSG = <?= json_encode([
+      'invalid_email' => t('getstarted.demo_err_invalid_email'),
+      'bad_domain'    => t('getstarted.demo_err_bad_domain'),
+      'slug_taken'    => t('getstarted.demo_err_slug_taken'),
+      'rate_ip'       => t('getstarted.demo_err_rate'),
+      'rate_email'    => t('getstarted.demo_err_rate'),
+      'busy'          => t('getstarted.demo_err_busy'),
+      'generic'       => t('getstarted.demo_err_generic'),
+  ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
+
+  var LABEL_IDLE     = <?= json_encode(t('getstarted.demo_submit'), JSON_UNESCAPED_UNICODE) ?>;
+  var LABEL_BUILDING = <?= json_encode(t('getstarted.demo_building'), JSON_UNESCAPED_UNICODE) ?>;
+  var ENDPOINT       = <?= json_encode(getBasePath() . 'instant_card.php', JSON_UNESCAPED_SLASHES) ?>;
+  var LANG           = <?= json_encode(function_exists('currentLocale') ? currentLocale() : 'en') ?>;
+
+  function showError(slug) {
+    errBox.textContent = MSG[slug] || MSG.generic;
+    errBox.classList.remove('hidden');
+    errBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    errBox.classList.add('hidden');
+
+    var email = document.getElementById('ic-email').value.trim();
+    var name  = document.getElementById('ic-name').value.trim();
+    if (!name || !email) { showError('invalid_email'); return; }
+
+    btn.disabled = true;
+    btn.textContent = LABEL_BUILDING;
+
+    var body = new FormData();
+    body.append('name',    name);
+    body.append('title',   document.getElementById('ic-title').value.trim());
+    body.append('company', document.getElementById('ic-company').value.trim());
+    body.append('email',   email);
+    body.append('color',   document.getElementById('ic-color').value);
+    body.append('lang',    LANG);
+
+    fetch(ENDPOINT, { method: 'POST', body: body, credentials: 'same-origin' })
+      .then(function (r) { return r.json().catch(function () { return { ok: false, error: 'generic' }; }); })
+      .then(function (d) {
+        if (!d || !d.ok) { showError((d && d.error) || 'generic'); return; }
+        /* Only ever point at the URL the server minted. */
+        if (d.cardUrl) { cardUrl.href = d.cardUrl; } else { cardUrl.classList.add('hidden'); }
+        form.classList.add('hidden');
+        done.classList.remove('hidden');
+        done.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      })
+      .catch(function () { showError('generic'); })
+      .finally(function () {
+        btn.disabled = false;
+        btn.textContent = LABEL_IDLE;
+      });
+  });
+})();
+</script>
 
 <?php require_once INCLUDES_DIR . '/ui-footer.php'; ?>
