@@ -90,6 +90,8 @@ return [
     'paper_uncoated'        => 'Uncoated (no lamination)',
     'paper_matte'           => 'Matte lamination',
     'paper_silk'            => 'Silk / glossy lamination',
+    'paper_glossy'          => 'Glossy lamination',
+    'paper_soft_touch'      => 'Soft-touch 350gsm (Premium)',
     'field_finish'          => 'Finish',
     'finish_standard'       => 'Standard',
     'finish_rounded'        => 'Rounded corners (+10%)',

@@ -90,6 +90,8 @@ return [
     'paper_uncoated'        => 'بدون تغليف',
     'paper_matte'           => 'تغليف مطفي (مات)',
     'paper_silk'            => 'تغليف لامع',
+    'paper_glossy'          => 'تغليف لامع',
+    'paper_soft_touch'      => 'ناعم الملمس 350 جرام (بريميوم)',
     'field_finish'          => 'التشطيب',
     'finish_standard'       => 'قياسي',
     'finish_rounded'        => 'زوايا مدوّرة (+10%)',

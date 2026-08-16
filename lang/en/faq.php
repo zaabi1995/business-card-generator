@@ -43,7 +43,7 @@ return [
     'pr3_q' => 'How long does printing take?',
     'pr3_a' => 'Standard turnaround inside Muscat is 2-3 working days. Rush orders deliver next day for an extra fee. Status updates flow as the order moves from production to delivery.',
     'pr4_q' => 'How much does printing cost?',
-    'pr4_a' => 'From 6 OMR per design on 300gsm matt stock. Premium 350gsm soft-touch from 9 OMR, luxury 450gsm with spot UV from 15 OMR, NFC-enabled cards from 25 OMR. Volume discounts at 100, 500 and 1,000 cards.',
+    'pr4_a' => 'From OMR 5.000 per 100 cards on 300gsm matt stock. Premium 350gsm soft-touch from OMR 6.000, luxury 450gsm with spot UV from OMR 15.000, NFC-enabled cards from OMR 25.000 each. Volume discounts at 100, 500 and 1,000 cards.',
 
     // For teams, 3
     'tm1_q' => 'Can I manage cards for many employees?',
