@@ -1,0 +1,27 @@
+#!/bin/sh
+# Fix file permissions after git pull.
+# Root umask creates 640 but PHP-FPM (www-data) needs at least 644 to read files.
+#
+# This file is TRACKED and its exec bit lives in git's index, so a checkout or a
+# clone re-asserts it. The untracked copy under .git/hooks lost its exec bit
+# twice (armed Apr 2026, found at mode 644 on 9 Aug 2026) because nothing
+# outside the filesystem remembered the mode. Point the repository at this
+# directory with ops/arm-git-hooks.sh, or by hand:
+#
+#   git config core.hooksPath .githooks
+#
+# ROOT is derived, not hardcoded, so a second checkout of this repository
+# repairs itself and not somebody else's webroot. No set -e: the old hook had
+# none, and one unreadable file must not stop the sweep half-way.
+ROOT=$(git rev-parse --show-toplevel 2>/dev/null || true)
+[ -n "$ROOT" ] || exit 0
+
+find "$ROOT" -type f \( \
+    -name "*.php" -o -name "*.html" -o -name "*.htm" \
+    -o -name "*.css" -o -name "*.js" -o -name "*.json" \
+    -o -name "*.txt" -o -name "*.xml" -o -name "*.svg" \
+    -o -name "*.ico" -o -name "*.md" \
+\) -perm 640 -exec chmod 644 {} \;
+# Ensure directories are traversable
+find "$ROOT" -type d -perm 750 -exec chmod 755 {} \;
+exit 0
