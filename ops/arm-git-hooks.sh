@@ -18,7 +18,9 @@ git config core.hooksPath .githooks
 
 for hook in .githooks/*; do
   [ -f "$hook" ] || continue
-  [ -x "$hook" ] || chmod +x "$hook"
+  # 755, not +x: chmod +x honours umask, and a root deploy at umask 027 leaves
+  # 754, which is out of step with every other file the deploy sweep writes.
+  [ -x "$hook" ] || chmod 755 "$hook"
 done
 
 # Report, so a deploy log can be read for this rather than assumed.
