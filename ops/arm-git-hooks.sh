@@ -18,9 +18,11 @@ git config core.hooksPath .githooks
 
 for hook in .githooks/*; do
   [ -f "$hook" ] || continue
-  # 755, not +x: chmod +x honours umask, and a root deploy at umask 027 leaves
-  # 754, which is out of step with every other file the deploy sweep writes.
-  [ -x "$hook" ] || chmod 755 "$hook"
+  # 755 unconditionally. Two reasons it is not `[ -x ] || chmod +x`: chmod +x
+  # honours umask and at a root umask of 027 leaves 754, and a 754 file already
+  # answers -x, so a guarded repair would look at 754 and decide there was
+  # nothing to do. An idempotent chmod is cheaper than a mode comparison.
+  chmod 755 "$hook"
 done
 
 # Report, so a deploy log can be read for this rather than assumed.
