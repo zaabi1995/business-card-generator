@@ -405,13 +405,15 @@ if ($homeFaqPairs) {
     ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>';
 }
 
+// r6-80: the measured desktop shift was the mock-card column being re-centred
+// when the Sora swap grew the text column 28px. The .hero-grid / .hero-reserve
+// / .hero-h1 / .hero-sub rules below anchor the columns to the top and commit
+// the text column height up front. Written here because lg:items-start is
+// absent from the prebuilt tailwind.min.css this page loads, so the utility
+// class was inert. This note is PHP-side on purpose: it addresses whoever
+// edits this file, not whoever reads the page, so it must not ship as bytes.
 $extraHead = $homeHreflang . $homeJsonLd . $scannerJsonLd . $homeFaqJsonLd . $appDiscoveryHead . '<style>
     .hero-gradient { background: linear-gradient(135deg, #eff6ff 0%, #ffffff 50%, #fffbeb 100%); }
-    /* r6-80: the measured desktop shift was the mock-card column being
-       re-centred when the Sora swap grew the text column 28px. Anchor the
-       columns to the top and commit the text column height up front.
-       Written here because lg:items-start is absent from the prebuilt
-       tailwind.min.css this page loads, so the utility class was inert. */
     @media (min-width: 1024px) {
       .hero-grid { align-items: start; }
       .hero-reserve { min-height: 780px; }
@@ -561,10 +563,10 @@ require_once INCLUDES_DIR . '/ui-header.php';
                             </div>
                         </div>
 
-                        <!-- Secondary Card. r28 27-54: the gold was amber-400/500 with white
-                             text, measured 1.79-1.9:1. amber-700/800 puts white at 5.0:1 and the
-                             avatar disc at 7.1:1 while keeping the gold. Opacity-dimmed white was
-                             the other half of the failure, so the caption lines are solid white. -->
+                        <?php /* Secondary Card. r28 27-54: the gold was amber-400/500 with white
+                                 text, measured 1.79-1.9:1. amber-700/800 puts white at 5.0:1 and the
+                                 avatar disc at 7.1:1 while keeping the gold. Opacity-dimmed white was
+                                 the other half of the failure, so the caption lines are solid white. */ ?>
                         <div class="float-delayed absolute top-52 -left-4 w-72 bg-gradient-to-br from-amber-700 to-amber-800 rounded-2xl card-shadow p-6 text-white">
                             <div class="flex items-start gap-4">
                                 <div class="w-14 h-14 rounded-full bg-black/20 flex items-center justify-center text-lg font-bold backdrop-blur-sm">
@@ -927,15 +929,14 @@ require_once INCLUDES_DIR . '/ui-header.php';
         </div>
     </section>
 
-    <!-- ========== WHY CARDIFY (checkable product facts) ==========
-         r28 item 20-23: this section used to be four fabricated customer testimonials.
-         r21 removed the invented names but left the attribution shell in place, so
-         production kept shipping quote marks, quote-element semantics, the deleted
-         people's initials and the raw i18n keys for author and role as visible text.
-         All attribution markup is gone for good: these are product facts, not quotes.
-         Do NOT reintroduce a quote or an attributed card without a named, contactable,
-         consenting customer on file. Keep this note free of literal tag text so it
-         cannot answer a gate that greps the served HTML. -->
+    <?php /* ========== WHY CARDIFY (checkable product facts) ==========
+             r28 item 20-23: this section used to be four fabricated customer testimonials.
+             r21 removed the invented names but left the attribution shell in place, so
+             production kept shipping quote marks, quote-element semantics, the deleted
+             people's initials and the raw i18n keys for author and role as visible text.
+             All attribution markup is gone for good: these are product facts, not quotes.
+             Do NOT reintroduce a quote or an attributed card without a named, contactable,
+             consenting customer on file. */ ?>
     <section id="why-cardify" class="py-16 lg:py-24 bg-gray-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <!-- Section Header -->
@@ -1190,7 +1191,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
         </div>
     </section>
 
-    <!-- ========== FAQ (r20-47) ========== -->
+    <?php /* ========== FAQ (r20-47) ========== */ ?>
     <?php if (!empty($homeFaqPairs)): ?>
     <?php $__isAr = function_exists('currentLocale') && currentLocale() === 'ar'; ?>
     <section id="faq" class="py-16 lg:py-24 bg-white">
@@ -1281,11 +1282,12 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     <div class="flex items-center gap-3 mb-6">
                         <img src="<?php echo assetUrl('images/logo-light.svg'); ?>" alt="<?php echo $brandName; ?>" class="h-10 w-auto">
                     </div>
-                    <!-- llm75-1: this blurb was hardcoded English and shipped inside
-                         <html lang="ar">, alone among its siblings, which all read from
-                         t('footer.*'). It now reads the SAME key includes/ui-footer.php
-                         renders on every other page, so the brand line has one source in
-                         both languages instead of a translated copy and an English one. -->
+                    <?php /* llm75-1: this blurb was hardcoded English and shipped inside a
+                             document whose html lang was ar, alone among its siblings, which
+                             all read from t('footer.*'). It now reads the SAME key
+                             includes/ui-footer.php renders on every other page, so the brand
+                             line has one source in both languages instead of a translated
+                             copy and an English one. */ ?>
                     <p class="text-gray-400 mb-4 leading-relaxed text-sm">
                         <?= htmlspecialchars(t('footer.tagline')) ?>
                     </p>

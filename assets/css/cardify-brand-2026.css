@@ -128,7 +128,7 @@ h1, h2, h3, .font-display {
   box-shadow: 0 12px 34px -18px rgba(0,0,0,.28);
 }
 .cf-swatches__lbl { font-size: 12px; font-weight: 600; color: #6b7280; margin-inline-end: 4px; }
-/* r6-100: 34px of visible swatch inside a 44x44 hit area. The padding is the
+/* 34px of visible swatch inside a 44x44 hit area. The padding is the
    touch surface; background-clip keeps the swatch's own colour at 34px. */
 .cf-swatch { width: 34px; height: 34px; border-radius: 10px; display: inline-block;
              padding: 5px; box-sizing: content-box; background-clip: content-box;

@@ -921,11 +921,11 @@ $switchThirdUrl = ($thirdCode !== '' && $thirdLabel !== '')
         /* The app hand-off. Peer of the Wallet row, not of the utility row:
            full width, accent-tinted rather than another neutral, so it reads as
            the one action that leaves this page. */
-        /* Shown when a card has no baked image. 111 of 399 active employees are
-           in that state: their design is a classic Fabric one, which only the
-           web editor can regenerate, so the page had a hole where the hero
-           belongs. This is deliberately a clean identity panel rather than a
-           fake print proof, so nobody mistakes it for their artwork. */
+<?php /* Shown when a card has no baked image. 111 of 399 active employees are
+         in that state: their design is a classic Fabric one, which only the
+         web editor can regenerate, so the page had a hole where the hero
+         belongs. This is deliberately a clean identity panel rather than a
+         fake print proof, so nobody mistakes it for their artwork. */ ?>
         .card-fallback {
             width: 100%;
             aspect-ratio: 1.75 / 1;

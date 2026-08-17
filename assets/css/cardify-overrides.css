@@ -795,7 +795,7 @@ html[dir="rtl"] td.text-left,  html[dir="rtl"] th.text-left  { text-align: right
 html[dir="rtl"] .fa-chevron-right.breadcrumb-sep { transform: scaleX(-1); }
 
 /* ---------------------------------------------------------------------------
-   r6-100: tap targets. Every control sized to its glyph gets a 44x44 hit area.
+   Tap targets. Every control sized to its glyph gets a 44x44 hit area.
    The visual size is unchanged; only the touchable box grows, so nothing in
    the layout shifts.
    --------------------------------------------------------------------------- */
@@ -845,8 +845,7 @@ button.cardify-tap::after {
    the light steps used for badges behind dark text are deliberately left
    alone: darkening those would break the contrast in the other direction.
 
-   Verified with contrast_gate.py, which measures the rendered pixel rather
-   than the declared hex.
+   Verified by measuring the rendered pixel rather than the declared hex.
    ===================================================== */
 :root {
     --bhd-green-ink:       #15803d;  /* 5.0:1 under white text */
