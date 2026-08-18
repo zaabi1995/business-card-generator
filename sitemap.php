@@ -25,6 +25,7 @@ echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
 function smX($s) { return htmlspecialchars((string) $s, ENT_XML1 | ENT_QUOTES, 'UTF-8'); }
 
 require_once __DIR__ . '/includes/ArTwins.php';
+require_once __DIR__ . '/includes/Freshness.php';
 require_once __DIR__ . '/includes/CompanyIndex.php';
 
 /**
@@ -113,6 +114,17 @@ function smRouteDate($path) {
     // not a date nobody can question.
     static $RENDERER = [
         'press-kit'         => 'press.php',
+        // r254 / bhd-r6-95 #67. Read out of .htaccess:260-267, same as the
+        // rows below it. Without these four, /logos/press and /logos/terms and
+        // their AR twins resolved to no file and took the fallback, so editing
+        // this generator on 15 Aug moved four live URLs to 2026-08-15 with
+        // nothing about them changed -- while each page's own closure still
+        // said 2026-08-12. Exactly the silent-fallback shape the docblock above
+        // warns about, three rounds after it was written.
+        'logos/press'       => 'logos.php',
+        'logos/terms'       => 'logos.php',
+        'ar/logos/press'    => 'logos.php',
+        'ar/logos/terms'    => 'logos.php',
         'gcc/saudi-arabia'  => 'gcc/country.php',
         'gcc/uae'           => 'gcc/country.php',
         'gcc/qatar'         => 'gcc/country.php',
@@ -124,12 +136,49 @@ function smRouteDate($path) {
     if (isset($RENDERER[$rel])) $roots[] = __DIR__ . '/' . $RENDERER[$rel];
     $roots[] = __DIR__ . '/' . ($rel === '' ? 'index.php' : $rel . '.php');
     $roots[] = __DIR__ . '/' . ($rel === '' ? 'index.php' : $rel . '/index.php');
+    // r252 / bhd-r6-95, change of approach #66: ONE author for one fact. This
+    // used to read the renderer's own mtime, while the page it points at had
+    // been dated by its whole include closure since r250 -- so the sitemap
+    // contradicted the page it advertises on 14 of 20 sampled URLs, /get-started
+    // by 105 days. Both channels now call Freshness::routeTimestamp() with the
+    // same renderer path, so the two claims are the same computation and cannot
+    // drift. The bare filemtime() stays only as the answer when the closure is
+    // unreadable, which is the pre-r250 behaviour and still honest.
     $t = 0;
     foreach ($roots as $f) {
-        if (is_file($f)) { $t = (int) filemtime($f); break; }
+        if (is_file($f)) { $t = (int) (Freshness::routeTimestamp($f, __DIR__) ?: filemtime($f)); break; }
     }
-    if ($t === 0) $t = (int) filemtime(__FILE__);
+    if ($t === 0) {
+        // r254 / bhd-r6-95, change of approach #67. THE FALLBACK IS A FINDING.
+        //
+        // The docblock above already demanded this: "A route that cannot find
+        // its renderer should be a short list somebody has to edit, not a date
+        // nobody can question." It was still a date. A route that resolves to
+        // no file gets this generator's own mtime, which means every edit to
+        // sitemap.php re-dates it, which means the claim tracks the wrong
+        // artifact and nothing can ever falsify it. That is how four live URLs
+        // sat one calendar ahead of their own pages until somebody censused
+        // them by hand.
+        //
+        // The date still ships -- withholding <lastmod> would trade a wrong
+        // claim for no claim -- but the route is now RECORDED and the document
+        // names it in a comment at the end of the urlset, so the fallback is
+        // visible on the wire to any reader instead of only in this function.
+        smRouteUnresolved($path);
+        $t = (int) (Freshness::routeTimestamp(__FILE__, __DIR__) ?: filemtime(__FILE__));
+    }
     return $cache[$path] = smMtimeDay($t);
+}
+
+/**
+ * Routes smRouteDate() could not resolve to a renderer, recorded so the
+ * document can publish its own blind spot. Call with no argument to read.
+ */
+function smRouteUnresolved($path = null) {
+    static $seen = [];
+    if ($path === null) return array_keys($seen);
+    $seen[$path] = true;
+    return null;
 }
 
 /**
@@ -177,13 +226,25 @@ function smMtimeDay($ts) {
  * file.
  */
 function smChildDate($part, $db) {
+    // r252: the instrument does not date what it measures, r250's commit
+    // 6b856b3 one level up. This seeded $t with sitemap.php's OWN mtime, so
+    // editing the generator moved all nine children to today even when not one
+    // URL inside them had changed -- measured 15 Aug 2026, every child read
+    // 2026-08-15 within a minute of this file being saved. The generator's mtime
+    // is now the FALLBACK for a child that contains nothing datable (companies-ar
+    // is deliberately empty), never the floor under one that does.
     $newest = function (array $globs) {
-        $t = (int) filemtime(__FILE__);
+        $t = 0;
         foreach ($globs as $g) {
             foreach (glob(__DIR__ . '/' . $g) ?: [] as $f) {
-                $t = max($t, (int) filemtime($f));
+                // ... and the 'static' child globs '*.php', which is the whole
+                // webroot root, THIS FILE INCLUDED. Excluded by name, not by a
+                // pattern, so the exclusion cannot quietly widen.
+                if (realpath($f) === realpath(__FILE__)) continue;
+                $t = max($t, (int) (Freshness::routeTimestamp($f, __DIR__) ?: filemtime($f)));
             }
         }
+        if ($t === 0) $t = (int) filemtime(__FILE__);
         return smMtimeDay($t);
     };
     $maxCol = function ($table, $col, $where = '') use ($db) {
@@ -562,4 +623,12 @@ if ($part === 'static') {
     // Unknown part, empty urlset (Google will just see no URLs; still valid XML).
 }
 
+// r254 / bhd-r6-95 #67: publish the denominator of this document's own
+// confidence. Any route whose renderer smRouteDate() could not find took this
+// generator's mtime instead of its page's, so its lastmod is unfalsifiable.
+// Naming them here puts the finding on the wire where a gate reads bytes.
+foreach (smRouteUnresolved() as $u) {
+    echo '    <!-- UNRESOLVED-ROUTE ' . smX($u) . ' : lastmod fell back to the '
+       . 'generator mtime because no renderer resolved; add it to $RENDERER -->' . "\n";
+}
 echo '</urlset>' . "\n";
