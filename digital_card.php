@@ -293,6 +293,28 @@ try {
         $backImage = $backRaw ? (strpos($backRaw, '/') === false ? $cardBasePath . $backRaw : $backRaw) : '';
     }
 
+    // The preview box is sized from the template aspect ratio resolved above, but what
+    // actually renders inside it is the generated IMAGE, and .card-face img is
+    // object-fit: contain. When a tenant's printed card is a different shape from what
+    // the template says (Cyfr's card is 90x50 = 1.80, the default here is 1.545), the
+    // image letterboxes and the card shows blank bands above and below it. So measure
+    // the real image and let it size its own box. Any card shape then fits, 90x50,
+    // 85x55, square, or a custom die, with no per-tenant configuration.
+    if ($frontImage !== '') {
+        $frontFsPath = __DIR__ . (parse_url($frontImage, PHP_URL_PATH) ?: '');
+        if (is_file($frontFsPath)) {
+            $dim = @getimagesize($frontFsPath);
+            if ($dim && !empty($dim[0]) && !empty($dim[1])) {
+                $measuredAspect = $dim[0] / $dim[1];
+                // Clamp so a corrupt or mis-generated file cannot wreck the layout.
+                if ($measuredAspect >= 0.5 && $measuredAspect <= 3.0) {
+                    $cardAspect = $measuredAspect;
+                    $cardAspectCss = number_format($cardAspect, 4, '.', '') . ' / 1';
+                }
+            }
+        }
+    }
+
     // Build VCF download URL. Always point at /vcf.php, which unconditionally
     // serves the text/vcard file. Do NOT use /qr.php?i= here: that endpoint
     // doubles as the printed-card QR target and 302-redirects to the owner's
