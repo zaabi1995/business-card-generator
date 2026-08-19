@@ -81,4 +81,6 @@ return [
     'field_po_document'    => 'PO Document',
     'po_document_hint'     => 'PDF, DOC, or image files accepted',
     'cancel'               => 'Cancel',
+    'upload_bad_type'      => 'Unsupported file type. Allowed: PDF, image, Word, Excel.',
+    'upload_too_large'     => 'File too large. Maximum 20 MB.',
 ];

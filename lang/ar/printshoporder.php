@@ -43,4 +43,6 @@ return [
     'status_shipped'     => 'قيد الشحن',
     'status_delivered'   => 'تمّ التسليم',
     'status_cancelled'   => 'ملغى',
+    'upload_bad_type'    => 'نوع الملف غير مدعوم. المسموح: PDF أو صورة أو Word أو Excel.',
+    'upload_too_large'   => 'حجم الملف كبير جدا. الحد الأقصى 20 ميجابايت.',
 ];

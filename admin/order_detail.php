@@ -52,6 +52,15 @@ if (!$order || ($user['role'] !== 'super_admin' && $order['company_id'] !== $com
 $message = null;
 $messageType = 'success';
 
+// Order attachments land under the webroot at /uploads/orders/<id>/ with a
+// name whose extension came straight from the client. nginx already refuses to
+// execute .php under /uploads/ (extension/00-noindex-sensitive.conf), so this
+// was not code execution, but it did let any caller park arbitrary file types
+// in a public directory. Constrain to inert document and image types here too,
+// per the finfo/MIME rule in CLAUDE.md, rather than relying on one layer.
+$ORDER_DOC_EXTS = ['pdf', 'jpg', 'jpeg', 'png', 'webp', 'gif', 'doc', 'docx', 'xls', 'xlsx', 'csv'];
+$ORDER_DOC_MAX_BYTES = 20 * 1024 * 1024;
+
 // Handle POST actions
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!validateCSRFToken($_POST['csrf_token'] ?? '')) {
@@ -68,10 +77,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $fullUploadDir = BASE_DIR . '/' . $uploadDir;
             if (!is_dir($fullUploadDir)) mkdir($fullUploadDir, 0755, true);
             
-            $filename = 'po_' . date('Ymd_His') . '_' . uniqid() . '.' . pathinfo($_FILES['po_file']['name'], PATHINFO_EXTENSION);
+            $ext = strtolower(pathinfo($_FILES['po_file']['name'], PATHINFO_EXTENSION));
+            $filename = 'po_' . date('Ymd_His') . '_' . uniqid() . '.' . $ext;
             $filePath = $uploadDir . $filename;
-            
-            if (move_uploaded_file($_FILES['po_file']['tmp_name'], BASE_DIR . '/' . $filePath)) {
+
+            if (!in_array($ext, $ORDER_DOC_EXTS, true)) {
+                $message = t('orderdetail.upload_bad_type');
+                $messageType = 'error';
+            } elseif ((int) $_FILES['po_file']['size'] > $ORDER_DOC_MAX_BYTES) {
+                $message = t('orderdetail.upload_too_large');
+                $messageType = 'error';
+            } elseif (move_uploaded_file($_FILES['po_file']['tmp_name'], BASE_DIR . '/' . $filePath)) {
                 $poNumber = trim($_POST['po_number'] ?? '');
                 
                 $pdo->prepare("UPDATE print_orders SET 

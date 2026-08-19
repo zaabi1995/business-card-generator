@@ -145,6 +145,15 @@ if (!$order || ($user['role'] !== 'super_admin' && $order['print_shop_id'] != $p
 $message = null;
 $messageType = 'success';
 
+// Order attachments land under the webroot at /uploads/orders/<id>/ with a
+// name whose extension came straight from the client. nginx already refuses to
+// execute .php under /uploads/ (extension/00-noindex-sensitive.conf), so this
+// was not code execution, but it did let any caller park arbitrary file types
+// in a public directory. Constrain to inert document and image types here too,
+// per the finfo/MIME rule in CLAUDE.md, rather than relying on one layer.
+$ORDER_DOC_EXTS = ['pdf', 'jpg', 'jpeg', 'png', 'webp', 'gif', 'doc', 'docx', 'xls', 'xlsx', 'csv'];
+$ORDER_DOC_MAX_BYTES = 20 * 1024 * 1024;
+
 // Initialize Odoo integration
 $odoo = new PrintShopOdoo($printShop['id']);
 
@@ -203,10 +212,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $fullUploadDir = BASE_DIR . '/' . $uploadDir;
             if (!is_dir($fullUploadDir)) mkdir($fullUploadDir, 0755, true);
             
-            $filename = 'quotation_' . date('Ymd_His') . '_' . uniqid() . '.' . pathinfo($_FILES['quotation_file']['name'], PATHINFO_EXTENSION);
+            $ext = strtolower(pathinfo($_FILES['quotation_file']['name'], PATHINFO_EXTENSION));
+            $filename = 'quotation_' . date('Ymd_His') . '_' . uniqid() . '.' . $ext;
             $filePath = $uploadDir . $filename;
-            
-            if (move_uploaded_file($_FILES['quotation_file']['tmp_name'], BASE_DIR . '/' . $filePath)) {
+
+            if (!in_array($ext, $ORDER_DOC_EXTS, true)) {
+                $message = t('printshoporder.upload_bad_type');
+                $messageType = 'error';
+            } elseif ((int) $_FILES['quotation_file']['size'] > $ORDER_DOC_MAX_BYTES) {
+                $message = t('printshoporder.upload_too_large');
+                $messageType = 'error';
+            } elseif (move_uploaded_file($_FILES['quotation_file']['tmp_name'], BASE_DIR . '/' . $filePath)) {
                 $quotationNumber = trim($_POST['quotation_number'] ?? '') ?: $odoo->generateDocumentNumber('quotation');
                 $quotationAmount = floatval($_POST['quotation_amount'] ?? $order['total']);
                 $validUntil = !empty($_POST['quotation_valid_until']) ? $_POST['quotation_valid_until'] : date('Y-m-d', strtotime('+30 days'));
@@ -242,10 +258,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $fullUploadDir = BASE_DIR . '/' . $uploadDir;
             if (!is_dir($fullUploadDir)) mkdir($fullUploadDir, 0755, true);
             
-            $filename = 'po_' . date('Ymd_His') . '_' . uniqid() . '.' . pathinfo($_FILES['po_file']['name'], PATHINFO_EXTENSION);
+            $ext = strtolower(pathinfo($_FILES['po_file']['name'], PATHINFO_EXTENSION));
+            $filename = 'po_' . date('Ymd_His') . '_' . uniqid() . '.' . $ext;
             $filePath = $uploadDir . $filename;
-            
-            if (move_uploaded_file($_FILES['po_file']['tmp_name'], BASE_DIR . '/' . $filePath)) {
+
+            if (!in_array($ext, $ORDER_DOC_EXTS, true)) {
+                $message = t('printshoporder.upload_bad_type');
+                $messageType = 'error';
+            } elseif ((int) $_FILES['po_file']['size'] > $ORDER_DOC_MAX_BYTES) {
+                $message = t('printshoporder.upload_too_large');
+                $messageType = 'error';
+            } elseif (move_uploaded_file($_FILES['po_file']['tmp_name'], BASE_DIR . '/' . $filePath)) {
                 $poNumber = trim($_POST['po_number'] ?? '');
                 
                 $pdo->prepare("UPDATE print_orders SET 
@@ -278,10 +301,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $fullUploadDir = BASE_DIR . '/' . $uploadDir;
             if (!is_dir($fullUploadDir)) mkdir($fullUploadDir, 0755, true);
             
-            $filename = 'invoice_' . date('Ymd_His') . '_' . uniqid() . '.' . pathinfo($_FILES['invoice_file']['name'], PATHINFO_EXTENSION);
+            $ext = strtolower(pathinfo($_FILES['invoice_file']['name'], PATHINFO_EXTENSION));
+            $filename = 'invoice_' . date('Ymd_His') . '_' . uniqid() . '.' . $ext;
             $filePath = $uploadDir . $filename;
-            
-            if (move_uploaded_file($_FILES['invoice_file']['tmp_name'], BASE_DIR . '/' . $filePath)) {
+
+            if (!in_array($ext, $ORDER_DOC_EXTS, true)) {
+                $message = t('printshoporder.upload_bad_type');
+                $messageType = 'error';
+            } elseif ((int) $_FILES['invoice_file']['size'] > $ORDER_DOC_MAX_BYTES) {
+                $message = t('printshoporder.upload_too_large');
+                $messageType = 'error';
+            } elseif (move_uploaded_file($_FILES['invoice_file']['tmp_name'], BASE_DIR . '/' . $filePath)) {
                 $invoiceNumber = trim($_POST['invoice_number'] ?? '') ?: $odoo->generateDocumentNumber('invoice');
                 $invoiceAmount = floatval($_POST['invoice_amount'] ?? $order['total']);
                 $dueDate = !empty($_POST['invoice_due_date']) ? $_POST['invoice_due_date'] : date('Y-m-d', strtotime('+30 days'));
@@ -360,10 +390,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $fullUploadDir = BASE_DIR . '/' . $uploadDir;
             if (!is_dir($fullUploadDir)) mkdir($fullUploadDir, 0755, true);
             
-            $filename = 'dn_' . date('Ymd_His') . '_' . uniqid() . '.' . pathinfo($_FILES['delivery_note_file']['name'], PATHINFO_EXTENSION);
+            $ext = strtolower(pathinfo($_FILES['delivery_note_file']['name'], PATHINFO_EXTENSION));
+            $filename = 'dn_' . date('Ymd_His') . '_' . uniqid() . '.' . $ext;
             $filePath = $uploadDir . $filename;
-            
-            if (move_uploaded_file($_FILES['delivery_note_file']['tmp_name'], BASE_DIR . '/' . $filePath)) {
+
+            if (!in_array($ext, $ORDER_DOC_EXTS, true)) {
+                $message = t('printshoporder.upload_bad_type');
+                $messageType = 'error';
+            } elseif ((int) $_FILES['delivery_note_file']['size'] > $ORDER_DOC_MAX_BYTES) {
+                $message = t('printshoporder.upload_too_large');
+                $messageType = 'error';
+            } elseif (move_uploaded_file($_FILES['delivery_note_file']['tmp_name'], BASE_DIR . '/' . $filePath)) {
                 $dnNumber = trim($_POST['delivery_note_number'] ?? '') ?: $odoo->generateDocumentNumber('delivery');
                 
                 $pdo->prepare("UPDATE print_orders SET 

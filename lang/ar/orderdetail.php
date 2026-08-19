@@ -81,4 +81,6 @@ return [
     'field_po_document'    => 'مستند أمر الشراء',
     'po_document_hint'     => 'تُقبل ملفات PDF أو DOC أو الصور',
     'cancel'               => 'إلغاء',
+    'upload_bad_type'      => 'نوع الملف غير مدعوم. المسموح: PDF أو صورة أو Word أو Excel.',
+    'upload_too_large'     => 'حجم الملف كبير جدا. الحد الأقصى 20 ميجابايت.',
 ];

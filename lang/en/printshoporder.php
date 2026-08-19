@@ -43,4 +43,6 @@ return [
     'status_shipped'     => 'Shipped',
     'status_delivered'   => 'Delivered',
     'status_cancelled'   => 'Cancelled',
+    'upload_bad_type'    => 'Unsupported file type. Allowed: PDF, image, Word, Excel.',
+    'upload_too_large'   => 'File too large. Maximum 20 MB.',
 ];

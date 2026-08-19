@@ -46,10 +46,21 @@ if (!validateCSRFToken($csrf)) {
 
 // Tenant-admin path uses session company_id; print-shop operator path
 // posts company_id explicitly when uploading on behalf of a tenant.
+//
+// The posted value lands in a filesystem path below, so it is constrained
+// to the companies.id column shape (VARCHAR(36) UUID) before use. Without
+// this a caller whose session carries no company_id (a super_admin is the
+// normal case) could post "../../.." and drive mkdir/move_uploaded_file
+// outside /uploads/fonts/companies.
 $companyId = function_exists('getCurrentCompanyId') ? getCurrentCompanyId() : null;
 if (!$companyId) {
     $postedCompanyId = trim((string) ($_POST['company_id'] ?? ''));
     if ($postedCompanyId !== '') {
+        if (!preg_match('/^[A-Za-z0-9-]{1,36}$/', $postedCompanyId)) {
+            http_response_code(400);
+            echo json_encode(['error' => 'invalid_company_id']);
+            exit;
+        }
         $companyId = $postedCompanyId;
     }
 }
