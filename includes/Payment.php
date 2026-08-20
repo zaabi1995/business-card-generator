@@ -597,12 +597,12 @@ class Payment {
         $currentCompany = $db->fetchOne("SELECT subscription_expires_at, subscription_status FROM companies WHERE id = :id", ['id' => $companyId]);
         $baseTime = time();
         if ($currentCompany && $currentCompany['subscription_status'] === 'active' && !empty($currentCompany['subscription_expires_at'])) {
-            $currentExpiry = strtotime($currentCompany['subscription_expires_at']);
+            $currentExpiry = dbTs($currentCompany['subscription_expires_at']);
             if ($currentExpiry > $baseTime) {
                 $baseTime = $currentExpiry;
             }
         }
-        $expiresAt = date('Y-m-d H:i:s', strtotime($billingCycle === 'yearly' ? '+1 year' : '+1 month', $baseTime));
+        $expiresAt = date('Y-m-d H:i:s', dbTs($billingCycle === 'yearly' ? '+1 year' : '+1 month', $baseTime));
 
         $db->update('companies',
             [

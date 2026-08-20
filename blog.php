@@ -70,7 +70,7 @@ if ($db->tableExists('blog_posts')) {
             }
 
             // Conditional crawl support: respect If-Modified-Since from Googlebot
-            $lastMod = strtotime($singlePost['updated_at'] ?? $singlePost['published_at'] ?? $singlePost['created_at']);
+            $lastMod = dbTs($singlePost['updated_at'] ?? $singlePost['published_at'] ?? $singlePost['created_at']);
             // r254 / bhd-r6-95, change of approach #67. THE ROW IS THE AUTHOR.
             //
             // sitemap.php:472-487 writes this URL's <lastmod> from
@@ -137,8 +137,8 @@ if ($db->tableExists('blog_posts')) {
 // Build JSON-LD structured data (Article for single post, Blog listing otherwise)
 $extraHead = '';
 if ($singlePost) {
-    $published = date('c', strtotime($singlePost['published_at'] ?? $singlePost['created_at']));
-    $modified = date('c', strtotime($singlePost['updated_at'] ?? $singlePost['published_at'] ?? $singlePost['created_at']));
+    $published = date('c', dbTs($singlePost['published_at'] ?? $singlePost['created_at']));
+    $modified = date('c', dbTs($singlePost['updated_at'] ?? $singlePost['published_at'] ?? $singlePost['created_at']));
     $imageUrl = !empty($singlePost['featured_image'])
         ? 'https://cardify.om/' . ltrim($singlePost['featured_image'], '/')
         : 'https://cardify.om/assets/images/cardify-og.png';
@@ -245,7 +245,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 </span>
                 <span class="text-gray-300">•</span>
                 <?php endif; ?>
-                <time datetime="<?= date('c', strtotime($singlePost['published_at'] ?? $singlePost['created_at'])) ?>"><?= htmlspecialchars(I18n::formatDate(strtotime($singlePost['published_at'] ?? $singlePost['created_at']))) ?></time>
+                <time datetime="<?= date('c', dbTs($singlePost['published_at'] ?? $singlePost['created_at'])) ?>"><?= htmlspecialchars(I18n::formatDate(dbTs($singlePost['published_at'] ?? $singlePost['created_at']))) ?></time>
                 <span class="text-gray-300">•</span>
                 <span class="inline-flex items-center gap-1"><i class="fa-regular fa-clock text-xs"></i> <?= htmlspecialchars(t('blog.min_read', ['n' => $readMinutes])) ?></span>
             </div>
@@ -322,7 +322,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
             <div class="grid md:grid-cols-3 gap-6">
                 <?php foreach ($relatedPosts as $rp): ?>
                 <a href="<?= getBasePath() ?>blog/<?= urlencode($rp['slug']) ?>" class="bg-white rounded-xl shadow-sm p-5 hover:shadow-md transition-shadow block">
-                    <span class="text-xs text-gray-400"><?= date('M j, Y', strtotime($rp['published_at'] ?? $rp['created_at'])) ?></span>
+                    <span class="text-xs text-gray-400"><?= date('M j, Y', dbTs($rp['published_at'] ?? $rp['created_at'])) ?></span>
                     <h4 class="font-semibold text-gray-900 mt-1 line-clamp-2"><?= htmlspecialchars($rp['title']) ?></h4>
                     <?php if ($rp['excerpt']): ?>
                     <p class="text-gray-500 text-sm mt-2 line-clamp-2"><?= htmlspecialchars($rp['excerpt']) ?></p>
@@ -402,7 +402,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     <div class="p-6">
                         <div class="flex items-center gap-3 mb-3">
                             <span class="text-xs text-gray-500">
-                                <?php echo date('M j, Y', strtotime($post['published_at'] ?? $post['created_at'])); ?>
+                                <?php echo date('M j, Y', dbTs($post['published_at'] ?? $post['created_at'])); ?>
                             </span>
                             <?php if ($post['author_name']): ?>
                             <span class="text-xs text-gray-400">•</span>

@@ -201,7 +201,7 @@ adminHeader(t('adminchrome.order_number', ['n' => $orderId]), 'print');
             <div class="flex items-start justify-between mb-4">
                 <div>
                     <h2 class="text-2xl font-bold text-gray-900"><?= htmlspecialchars(str_replace(':n', (string) ($order['order_number'] ?? $orderId), t('orderdetail.order_h2'))) ?></h2>
-                    <p class="text-gray-500 mt-1"><?= htmlspecialchars(str_replace(':date', date('F j, Y', strtotime($order['created_at'])), t('orderdetail.placed_on'))) ?></p>
+                    <p class="text-gray-500 mt-1"><?= htmlspecialchars(str_replace(':date', date('F j, Y', dbTs($order['created_at'])), t('orderdetail.placed_on'))) ?></p>
                 </div>
                 <span class="px-4 py-2 rounded-full text-sm font-semibold border <?php echo $statusColors[$order['status']] ?? 'bg-gray-100 text-gray-700'; ?>">
                     <?php $stk = 'orderdetail.status_' . $order['status']; $stl = t($stk); echo htmlspecialchars($stl === $stk ? ucfirst($order['status']) : $stl); ?>
@@ -312,7 +312,7 @@ adminHeader(t('adminchrome.order_number', ['n' => $orderId]), 'print');
                     <div class="mt-3 pt-3 border-t border-gray-200 flex items-center gap-4 text-sm">
                         <span class="text-gray-500"><?= htmlspecialchars(t('orderdetail.amount_prefix')) ?> <strong class="text-gray-900"><?php echo Currency::format($order['quotation_amount'], $currency); ?></strong></span>
                         <?php if (!empty($order['quotation_valid_until'])): ?>
-                        <span class="text-gray-500"><?= htmlspecialchars(t('orderdetail.valid_until')) ?> <strong class="text-gray-900"><?php echo date('M j, Y', strtotime($order['quotation_valid_until'])); ?></strong></span>
+                        <span class="text-gray-500"><?= htmlspecialchars(t('orderdetail.valid_until')) ?> <strong class="text-gray-900"><?php echo date('M j, Y', dbTs($order['quotation_valid_until'])); ?></strong></span>
                         <?php endif; ?>
                     </div>
                     <?php endif; ?>
@@ -383,7 +383,7 @@ adminHeader(t('adminchrome.order_number', ['n' => $orderId]), 'print');
                             </span>
                             <?php else: ?>
                             <span class="px-3 py-1.5 bg-amber-100 text-amber-700 rounded-lg text-sm font-medium">
-                                <?= htmlspecialchars(str_replace(':date', date('M j', strtotime($order['invoice_due_date'])), t('orderdetail.due_prefix'))) ?>
+                                <?= htmlspecialchars(str_replace(':date', date('M j', dbTs($order['invoice_due_date'])), t('orderdetail.due_prefix'))) ?>
                             </span>
                             <?php endif; ?>
                         </div>

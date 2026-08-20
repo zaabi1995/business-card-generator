@@ -232,7 +232,7 @@ adminHeader(($employee['name_en'] ?: $employee['email']), 'employees');
                 <tbody class="divide-y divide-gray-100">
                     <?php foreach ($recentScans as $s): ?>
                         <tr>
-                            <td class="px-5 py-3 text-gray-900"><?= htmlspecialchars(date('j M, H:i', strtotime($s['scanned_at']))) ?></td>
+                            <td class="px-5 py-3 text-gray-900"><?= htmlspecialchars(date('j M, H:i', dbTs($s['scanned_at']))) ?></td>
                             <td class="px-5 py-3 text-gray-600"><?= sanitize(trim(($s['city'] ?? '') . ', ' . ($s['country'] ?? ''), ' ,')) ?: '—' ?></td>
                             <td class="px-5 py-3 text-gray-500 hidden md:table-cell text-xs"><?= sanitize(substr($s['user_agent'] ?? '', 0, 60)) ?></td>
                         </tr>

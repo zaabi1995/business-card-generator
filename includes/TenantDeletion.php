@@ -107,8 +107,8 @@ class TenantDeletion
         }
 
         try {
-            $db->update('tenant_deletions', ['cancelled_at' => date('Y-m-d H:i:s')], 'company_id = :id', ['id' => $companyId]);
-            $db->update('companies', ['status' => 'active', 'updated_at' => date('Y-m-d H:i:s')], 'id = :id', ['id' => $companyId]);
+            $db->update('tenant_deletions', ['cancelled_at' => dbNow()], 'company_id = :id', ['id' => $companyId]);
+            $db->update('companies', ['status' => 'active', 'updated_at' => dbNow()], 'id = :id', ['id' => $companyId]);
 
             if (class_exists('AuditLog')) {
                 AuditLog::logCompany('delete_cancelled', $companyId, $row, null);

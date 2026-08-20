@@ -116,7 +116,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'responsible_email' => dept_clean_email($_POST['responsible_email'] ?? ''),
                 'cc_emails' => dept_clean_cc($_POST['cc_emails'] ?? ''),
                 'include_qr_default' => !empty($_POST['include_qr_default']) ? 1 : 0,
-                'created_at' => date('Y-m-d H:i:s')
+                'created_at' => dbNow()
             ];
             
             // Handle template pair assignment

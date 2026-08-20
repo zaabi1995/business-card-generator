@@ -41,7 +41,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $tableExists) {
                 'status' => sanitize($_POST['status']),
                 'featured' => isset($_POST['featured']) ? 1 : 0,
                 'verified' => isset($_POST['verified']) ? 1 : 0,
-                'updated_at' => date('Y-m-d H:i:s')
+                'updated_at' => dbNow()
             ];
             
             $db->update('print_shops', $updateData, 'id = :id', ['id' => $shopId]);
@@ -78,9 +78,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $tableExists) {
         if ($shop) {
             $db->update('print_shops', [
                 'status' => 'active',
-                'approved_at' => date('Y-m-d H:i:s'),
+                'approved_at' => dbNow(),
                 'approved_by' => $_SESSION['user_id'] ?? null,
-                'updated_at' => date('Y-m-d H:i:s')
+                'updated_at' => dbNow()
             ], 'id = :id', ['id' => $shopId]);
             
             AuditLog::log('approve', 'print_shop', $shopId, $shop, ['status' => 'active']);
@@ -95,7 +95,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $tableExists) {
         if ($shop) {
             $db->update('print_shops', [
                 'status' => 'suspended',
-                'updated_at' => date('Y-m-d H:i:s')
+                'updated_at' => dbNow()
             ], 'id = :id', ['id' => $shopId]);
             
             AuditLog::log('suspend', 'print_shop', $shopId, $shop, ['status' => 'suspended']);
@@ -157,7 +157,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $tableExists) {
                             'name' => $name,
                             'role' => 'print_shop',
                             'status' => 'active',
-                            'created_at' => date('Y-m-d H:i:s')
+                            'created_at' => dbNow()
                         ]);
                     }
                     
@@ -177,8 +177,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $tableExists) {
                         'currency' => $currency,
                         'user_id' => $userId,
                         'status' => $status,
-                        'created_at' => date('Y-m-d H:i:s'),
-                        'updated_at' => date('Y-m-d H:i:s')
+                        'created_at' => dbNow(),
+                        'updated_at' => dbNow()
                     ]);
                     
                     $pdo->commit();
@@ -226,7 +226,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $tableExists) {
                     'name' => $shop['name'],
                     'role' => 'print_shop',
                     'status' => 'active',
-                    'created_at' => date('Y-m-d H:i:s')
+                    'created_at' => dbNow()
                 ]);
                 
                 $db->update('print_shops', ['user_id' => $userId], 'id = :id', ['id' => $shopId]);

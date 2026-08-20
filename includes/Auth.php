@@ -116,7 +116,7 @@ class Auth {
         // Update last login if column exists
         try {
             self::$db->update('employees',
-                ['updated_at' => date('Y-m-d H:i:s')],
+                ['updated_at' => dbNow()],
                 'id = :id',
                 ['id' => $employee['id']]
             );
@@ -212,7 +212,7 @@ class Auth {
         
         // Update last login
         self::$db->update('users',
-            ['last_login_at' => date('Y-m-d H:i:s')],
+            ['last_login_at' => dbNow()],
             'id = :id',
             ['id' => $user['id']]
         );

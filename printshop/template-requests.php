@@ -204,8 +204,8 @@ printshopHeader(t('printshoppages.title_template_requests'), 'template_requests'
                     <span class="text-xs font-medium px-2 py-0.5 rounded-full <?= $sc ?>"><?php $stk = 'printshoptpl.status_' . $req['status']; $stl = t($stk); echo htmlspecialchars($stl === $stk ? ucfirst($req['status']) : $stl); ?></span>
                 </td>
                 <td class="px-4 py-3 text-xs text-gray-400 whitespace-nowrap tabular-nums">
-                    <?= date('M j, Y', strtotime($req['created_at'])) ?><br>
-                    <?= date('g:ia', strtotime($req['created_at'])) ?>
+                    <?= date('M j, Y', dbTs($req['created_at'])) ?><br>
+                    <?= date('g:ia', dbTs($req['created_at'])) ?>
                 </td>
                 <td class="px-4 py-3">
                     <form method="POST" class="flex items-center gap-1">

@@ -510,7 +510,7 @@ printshopHeader(t('printshoppages.title_order_n', ['n' => $orderId, 'shop' => $p
                     <i class="fa-solid fa-arrow-left"></i> <?= htmlspecialchars(t('printshoporder.back_to_orders')) ?>
                 </a>
                 <h1 class="text-2xl font-bold text-gray-900"><?= htmlspecialchars(t("printshoppages.h1_order_n", ["n" => $orderId])) ?></h1>
-                <p class="text-gray-500"><?= htmlspecialchars(str_replace(':date', date('F j, Y \a\t g:i A', strtotime($order['created_at'])), t('printshoporder.placed_on'))) ?></p>
+                <p class="text-gray-500"><?= htmlspecialchars(str_replace(':date', date('F j, Y \a\t g:i A', dbTs($order['created_at'])), t('printshoporder.placed_on'))) ?></p>
             </div>
             <span class="inline-flex px-4 py-2 rounded-lg text-sm font-semibold border <?php echo $statusColors[$order['status']] ?? 'bg-gray-100 text-gray-700'; ?>">
                 <?php $stk = 'printshoporder.status_' . $order['status']; $stl = t($stk); echo htmlspecialchars($stl === $stk ? ucfirst($order['status']) : $stl); ?>
@@ -857,11 +857,11 @@ printshopHeader(t('printshoppages.title_order_n', ['n' => $orderId, 'shop' => $p
                                     </div>
                                     <div>
                                         <span class="text-green-700">Issued:</span>
-                                        <span><?php echo $order['quotation_issued_at'] ? date('M j, Y', strtotime($order['quotation_issued_at'])) : '-'; ?></span>
+                                        <span><?php echo $order['quotation_issued_at'] ? date('M j, Y', dbTs($order['quotation_issued_at'])) : '-'; ?></span>
                                     </div>
                                     <div>
                                         <span class="text-green-700">Valid Until:</span>
-                                        <span><?php echo $order['quotation_valid_until'] ? date('M j, Y', strtotime($order['quotation_valid_until'])) : '-'; ?></span>
+                                        <span><?php echo $order['quotation_valid_until'] ? date('M j, Y', dbTs($order['quotation_valid_until'])) : '-'; ?></span>
                                     </div>
                                 </div>
                                 <?php if (!empty($order['quotation_file_path'])): ?>
@@ -929,7 +929,7 @@ printshopHeader(t('printshoppages.title_order_n', ['n' => $orderId, 'shop' => $p
                                 </div>
                                 <div class="text-sm">
                                     <span class="text-gray-600">Received:</span>
-                                    <span><?php echo $order['po_received_at'] ? date('M j, Y', strtotime($order['po_received_at'])) : '-'; ?></span>
+                                    <span><?php echo $order['po_received_at'] ? date('M j, Y', dbTs($order['po_received_at'])) : '-'; ?></span>
                                 </div>
                                 <?php if (!empty($order['po_file_path'])): ?>
                                 <a href="<?php echo getBasePath() . sanitize($order['po_file_path']); ?>" target="_blank"
@@ -990,11 +990,11 @@ printshopHeader(t('printshoppages.title_order_n', ['n' => $orderId, 'shop' => $p
                                     </div>
                                     <div>
                                         <span class="text-gray-600">Issued:</span>
-                                        <span><?php echo $order['invoice_issued_at'] ? date('M j, Y', strtotime($order['invoice_issued_at'])) : '-'; ?></span>
+                                        <span><?php echo $order['invoice_issued_at'] ? date('M j, Y', dbTs($order['invoice_issued_at'])) : '-'; ?></span>
                                     </div>
                                     <div>
                                         <span class="text-gray-600">Due:</span>
-                                        <span><?php echo $order['invoice_due_date'] ? date('M j, Y', strtotime($order['invoice_due_date'])) : '-'; ?></span>
+                                        <span><?php echo $order['invoice_due_date'] ? date('M j, Y', dbTs($order['invoice_due_date'])) : '-'; ?></span>
                                     </div>
                                 </div>
                                 <div class="mt-3 flex gap-2">
@@ -1073,7 +1073,7 @@ printshopHeader(t('printshoppages.title_order_n', ['n' => $orderId, 'shop' => $p
                                         <?php endif; ?>
                                     </div>
                                     <span class="text-xs text-green-600 mt-1 block">
-                                        Paid on <?php echo $order['invoice_paid_at'] ? date('M j, Y', strtotime($order['invoice_paid_at'])) : '-'; ?>
+                                        Paid on <?php echo $order['invoice_paid_at'] ? date('M j, Y', dbTs($order['invoice_paid_at'])) : '-'; ?>
                                     </span>
                                     <?php endif; ?>
                                 </div>
@@ -1129,7 +1129,7 @@ printshopHeader(t('printshoppages.title_order_n', ['n' => $orderId, 'shop' => $p
                                 </div>
                                 <div class="text-sm">
                                     <span class="text-cyan-700">Issued:</span>
-                                    <span><?php echo $order['delivery_note_issued_at'] ? date('M j, Y', strtotime($order['delivery_note_issued_at'])) : '-'; ?></span>
+                                    <span><?php echo $order['delivery_note_issued_at'] ? date('M j, Y', dbTs($order['delivery_note_issued_at'])) : '-'; ?></span>
                                 </div>
                                 <?php if (!empty($order['delivery_note_file_path'])): ?>
                                 <a href="<?php echo getBasePath() . sanitize($order['delivery_note_file_path']); ?>" target="_blank"
@@ -1185,7 +1185,7 @@ printshopHeader(t('printshoppages.title_order_n', ['n' => $orderId, 'shop' => $p
                                 </form>
                             </div>
                             <?php if (!empty($order['erp_last_sync'])): ?>
-                            <p class="text-xs text-gray-500 mt-1">Last sync: <?php echo date('M j, Y g:i A', strtotime($order['erp_last_sync'])); ?></p>
+                            <p class="text-xs text-gray-500 mt-1">Last sync: <?php echo date('M j, Y g:i A', dbTs($order['erp_last_sync'])); ?></p>
                             <?php endif; ?>
                         </div>
                         <?php endif; ?>
@@ -1292,7 +1292,7 @@ printshopHeader(t('printshoppages.title_order_n', ['n' => $orderId, 'shop' => $p
                                 <div class="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
                                 <div>
                                     <p class="text-sm font-medium text-gray-900">Order Created</p>
-                                    <p class="text-xs text-gray-500"><?php echo date('M j, Y g:i A', strtotime($order['created_at'])); ?></p>
+                                    <p class="text-xs text-gray-500"><?php echo date('M j, Y g:i A', dbTs($order['created_at'])); ?></p>
                                 </div>
                             </div>
                             <?php if (!empty($order['updated_at']) && $order['updated_at'] !== $order['created_at']): ?>
@@ -1300,7 +1300,7 @@ printshopHeader(t('printshoppages.title_order_n', ['n' => $orderId, 'shop' => $p
                                 <div class="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
                                 <div>
                                     <p class="text-sm font-medium text-gray-900">Last Updated</p>
-                                    <p class="text-xs text-gray-500"><?php echo date('M j, Y g:i A', strtotime($order['updated_at'])); ?></p>
+                                    <p class="text-xs text-gray-500"><?php echo date('M j, Y g:i A', dbTs($order['updated_at'])); ?></p>
                                 </div>
                             </div>
                             <?php endif; ?>

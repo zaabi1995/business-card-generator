@@ -112,7 +112,7 @@ printshopHeader(t('printshopinternal.clients_title', ['shop' => $shop['name']]),
                     </td>
                     <td class="px-4 py-3 text-gray-700 tabular-nums"><?= (int)$r['employee_count'] ?></td>
                     <td class="px-4 py-3 text-gray-700 tabular-nums"><?= (int)$r['shop_order_count'] ?></td>
-                    <td class="px-4 py-3 text-xs text-gray-500 tabular-nums"><?= $r['last_order_at'] ? sanitize(date('Y-m-d', strtotime($r['last_order_at']))) : '<span class="text-gray-400">,</span>' ?></td>
+                    <td class="px-4 py-3 text-xs text-gray-500 tabular-nums"><?= $r['last_order_at'] ? sanitize(date('Y-m-d', dbTs($r['last_order_at']))) : '<span class="text-gray-400">,</span>' ?></td>
                     <td class="px-4 py-3 text-end">
                         <a href="client.php?company=<?= urlencode($r['id']) ?>" class="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-md text-sm font-medium">
                             <i class="fa-solid fa-arrow-right"></i> <?= htmlspecialchars(t('printshopinternal.open_btn')) ?>

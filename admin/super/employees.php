@@ -37,7 +37,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'phone' => sanitize($_POST['phone']),
                 'mobile' => sanitize($_POST['mobile']),
                 'status' => sanitize($_POST['status']),
-                'updated_at' => date('Y-m-d H:i:s')
+                'updated_at' => dbNow()
             ];
             
             // Update password if provided
@@ -71,7 +71,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $employee = $db->fetchOne("SELECT * FROM employees WHERE id = :id", ['id' => $employeeId]);
             if ($employee) {
                 $db->update('employees', 
-                    ['password_hash' => password_hash($newPassword, PASSWORD_BCRYPT), 'updated_at' => date('Y-m-d H:i:s')],
+                    ['password_hash' => password_hash($newPassword, PASSWORD_BCRYPT), 'updated_at' => dbNow()],
                     'id = :id', ['id' => $employeeId]
                 );
                 

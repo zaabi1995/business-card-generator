@@ -45,14 +45,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'linkedin_carousel_pdf' => $relPdf,
                 'linkedin_carousel_data' => json_encode($slides, JSON_UNESCAPED_UNICODE),
                 'linkedin_commentary' => $commentary,
-                'linkedin_generated_at' => date('Y-m-d H:i:s'),
+                'linkedin_generated_at' => dbNow(),
             ], 'id = :id', ['id' => $id]);
             $message = 'Carousel generated successfully'; $messageType = 'success';
         } catch (Throwable $e) {
             $message = 'Generation failed: ' . $e->getMessage(); $messageType = 'error';
         }
     } elseif ($action === 'mark_posted') {
-        $db->update('blog_posts', ['linkedin_marked_posted_at' => date('Y-m-d H:i:s')], 'id = :id', ['id' => $id]);
+        $db->update('blog_posts', ['linkedin_marked_posted_at' => dbNow()], 'id = :id', ['id' => $id]);
         $message = 'Marked as posted'; $messageType = 'success';
     } elseif ($action === 'unmark_posted') {
         $db->update('blog_posts', ['linkedin_marked_posted_at' => null], 'id = :id', ['id' => $id]);
@@ -170,7 +170,7 @@ adminHeader('LinkedIn Carousels', 'linkedin-carousels');
         <div class="p-6" style="border-bottom: 1px solid rgba(255,255,255,0.20);">
             <div class="flex items-center gap-2 mb-2">
                 <span class="px-2 py-0.5 text-xs uppercase font-semibold rounded" style="background: rgba(255,255,255,0.22); color: #fff; letter-spacing: 0.05em;">Ready to post now</span>
-                <span class="text-xs" style="color: rgba(255,255,255,0.85);">Generated <?= htmlspecialchars(date('M j, H:i', strtotime($heroPost['linkedin_generated_at']))) ?></span>
+                <span class="text-xs" style="color: rgba(255,255,255,0.85);">Generated <?= htmlspecialchars(date('M j, H:i', dbTs($heroPost['linkedin_generated_at']))) ?></span>
             </div>
             <h2 class="text-2xl font-bold leading-tight" style="color: #fff;">
                 <a href="https://cardify.om/blog/<?= htmlspecialchars($heroPost['slug']) ?>" target="_blank" style="color: #fff; text-decoration: none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'"><?= htmlspecialchars($heroPost['title']) ?></a>
@@ -295,12 +295,12 @@ adminHeader('LinkedIn Carousels', 'linkedin-carousels');
                         <a href="https://cardify.om/blog/<?= htmlspecialchars($p['slug']) ?>" target="_blank" style="color: inherit; text-decoration: none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'"><?= htmlspecialchars($p['title']) ?></a>
                     </h4>
                     <div class="text-xs text-gray-500" style="margin-top: 4px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
-                        <span><i class="fa-regular fa-calendar"></i> <?= htmlspecialchars(date('Y-m-d', strtotime($p['published_at']))) ?></span>
+                        <span><i class="fa-regular fa-calendar"></i> <?= htmlspecialchars(date('Y-m-d', dbTs($p['published_at']))) ?></span>
                         <?php if ($hasData): ?>
-                            <span><i class="fa-solid fa-wand-magic-sparkles" style="color: #3b82f6;"></i> Generated <?= htmlspecialchars(date('M j, H:i', strtotime($p['linkedin_generated_at']))) ?></span>
+                            <span><i class="fa-solid fa-wand-magic-sparkles" style="color: #3b82f6;"></i> Generated <?= htmlspecialchars(date('M j, H:i', dbTs($p['linkedin_generated_at']))) ?></span>
                         <?php endif; ?>
                         <?php if ($isPosted): ?>
-                            <span style="color: #16a34a;"><i class="fa-solid fa-paper-plane"></i> Posted <?= htmlspecialchars(date('M j, H:i', strtotime($p['linkedin_marked_posted_at']))) ?></span>
+                            <span style="color: #16a34a;"><i class="fa-solid fa-paper-plane"></i> Posted <?= htmlspecialchars(date('M j, H:i', dbTs($p['linkedin_marked_posted_at']))) ?></span>
                         <?php endif; ?>
                     </div>
                 </div>

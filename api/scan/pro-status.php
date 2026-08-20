@@ -24,7 +24,7 @@ $identifiers = ScanIdentity::linkedIdentifiers(
     (string) $ctx['account_id']
 );
 $until = $row['scan_pro_until'] ?? null;
-$pro = $until !== null && strtotime($until) > time();
+$pro = $until !== null && dbTs($until) > time();
 echo json_encode([
     'success' => true,
     'pro'     => $pro,

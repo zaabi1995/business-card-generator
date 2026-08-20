@@ -377,7 +377,7 @@ printshopHeader(t('printshoppages.title_profile', ['shop' => $printShop['name']]
                         </div>
                         <div class="text-center p-4 bg-gray-50 rounded-lg">
                             <p class="text-sm text-gray-500 mb-1">Member Since</p>
-                            <span class="font-medium text-gray-900"><?php echo date('M Y', strtotime($printShop['created_at'])); ?></span>
+                            <span class="font-medium text-gray-900"><?php echo date('M Y', dbTs($printShop['created_at'])); ?></span>
                         </div>
                     </div>
                 </div>

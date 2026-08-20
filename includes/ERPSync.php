@@ -101,7 +101,7 @@ class ERPSync {
             'description'   => $description,
             'paymentMethod' => 'bank_transfer', // Paymob card/apple-pay settle as bank transfer on our ERP side
             'paymentRef'    => $pay['paymob_transaction_id'] ?: $shortRef,
-            'paymentDate'   => date('c', strtotime($pay['updated_at'] ?? $pay['created_at'])),
+            'paymentDate'   => date('c', dbTs($pay['updated_at'] ?? $pay['created_at'])),
             'notes'         => "Card-credit top-up via Paymob · company={$pay['company_id']}",
         ];
 

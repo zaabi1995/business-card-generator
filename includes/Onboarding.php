@@ -60,7 +60,7 @@ class Onboarding
         if (!empty($row['completed_at'])) return false;
         if (!empty($row['skipped_at'])) {
             // Re-show 24h after a skip
-            if (strtotime($row['skipped_at']) > time() - 86400) return false;
+            if (dbTs($row['skipped_at']) > time() - 86400) return false;
         }
         return true;
     }
@@ -282,12 +282,12 @@ class Onboarding
             $db->insert('company_onboarding', [
                 'company_id' => $companyId,
                 'step'       => 0,
-                'skipped_at' => date('Y-m-d H:i:s'),
+                'skipped_at' => dbNow(),
             ]);
         } else {
             $db->update(
                 'company_onboarding',
-                ['skipped_at' => date('Y-m-d H:i:s')],
+                ['skipped_at' => dbNow()],
                 'company_id = :cid',
                 ['cid' => $companyId]
             );
@@ -311,7 +311,7 @@ class Onboarding
         $wasAlreadyCompleted = !empty($existing['completed_at']);
         $row = [
             'step'         => self::TOTAL_STEPS,
-            'completed_at' => date('Y-m-d H:i:s'),
+            'completed_at' => dbNow(),
         ];
         if (empty($existing['started_at']) && $existing['step'] === 0) {
             $db->insert('company_onboarding', array_merge(['company_id' => $companyId], $row));

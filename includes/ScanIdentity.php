@@ -247,7 +247,7 @@ class ScanIdentity
                     'account_id' => $accountId,
                     'identifier_type' => $type,
                     'identifier_value' => $storedValue,
-                    'verified_at' => date('Y-m-d H:i:s'),
+                    'verified_at' => dbNow(),
                     'source' => $source,
                 ],
                 'identifier_hash = :where_hash AND verified_at IS NULL',
@@ -290,7 +290,7 @@ class ScanIdentity
                 'account_id' => $accountId,
                 'identifier_type' => $type,
                 'identifier_value' => $storedValue,
-                'verified_at' => date('Y-m-d H:i:s'),
+                'verified_at' => dbNow(),
                 'source' => $source,
             ]);
         } catch (Throwable $e) {

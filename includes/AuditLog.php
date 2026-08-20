@@ -86,7 +86,7 @@ class AuditLog {
                 'after_data' => $afterData ? json_encode($afterData) : null,
                 'ip_address' => $ipAddress,
                 'user_agent' => $userAgent ? substr($userAgent, 0, 500) : null,
-                'created_at' => date('Y-m-d H:i:s')
+                'created_at' => dbNow()
             ]);
             return true;
         } catch (Exception $e) {

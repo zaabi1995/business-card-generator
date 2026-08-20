@@ -216,7 +216,7 @@ adminHeader(t('print_tracking.title'), 'print-tracking');
                     <?php endif; ?>
                     <?php foreach ($runs as $r): ?>
                     <tr class="hover:bg-gray-50">
-                        <td class="px-5 py-3 text-gray-600 whitespace-nowrap"><?= htmlspecialchars(date('d M Y', strtotime($r['created_at']))) ?></td>
+                        <td class="px-5 py-3 text-gray-600 whitespace-nowrap"><?= htmlspecialchars(date('d M Y', dbTs($r['created_at']))) ?></td>
                         <td class="px-5 py-3 text-gray-900"><?= htmlspecialchars($r['emp_name_en'] ?? '') ?: '<span class="text-gray-400">-</span>' ?></td>
                         <td class="px-5 py-3 text-right font-semibold text-gray-900"><?= number_format((int)$r['quantity']) ?></td>
                         <td class="px-5 py-3 text-gray-600"><?= htmlspecialchars($r['note'] ?? '') ?: '<span class="text-gray-300">-</span>' ?></td>
@@ -265,7 +265,7 @@ adminHeader(t('print_tracking.title'), 'print-tracking');
                     <?php endif; ?>
                     <?php foreach ($pos as $p): ?>
                     <tr class="hover:bg-gray-50">
-                        <td class="px-5 py-3 text-gray-600 whitespace-nowrap"><?= htmlspecialchars(date('d M Y', strtotime($p['created_at']))) ?></td>
+                        <td class="px-5 py-3 text-gray-600 whitespace-nowrap"><?= htmlspecialchars(date('d M Y', dbTs($p['created_at']))) ?></td>
                         <td class="px-5 py-3 text-gray-900"><?= htmlspecialchars($p['po_number'] ?? '') ?: '<span class="text-gray-300">-</span>' ?></td>
                         <td class="px-5 py-3 text-right font-semibold text-gray-900"><?= number_format((int)$p['quantity']) ?></td>
                         <td class="px-5 py-3 text-gray-600"><?= htmlspecialchars($p['note'] ?? '') ?: '<span class="text-gray-300">-</span>' ?></td>

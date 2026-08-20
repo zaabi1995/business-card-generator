@@ -349,8 +349,8 @@ adminHeader(t('generated.page_title'), 'generated');
                         
                         <!-- Generated Date -->
                         <td class="px-4 py-3">
-                            <div class="text-sm text-gray-900"><?php echo date('M j, Y', strtotime($entry['generatedAt'])); ?></div>
-                            <div class="text-xs text-gray-500"><?php echo date('g:i A', strtotime($entry['generatedAt'])); ?></div>
+                            <div class="text-sm text-gray-900"><?php echo date('M j, Y', dbTs($entry['generatedAt'])); ?></div>
+                            <div class="text-xs text-gray-500"><?php echo date('g:i A', dbTs($entry['generatedAt'])); ?></div>
                         </td>
                         
                         <!-- Version -->

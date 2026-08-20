@@ -665,7 +665,7 @@ function setBillingCycle(cycle) {
                     <?= htmlspecialchars(str_replace(':n', (string)(int)($uOrder['quantity'] ?? 0), t('billing.n_cards'))) ?> ·
                     <?= ucfirst($uOrder['paper_type'] ?? 'standard') ?> ·
                     <?= ucfirst($uOrder['finish'] ?? 'matte') ?> ·
-                    <?= date('d M Y', strtotime($uOrder['created_at'])) ?>
+                    <?= date('d M Y', dbTs($uOrder['created_at'])) ?>
                 </p>
             </div>
             <div class="flex items-center gap-3 flex-shrink-0">

@@ -158,8 +158,8 @@ adminHeader('Print Orders', 'print_orders');
                         <?php endif; ?>
                     </td>
                     <td class="px-6 py-4 text-sm text-gray-500">
-                        <?php echo date('M j, Y', strtotime($order['created_at'])); ?>
-                        <span class="block text-xs"><?php echo date('g:i A', strtotime($order['created_at'])); ?></span>
+                        <?php echo date('M j, Y', dbTs($order['created_at'])); ?>
+                        <span class="block text-xs"><?php echo date('g:i A', dbTs($order['created_at'])); ?></span>
                     </td>
                     <td class="px-6 py-4 text-right">
                         <button onclick="openOrderModal(<?php echo htmlspecialchars(json_encode($order)); ?>)" 

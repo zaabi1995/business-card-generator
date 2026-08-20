@@ -307,7 +307,7 @@ adminHeader(t('adminchrome.bhd_campaign_manager'), 'reports');
                     <div class="px-5 py-3 text-sm">
                         <div class="font-medium text-gray-900 truncate"><?= sanitize($camp['campaign_name']) ?></div>
                         <div class="text-gray-500 text-xs mt-0.5">
-                            <?= ucfirst($camp['channel']) ?> &bull; <?= date('M j Y', strtotime($camp['started_at'])) ?>
+                            <?= ucfirst($camp['channel']) ?> &bull; <?= date('M j Y', dbTs($camp['started_at'])) ?>
                             &bull; <span class="text-green-600"><?= htmlspecialchars(str_replace(':n', (string)(int)$camp['succeeded'], t('bhdcampaign.n_sent'))) ?></span>
                             <?php if ($camp['failed'] > 0): ?> &bull; <span class="text-red-500"><?= htmlspecialchars(str_replace(':n', (string)(int)$camp['failed'], t('bhdcampaign.n_failed'))) ?></span><?php endif; ?>
                         </div>
@@ -347,7 +347,7 @@ adminHeader(t('adminchrome.bhd_campaign_manager'), 'reports');
                         </td>
                         <td class="px-6 py-3 text-right"><?= (int)$comp['order_count'] ?></td>
                         <td class="px-6 py-3 text-right font-medium"><?= number_format($comp['total_revenue'] ?? 0, 3) ?> <?= htmlspecialchars(t('bhdcampaign.omr')) ?></td>
-                        <td class="px-6 py-3 text-gray-500"><?= date('M j, Y', strtotime($comp['created_at'])) ?></td>
+                        <td class="px-6 py-3 text-gray-500"><?= date('M j, Y', dbTs($comp['created_at'])) ?></td>
                         <td class="px-6 py-3">
                             <?php if ((int)$comp['order_count'] > 0): ?>
                             <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700"><?= htmlspecialchars(t('bhdcampaign.status_converted')) ?></span>

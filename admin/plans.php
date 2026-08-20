@@ -70,7 +70,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'max_storage_mb' => $maxStorageMb,
             'is_active' => $isActive,
             'sort_order' => $sortOrder,
-            'updated_at' => date('Y-m-d H:i:s')
+            'updated_at' => dbNow()
         ], 'id = :id', ['id' => $planId]);
         
         // Update prices
@@ -92,7 +92,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $db->update('plan_prices', [
                         'price_monthly' => $monthly,
                         'price_yearly' => $yearly,
-                        'updated_at' => date('Y-m-d H:i:s')
+                        'updated_at' => dbNow()
                     ], 'id = :id', ['id' => $existing['id']]);
                 } else {
                     $db->insert('plan_prices', [
@@ -101,7 +101,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         'currency' => $currency,
                         'price_monthly' => $monthly,
                         'price_yearly' => $yearly,
-                        'created_at' => date('Y-m-d H:i:s')
+                        'created_at' => dbNow()
                     ]);
                 }
             }
@@ -142,7 +142,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'currency' => $newCurrency,
                     'price_monthly' => 0,
                     'price_yearly' => 0,
-                    'created_at' => date('Y-m-d H:i:s')
+                    'created_at' => dbNow()
                 ]);
             }
             

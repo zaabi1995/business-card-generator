@@ -184,7 +184,7 @@ $overallIcon = [
                     <li>
                         <span class="<?= $isAr ? '-right-2' : '-left-2' ?> absolute -mt-1 w-3 h-3 rounded-full bg-gray-300"></span>
                         <div class="flex items-center gap-2 text-xs text-gray-500 mb-1">
-                            <time datetime="<?= date('c', strtotime($inc['started_at'])) ?>"><?= htmlspecialchars(I18n::formatDate(strtotime($inc['started_at']))) ?></time>
+                            <time datetime="<?= date('c', dbTs($inc['started_at'])) ?>"><?= htmlspecialchars(I18n::formatDate(strtotime($inc['started_at']))) ?></time>
                             <span class="inline-block px-2 py-0.5 rounded-full <?= $sevCls ?> font-semibold"><?= htmlspecialchars(t('status.sev_' . $sev)) ?></span>
                             <?php if (!empty($inc['resolved_at'])): ?>
                             <span class="text-green-700 font-semibold">• <?= htmlspecialchars(t('status.resolved')) ?></span>

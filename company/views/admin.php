@@ -211,7 +211,7 @@ adminHeader('Dashboard - ' . $company['name'], 'dashboard');
             <div class="p-4 flex items-center justify-between">
                 <div>
                     <p class="font-medium text-gray-900">#<?php echo sanitize($order['order_number']); ?></p>
-                    <p class="text-sm text-gray-500"><?php echo date('M j, Y', strtotime($order['created_at'])); ?></p>
+                    <p class="text-sm text-gray-500"><?php echo date('M j, Y', dbTs($order['created_at'])); ?></p>
                 </div>
                 <div class="text-right">
                     <p class="font-medium text-gray-900"><?php echo Currency::formatHtml($order['total_amount'], $currency, 'sm'); ?></p>

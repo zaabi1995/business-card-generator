@@ -76,7 +76,7 @@ printshopHeader(t('printshopinternal.operators_title', ['shop' => $shop['name']]
                         <?php endif; ?>
                     </td>
                     <td class="px-4 py-3 text-gray-500 text-xs">
-                        <?= $op['last_login_at'] ? sanitize(date('Y-m-d H:i', strtotime($op['last_login_at']))) : '<span class="text-gray-400">never</span>' ?>
+                        <?= $op['last_login_at'] ? sanitize(date('Y-m-d H:i', dbTs($op['last_login_at']))) : '<span class="text-gray-400">never</span>' ?>
                     </td>
                     <td class="px-4 py-3 text-end">
                         <button type="button"

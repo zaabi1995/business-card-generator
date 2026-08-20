@@ -473,7 +473,7 @@ function addNewTemplate() {
         'backgroundImage' => getWebPath($uploadResult['path']),
         'fields' => $fields,
         'settings' => null,
-        'created_at' => date('Y-m-d H:i:s')
+        'created_at' => dbNow()
     ];
 
     if (!empty($settingsJson)) {

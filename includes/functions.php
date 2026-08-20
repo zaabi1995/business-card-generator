@@ -1850,5 +1850,12 @@ function dbTs($value): int
     if (preg_match('/(?:Z|[+-]\d{2}:?\d{2})$/', $s)) {
         return (int) strtotime($s);
     }
+    // Only a bare absolute datetime gets the UTC assumption. Relative phrases
+    // ("now", "today", "+1 hour") are evaluated against the local clock on
+    // purpose, and appending " UTC" to one shifts it by the offset instead of
+    // labelling it: strtotime('now UTC') lands four hours out.
+    if (!preg_match('/^\d{4}-\d{2}-\d{2}/', $s)) {
+        return (int) strtotime($s);
+    }
     return (int) strtotime($s . ' UTC');
 }

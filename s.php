@@ -56,7 +56,7 @@ try {
         exit;
     }
 
-    if (!empty($link['expires_at']) && strtotime($link['expires_at']) < time()) {
+    if (!empty($link['expires_at']) && dbTs($link['expires_at']) < time()) {
         http_response_code(410); // Gone
         include __DIR__ . '/404.php';
         exit;

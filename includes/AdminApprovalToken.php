@@ -78,7 +78,7 @@ class AdminApprovalToken
         $db = Database::getInstance();
         $affected = $db->update(
             'admin_approval_tokens',
-            ['used_at' => date('Y-m-d H:i:s')],
+            ['used_at' => dbNow()],
             'token = :tok AND used_at IS NULL AND expires_at > NOW()',
             ['tok' => $token]
         );

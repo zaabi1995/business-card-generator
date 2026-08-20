@@ -425,7 +425,7 @@ class WhatsApp {
             if ($existing) {
                 self::$db->update(
                     'system_settings',
-                    ['setting_value' => $value, 'updated_at' => date('Y-m-d H:i:s')],
+                    ['setting_value' => $value, 'updated_at' => dbNow()],
                     'setting_key = :key',
                     ['key' => $key]
                 );

@@ -148,7 +148,7 @@ try {
         'quantity'    => $quantity,
         'note'        => 'Sent to production' . ($soNumber ? " ($soNumber)" : ''),
         'created_by'  => (string)(Auth::getCurrentUser()['id'] ?? 'admin'),
-        'created_at'  => date('Y-m-d H:i:s'),
+        'created_at'  => dbNow(),
     ]);
 } catch (Throwable $e) {
     error_log('send-to-print: print-run log failed: ' . $e->getMessage());

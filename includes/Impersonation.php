@@ -132,7 +132,7 @@ class Impersonation
         $stoppedAt = date('c');
         $durationSeconds = null;
         if ($startedAt) {
-            $durationSeconds = max(0, strtotime($stoppedAt) - strtotime($startedAt));
+            $durationSeconds = max(0, dbTs($stoppedAt) - dbTs($startedAt));
         }
 
         // Log stop (still in target session, logger will record target as actor,

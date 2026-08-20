@@ -162,7 +162,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if (!$ts || $ts < time()) {
                     $err = 'Expiry must be a future date.';
                 } else {
-                    $expiresAt = date('Y-m-d H:i:s', $ts);
+                    $expiresAt = dbNow($ts);   // store UTC; s.php reads it back with dbTs()
                 }
             }
 
@@ -260,7 +260,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if (!$ts) {
                     $err = 'Invalid expiry.';
                 } else {
-                    $expiresAt = date('Y-m-d H:i:s', $ts);
+                    $expiresAt = dbNow($ts);   // store UTC; s.php reads it back with dbTs()
                 }
             }
 
@@ -451,7 +451,7 @@ adminHeader('Short Links', 'short-links');
             <tbody class="divide-y divide-gray-100">
                 <?php foreach ($links as $l):
                     $shortUrl = $shortPrefix . $l['slug'];
-                    $expired = !empty($l['expires_at']) && strtotime($l['expires_at']) < time();
+                    $expired = !empty($l['expires_at']) && dbTs($l['expires_at']) < time();
                     $approved = !empty($l['approved']);
                 ?>
                 <tr class="<?= ($expired || !$approved) ? 'opacity-60' : ''; ?>">
@@ -478,12 +478,12 @@ adminHeader('Short Links', 'short-links');
                     <td class="px-4 py-3 text-gray-500 text-xs">
                         <?php if ($l['expires_at']): ?>
                             <?= $expired ? '<span class="text-red-600">Expired</span> ' : ''; ?>
-                            <?= sanitize(date('Y-m-d H:i', strtotime($l['expires_at']))); ?>
+                            <?= sanitize(date('Y-m-d H:i', dbTs($l['expires_at']))); ?>
                         <?php else: ?>
                             <span class="text-gray-300">Never</span>
                         <?php endif; ?>
                     </td>
-                    <td class="px-4 py-3 text-gray-500 text-xs"><?= sanitize(date('Y-m-d H:i', strtotime($l['created_at']))); ?></td>
+                    <td class="px-4 py-3 text-gray-500 text-xs"><?= sanitize(date('Y-m-d H:i', dbTs($l['created_at']))); ?></td>
                     <td class="px-4 py-3 text-right whitespace-nowrap">
                         <?php if ($isSuperAdmin): ?>
                             <?php if (!$approved): ?>

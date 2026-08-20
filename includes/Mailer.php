@@ -1722,7 +1722,7 @@ HTML
                 if ($success) {
                     $db->update('email_queue', [
                         'status'  => 'sent',
-                        'sent_at' => date('Y-m-d H:i:s'),
+                        'sent_at' => dbNow(),
                         'attempts' => $row['attempts'] + 1,
                     ], 'id = :id', ['id' => $row['id']]);
                     $stats['sent']++;

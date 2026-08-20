@@ -237,7 +237,7 @@ class Referral {
             $now = time();
             $base = $now;
             if (!empty($refCompany['subscription_expires_at'])) {
-                $cur = strtotime($refCompany['subscription_expires_at']);
+                $cur = dbTs($refCompany['subscription_expires_at']);
                 if ($cur > $now) $base = $cur;
             }
             $newExpiry = date('Y-m-d H:i:s', strtotime('+' . self::REWARD_MONTHS . ' months', $base));
@@ -300,7 +300,7 @@ class Referral {
 
             $name = trim($user['name'] ?? '');
             $firstName = $name !== '' ? explode(' ', $name)[0] : 'there';
-            $expiryDate = date('M j, Y', strtotime($newExpiry));
+            $expiryDate = date('M j, Y', dbTs($newExpiry));
 
             $msg  = "🎉 مرحباً " . $firstName . "!\n\n";
             $msg .= "صديقك " . $referredName . " انضم للتو إلى Cardify, لقد حصلت على 3 أشهر مجانية!\n";

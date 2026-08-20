@@ -302,7 +302,7 @@ adminHeader(t('adminchrome.audit_logs'), 'audit-logs');
                 <?php foreach ($logs as $log): ?>
                 <tr class="hover:bg-gray-50">
                     <td class="px-4 py-3 text-sm text-gray-600 whitespace-nowrap">
-                        <?php echo date('M j, Y H:i', strtotime($log['created_at'])); ?>
+                        <?php echo date('M j, Y H:i', dbTs($log['created_at'])); ?>
                     </td>
                     <td class="px-4 py-3">
                         <div class="text-sm">

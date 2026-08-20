@@ -55,7 +55,7 @@ class Billing {
             $db->update('companies', [
                 'plan' => $planId,
                 'subscription_status' => 'active',
-                'subscription_expires_at' => date('Y-m-d H:i:s', strtotime($interval)),
+                'subscription_expires_at' => dbNow(strtotime($interval)),
                 'subscription_id' => 'free_' . time()
             ], 'id = :id', ['id' => $companyId]);
             return ['success' => true, 'free' => true, 'payment_url' => null, 'amount' => 0];
@@ -542,7 +542,7 @@ class Billing {
             return false;
         }
         
-        if ($company['subscription_expires_at'] && strtotime($company['subscription_expires_at']) < time()) {
+        if ($company['subscription_expires_at'] && dbTs($company['subscription_expires_at']) < time()) {
             return false;
         }
         

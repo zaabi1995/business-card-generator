@@ -138,7 +138,7 @@ adminHeader('Payment History', 'payment-history');
                 <?php foreach ($payments as $pmt): ?>
                 <tr class="hover:bg-gray-50 transition-colors">
                     <td class="px-4 py-3 text-gray-500 whitespace-nowrap">
-                        <?php echo date('d M Y, H:i', strtotime($pmt['created_at'])); ?>
+                        <?php echo date('d M Y, H:i', dbTs($pmt['created_at'])); ?>
                     </td>
                     <td class="px-4 py-3">
                         <?php if ($pmt['type'] === 'subscription'): ?>

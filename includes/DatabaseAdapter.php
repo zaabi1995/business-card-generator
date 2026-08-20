@@ -133,7 +133,7 @@ class DatabaseAdapter {
             'password_hash' => password_hash($password, PASSWORD_DEFAULT),
             'plan' => 'enterprise', // free-forever: every new company gets top tier, all features unlocked
             'status' => 'active',
-            'created_at' => date('Y-m-d H:i:s')
+            'created_at' => dbNow()
         ];
 
         if ($hasParentCompany) {
@@ -162,8 +162,8 @@ class DatabaseAdapter {
                         'company_id'      => $company['id'],
                         'primary_color'   => '#009bc1',
                         'secondary_color' => '#824598',
-                        'created_at'      => date('Y-m-d H:i:s'),
-                        'updated_at'      => date('Y-m-d H:i:s'),
+                        'created_at'      => dbNow(),
+                        'updated_at'      => dbNow(),
                     ]);
                 }
             } catch (Exception $themeErr) {
@@ -325,7 +325,7 @@ class DatabaseAdapter {
         if (!$order) {
             return ['success' => false, 'error' => 'Order not found'];
         }
-        $update = ['status' => $status, 'updated_at' => date('Y-m-d H:i:s')];
+        $update = ['status' => $status, 'updated_at' => dbNow()];
         if ($reason !== null && $reason !== ''
             && in_array($status, ['cancelled', 'rejected'], true)
             && self::$db->columnExists('print_orders', 'cancellation_reason')) {
@@ -575,7 +575,7 @@ class DatabaseAdapter {
             // Pro-tier only: hide "Made with Cardify" viral footer. Free plans
             // always get 0 regardless of what the form posted, server-side gate.
             'hide_cardify_branding' => self::resolveHideCardifyBranding($data['hide_cardify_branding'] ?? 0, $companyId),
-            'created_at' => date('Y-m-d H:i:s')
+            'created_at' => dbNow()
         ];
 
         // Honour an explicit status (the domain-based "join existing company"
@@ -705,7 +705,7 @@ class DatabaseAdapter {
             'card_dark_mode_toggle' => self::normalizeBoolFlag($data['card_dark_mode_toggle'] ?? 1, 1),
             // Pro-tier only: hide "Made with Cardify" viral footer (see migration 065).
             'hide_cardify_branding' => self::resolveHideCardifyBranding($data['hide_cardify_branding'] ?? 0, $companyId),
-            'updated_at' => date('Y-m-d H:i:s')
+            'updated_at' => dbNow()
         ];
 
         // Only touch `photo` when the caller explicitly submits it (new upload,
@@ -871,7 +871,7 @@ class DatabaseAdapter {
                     'side' => $template['side'] ?? 'front',
                     'background_image_path' => $template['backgroundImage'] ?? '',
                     'fields_json' => json_encode($fieldsToEncode),
-                    'updated_at' => date('Y-m-d H:i:s')
+                    'updated_at' => dbNow()
                 ];
                 
                 // Add pair_id if available
@@ -1018,7 +1018,7 @@ class DatabaseAdapter {
                 'front_file_path' => $frontFile,
                 'back_file_path' => $backFile,
                 'pdf_file_path' => $pdfFile,
-                'generated_at' => date('Y-m-d H:i:s')
+                'generated_at' => dbNow()
             ];
 
             // Pin the template versions live at generation time so later

@@ -35,7 +35,7 @@ class EmployeeEditToken
         $db = Database::getInstance();
         $db->update(
             'employee_edit_tokens',
-            ['revoked_at' => date('Y-m-d H:i:s')],
+            ['revoked_at' => dbNow()],
             'employee_id = :eid AND revoked_at IS NULL',
             ['eid' => $employeeId]
         );
@@ -48,7 +48,7 @@ class EmployeeEditToken
         // Revoke previous
         $db->update(
             'employee_edit_tokens',
-            ['revoked_at' => date('Y-m-d H:i:s')],
+            ['revoked_at' => dbNow()],
             'employee_id = :eid AND revoked_at IS NULL',
             ['eid' => $employeeId]
         );
@@ -59,7 +59,7 @@ class EmployeeEditToken
         $db->insert('employee_edit_tokens', [
             'employee_id' => $employeeId,
             'token_hash'  => $hash,
-            'expires_at'  => date('Y-m-d H:i:s', time() + (self::TTL_DAYS * 86400)),
+            'expires_at'  => dbNow(time() + (self::TTL_DAYS * 86400)),
             'created_by'  => $createdBy,
             'ip'          => $ip ? substr($ip, 0, 45) : null,
         ]);
@@ -93,14 +93,14 @@ class EmployeeEditToken
         );
         if (!$row) return null;
         if (!empty($row['_t_revoked_at'])) return null;
-        if (strtotime($row['_t_expires_at']) < time()) return null;
+        if (dbTs($row['_t_expires_at']) < time()) return null;
         // Idle-timeout removed: links are designed to live for the full
         // tenure of the employment. Revocation is explicit via admin
         // mint-replaces-prior or leave-company flow, not implicit drift.
 
         $db->update(
             'employee_edit_tokens',
-            ['last_used_at' => date('Y-m-d H:i:s')],
+            ['last_used_at' => dbNow()],
             'id = :id',
             ['id' => $row['_t_id']]
         );

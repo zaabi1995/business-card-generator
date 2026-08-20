@@ -47,7 +47,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         'mobile' => trim($_POST['mobile'] ?? ''),
         'website' => trim($_POST['website'] ?? ''),
         'address' => trim($_POST['address'] ?? ''),
-        'updated_at' => date('Y-m-d H:i:s')
+        'updated_at' => dbNow()
     ];
 
     try {
@@ -570,7 +570,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                         <?php if (!empty($latestCard['front_file_path'])): ?>
                         <img src="<?php echo imageUrl($latestCard['front_file_path']); ?>" alt="Your Card" class="w-full rounded-lg shadow-sm mb-3">
                         <?php endif; ?>
-                        <p class="text-sm text-gray-500">Generated <?php echo date('M j, Y', strtotime($latestCard['generated_at'])); ?></p>
+                        <p class="text-sm text-gray-500">Generated <?php echo date('M j, Y', dbTs($latestCard['generated_at'])); ?></p>
                         <?php else: ?>
                         <div class="text-center py-6 text-gray-500">
                             <i class="fa-solid fa-id-card text-3xl opacity-30 mb-2"></i>

@@ -238,7 +238,7 @@ if ($active) {
             [
                 'status' => 'inactive',
                 'valid_until' => null,
-                'verified_at' => date('Y-m-d H:i:s'),
+                'verified_at' => dbNow(),
             ],
             "account_id = :where_account_id AND entitlement = 'scan_pro'",
             ['where_account_id' => $accountId]

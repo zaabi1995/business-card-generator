@@ -201,7 +201,7 @@ printshopHeader(t('printshoppages.title_orders', ['shop' => $printShop['name']])
                             </td>
                             <td class="px-4 py-4 tabular-nums">
                                 <a href="order.php?id=<?= $order['id'] ?>" class="font-bold text-blue-600 hover:text-blue-700">#<?= $order['id'] ?></a>
-                                <span class="block text-xs text-gray-500"><?= date('M j, Y', strtotime($order['created_at'])) ?></span>
+                                <span class="block text-xs text-gray-500"><?= date('M j, Y', dbTs($order['created_at'])) ?></span>
                             </td>
                             <td class="px-4 py-4">
                                 <p class="font-medium text-gray-900"><?= sanitize($order['company_name'] ?? 'Unknown') ?></p>

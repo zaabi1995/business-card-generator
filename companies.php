@@ -105,7 +105,7 @@ if ($view === 'company' && $slug) {
         exit;
     }
     // Conditional crawl support
-    $lastMod = strtotime($company['updated_at'] ?? 'now');
+    $lastMod = dbTs($company['updated_at'] ?? 'now');
     // r250, bhd-r6-95: this row's own date is what the sitemap publishes for
     // this URL, so it is what the page must publish too. Without this the page
     // channel reports companies.php's render closure for every company alike,
@@ -472,7 +472,7 @@ function escq($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
                         }
                         if ($headerLogoUrl && !empty($company['logo_updated_at'])
                             && !str_contains($headerLogoUrl, '?')) {
-                            $headerLogoUrl .= '?v=' . strtotime($company['logo_updated_at']);
+                            $headerLogoUrl .= '?v=' . dbTs($company['logo_updated_at']);
                         }
                     }
                 ?>
@@ -769,7 +769,7 @@ function escq($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
                             ?: $rb['logo_png_path'] ?: $rb['logo_svg_path'];
                     }
                     if ($_rbSrc && !empty($rb['logo_updated_at'])) {
-                        $_rbSrc .= '?v=' . strtotime($rb['logo_updated_at']);
+                        $_rbSrc .= '?v=' . dbTs($rb['logo_updated_at']);
                     }
                     $_rbBg = $rb['logo_dominant_color'] ?: '#f9fafb';
                 ?>
@@ -801,7 +801,7 @@ function escq($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
 
         <p class="mt-10 text-xs text-gray-400 text-center">
             <?= escq(t('companies.source_footer')) ?>
-            <?= date('F Y', strtotime($company['updated_at'])) ?>
+            <?= date('F Y', dbTs($company['updated_at'])) ?>
             · <a href="/contact" class="underline hover:text-gray-600"><?= escq(t('companies.request_edit_takedown')) ?></a>
         </p>
     </div>
@@ -889,7 +889,7 @@ function escq($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
                         }
                         if (!$src) continue;
                         if (!empty($l['logo_updated_at'])) {
-                            $src .= '?v=' . strtotime($l['logo_updated_at']);
+                            $src .= '?v=' . dbTs($l['logo_updated_at']);
                         }
                     ?>
                         <a href="<?= $basePrefix ?>/<?= escq($l['slug']) ?>"
@@ -985,7 +985,7 @@ function escq($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
                     $_idxSrc = $c['logo_webp_path'] ?: $c['logo_png_512_path'] ?: $c['logo_png_path'] ?: $c['logo_svg_path'];
                 }
                 if ($_idxSrc && !empty($c['logo_updated_at'])) {
-                    $_idxSrc .= '?v=' . strtotime($c['logo_updated_at']);
+                    $_idxSrc .= '?v=' . dbTs($c['logo_updated_at']);
                 }
                 $_idxBg = $c['logo_dominant_color'] ?: '#f3f4f6';
                 $_idxVerified = ($c['logo_status'] ?? null) === 'verified';

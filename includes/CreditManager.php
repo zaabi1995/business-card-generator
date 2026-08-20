@@ -68,7 +68,7 @@ class CreditManager {
                 'credit_limit' => $approvedLimit,
                 'payment_terms' => $paymentTerms,
                 'approved_by' => $approvedBy,
-                'approved_at' => date('Y-m-d H:i:s')
+                'approved_at' => dbNow()
             ],
             'id = :id AND status = :status',
             ['id' => $creditAccountId, 'status' => 'pending']
@@ -250,7 +250,7 @@ class CreditManager {
         $db->update('credit_accounts', [
             'po_file_path' => $relativePath,
             'po_number' => $poNumber,
-            'po_received_at' => date('Y-m-d H:i:s')
+            'po_received_at' => dbNow()
         ], 'id = :id', ['id' => $creditAccountId]);
 
         return ['po_file_path' => $relativePath];

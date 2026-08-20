@@ -246,8 +246,8 @@ if ($action === 'submit_request') {
         'quantity' => $quantity,
         'notes' => $notes ?: null,
         'status' => 'pending',
-        'created_at' => date('Y-m-d H:i:s'),
-        'updated_at' => date('Y-m-d H:i:s'),
+        'created_at' => dbNow(),
+        'updated_at' => dbNow(),
     ]);
 
     // Notify BHD via WhatsApp if configured

@@ -184,7 +184,7 @@ function updateUserPassword($db, $tokenData, $newPassword) {
                                 'name' => $printShop['name'] ?? 'Print Shop',
                                 'role' => 'print_shop',
                                 'status' => 'active',
-                                'created_at' => date('Y-m-d H:i:s')
+                                'created_at' => dbNow()
                             ]);
                             
                             $debugInfo['new_user_id'] = $newUserId;

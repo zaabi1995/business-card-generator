@@ -196,7 +196,7 @@ function logos_esc($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8
                         : ($f['logo_webp_path'] ?: $f['logo_png_512_path'] ?: $f['logo_png_path'] ?: $f['logo_svg_path']);
                     if (!$fsrc) continue;
                     if (!empty($f['logo_updated_at'])) {
-                        $fsrc .= '?v=' . strtotime($f['logo_updated_at']);
+                        $fsrc .= '?v=' . dbTs($f['logo_updated_at']);
                     }
                     $fbg = $f['logo_dominant_color'] ?: '#f9fafb';
                 ?>
@@ -386,7 +386,7 @@ function logos_esc($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8
                 // Bust CF's 30-day immutable cache on retrims by appending the
                 // logo_updated_at timestamp; same pattern as the card-render bg URL.
                 if ($src && !empty($r['logo_updated_at'])) {
-                    $src .= '?v=' . strtotime($r['logo_updated_at']);
+                    $src .= '?v=' . dbTs($r['logo_updated_at']);
                 }
                 $bg  = $r['logo_dominant_color'] ?: '#f9fafb';
 

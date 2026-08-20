@@ -46,7 +46,7 @@ adminHeader('Settings', 'settings');
                     <div class="text-sm font-medium text-gray-900"><?= htmlspecialchars($u['name'] ?: $u['email']) ?></div>
                     <div class="text-xs text-gray-500"><?= htmlspecialchars($u['email']) ?>
                         <?php if (!empty($u['last_login_at'])): ?>
-                            · last login <?= htmlspecialchars(date('j M Y', strtotime($u['last_login_at']))) ?>
+                            · last login <?= htmlspecialchars(date('j M Y', dbTs($u['last_login_at']))) ?>
                         <?php else: ?>
                             · never logged in
                         <?php endif; ?>

@@ -215,7 +215,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'total'         => count($parsed),
                     'status'        => 'sending',
                     'csv_snapshot'  => substr($csvText, 0, 1000000),
-                    'sent_at'       => date('Y-m-d H:i:s'),
+                    'sent_at'       => dbNow(),
                 ]);
 
                 $createdN = 0; $sentN = 0; $failedN = 0; $skippedN = 0;
@@ -312,7 +312,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $db->update('bulk_claim_leads', [
                             'wa_status'     => 'sent',
                             'wa_message_id' => $res['messageId'] ?? null,
-                            'wa_sent_at'    => date('Y-m-d H:i:s'),
+                            'wa_sent_at'    => dbNow(),
                         ], 'magic_token = :t', ['t' => $token]);
                         $sendReport['rows'][] = [
                             'name'   => $r['name'],
@@ -501,7 +501,7 @@ adminHeader(t('adminchrome.bulk_claim'), 'reports');
                     <a href="?batch=<?= urlencode($b['id']) ?>" class="block px-5 py-3 hover:bg-gray-50">
                         <div class="flex items-center justify-between text-sm">
                             <span class="font-medium text-gray-800 truncate"><?= sanitize($b['admin_label'] ?? t('bulkclaim.unnamed')) ?></span>
-                            <span class="text-xs text-gray-500"><?= date('M j', strtotime($b['created_at'])) ?></span>
+                            <span class="text-xs text-gray-500"><?= date('M j', dbTs($b['created_at'])) ?></span>
                         </div>
                         <div class="mt-1 text-xs text-gray-500">
                             <?= htmlspecialchars(strtr(t('bulkclaim.batch_counts'), [':sent' => (string)(int)$b['sent'], ':total' => (string)(int)$b['total'], ':claimed' => (string)(int)$b['claimed'], ':active' => (string)(int)$b['active']])) ?>
@@ -605,7 +605,7 @@ adminHeader(t('adminchrome.bulk_claim'), 'reports');
         <div class="px-5 py-4 border-b border-gray-100">
             <h2 class="font-semibold text-gray-800"><?= htmlspecialchars(str_replace(':label', (string) sanitize($batch['admin_label'] ?? $batch['id']), t('bulkclaim.batch_prefix'))) ?></h2>
             <p class="text-xs text-gray-500 mt-1">
-                <?= htmlspecialchars(strtr(t('bulkclaim.batch_meta'), [':date' => date('M j, Y H:i', strtotime($batch['created_at'])), ':sent' => (string)(int)$batch['sent'], ':total' => (string)(int)$batch['total'], ':status' => (string) sanitize($batch['status'])])) ?>
+                <?= htmlspecialchars(strtr(t('bulkclaim.batch_meta'), [':date' => date('M j, Y H:i', dbTs($batch['created_at'])), ':sent' => (string)(int)$batch['sent'], ':total' => (string)(int)$batch['total'], ':status' => (string) sanitize($batch['status'])])) ?>
             </p>
         </div>
         <div class="overflow-x-auto">
@@ -628,9 +628,9 @@ adminHeader(t('adminchrome.bulk_claim'), 'reports');
                         <td class="px-4 py-2 text-xs">
                             <?= $l['wa_status'] === 'sent' ? '<span class="text-green-600">' . htmlspecialchars(t('bulkclaim.wa_sent')) . '</span>' : ($l['wa_status'] === 'failed' ? '<span class="text-red-600" title="' . sanitize($l['wa_error'] ?? '') . '">' . htmlspecialchars(t('bulkclaim.wa_failed')) . '</span>' : htmlspecialchars(t('bulkclaim.wa_pending'))) ?>
                         </td>
-                        <td class="px-4 py-2 text-xs text-gray-600"><?= $l['opened_at'] ? date('M j H:i', strtotime($l['opened_at'])) : ',' ?></td>
-                        <td class="px-4 py-2 text-xs text-gray-600"><?= $l['claimed_at'] ? date('M j H:i', strtotime($l['claimed_at'])) : ',' ?></td>
-                        <td class="px-4 py-2 text-xs text-gray-600"><?= $l['activated_at'] ? date('M j H:i', strtotime($l['activated_at'])) : ',' ?></td>
+                        <td class="px-4 py-2 text-xs text-gray-600"><?= $l['opened_at'] ? date('M j H:i', dbTs($l['opened_at'])) : ',' ?></td>
+                        <td class="px-4 py-2 text-xs text-gray-600"><?= $l['claimed_at'] ? date('M j H:i', dbTs($l['claimed_at'])) : ',' ?></td>
+                        <td class="px-4 py-2 text-xs text-gray-600"><?= $l['activated_at'] ? date('M j H:i', dbTs($l['activated_at'])) : ',' ?></td>
                     </tr>
                     <?php endforeach; ?>
                 </tbody>

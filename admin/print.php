@@ -163,7 +163,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             'quantity' => $quantity,
             'status' => 'pending',
             'notes' => $notes,
-            'created_at' => date('Y-m-d H:i:s')
+            'created_at' => dbNow()
         ];
         
         if ($poFilePath) {
@@ -454,8 +454,8 @@ adminHeader('Print Orders', 'print');
                 <!-- Order Meta & Actions -->
                 <div class="flex items-center gap-4">
                     <div class="text-right text-sm">
-                        <div class="text-gray-900"><?php echo date('M d, Y', strtotime($order['created_at'])); ?></div>
-                        <div class="text-gray-500 text-xs"><?php echo date('h:i A', strtotime($order['created_at'])); ?></div>
+                        <div class="text-gray-900"><?php echo date('M d, Y', dbTs($order['created_at'])); ?></div>
+                        <div class="text-gray-500 text-xs"><?php echo date('h:i A', dbTs($order['created_at'])); ?></div>
                     </div>
                     
                     <!-- Action Buttons -->

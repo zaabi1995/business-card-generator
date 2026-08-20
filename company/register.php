@@ -241,7 +241,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         'password_hash' => password_hash($password, PASSWORD_BCRYPT),
                         'company_id' => $existingCompany['id'],
                         'status' => 'pending', // Requires admin approval
-                        'created_at' => date('Y-m-d H:i:s')
+                        'created_at' => dbNow()
                     ];
                     
                     if ($phone !== '') {

@@ -52,7 +52,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'template_id' => $templateId,
                 'share_token' => $shareToken,
                 'password_hash' => !empty($password) ? password_hash($password, PASSWORD_BCRYPT) : null,
-                'expires_at' => $expiresAt ? date('Y-m-d H:i:s', strtotime($expiresAt)) : null,
+                // Admin-typed date, so parse it in their local zone with
+                // strtotime, then store UTC with dbNow. dbTs is for reading a
+                // value back out of the database, not for form input.
+                'expires_at' => $expiresAt ? dbNow(strtotime($expiresAt)) : null,
                 'max_access' => $maxAccess ? (int)$maxAccess : null,
                 'created_by' => $_SESSION['user_id'] ?? null
             ]);
@@ -119,12 +122,12 @@ adminHeader('Share Links', 'share');
                     <?php foreach ($links as $link): ?>
                     <?php 
                     $shareUrl = rtrim(BASE_URL ?? '', '/') . '/share/' . $link['share_token'];
-                    $isExpired = $link['expires_at'] && strtotime($link['expires_at']) < time();
+                    $isExpired = $link['expires_at'] && dbTs($link['expires_at']) < time();
                     ?>
                     <tr class="hover:bg-gray-50 transition-colors <?php echo $isExpired ? 'opacity-50' : ''; ?>">
                         <td class="px-6 py-4">
                             <p class="font-medium text-gray-900"><?php echo sanitize($link['template_name'] ?? 'Unknown'); ?></p>
-                            <p class="text-gray-500 text-sm">Created <?php echo date('M j, Y', strtotime($link['created_at'])); ?></p>
+                            <p class="text-gray-500 text-sm">Created <?php echo date('M j, Y', dbTs($link['created_at'])); ?></p>
                         </td>
                         <td class="px-6 py-4">
                             <div class="flex items-center gap-2">
@@ -146,7 +149,7 @@ adminHeader('Share Links', 'share');
                                 <?php endif; ?>
                                 <?php if ($link['expires_at']): ?>
                                 <span class="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium <?php echo $isExpired ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'; ?>">
-                                    <i class="fa-solid fa-clock"></i> <?php echo $isExpired ? 'Expired' : date('M j', strtotime($link['expires_at'])); ?>
+                                    <i class="fa-solid fa-clock"></i> <?php echo $isExpired ? 'Expired' : date('M j', dbTs($link['expires_at'])); ?>
                                 </span>
                                 <?php endif; ?>
                                 <?php if (!$link['password_hash'] && !$link['expires_at']): ?>

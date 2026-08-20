@@ -146,7 +146,7 @@ $page = $data['page'];
                         $src = $r['logo_webp_path'] ?: $r['logo_png_512_path'] ?: $r['logo_png_path'] ?: $r['logo_svg_path'];
                     }
                     if ($src && !empty($r['logo_updated_at'])) {
-                        $src .= '?v=' . strtotime($r['logo_updated_at']);
+                        $src .= '?v=' . dbTs($r['logo_updated_at']);
                     }
                     // Stash row data for the quick-preview modal (same shape as
                     // logos_hub.php). Variant URLs not all selected here, so

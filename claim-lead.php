@@ -75,7 +75,7 @@ if (!$lead) {
 }
 
 // Expired?
-if (!empty($lead['expires_at']) && strtotime($lead['expires_at']) < time()) {
+if (!empty($lead['expires_at']) && dbTs($lead['expires_at']) < time()) {
     http_response_code(410);
     renderClaimError(
         'This link has expired.',
@@ -120,7 +120,7 @@ $company = findCompanyById($employee['company_id']);
 // Stamp opened_at on first visit (idempotent, no overwrite).
 if ($_SERVER['REQUEST_METHOD'] === 'GET' && empty($lead['opened_at'])) {
     try {
-        $db->update('bulk_claim_leads', ['opened_at' => date('Y-m-d H:i:s')], 'id = :id', ['id' => $lead['id']]);
+        $db->update('bulk_claim_leads', ['opened_at' => dbNow()], 'id = :id', ['id' => $lead['id']]);
         // Bump batch.opened counter
         $db->getConnection()->prepare(
             "UPDATE bulk_claim_batches SET opened = opened + 1 WHERE id = :b"
@@ -305,7 +305,7 @@ $isAr   = ($locale === 'ar');
                 <?php if ($isAr): ?>
                     الرابط السحري يُستخدم مرة واحدة<?= !empty($lead['expires_at']) ? ' وينتهي في ' . htmlspecialchars(I18n::formatDate(strtotime($lead['expires_at']), 'ar'), ENT_QUOTES) : '' ?>.
                 <?php else: ?>
-                    This magic link is one-time use<?= !empty($lead['expires_at']) ? ' and expires on ' . htmlspecialchars(date('M j, Y', strtotime($lead['expires_at'])), ENT_QUOTES) : '' ?>.
+                    This magic link is one-time use<?= !empty($lead['expires_at']) ? ' and expires on ' . htmlspecialchars(date('M j, Y', dbTs($lead['expires_at'])), ENT_QUOTES) : '' ?>.
                 <?php endif; ?>
             </p>
         </div>

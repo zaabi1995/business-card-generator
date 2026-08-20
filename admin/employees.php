@@ -827,7 +827,7 @@ function processImportedEmployee($data, $autoConvertArabic = true) {
                         'id' => $newDeptId,
                         'company_id' => $companyId,
                         'name' => $deptName,
-                        'created_at' => date('Y-m-d H:i:s')
+                        'created_at' => dbNow()
                     ]);
                     $data['department_id'] = $newDeptId;
                 } catch (Exception $e) {

@@ -297,7 +297,7 @@ printshopHeader(t('printshoppages.title_analytics', ['shop' => $printShop['name'
 
 <script>
 <?php if (!empty($monthlyData)): ?>
-const months = <?= json_encode(array_map(function($m) { return date('M Y', strtotime($m . '-01')); }, $chartMonths)) ?>;
+const months = <?= json_encode(array_map(function($m) { return date('M Y', dbTs($m . '-01')); }, $chartMonths)) ?>;
 const revenueData = <?= json_encode(array_map('floatval', $chartRevenue)) ?>;
 const ordersData  = <?= json_encode(array_map('intval', $chartOrders)) ?>;
 

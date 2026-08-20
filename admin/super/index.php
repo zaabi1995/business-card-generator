@@ -278,7 +278,7 @@ adminHeader('Super Admin Dashboard', 'dashboard');
                                 <?php echo sanitize(ucfirst($company['status'] ?? 'active')); ?>
                             </span>
                         </td>
-                        <td class="px-6 py-4"><?php echo date('M d, Y', strtotime($company['created_at'])); ?></td>
+                        <td class="px-6 py-4"><?php echo date('M d, Y', dbTs($company['created_at'])); ?></td>
                         <td class="px-6 py-4">
                             <a href="employees.php?company_id=<?php echo $company['id']; ?>" class="text-blue-600 hover:text-blue-800 mr-2" title="View Employees">
                                 <i class="fa-solid fa-users"></i>
@@ -326,7 +326,7 @@ adminHeader('Super Admin Dashboard', 'dashboard');
                                 <?php echo sanitize($tx['status']); ?>
                             </span>
                         </td>
-                        <td class="px-6 py-4"><?php echo date('M d', strtotime($tx['created_at'])); ?></td>
+                        <td class="px-6 py-4"><?php echo date('M d', dbTs($tx['created_at'])); ?></td>
                     </tr>
                     <?php endforeach; ?>
                     <?php endif; ?>

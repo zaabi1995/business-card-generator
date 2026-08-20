@@ -286,7 +286,7 @@ adminHeader($pageTitle, 'analytics');
                     <?php foreach ($stats['recent'] as $scan): ?>
                     <tr class="hover:bg-gray-50">
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                            <?php echo date('M j, Y g:i A', strtotime($scan['scanned_at'])); ?>
+                            <?php echo date('M j, Y g:i A', dbTs($scan['scanned_at'])); ?>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm">
                             <span class="inline-flex items-center gap-1.5">

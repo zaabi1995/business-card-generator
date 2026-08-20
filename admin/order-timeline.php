@@ -46,7 +46,7 @@ $docUrl = function (?string $p): string {
 $fmt = function (?string $ts): string {
     $ts = trim((string)$ts);
     if ($ts === '' || $ts === '0000-00-00 00:00:00') return '';
-    $t = strtotime($ts);
+    $t = dbTs($ts);
     return $t ? date('d M Y, H:i', $t) : '';
 };
 

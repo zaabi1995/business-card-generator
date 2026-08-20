@@ -57,7 +57,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 
                 $db->update('users', [
                     'email' => $newEmail,
-                    'updated_at' => date('Y-m-d H:i:s')
+                    'updated_at' => dbNow()
                 ], 'id = :id', ['id' => $currentUser['id']]);
                 
                 // Update session
@@ -95,7 +95,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             $db->update('users', [
                 'password_hash' => password_hash($newPassword, PASSWORD_BCRYPT),
-                'updated_at' => date('Y-m-d H:i:s')
+                'updated_at' => dbNow()
             ], 'id = :id', ['id' => $currentUser['id']]);
             
             AuditLog::log('change_password', 'user', $currentUser['id'], null, ['password_changed' => true]);
@@ -125,7 +125,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             $db->update('users', [
                 'name' => $newName,
-                'updated_at' => date('Y-m-d H:i:s')
+                'updated_at' => dbNow()
             ], 'id = :id', ['id' => $currentUser['id']]);
             
             // Update session
@@ -201,13 +201,13 @@ adminHeader('Account Settings', 'settings');
                 <div class="flex justify-between text-sm">
                     <span class="text-gray-500">Last Login</span>
                     <span class="text-gray-900">
-                        <?php echo $currentUser['last_login_at'] ? date('M d, Y H:i', strtotime($currentUser['last_login_at'])) : 'N/A'; ?>
+                        <?php echo $currentUser['last_login_at'] ? date('M d, Y H:i', dbTs($currentUser['last_login_at'])) : 'N/A'; ?>
                     </span>
                 </div>
                 <div class="flex justify-between text-sm">
                     <span class="text-gray-500">Account Created</span>
                     <span class="text-gray-900">
-                        <?php echo $currentUser['created_at'] ? date('M d, Y', strtotime($currentUser['created_at'])) : 'N/A'; ?>
+                        <?php echo $currentUser['created_at'] ? date('M d, Y', dbTs($currentUser['created_at'])) : 'N/A'; ?>
                     </span>
                 </div>
             </div>
@@ -391,7 +391,7 @@ adminHeader('Account Settings', 'settings');
                                 <?php echo sanitize($event['ip_address'] ?? 'N/A'); ?>
                             </td>
                             <td class="px-6 py-4">
-                                <?php echo date('M d, Y H:i:s', strtotime($event['created_at'])); ?>
+                                <?php echo date('M d, Y H:i:s', dbTs($event['created_at'])); ?>
                             </td>
                         </tr>
                         <?php endforeach; ?>

@@ -96,7 +96,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $themeData = [
                     'primary_color'   => substr(trim($_POST['primary_color'] ?? ''), 0, 7),
                     'secondary_color' => substr(trim($_POST['secondary_color'] ?? ''), 0, 7),
-                    'updated_at'      => date('Y-m-d H:i:s'),
+                    'updated_at'      => dbNow(),
                 ];
                 $existingTheme = $db->fetchOne("SELECT id FROM company_themes WHERE company_id = :cid", ['cid' => $companyId]);
                 if ($existingTheme) {
@@ -171,7 +171,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Status is not handled by updateEmployee; apply it directly (whitelisted).
             if ($empId !== '' && in_array($_POST['status'] ?? '', ['active', 'pending', 'suspended', 'inactive'], true)) {
                 try {
-                    $db->update('employees', ['status' => $_POST['status'], 'updated_at' => date('Y-m-d H:i:s')],
+                    $db->update('employees', ['status' => $_POST['status'], 'updated_at' => dbNow()],
                         'id = :id AND company_id = :cid', ['id' => $empId, 'cid' => $companyId]);
                 } catch (\Throwable $e) {}
             }
@@ -260,7 +260,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } else {
                 $res = TenantDeletion::requestDelete($companyId, $_SESSION['user_id'] ?? null, $_POST['reason'] ?? '');
                 $flash = !empty($res['success'])
-                    ? ['success', 'Deletion scheduled. Company deactivated; purges after ' . date('M d, Y', strtotime($res['purge_after'])) . '.']
+                    ? ['success', 'Deletion scheduled. Company deactivated; purges after ' . date('M d, Y', dbTs($res['purge_after'])) . '.']
                     : ['error', $res['error'] ?? 'Failed to schedule deletion'];
             }
             break;
@@ -409,7 +409,7 @@ $h = fn($v) => htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8');
 
     <?php if ($pendingDeletion): ?>
     <div class="mt-4 p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm flex items-center justify-between gap-4 flex-wrap">
-        <div><i class="fa-solid fa-triangle-exclamation mr-1"></i> Deletion scheduled, purges on <strong><?php echo $h(date('M d, Y', strtotime($pendingDeletion['purge_after']))); ?></strong>. Company is deactivated.</div>
+        <div><i class="fa-solid fa-triangle-exclamation mr-1"></i> Deletion scheduled, purges on <strong><?php echo $h(date('M d, Y', dbTs($pendingDeletion['purge_after']))); ?></strong>. Company is deactivated.</div>
         <form method="POST" class="m-0">
             <input type="hidden" name="csrf_token" value="<?php echo $h($csrf); ?>">
             <input type="hidden" name="company_id" value="<?php echo $h($company['id']); ?>">
@@ -489,7 +489,7 @@ $h = fn($v) => htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8');
                     <div>
                         <h3 class="font-semibold text-gray-900 mb-3">Record</h3>
                         <dl class="text-sm grid grid-cols-2 gap-y-2">
-                            <dt class="text-gray-500">Created</dt><dd class="text-gray-900"><?php echo $h(date('M d, Y', strtotime($company['created_at']))); ?></dd>
+                            <dt class="text-gray-500">Created</dt><dd class="text-gray-900"><?php echo $h(date('M d, Y', dbTs($company['created_at']))); ?></dd>
                             <dt class="text-gray-500">Card credits</dt><dd class="text-gray-900"><?php echo (int)($company['card_credits'] ?? 0); ?></dd>
                             <dt class="text-gray-500">Country</dt><dd class="text-gray-900"><?php echo $h($company['country'] ?? '-'); ?></dd>
                             <dt class="text-gray-500">CR number</dt><dd class="text-gray-900"><?php echo $h($company['cr_number'] ?? '-'); ?></dd>
@@ -564,7 +564,7 @@ $h = fn($v) => htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8');
                             <td class="px-4 py-2"><?php echo !empty($t['has_vector_source']) ? '<span class="text-green-600">vector</span>' : '<span class="text-gray-400">raster</span>'; ?></td>
                             <td class="px-4 py-2">v<?php echo (int)($t['current_version'] ?? 1); ?></td>
                             <td class="px-4 py-2"><?php echo !empty($t['is_active']) ? '<i class="fa-solid fa-check text-green-600"></i>' : ''; ?></td>
-                            <td class="px-4 py-2"><?php echo $h(date('M d, Y', strtotime($t['created_at']))); ?></td>
+                            <td class="px-4 py-2"><?php echo $h(date('M d, Y', dbTs($t['created_at']))); ?></td>
                         </tr>
                         <?php endforeach; ?>
                     </tbody>
@@ -586,7 +586,7 @@ $h = fn($v) => htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8');
                     <thead class="text-xs uppercase bg-gray-50 text-gray-500"><tr><th class="px-4 py-2">When</th><th class="px-4 py-2">Reason</th><th class="px-4 py-2">Delta</th><th class="px-4 py-2">Balance</th><th class="px-4 py-2">Notes</th></tr></thead>
                     <tbody class="divide-y divide-gray-100">
                         <?php foreach ($cardLedger as $l): ?>
-                        <tr><td class="px-4 py-2"><?php echo $h(date('M d, H:i', strtotime($l['created_at']))); ?></td><td class="px-4 py-2"><?php echo $h($l['reason']); ?></td><td class="px-4 py-2 <?php echo (int)$l['delta'] < 0 ? 'text-red-600' : 'text-green-600'; ?>"><?php echo (int)$l['delta']; ?></td><td class="px-4 py-2"><?php echo (int)$l['balance_after']; ?></td><td class="px-4 py-2 text-gray-400"><?php echo $h($l['notes'] ?? ''); ?></td></tr>
+                        <tr><td class="px-4 py-2"><?php echo $h(date('M d, H:i', dbTs($l['created_at']))); ?></td><td class="px-4 py-2"><?php echo $h($l['reason']); ?></td><td class="px-4 py-2 <?php echo (int)$l['delta'] < 0 ? 'text-red-600' : 'text-green-600'; ?>"><?php echo (int)$l['delta']; ?></td><td class="px-4 py-2"><?php echo (int)$l['balance_after']; ?></td><td class="px-4 py-2 text-gray-400"><?php echo $h($l['notes'] ?? ''); ?></td></tr>
                         <?php endforeach; ?>
                     </tbody>
                 </table>
@@ -609,7 +609,7 @@ $h = fn($v) => htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8');
                     <thead class="text-xs uppercase bg-gray-50 text-gray-500"><tr><th class="px-4 py-2">When</th><th class="px-4 py-2">Event</th><th class="px-4 py-2">Target</th></tr></thead>
                     <tbody class="divide-y divide-gray-100">
                         <?php foreach ($recentEvents as $ev): ?>
-                        <tr><td class="px-4 py-2"><?php echo $h(date('M d, H:i', strtotime($ev['created_at']))); ?></td><td class="px-4 py-2"><?php echo $h(str_replace('_', ' ', $ev['event_type'])); ?></td><td class="px-4 py-2 text-gray-400 truncate max-w-xs"><?php echo $h($ev['cta_target'] ?? ''); ?></td></tr>
+                        <tr><td class="px-4 py-2"><?php echo $h(date('M d, H:i', dbTs($ev['created_at']))); ?></td><td class="px-4 py-2"><?php echo $h(str_replace('_', ' ', $ev['event_type'])); ?></td><td class="px-4 py-2 text-gray-400 truncate max-w-xs"><?php echo $h($ev['cta_target'] ?? ''); ?></td></tr>
                         <?php endforeach; ?>
                     </tbody>
                 </table>
@@ -639,7 +639,7 @@ $h = fn($v) => htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8');
                             <td class="px-4 py-2"><span class="px-2 py-0.5 rounded-full text-xs <?php echo cdm_badge($o['payment_status'] ?: 'pending'); ?>"><?php echo $h($o['payment_status'] ?: '-'); ?></span></td>
                             <td class="px-4 py-2"><span class="px-2 py-0.5 rounded-full text-xs <?php echo cdm_badge($o['status']); ?>"><?php echo $h($o['status']); ?></span></td>
                             <td class="px-4 py-2 text-gray-400"><?php echo $h($o['erp_invoice_number'] ?: $o['invoice_number'] ?: '-'); ?></td>
-                            <td class="px-4 py-2"><?php echo $h(date('M d, Y', strtotime($o['created_at']))); ?></td>
+                            <td class="px-4 py-2"><?php echo $h(date('M d, Y', dbTs($o['created_at']))); ?></td>
                             <td class="px-4 py-2 text-right"><button class="text-blue-600 hover:text-blue-800" title="Change status" onclick="orderStatus(<?php echo $h(json_encode($o['id'])); ?>, <?php echo $h(json_encode($o['status'])); ?>)"><i class="fa-solid fa-arrows-rotate"></i></button></td>
                         </tr>
                         <?php endforeach; ?>
@@ -702,7 +702,7 @@ $h = fn($v) => htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8');
                 <div class="mt-3 text-xs">
                     <div class="text-gray-500 mb-1">Recent ledger</div>
                     <?php foreach ($ca['ledger'] as $lx): ?>
-                    <div class="flex justify-between border-b border-gray-50 py-1"><span><?php echo $h(date('M d', strtotime($lx['created_at']))); ?> · <?php echo $h($lx['type']); ?></span><span><?php echo $h(cdm_money($lx['amount'], $cur)); ?> (bal <?php echo $h(cdm_money($lx['balance_after'], $cur)); ?>)</span></div>
+                    <div class="flex justify-between border-b border-gray-50 py-1"><span><?php echo $h(date('M d', dbTs($lx['created_at']))); ?> · <?php echo $h($lx['type']); ?></span><span><?php echo $h(cdm_money($lx['amount'], $cur)); ?> (bal <?php echo $h(cdm_money($lx['balance_after'], $cur)); ?>)</span></div>
                     <?php endforeach; ?>
                 </div>
                 <?php endif; ?>
@@ -723,7 +723,7 @@ $h = fn($v) => htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8');
                     <thead class="text-xs uppercase bg-gray-50 text-gray-500"><tr><th class="px-4 py-2">When</th><th class="px-4 py-2">Amount</th><th class="px-4 py-2">Method</th><th class="px-4 py-2">Status</th><th class="px-4 py-2">Description</th></tr></thead>
                     <tbody class="divide-y divide-gray-100">
                         <?php foreach ($payments as $p): ?>
-                        <tr><td class="px-4 py-2"><?php echo $h(date('M d, H:i', strtotime($p['created_at']))); ?></td><td class="px-4 py-2"><?php echo $h(cdm_money($p['amount'], $p['currency'] ?: $cur)); ?></td><td class="px-4 py-2"><?php echo $h($p['payment_method'] ?: '-'); ?></td><td class="px-4 py-2"><span class="px-2 py-0.5 rounded-full text-xs <?php echo cdm_badge($p['status']); ?>"><?php echo $h($p['status']); ?></span></td><td class="px-4 py-2 text-gray-400 truncate max-w-xs"><?php echo $h($p['description'] ?? ''); ?></td></tr>
+                        <tr><td class="px-4 py-2"><?php echo $h(date('M d, H:i', dbTs($p['created_at']))); ?></td><td class="px-4 py-2"><?php echo $h(cdm_money($p['amount'], $p['currency'] ?: $cur)); ?></td><td class="px-4 py-2"><?php echo $h($p['payment_method'] ?: '-'); ?></td><td class="px-4 py-2"><span class="px-2 py-0.5 rounded-full text-xs <?php echo cdm_badge($p['status']); ?>"><?php echo $h($p['status']); ?></span></td><td class="px-4 py-2 text-gray-400 truncate max-w-xs"><?php echo $h($p['description'] ?? ''); ?></td></tr>
                         <?php endforeach; ?>
                     </tbody>
                 </table>
@@ -768,7 +768,7 @@ $h = fn($v) => htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8');
                     <thead class="text-xs uppercase bg-gray-50 text-gray-500"><tr><th class="px-4 py-2">When</th><th class="px-4 py-2">Actor</th><th class="px-4 py-2">Action</th><th class="px-4 py-2">Entity</th></tr></thead>
                     <tbody class="divide-y divide-gray-100">
                         <?php foreach ($auditLogs as $a): ?>
-                        <tr><td class="px-4 py-2"><?php echo $h(date('M d, H:i', strtotime($a['created_at']))); ?></td><td class="px-4 py-2"><?php echo $h($a['actor_email'] ?: $a['actor_id'] ?: 'system'); ?></td><td class="px-4 py-2"><span class="px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-700"><?php echo $h($a['action']); ?></span></td><td class="px-4 py-2 text-gray-400"><?php echo $h($a['entity_type']); ?></td></tr>
+                        <tr><td class="px-4 py-2"><?php echo $h(date('M d, H:i', dbTs($a['created_at']))); ?></td><td class="px-4 py-2"><?php echo $h($a['actor_email'] ?: $a['actor_id'] ?: 'system'); ?></td><td class="px-4 py-2"><span class="px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-700"><?php echo $h($a['action']); ?></span></td><td class="px-4 py-2 text-gray-400"><?php echo $h($a['entity_type']); ?></td></tr>
                         <?php endforeach; ?>
                     </tbody>
                 </table>

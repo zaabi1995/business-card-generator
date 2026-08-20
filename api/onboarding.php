@@ -162,7 +162,7 @@ function saveCompanyTheme($db, $companyId, $logoPath, $templateKey, $source) {
                 'primary_color'   => $palette['primary'],
                 'secondary_color' => $palette['secondary'],
                 'logo_path'       => $logoPath,
-                'created_at'      => date('Y-m-d H:i:s'),
+                'created_at'      => dbNow(),
             ];
             $db->insert('company_themes', $data);
         }

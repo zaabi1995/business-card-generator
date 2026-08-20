@@ -172,7 +172,7 @@ printshopHeader(t('printshoppages.title_credit_accounts', ['shop' => $printShop[
                         <a href="<?= getBasePath() . htmlspecialchars($acc['po_file_path']) ?>" target="_blank" class="underline text-xs ml-1"><?= htmlspecialchars(t('printshopcredit.view')) ?></a>
                     </div>
                     <?php endif; ?>
-                    <p class="text-xs text-gray-400 mt-2"><?= htmlspecialchars(str_replace(':date', date('d M Y', strtotime($acc['created_at'])), t('printshopcredit.requested_on'))) ?></p>
+                    <p class="text-xs text-gray-400 mt-2"><?= htmlspecialchars(str_replace(':date', date('d M Y', dbTs($acc['created_at'])), t('printshopcredit.requested_on'))) ?></p>
                 </div>
 
                 <!-- Approve Form -->

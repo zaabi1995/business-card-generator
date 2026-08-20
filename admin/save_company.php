@@ -58,7 +58,7 @@ $update = [
     'admin_email'  => $email,
     'email_domain' => $emailDomain,
     'slug'         => $slug,
-    'updated_at'   => date('Y-m-d H:i:s'),
+    'updated_at'   => dbNow(),
 ];
 $db->update('companies', $update, 'id = :id', ['id' => $companyId]);
 

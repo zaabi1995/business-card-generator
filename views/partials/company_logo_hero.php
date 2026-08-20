@@ -38,7 +38,7 @@ if ($_useDarkVar) {
 }
 // Bust Cloudflare's 30-day immutable cache on retrims/refreshes
 if ($src && !empty($company['logo_updated_at'])) {
-    $src .= '?v=' . strtotime($company['logo_updated_at']);
+    $src .= '?v=' . dbTs($company['logo_updated_at']);
 }
 $bg           = $company['logo_dominant_color'] ?: '#f8fafc';
 $canDownload  = LogoLibrary::canDownload($company);
@@ -372,7 +372,7 @@ $companyId = (int) ($company['id'] ?? 0);
                     'admin_upload' => $isAr ? 'محرر المكتبة' : 'Library editor',
                     default        => $isAr ? 'مصدر عام' : 'Public source',
                 };
-                $updated = !empty($company['logo_updated_at']) ? date('M j, Y', strtotime($company['logo_updated_at'])) : null;
+                $updated = !empty($company['logo_updated_at']) ? date('M j, Y', dbTs($company['logo_updated_at'])) : null;
             ?>
             <div class="border-t border-gray-100 px-6 md:px-8 py-4">
                 <dl class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">

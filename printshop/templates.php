@@ -244,7 +244,7 @@ printshopHeader(t('printshoppages.title_templates'), 'template_requests');
                     <p class="text-xs text-gray-500 truncate"><?= sanitize($req['template_name'] ?? 'Unknown template') ?> &middot; <?= $req['quantity'] ?> cards</p>
                 </div>
                 <span class="text-xs font-medium px-2 py-0.5 rounded-full <?= $sc ?>"><?= ucfirst($req['status']) ?></span>
-                <span class="text-xs text-gray-400 flex-shrink-0"><?= date('M j', strtotime($req['created_at'])) ?></span>
+                <span class="text-xs text-gray-400 flex-shrink-0"><?= date('M j', dbTs($req['created_at'])) ?></span>
             </div>
             <?php endforeach; ?>
         </div>

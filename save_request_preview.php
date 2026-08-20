@@ -105,7 +105,7 @@ try {
                 ['id' => $requestId, 'cid' => $companyId]
             );
             if ($owns) {
-                $updateData = ['preview_generated_at' => date('Y-m-d H:i:s')];
+                $updateData = ['preview_generated_at' => dbNow()];
                 if ($result['front_url']) $updateData['preview_front'] = $result['front_url'];
                 if ($result['back_url'])  $updateData['preview_back']  = $result['back_url'];
                 $db->update('card_requests', $updateData, 'id = :where_id', ['where_id' => $requestId]);

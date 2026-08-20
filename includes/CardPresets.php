@@ -222,7 +222,7 @@ class CardPresets
                 'id' => function_exists('generateUUID') ? generateUUID() : bin2hex(random_bytes(16)),
                 'company_id' => $cid, 'employee_id' => $emp['id'],
                 'front_file_path' => $fn, 'back_file_path' => ($okB ? $bn : null),
-                'generated_at' => date('Y-m-d H:i:s'),
+                'generated_at' => dbNow(),
             ]);
         }
         return true;
@@ -304,7 +304,7 @@ class CardPresets
                     'id' => function_exists('generateUUID') ? generateUUID() : bin2hex(random_bytes(16)),
                     'company_id' => $companyId, 'employee_id' => $emp['id'],
                     'front_file_path' => $fn, 'back_file_path' => $bn,
-                    'generated_at' => date('Y-m-d H:i:s'),
+                    'generated_at' => dbNow(),
                 ]);
             }
             $n++;

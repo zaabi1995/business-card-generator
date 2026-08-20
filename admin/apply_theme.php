@@ -98,7 +98,7 @@ $themeData = [
     'primary_color'   => $palette['primary'],
     'secondary_color' => $palette['secondary'],
     'logo_path'       => '/uploads/companies/' . $companyId . '/logo.' . $ext,
-    'updated_at'      => date('Y-m-d H:i:s'),
+    'updated_at'      => dbNow(),
 ];
 if ($faviconRel) {
     $themeData['favicon_path'] = $faviconRel;

@@ -204,8 +204,8 @@ adminHeader('Email Logs', 'email_logs');
                 <?php foreach ($logs as $log): ?>
                 <tr class="bg-white border-b hover:bg-gray-50">
                     <td class="px-6 py-4">
-                        <div class="font-medium text-gray-900"><?php echo date('M d, Y', strtotime($log['created_at'])); ?></div>
-                        <div class="text-xs text-gray-500"><?php echo date('H:i:s', strtotime($log['created_at'])); ?></div>
+                        <div class="font-medium text-gray-900"><?php echo date('M d, Y', dbTs($log['created_at'])); ?></div>
+                        <div class="text-xs text-gray-500"><?php echo date('H:i:s', dbTs($log['created_at'])); ?></div>
                     </td>
                     <td class="px-6 py-4">
                         <div class="font-medium text-gray-900"><?php echo sanitize($log['recipient_email']); ?></div>

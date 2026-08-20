@@ -71,7 +71,7 @@ foreach ($targets as $tbl) {
         }
         $byCompany[$cid]['breakdown'][$tbl] = (int) $r['n'];
         $byCompany[$cid]['total'] += (int) $r['n'];
-        if (strtotime($r['oldest']) < strtotime($byCompany[$cid]['oldest'])) {
+        if (dbTs($r['oldest']) < dbTs($byCompany[$cid]['oldest'])) {
             $byCompany[$cid]['oldest'] = $r['oldest'];
         }
     }
@@ -97,7 +97,7 @@ foreach ($byCompany as $companyId => $summary) {
     if ($already) { $skipped++; continue; }
 
     // Days remaining for the oldest item in the window.
-    $daysElapsed = floor((time() - strtotime($summary['oldest'])) / 86400);
+    $daysElapsed = floor((time() - dbTs($summary['oldest'])) / 86400);
     $daysRemaining = max(1, TRASH_GRACE_DAYS - (int) $daysElapsed);
 
     $locale = ($company['locale'] === 'ar') ? 'ar' : 'en';

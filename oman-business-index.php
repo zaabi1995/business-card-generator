@@ -219,7 +219,7 @@ $mediumPctOfTotal = $stats['total'] > 0
     : 0;
 
 // --- Last updated date (from MAX(updated_at)) ---
-$lastUpdatedTs = $stats['last_updated'] ? strtotime($stats['last_updated']) : time();
+$lastUpdatedTs = $stats['last_updated'] ? dbTs($stats['last_updated']) : time();
 $lastUpdatedHuman = date('F j, Y', $lastUpdatedTs);
 $lastUpdatedIso   = date('c', $lastUpdatedTs);
 

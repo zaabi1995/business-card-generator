@@ -254,7 +254,7 @@ function smChildDate($part, $db) {
             // DB calendar, deliberately date() not smMtimeDay(): updated_at is
             // a wall-clock string written in Asia/Muscat, so gmdate would move
             // an early-morning row back a day. See smMtimeDay().
-            return ($r && $r['m']) ? date('Y-m-d', strtotime($r['m'])) : null;
+            return ($r && $r['m']) ? date('Y-m-d', dbTs($r['m'])) : null;
         } catch (Throwable $e) { return null; }
     };
     switch ($part) {
@@ -510,7 +510,7 @@ if ($part === 'static') {
             // Dataset count on /oman-business-index. See includes/CompanyIndex.php.
             $rows = CompanyIndex::rows($db);
             foreach ($rows as $c) {
-                $lastmod = /* DB calendar, see smMtimeDay() */ date('Y-m-d', strtotime($c['updated_at']));
+                $lastmod = /* DB calendar, see smMtimeDay() */ date('Y-m-d', dbTs($c['updated_at']));
                 smUrl("{$baseUrl}/companies/" . $c['slug'], $lastmod, 'monthly', '0.5',
                       $logoXml[$c['slug']] ?? '');
             }
@@ -535,7 +535,7 @@ if ($part === 'static') {
                   ORDER BY updated_at DESC"
             );
             foreach ($posts as $post) {
-                $lastmod = /* DB calendar, see smMtimeDay() */ date('Y-m-d', strtotime($post['updated_at']));
+                $lastmod = /* DB calendar, see smMtimeDay() */ date('Y-m-d', dbTs($post['updated_at']));
                 // If an AR translation ships (slug_ar populated), emit the
                 // AR URL too and mark both with xhtml:link alternates so
                 // Google treats them as one post in two languages.
@@ -578,7 +578,7 @@ if ($part === 'static') {
         try {
             $careers = $db->fetchAll("SELECT slug, updated_at FROM career_listings WHERE status = 'open' ORDER BY updated_at DESC");
             foreach ($careers as $c) {
-                $lastmod = /* DB calendar, see smMtimeDay() */ date('Y-m-d', strtotime($c['updated_at']));
+                $lastmod = /* DB calendar, see smMtimeDay() */ date('Y-m-d', dbTs($c['updated_at']));
                 smUrl("{$baseUrl}/careers/" . $c['slug'], $lastmod, 'weekly', '0.6');
             }
         } catch (Throwable $e) { /* career_listings may not exist */ }

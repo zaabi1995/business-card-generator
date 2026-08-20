@@ -109,7 +109,7 @@ $shareRow = $db->fetchOne(
 
 if ($shareRow) {
     // Check expiration
-    if (!empty($shareRow['expires_at']) && strtotime($shareRow['expires_at']) < time()) {
+    if (!empty($shareRow['expires_at']) && dbTs($shareRow['expires_at']) < time()) {
         renderErrorPage('Link Expired', 'This share link has expired and is no longer valid.', 410);
     }
 
@@ -151,7 +151,7 @@ if (!$designRow) {
 }
 
 // Check expiration
-if (!empty($designRow['expires_at']) && strtotime($designRow['expires_at']) < time()) {
+if (!empty($designRow['expires_at']) && dbTs($designRow['expires_at']) < time()) {
     renderErrorPage('Link Expired', 'This design link has expired and is no longer valid.', 410);
 }
 

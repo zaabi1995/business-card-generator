@@ -304,7 +304,7 @@ class MigrationRunner {
             self::$db->insert('migrations', [
                 'migration_number' => $migrationNumber,
                 'migration_name' => $migration['name'],
-                'executed_at' => date('Y-m-d H:i:s')
+                'executed_at' => dbNow()
             ]);
 
             return [

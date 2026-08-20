@@ -56,11 +56,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 case 'extend':
                     // Extend from current expiry or from now
                     $company = $db->fetchOne("SELECT subscription_expires_at FROM companies WHERE id = :id", ['id' => $companyId]);
-                    $baseDate = ($company && $company['subscription_expires_at'] && strtotime($company['subscription_expires_at']) > time()) 
+                    $baseDate = ($company && $company['subscription_expires_at'] && dbTs($company['subscription_expires_at']) > time()) 
                         ? $company['subscription_expires_at'] 
                         : date('Y-m-d H:i:s');
                     $extendMonths = (int)($_POST['extend_months'] ?? 1);
-                    $expiresAt = date('Y-m-d H:i:s', strtotime($baseDate . " +{$extendMonths} months"));
+                    $expiresAt = date('Y-m-d H:i:s', dbTs($baseDate . " +{$extendMonths} months"));
                     break;
             }
         }
@@ -70,7 +70,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'plan' => $planId,
             'subscription_status' => $subscriptionStatus,
             'subscription_expires_at' => $expiresAt,
-            'updated_at' => date('Y-m-d H:i:s')
+            'updated_at' => dbNow()
         ];
         
         $db->update('companies', $updateData, 'id = :id', ['id' => $companyId]);
@@ -102,7 +102,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $updateData = [
                             'plan' => $planId,
                             'subscription_status' => 'active',
-                            'subscription_expires_at' => date('Y-m-d H:i:s', strtotime('+1 month'))
+                            'subscription_expires_at' => dbNow(strtotime('+1 month'))
                         ];
                         break;
                     case 'downgrade_free':
@@ -114,17 +114,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         break;
                     case 'extend_1_month':
                         $company = $db->fetchOne("SELECT subscription_expires_at FROM companies WHERE id = :id", ['id' => $companyId]);
-                        $baseDate = ($company && $company['subscription_expires_at'] && strtotime($company['subscription_expires_at']) > time()) 
+                        $baseDate = ($company && $company['subscription_expires_at'] && dbTs($company['subscription_expires_at']) > time()) 
                             ? $company['subscription_expires_at'] 
                             : date('Y-m-d H:i:s');
                         $updateData = [
-                            'subscription_expires_at' => date('Y-m-d H:i:s', strtotime($baseDate . ' +1 month'))
+                            'subscription_expires_at' => dbNow(strtotime($baseDate . ' +1 month'))
                         ];
                         break;
                     case 'cancel':
                         $updateData = [
                             'subscription_status' => 'cancelled',
-                            'subscription_expires_at' => date('Y-m-d H:i:s') // Expire immediately
+                            'subscription_expires_at' => dbNow() // Expire immediately
                         ];
                         break;
                 }
@@ -192,11 +192,11 @@ foreach ($companies as $c) {
         $stats['paid']++;
     }
     
-    if ($c['subscription_status'] === 'active' && (!$c['subscription_expires_at'] || strtotime($c['subscription_expires_at']) > time())) {
+    if ($c['subscription_status'] === 'active' && (!$c['subscription_expires_at'] || dbTs($c['subscription_expires_at']) > time())) {
         $stats['active']++;
     }
     
-    if ($c['subscription_expires_at'] && strtotime($c['subscription_expires_at']) > time() && strtotime($c['subscription_expires_at']) < strtotime('+30 days')) {
+    if ($c['subscription_expires_at'] && dbTs($c['subscription_expires_at']) > time() && dbTs($c['subscription_expires_at']) < strtotime('+30 days')) {
         $stats['expiring_soon']++;
     }
 }
@@ -330,8 +330,8 @@ adminHeader('Subscriptions', 'super');
                 <tbody class="divide-y divide-gray-100">
                     <?php foreach ($companies as $company): ?>
                     <?php 
-                    $isExpired = $company['subscription_expires_at'] && strtotime($company['subscription_expires_at']) < time();
-                    $isExpiringSoon = $company['subscription_expires_at'] && strtotime($company['subscription_expires_at']) > time() && strtotime($company['subscription_expires_at']) < strtotime('+30 days');
+                    $isExpired = $company['subscription_expires_at'] && dbTs($company['subscription_expires_at']) < time();
+                    $isExpiringSoon = $company['subscription_expires_at'] && dbTs($company['subscription_expires_at']) > time() && dbTs($company['subscription_expires_at']) < strtotime('+30 days');
                     $isFree = $company['plan'] === 'free' || empty($company['plan']);
                     ?>
                     <tr class="hover:bg-gray-50">
@@ -379,7 +379,7 @@ adminHeader('Subscriptions', 'super');
                         <td class="px-4 py-3">
                             <?php if ($company['subscription_expires_at']): ?>
                             <span class="text-sm <?php echo $isExpired ? 'text-red-600' : ($isExpiringSoon ? 'text-amber-600' : 'text-gray-600'); ?>">
-                                <?php echo date('M j, Y', strtotime($company['subscription_expires_at'])); ?>
+                                <?php echo date('M j, Y', dbTs($company['subscription_expires_at'])); ?>
                                 <?php if ($isExpiringSoon): ?>
                                 <i class="fa-solid fa-clock ml-1" title="Expiring soon"></i>
                                 <?php endif; ?>

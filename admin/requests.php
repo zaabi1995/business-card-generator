@@ -261,7 +261,7 @@ $adminBase = defined('COMPANY_ADMIN_BASE') ? COMPANY_ADMIN_BASE : getBasePath() 
                 $employeeName = $req['name_en'] ?: $req['name_ar'] ?: 'Unknown';
                 $position = $req['position_en'] ?: $req['position_ar'] ?: '';
                 $deptName = !empty($req['department_id']) && isset($departments[$req['department_id']]) ? $departments[$req['department_id']] : '';
-                $submittedDate = date('M j, Y g:i A', strtotime($req['submitted_at']));
+                $submittedDate = date('M j, Y g:i A', dbTs($req['submitted_at']));
             ?>
             <div class="p-4 hover:bg-gray-50" x-data="{ expanded: false, showRejectModal: false }">
                 <div class="flex items-start gap-4">

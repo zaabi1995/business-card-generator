@@ -69,7 +69,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $result = TenantDeletion::requestDelete($companyId, $_SESSION['user_id'] ?? null, 'Scheduled from super-admin companies list');
             if (!empty($result['success'])) {
                 $message = 'Deletion scheduled for "' . $company['name'] . '". It is deactivated now and will be purged after '
-                    . date('M d, Y', strtotime($result['purge_after'])) . '. Cancel any time from the company page.';
+                    . date('M d, Y', dbTs($result['purge_after'])) . '. Cancel any time from the company page.';
                 $messageType = 'success';
             } else {
                 $message = $result['error'] ?? 'Failed to schedule deletion';
@@ -121,8 +121,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'currency' => sanitize($_POST['currency'] ?? 'OMR'),
                     'billing_email' => sanitizeEmail($_POST['billing_email'] ?? ''),
                     'erp_client_name' => trim($_POST['erp_client_name'] ?? ''),
-                    'created_at' => date('Y-m-d H:i:s'),
-                    'updated_at' => date('Y-m-d H:i:s')
+                    'created_at' => dbNow(),
+                    'updated_at' => dbNow()
                 ];
 
                 $db->insert('companies', $newCompany);
@@ -310,7 +310,7 @@ adminHeader('Companies Management', 'companies');
                         <?php endif; ?>
                     </td>
                     <td class="px-6 py-4"><?php echo $company['card_count']; ?></td>
-                    <td class="px-6 py-4"><?php echo date('M d, Y', strtotime($company['created_at'])); ?></td>
+                    <td class="px-6 py-4"><?php echo date('M d, Y', dbTs($company['created_at'])); ?></td>
                     <td class="px-6 py-4">
                         <div class="flex items-center gap-2">
                             <a href="company.php?id=<?php echo urlencode($company['id']); ?>"

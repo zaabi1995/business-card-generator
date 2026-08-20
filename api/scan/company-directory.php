@@ -54,7 +54,9 @@ $params = ['cid' => $companyId, 'self' => $self];
 $since = trim($_GET['since'] ?? '');
 if ($since !== '') {
     $where .= " AND updated_at >= :since";
-    $params['since'] = date('Y-m-d H:i:s', strtotime($since) ?: 0);
+    // Compared against updated_at, which is UTC, so the bound must be UTC
+    // too. date() would render it in Asia/Muscat and shift the window 4h.
+    $params['since'] = dbNow(dbTs($since) ?: 0);
 }
 $query = trim((string) ($_GET['q'] ?? ''));
 if ($query !== '') {

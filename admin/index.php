@@ -1093,8 +1093,8 @@ if ($currentRole !== 'super_admin' && !empty($companySlug)):
         <?php $pct = $maxDaily > 0 ? max(4, round($count / $maxDaily * 100)) : 4; ?>
         <div class="flex-1 flex flex-col items-center gap-1 group relative">
             <div class="w-full rounded-t bg-cyan-500 hover:bg-cyan-600 transition-colors cursor-default" style="height: <?= $pct ?>%"
-                 title="<?= date('D, M j', strtotime($date)) ?>: <?= number_format($count) ?> view<?= $count !== 1 ? 's' : '' ?>"></div>
-            <span class="text-[10px] text-gray-400 leading-none"><?= date('D', strtotime($date)) ?></span>
+                 title="<?= date('D, M j', dbTs($date)) ?>: <?= number_format($count) ?> view<?= $count !== 1 ? 's' : '' ?>"></div>
+            <span class="text-[10px] text-gray-400 leading-none"><?= date('D', dbTs($date)) ?></span>
         </div>
         <?php endforeach; ?>
     </div>

@@ -27,7 +27,7 @@ echo '<?xml version="1.0" encoding="UTF-8"?>';
     <lastBuildDate><?= date('r') ?></lastBuildDate>
     <atom:link href="https://cardify.om/feed" rel="self" type="application/rss+xml"/>
     <?php foreach ($posts as $post):
-        $pubDate = date('r', strtotime($post['published_at'] ?? $post['created_at']));
+        $pubDate = date('r', dbTs($post['published_at'] ?? $post['created_at']));
         $desc = htmlspecialchars($post['excerpt'] ?? substr(strip_tags($post['content']), 0, 300));
     ?>
     <item>

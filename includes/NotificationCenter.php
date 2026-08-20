@@ -110,7 +110,7 @@ class NotificationCenter
             $db->exec(null); // noop, Database doesn't expose rowCount easily
             $db->update(
                 'notifications',
-                ['read_at' => date('Y-m-d H:i:s')],
+                ['read_at' => dbNow()],
                 "recipient_id = :r AND read_at IS NULL AND id IN ({$placeholders})",
                 $params
             );
@@ -124,7 +124,7 @@ class NotificationCenter
             $db = Database::getInstance();
             $db->update(
                 'notifications',
-                ['read_at' => date('Y-m-d H:i:s')],
+                ['read_at' => dbNow()],
                 'recipient_id = :r AND read_at IS NULL',
                 ['r' => $recipientId]
             );

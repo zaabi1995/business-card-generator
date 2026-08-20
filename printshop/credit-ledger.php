@@ -151,7 +151,7 @@ printshopHeader(t('printshoppages.title_credit_ledger', ['name' => $company['nam
                         <tbody class="divide-y divide-gray-200">
                             <?php foreach ($ledger as $tx): ?>
                             <tr>
-                                <td class="px-6 py-3 text-sm text-gray-500 whitespace-nowrap"><?= date('M d, Y', strtotime($tx['created_at'])) ?><br><span class="text-xs"><?= date('h:i A', strtotime($tx['created_at'])) ?></span></td>
+                                <td class="px-6 py-3 text-sm text-gray-500 whitespace-nowrap"><?= date('M d, Y', dbTs($tx['created_at'])) ?><br><span class="text-xs"><?= date('h:i A', dbTs($tx['created_at'])) ?></span></td>
                                 <td class="px-6 py-3 text-sm">
                                     <span class="<?= $txColors[$tx['type']] ?? 'text-gray-600' ?> font-medium">
                                         <i class="fa-solid <?= $txIcons[$tx['type']] ?? 'fa-circle' ?> mr-1"></i>

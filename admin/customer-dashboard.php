@@ -35,7 +35,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             $updateData = [
                 'name'           => trim($_POST['name'] ?? ''),
                 'billing_email'  => trim($_POST['billing_email'] ?? ''),
-                'updated_at'     => date('Y-m-d H:i:s'),
+                'updated_at'     => dbNow(),
             ];
             // Normalize phone to E.164 when provided; allow empty to clear it (opt-out).
             // intl-tel-input posts the canonical international number into
@@ -245,7 +245,7 @@ adminHeader(t('adminchrome.my_dashboard'), 'customer-dashboard');
                 <div class="min-w-0 flex-1">
                     <p class="font-medium text-gray-900 text-sm">#<?= sanitize($o['order_number']); ?></p>
                     <p class="text-xs text-gray-500 truncate"><?= sanitize($o['employee_name']); ?> &middot; <?= htmlspecialchars(str_replace(':n', number_format($o['quantity']), t('customerdash.n_cards_short'))); ?></p>
-                    <p class="text-xs text-gray-400"><?= date('M j, Y', strtotime($o['created_at'])); ?></p>
+                    <p class="text-xs text-gray-400"><?= date('M j, Y', dbTs($o['created_at'])); ?></p>
                 </div>
                 <div class="text-right ml-3 flex-shrink-0">
                     <p class="font-semibold text-gray-900 text-sm"><?= Currency::formatHtml($o['total'], $currency, 'sm'); ?></p>
@@ -297,7 +297,7 @@ adminHeader(t('adminchrome.my_dashboard'), 'customer-dashboard');
                     <?php if (!empty($card['front_template_name'])): ?>
                     <p class="text-xs text-gray-500 truncate"><?= sanitize($card['front_template_name']); ?></p>
                     <?php endif; ?>
-                    <p class="text-xs text-gray-400"><?= date('M j, Y', strtotime($card['generated_at'])); ?></p>
+                    <p class="text-xs text-gray-400"><?= date('M j, Y', dbTs($card['generated_at'])); ?></p>
                 </div>
             </div>
             <?php endforeach; ?>
@@ -354,7 +354,7 @@ adminHeader(t('adminchrome.my_dashboard'), 'customer-dashboard');
             <div class="flex justify-between items-start mb-2">
                 <div>
                     <p class="font-semibold text-gray-900">#<?= sanitize($o['order_number']); ?></p>
-                    <p class="text-sm text-gray-500"><?= date('M j, Y', strtotime($o['created_at'])); ?></p>
+                    <p class="text-sm text-gray-500"><?= date('M j, Y', dbTs($o['created_at'])); ?></p>
                 </div>
                 <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium <?= $sc; ?>">
                     <?= ucfirst($o['status']); ?>
@@ -422,7 +422,7 @@ adminHeader(t('adminchrome.my_dashboard'), 'customer-dashboard');
                 <tr class="hover:bg-gray-50 transition-colors">
                     <td class="px-4 py-3">
                         <p class="font-medium text-gray-900 text-sm">#<?= sanitize($o['order_number']); ?></p>
-                        <p class="text-xs text-gray-400"><?= date('M j, Y', strtotime($o['created_at'])); ?></p>
+                        <p class="text-xs text-gray-400"><?= date('M j, Y', dbTs($o['created_at'])); ?></p>
                     </td>
                     <td class="px-4 py-3">
                         <p class="text-sm text-gray-900"><?= sanitize($o['employee_name']); ?></p>
@@ -552,7 +552,7 @@ adminHeader(t('adminchrome.my_dashboard'), 'customer-dashboard');
                 <?php if (!empty($card['front_template_name'])): ?>
                 <p class="text-xs text-gray-500 truncate"><?= sanitize($card['front_template_name']); ?></p>
                 <?php endif; ?>
-                <p class="text-xs text-gray-400 mt-0.5"><?= date('M j, Y', strtotime($card['generated_at'])); ?></p>
+                <p class="text-xs text-gray-400 mt-0.5"><?= date('M j, Y', dbTs($card['generated_at'])); ?></p>
                 <!-- Actions -->
                 <div class="mt-2 flex gap-1.5">
                     <?php if (!empty($card['front_file_path'])): ?>
@@ -710,7 +710,7 @@ adminHeader(t('adminchrome.my_dashboard'), 'customer-dashboard');
             </div>
             <div class="px-6 py-3 flex items-center justify-between">
                 <span class="text-sm text-gray-500"><?= htmlspecialchars(t('customerdash.acct_since')) ?></span>
-                <span class="text-sm text-gray-700"><?= date('M j, Y', strtotime($company['created_at'] ?? 'now')); ?></span>
+                <span class="text-sm text-gray-700"><?= date('M j, Y', dbTs($company['created_at'] ?? 'now')); ?></span>
             </div>
         </div>
         <div class="p-4 border-t border-gray-100">

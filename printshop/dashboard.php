@@ -96,7 +96,7 @@ $maxDailyRev = 0; foreach ($sparkline as $v) { if ($v > $maxDailyRev) $maxDailyR
 $tenantStats = ['active30' => 0, 'dormant60' => 0, 'unprinted' => 0];
 $now = time();
 foreach ($tenants as $t) {
-    $last = $t['last_order_at'] ? strtotime($t['last_order_at']) : 0;
+    $last = $t['last_order_at'] ? dbTs($t['last_order_at']) : 0;
     if ($last && ($now - $last) <= 30 * 86400) $tenantStats['active30']++;
     if ($last && ($now - $last) >= 60 * 86400) $tenantStats['dormant60']++;
     elseif (!$last && (int) $t['employee_count'] > 0) $tenantStats['dormant60']++;
@@ -112,7 +112,7 @@ $stageMeta = [
 
 $timeAgo = function ($timestamp) {
     if (!$timestamp) return '';
-    $diff = time() - strtotime($timestamp);
+    $diff = time() - dbTs($timestamp);
     if ($diff < 60)    return t('printshopdash.activity_just_now');
     if ($diff < 3600)  return strtr(t('printshopdash.activity_minutes_ago'), [':n' => (string) (int) ($diff / 60)]);
     if ($diff < 86400) return strtr(t('printshopdash.activity_hours_ago'),   [':n' => (string) (int) ($diff / 3600)]);
@@ -339,7 +339,7 @@ printshopHeader(t('printshoppages.title_dashboard', ['shop' => $printShop['name'
                 </div>
                 <div class="text-center min-w-[96px]">
                     <p class="text-sm font-medium text-gray-900 leading-none tabular-nums">
-                        <?= $last ? htmlspecialchars(date('M j, Y', strtotime($last))) : '<span class="text-gray-400 italic font-normal">' . htmlspecialchars(t('printshopdash.tenants_no_orders')) . '</span>' ?>
+                        <?= $last ? htmlspecialchars(date('M j, Y', dbTs($last))) : '<span class="text-gray-400 italic font-normal">' . htmlspecialchars(t('printshopdash.tenants_no_orders')) . '</span>' ?>
                     </p>
                     <?php if ($last): ?>
                     <p class="text-[10.5px] text-gray-400 mt-1.5 tabular-nums"><?= htmlspecialchars(strtr(t('printshopdash.tenants_orders_n'), [':n' => (string) $ord])) ?></p>
@@ -573,11 +573,11 @@ printshopHeader(t('printshoppages.title_dashboard', ['shop' => $printShop['name'
     <div class="flex items-end gap-1.5 h-20">
         <?php foreach ($sparkline as $date => $rev):
             $pct = $maxDailyRev > 0 ? max(4, round($rev / $maxDailyRev * 100)) : 4;
-            $title = date('D, M j', strtotime($date)) . ': ' . Currency::format((float) $rev, $currency);
+            $title = date('D, M j', dbTs($date)) . ': ' . Currency::format((float) $rev, $currency);
         ?>
         <div class="flex-1 flex flex-col items-center gap-1">
             <div class="w-full rounded-t transition-colors hover:opacity-80" style="height: <?= $pct ?>%; background: <?= $rev > 0 ? 'var(--cardify-primary-500)' : '#e5e7eb' ?>;" title="<?= htmlspecialchars($title) ?>"></div>
-            <span class="text-[10px] text-gray-400 leading-none"><?= date('D', strtotime($date)) ?></span>
+            <span class="text-[10px] text-gray-400 leading-none"><?= date('D', dbTs($date)) ?></span>
         </div>
         <?php endforeach; ?>
     </div>

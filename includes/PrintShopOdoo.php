@@ -466,7 +466,7 @@ class PrintShopOdoo {
         // Update local order with Odoo reference
         $this->db->update('print_orders', [
             'quotation_number' => $odooQuotationNumber,
-            'quotation_issued_at' => date('Y-m-d H:i:s'),
+            'quotation_issued_at' => dbNow(),
             'quotation_valid_until' => $validityDate,
             'quotation_amount' => $subtotal,
             'quotation_external_id' => $odooOrderId,
@@ -502,7 +502,7 @@ class PrintShopOdoo {
         if ($result['success']) {
             $this->db->update('print_orders', [
                 'quotation_accepted' => 1,
-                'quotation_accepted_at' => date('Y-m-d H:i:s'),
+                'quotation_accepted_at' => dbNow(),
                 'erp_sync_status' => 'synced',
                 'erp_last_sync' => date('Y-m-d H:i:s')
             ], 'id = :id', ['id' => $orderId]);
@@ -566,7 +566,7 @@ class PrintShopOdoo {
             'invoice_number' => $invoiceNumber,
             'invoice_external_id' => $invoiceId,
             'invoice_amount' => $invoiceAmount,
-            'invoice_issued_at' => date('Y-m-d H:i:s'),
+            'invoice_issued_at' => dbNow(),
             'invoice_due_date' => $dueDate,
             'erp_sync_status' => 'synced',
             'erp_last_sync' => date('Y-m-d H:i:s')
@@ -651,8 +651,8 @@ class PrintShopOdoo {
             $this->db->update('print_orders', [
                 'delivery_note_number' => $deliveryNumber,
                 'delivery_note_external_id' => $pickingId,
-                'delivery_note_issued_at' => date('Y-m-d H:i:s'),
-                'shipped_at' => date('Y-m-d H:i:s'),
+                'delivery_note_issued_at' => dbNow(),
+                'shipped_at' => dbNow(),
                 'status' => 'shipped',
                 'erp_sync_status' => 'synced',
                 'erp_last_sync' => date('Y-m-d H:i:s')

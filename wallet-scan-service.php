@@ -103,7 +103,7 @@ if ($method === 'GET' && count($seg) === 4 && $seg[0] === 'v1' && $seg[1] === 'p
     if (!$pass || (int)$pass['revoked'] === 1) out(404);
 
     // Conditional GET: If-Modified-Since vs the pass last_modified.
-    $lastMod = strtotime($pass['last_modified']);
+    $lastMod = dbTs($pass['last_modified']);
     $ims = $_SERVER['HTTP_IF_MODIFIED_SINCE'] ?? '';
     if ($ims !== '' && strtotime($ims) >= $lastMod) { http_response_code(304); exit; }
 

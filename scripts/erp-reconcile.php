@@ -38,7 +38,7 @@ if (!$month) {
 }
 
 $from = $month . '-01 00:00:00';
-$to   = date('Y-m-t 23:59:59', strtotime($from));
+$to   = date('Y-m-t 23:59:59', dbTs($from));
 
 $db = Database::getInstance();
 $report = ['month' => $month, 'generated_at' => date('c'), 'drift_count' => 0];

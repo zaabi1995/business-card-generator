@@ -118,7 +118,7 @@ adminHeader('Referrals', 'referrals');
                             </span>
                         </td>
                         <td class="px-4 py-3 text-sm text-gray-500">
-                            <?= !empty($row['last_activity']) ? date('M j, Y H:i', strtotime($row['last_activity'])) : ',' ?>
+                            <?= !empty($row['last_activity']) ? date('M j, Y H:i', dbTs($row['last_activity'])) : ',' ?>
                         </td>
                     </tr>
                     <?php endforeach; ?>
@@ -160,7 +160,7 @@ adminHeader('Referrals', 'referrals');
                     ?>
                     <tr class="hover:bg-gray-50">
                         <td class="px-4 py-3 text-xs text-gray-500 whitespace-nowrap">
-                            <?= htmlspecialchars(date('M j, Y H:i', strtotime($ev['created_at']))) ?>
+                            <?= htmlspecialchars(date('M j, Y H:i', dbTs($ev['created_at']))) ?>
                         </td>
                         <td class="px-4 py-3">
                             <p class="text-sm font-medium text-gray-900"><?= htmlspecialchars($ev['referrer_name'] ?? '') ?></p>

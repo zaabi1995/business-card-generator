@@ -232,17 +232,17 @@ adminHeader('Blog Management', 'content');
                                     <?php echo ucfirst($post['status']); ?>
                                 </span>
                                 <span class="mx-2">•</span>
-                                <?php echo date('M j, Y', strtotime($post['created_at'])); ?>
+                                <?php echo date('M j, Y', dbTs($post['created_at'])); ?>
                                 <?php if ($post['author_name']): ?>
                                 <span class="mx-2">•</span>
                                 By <?php echo htmlspecialchars($post['author_name']); ?>
                                 <?php endif; ?>
                                 <?php if (!empty($post['linkedin_posted'])): ?>
                                 <span class="mx-2">•</span>
-                                <span class="text-blue-600 text-xs" title="Posted to LinkedIn on <?php echo date('M j', strtotime($post['linkedin_posted'])); ?>">
+                                <span class="text-blue-600 text-xs" title="Posted to LinkedIn on <?php echo date('M j', dbTs($post['linkedin_posted'])); ?>">
                                     <i class="fa-brands fa-linkedin mr-0.5"></i>Posted
                                 </span>
-                                <?php elseif ($post['status'] === 'published' || ($post['status'] === 'draft' && !empty($post['published_at']) && strtotime($post['published_at']) <= time())): ?>
+                                <?php elseif ($post['status'] === 'published' || ($post['status'] === 'draft' && !empty($post['published_at']) && dbTs($post['published_at']) <= time())): ?>
                                 <span class="mx-2">•</span>
                                 <span class="text-amber-600 text-xs" title="Queued for LinkedIn, will post next 9am">
                                     <i class="fa-brands fa-linkedin mr-0.5"></i>Queued

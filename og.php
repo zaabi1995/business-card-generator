@@ -58,7 +58,7 @@ if ($entity === 'company') {
     } catch (Throwable $e) { $row = null; }
     if (!$row) { header('Location: /assets/images/cardify-og.png', true, 302); exit; }
     $title = $row['title'];
-    $eyebrow = strtoupper('CARDIFY BLOG · ' . date('M Y', strtotime($row['updated_at'] ?? 'now')));
+    $eyebrow = strtoupper('CARDIFY BLOG · ' . date('M Y', dbTs($row['updated_at'] ?? 'now')));
     $brandLine = 'cardify.om/blog';
 }
 
