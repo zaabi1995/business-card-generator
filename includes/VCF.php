@@ -184,7 +184,12 @@ class VCF {
         }
         
         // Revision timestamp
-        $lines[] = 'REV:' . date('Y-m-d\TH:i:s\Z');
+        // gmdate, not date. The trailing Z declares UTC (RFC 6350), but
+        // config.php sets Asia/Muscat, so date() stamped local time and
+        // labelled it UTC: every card advertised a REV four hours in the
+        // future. Contact apps treat the higher REV as the newer record when
+        // they merge, so the stale copy could win a sync.
+        $lines[] = 'REV:' . gmdate('Y-m-d\TH:i:s\Z');
         
         // Unique ID
         $uid = $employee['id'] ?? $employee['email'] ?? uniqid();

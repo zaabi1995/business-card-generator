@@ -297,6 +297,13 @@ $fmt = function ($omr) use ($homeCur) {
 // Tier-based subscription pricing was removed Apr 2026. Platform is free forever,
 // revenue comes from per-order print products (see lang/en/pricing.php and /pricing).
 
+// Cheapest print product, Standard at OMR 5.000 per 100, converted to the
+// visitor's currency. The hero's "Prints from :amount :currency" line lost its
+// value in that Apr 2026 removal and had been rendering "Prints from  OMR" with
+// an empty amount ever since, logging an undefined-variable warning on every
+// homepage hit. Keep in step with /pricing and the Product JSON-LD below.
+$priceStarterFrom = $fmt(5);
+
 // Latest blog posts for homepage SEO (internal links + freshness signal).
 //
 // llm75-1: this section used to select `title` and `excerpt` only, so the

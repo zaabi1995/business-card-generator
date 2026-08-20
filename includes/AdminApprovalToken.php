@@ -33,7 +33,13 @@ class AdminApprovalToken
             'request_id'   => $requestId,
             'admin_email'  => $adminEmail,
             'token'        => $plain,
-            'expires_at'   => date('Y-m-d H:i:s', time() + (self::TTL_DAYS * 86400)),
+            // gmdate, not date. config.php sets Asia/Muscat but the PDO
+            // connection never issues SET time_zone, so MySQL stays on UTC and
+            // the two reads below compare this column against NOW(). Stamping
+            // it in Muscat wall-clock wrote it 4 hours ahead of the clock it is
+            // judged by, so a 7-day token stayed valid for 7 days and 4 hours.
+            // OtpService already does it this way.
+            'expires_at'   => gmdate('Y-m-d H:i:s', time() + (self::TTL_DAYS * 86400)),
         ]);
 
         return $plain;
