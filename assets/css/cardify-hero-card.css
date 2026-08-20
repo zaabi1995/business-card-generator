@@ -1,0 +1,76 @@
+/**
+ * Hero card, CSS 3D.
+ *
+ * A two-sided card flip is a transform, not a scene, so it does not need
+ * WebGL. This works with hardware acceleration disabled, on every browser the
+ * site supports, at ~1 KB, and it keeps the card's content as real text that
+ * screen readers and crawlers can reach. Three.js is still loaded site-wide
+ * for the ambient layer; it is simply the wrong tool for this one job.
+ */
+
+.cf-card {
+  perspective: 1400px;
+  /* 85.6 x 54 mm, the real business-card ratio */
+  aspect-ratio: 85.6 / 54;
+}
+
+.cf-card__inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform 700ms cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
+}
+
+.cf-card.is-flipped .cf-card__inner {
+  transform: rotateY(180deg);
+}
+
+.cf-card__face {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  border-radius: 1rem;
+  overflow: hidden;
+  box-shadow: 0 40px 80px -30px rgba(5, 59, 73, 0.45);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.cf-card__back {
+  transform: rotateY(180deg);
+}
+
+/* A gentle rest angle so the object reads as physical, removed on hover/focus
+   so the card squares up when the visitor engages with it. */
+@media (hover: hover) and (min-width: 1024px) {
+  .cf-card:not(.is-flipped) .cf-card__inner {
+    transform: rotateY(-9deg) rotateX(3deg);
+  }
+  .cf-card:not(.is-flipped):hover .cf-card__inner,
+  .cf-card:not(.is-flipped):focus-within .cf-card__inner {
+    transform: rotateY(0deg) rotateX(0deg);
+  }
+}
+
+/* Reduced motion: the flip still works, it just stops being an animation,
+   and the resting tilt is dropped entirely. */
+@media (prefers-reduced-motion: reduce) {
+  .cf-card__inner {
+    transition: none;
+  }
+  .cf-card:not(.is-flipped) .cf-card__inner,
+  .cf-card:not(.is-flipped):hover .cf-card__inner {
+    transform: none;
+  }
+}
+
+/* backface-visibility is unreliable in a few older engines; if the browser
+   cannot do 3D transforms at all, show the front and hide the back rather
+   than stacking both. */
+@supports not (transform-style: preserve-3d) {
+  .cf-card__back { display: none; }
+}

@@ -530,84 +530,87 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 </div>
 
                 <!-- Right Content - Card Mockups -->
-                <div class="lg:col-span-6 relative hidden lg:block">
-                    <div class="relative h-[500px]">
-                        <!-- Main Card -->
-                        <div class="float-animation absolute top-0 right-0 w-80 bg-white rounded-2xl card-shadow p-6 border border-gray-100">
-                            <div class="flex items-start gap-4">
-                                <div class="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white text-xl font-bold shadow-lg">
-                                    JD
+                <?php
+                /*
+                 * Hero product object. Replaces three floating cards that showed
+                 * John Doe / TechCorp, Sarah Miller / creativeco.com and Alex Kim /
+                 * StartupXYZ: invented people at invented companies, on an
+                 * Arabic-first Omani product whose hero contained no Arabic at all.
+                 * DESIGN.md already called for exactly this ("one hero object",
+                 * "placeholder names -> real Omani names", "busy floating 3-card
+                 * cluster -> one wallet pass").
+                 *
+                 * This is a SAMPLE card, labelled as one. It is not a customer and
+                 * does not claim to be. Its job is to demonstrate the single thing
+                 * that differentiates the product: Arabic and English on one card,
+                 * each reading in its own direction.
+                 *
+                 * The markup below IS the product. Three.js, when it runs, lifts
+                 * this same content into a rotatable card and hides the flat copy
+                 * from sight only, never from assistive tech or crawlers. With no
+                 * WebGL, reduced motion, or a failed asset, this is what stays, and
+                 * it is complete on its own. It is no longer hidden on mobile.
+                 */
+                ?>
+                <div class="lg:col-span-6 relative mt-12 lg:mt-0">
+                    <div class="relative mx-auto w-full max-w-sm lg:max-w-md lg:h-[500px] flex flex-col items-center justify-center gap-5">
+
+                        <div id="cardify-hero-card" class="cf-card w-full" role="img"
+                             aria-label="<?= htmlspecialchars(t('herocard.alt')) ?>">
+                            <div class="cf-card__inner">
+
+                                <div class="cf-card__face cf-card__front" style="background:linear-gradient(150deg,#009bc1,#053b49)">
+                                    <div class="flex items-start justify-between p-6 pb-4">
+                                        <p class="text-[11px] font-bold tracking-[0.16em] text-white/80 uppercase">Cardify</p>
+                                        <span class="text-[10px] font-bold tracking-widest text-white bg-white/20 rounded-full px-2 py-0.5">
+                                            <?= htmlspecialchars(t('herocard.sample')) ?>
+                                        </span>
+                                    </div>
+                                    <div class="px-6 pb-5 grid grid-cols-2 gap-4 items-start">
+                                        <div dir="ltr" class="text-left">
+                                            <p class="font-display font-bold text-white text-lg leading-tight">Aisha Al Balushi</p>
+                                            <p class="text-white/85 text-xs mt-1">Operations Manager</p>
+                                        </div>
+                                        <div dir="rtl" class="text-right">
+                                            <p class="font-display font-bold text-white text-lg leading-tight">عائشة البلوشي</p>
+                                            <p class="text-white/85 text-xs mt-1">مديرة العمليات</p>
+                                        </div>
+                                    </div>
+                                    <div class="px-6 pb-5 flex items-end justify-between gap-4">
+                                        <div class="space-y-1 text-white/85 text-xs" dir="ltr">
+                                            <p>aisha@example.om</p>
+                                            <p>+968 2200 0000</p>
+                                        </div>
+                                        <div class="shrink-0 w-14 h-14 rounded-lg bg-white/95 flex items-center justify-center" aria-hidden="true">
+                                            <i class="fa-solid fa-qrcode text-2xl" style="color:#053b49"></i>
+                                        </div>
+                                    </div>
+                                    <div class="bg-black/15 px-6 py-3 flex items-center gap-2">
+                                        <i class="fa-brands fa-apple text-white/90" aria-hidden="true"></i>
+                                        <i class="fa-brands fa-google text-white/90" aria-hidden="true"></i>
+                                        <p class="text-white/85 text-xs"><?= htmlspecialchars(t('herocard.wallet')) ?></p>
+                                    </div>
                                 </div>
-                                <div class="flex-1">
-                                    <p class="font-display font-bold text-gray-900 text-lg">John Doe</p>
-                                    <p class="text-blue-600 text-sm font-semibold">Senior Developer</p>
-                                    <p class="text-gray-500 text-sm">TechCorp Inc.</p>
+
+                                <div class="cf-card__face cf-card__back bg-white border border-gray-200">
+                                    <div class="h-full flex flex-col items-center justify-center gap-4 p-8 text-center">
+                                        <div class="w-24 h-24 rounded-xl bg-gray-900 flex items-center justify-center" aria-hidden="true">
+                                            <i class="fa-solid fa-qrcode text-5xl text-white"></i>
+                                        </div>
+                                        <p class="text-gray-900 font-display font-bold"><?= htmlspecialchars(t('herocard.scan')) ?></p>
+                                        <p class="text-gray-500 text-xs max-w-[15rem]"><?= htmlspecialchars(t('herocard.scan_hint')) ?></p>
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="mt-5 pt-5 border-t border-gray-100 space-y-3">
-                                <div class="flex items-center gap-3 text-sm text-gray-600">
-                                    <i class="fa-solid fa-envelope w-4 text-blue-500"></i>
-                                    <span>john.doe@techcorp.com</span>
-                                </div>
-                                <div class="flex items-center gap-3 text-sm text-gray-600">
-                                    <i class="fa-solid fa-phone w-4 text-blue-500"></i>
-                                    <span>+1 (555) 123-4567</span>
-                                </div>
-                                <div class="flex items-center gap-3 text-sm text-gray-600">
-                                    <i class="fa-solid fa-globe w-4 text-blue-500"></i>
-                                    <span>techcorp.com</span>
-                                </div>
-                            </div>
-                            <div class="mt-5 flex gap-2">
-                                <button class="flex-1 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition">
-                                    <i class="fa-solid fa-address-book mr-2"></i>Save Contact
-                                </button>
-                                <button class="p-2.5 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition"
-                                        aria-label="<?= htmlspecialchars(t('common.show_qr')) ?>"
-                                        type="button">
-                                    <i class="fa-solid fa-qrcode" aria-hidden="true"></i>
-                                </button>
+
                             </div>
                         </div>
 
-                        <?php /* Secondary Card. r28 27-54: the gold was amber-400/500 with white
-                                 text, measured 1.79-1.9:1. amber-700/800 puts white at 5.0:1 and the
-                                 avatar disc at 7.1:1 while keeping the gold. Opacity-dimmed white was
-                                 the other half of the failure, so the caption lines are solid white. */ ?>
-                        <div class="float-delayed absolute top-52 -left-4 w-72 bg-gradient-to-br from-amber-700 to-amber-800 rounded-2xl card-shadow p-6 text-white">
-                            <div class="flex items-start gap-4">
-                                <div class="w-14 h-14 rounded-full bg-black/20 flex items-center justify-center text-lg font-bold backdrop-blur-sm">
-                                    SM
-                                </div>
-                                <div class="flex-1">
-                                    <p class="font-display font-bold text-lg">Sarah Miller</p>
-                                    <p class="text-white text-sm">Marketing Director</p>
-                                </div>
-                            </div>
-                            <div class="mt-4 pt-4 border-t border-white/40 space-y-2 text-sm text-white">
-                                <div class="flex items-center gap-3">
-                                    <i class="fa-solid fa-envelope w-4"></i>
-                                    <span>sarah@creativeco.com</span>
-                                </div>
-                                <div class="flex items-center gap-3">
-                                    <i class="fa-solid fa-globe w-4"></i>
-                                    <span>creativeco.com</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Small Card -->
-                        <div class="float-animation float-delay-2 absolute bottom-8 right-8 w-64 bg-white rounded-2xl card-shadow p-5 border border-gray-100">
-                            <div class="flex items-center gap-3">
-                                <div class="w-12 h-12 rounded-full bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center text-white font-bold shadow-lg">
-                                    AK
-                                </div>
-                                <div>
-                                    <p class="font-display font-bold text-gray-900">Alex Kim</p>
-                                    <p class="text-gray-500 text-xs">CEO, StartupXYZ</p>
-                                </div>
-                            </div>
-                        </div>
+                        <button type="button" id="cardify-hero-flip"
+                                class="inline-flex items-center gap-2 rounded-full border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+                                style="outline-color:#009bc1" aria-pressed="false">
+                            <i class="fa-solid fa-rotate" aria-hidden="true"></i>
+                            <span><?= htmlspecialchars(t('herocard.flip')) ?></span>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -615,7 +618,11 @@ require_once INCLUDES_DIR . '/ui-header.php';
     </section>
 
     <!-- ========== TRUST SIGNALS ========== -->
-    <?php @include __DIR__ . '/views/partials/trust_logo_strip.php'; ?>
+        <?php // Hero card: component-scoped, homepage only. Not site-wide, it exists on one screen. ?>
+    <link rel="stylesheet" href="<?= htmlspecialchars(getBasePath()) ?>assets/css/cardify-hero-card.css">
+    <script defer src="<?= htmlspecialchars(getBasePath()) ?>assets/js/cardify-hero-card.js"></script>
+
+<?php @include __DIR__ . '/views/partials/trust_logo_strip.php'; ?>
 
     <!-- ========== VALUE PROPOSITION BANNER ========== -->
     <section class="py-12 bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 text-white">
