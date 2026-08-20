@@ -33,4 +33,17 @@ return [
     'solutions/nfc-business-cards-oman-executives.php'             => '2026-04-16',
     'solutions/qr-code-menu-muscat-restaurants.php'                => '2026-04-16',
     'solutions/salalah-tourism-business-cards.php'                 => '2026-04-16',
+    // r328, first published 20 Aug 2026. Head-term, comparison and glossary
+    // clusters. Same rule as the rows above: this is the authoring date of
+    // the commit that added the file, not a guess and not a backdate.
+    'digital-business-card.php'                            => '2026-08-20',
+    'nfc-business-card.php'                                => '2026-08-20',
+    'virtual-business-card.php'                            => '2026-08-20',
+    'compare/index.php'                                    => '2026-08-20',
+    'compare/cardify-vs-popl.php'                          => '2026-08-20',
+    'compare/cardify-vs-blinq.php'                         => '2026-08-20',
+    'compare/cardify-vs-hihello.php'                       => '2026-08-20',
+    'compare/best-digital-business-card-gcc.php'           => '2026-08-20',
+    'glossary/index.php'                                   => '2026-08-20',
+    'glossary/term.php'                                    => '2026-08-20',
 ];

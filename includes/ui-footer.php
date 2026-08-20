@@ -72,6 +72,15 @@ elseif (!empty($minimalFooter)):
                         <li><a href="<?= $footLink('blog') ?>" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_blog')) ?></a></li>
                         <li><a href="<?= $footLink('faq') ?>" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_faq')) ?></a></li>
                         <li><a href="<?= $footLink('app') ?>" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_app')) ?></a></li>
+                        <?php /* r328: the three head-term pages, the comparison hub and the
+                           glossary get a sitewide link from here. They were built as real
+                           pages, not doorways, and a real page that nothing links to still
+                           reads as an orphan. */ ?>
+                        <li><a href="<?= $footLink('digital-business-card') ?>" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_digital_card')) ?></a></li>
+                        <li><a href="<?= $footLink('nfc-business-card') ?>" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_nfc_card')) ?></a></li>
+                        <li><a href="<?= $footLink('virtual-business-card') ?>" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_virtual_card')) ?></a></li>
+                        <li><a href="<?= $footLink('compare') ?>" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_compare')) ?></a></li>
+                        <li><a href="<?= $footLink('glossary') ?>" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_glossary')) ?></a></li>
                     </ul>
                 </div>
                 <div>

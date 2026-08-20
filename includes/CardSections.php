@@ -397,7 +397,10 @@ class CardSections
             $template
         );
 
-        return 'https://wa.me/' . $digits . '?text=' . rawurlencode($msg);
+        // House rule: api.whatsapp.com/send, never wa.me. Same official
+        // click-to-chat endpoint, and the short host is unreliable on some
+        // Omani networks, which is the whole market this button serves.
+        return 'https://api.whatsapp.com/send?phone=' . $digits . '&text=' . rawurlencode($msg);
     }
 
     /**

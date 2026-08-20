@@ -615,7 +615,7 @@ $pageTitle = t('portal.edit_my_details');
         return {
             copied: false,
             showFallback: false,
-            waUrl: 'https://wa.me/?text=' + t,
+            waUrl: 'https://api.whatsapp.com/send?text=' + t,
             smsUrl: 'sms:?body=' + t,
             emailUrl: 'mailto:?subject=' + encodeURIComponent(init.name || 'My card') + '&body=' + t,
             async share() {

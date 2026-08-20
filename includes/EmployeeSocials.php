@@ -18,7 +18,7 @@ class EmployeeSocials
         'linkedin'      => ['label' => 'LinkedIn',       'icon' => 'fa-brands fa-linkedin',       'hint' => 'https://linkedin.com/in/…'],
         'youtube'       => ['label' => 'YouTube',        'icon' => 'fa-brands fa-youtube',        'hint' => 'https://youtube.com/@…'],
         'tiktok'        => ['label' => 'TikTok',         'icon' => 'fa-brands fa-tiktok',         'hint' => 'https://tiktok.com/@…'],
-        'whatsapp'      => ['label' => 'WhatsApp',       'icon' => 'fa-brands fa-whatsapp',       'hint' => 'https://wa.me/…'],
+        'whatsapp'      => ['label' => 'WhatsApp',       'icon' => 'fa-brands fa-whatsapp',       'hint' => 'https://api.whatsapp.com/send?phone=…'],
         'telegram'      => ['label' => 'Telegram',       'icon' => 'fa-brands fa-telegram',       'hint' => 'https://t.me/…'],
         'snapchat'      => ['label' => 'Snapchat',       'icon' => 'fa-brands fa-snapchat',       'hint' => 'https://snapchat.com/add/…'],
         'pinterest'     => ['label' => 'Pinterest',      'icon' => 'fa-brands fa-pinterest',      'hint' => 'https://pinterest.com/…'],

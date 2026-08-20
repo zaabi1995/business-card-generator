@@ -32,6 +32,11 @@ return [
     'link_browse_companies' => 'Browse 2,500+ companies',
     'link_logos'       => 'Omani Logo Library',
     'link_solutions'   => 'All solutions',
+    'link_digital_card' => 'Digital business cards',
+    'link_nfc_card'    => 'NFC business cards',
+    'link_virtual_card' => 'Virtual business cards',
+    'link_compare'     => 'Compare platforms',
+    'link_glossary'    => 'Glossary',
 
     // Industries
     'col_industries'   => 'For industries',

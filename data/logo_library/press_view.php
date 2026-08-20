@@ -222,7 +222,7 @@ GET /api/logos/random          # one random brand, no-cache</code></pre>
                     <i class="fa-solid fa-envelope text-xs"></i>
                     press@cardify.om
                 </a>
-                <a href="https://wa.me/96898899100" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-white border border-gray-200 text-gray-700 hover:border-emerald-300 hover:text-emerald-700 text-sm font-semibold transition">
+                <a href="https://api.whatsapp.com/send?phone=96898899100" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-white border border-gray-200 text-gray-700 hover:border-emerald-300 hover:text-emerald-700 text-sm font-semibold transition">
                     <i class="fa-brands fa-whatsapp text-emerald-600"></i>
                     +968 9889 9100 <?= logos_press_esc(t('logos.press_bhd_suffix')) ?>
                 </a>

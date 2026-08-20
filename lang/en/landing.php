@@ -6,8 +6,8 @@ return [
     // Hero
     'hero_badge_loc'   => 'Made in Oman',
     'hero_badge_copy'  => 'For teams of 50 to 5,000',
-    'hero_h1_line1'    => 'Bilingual cards for',
-    'hero_h1_line2'    => 'every employee on your team.',
+    'hero_h1_line1'    => 'Bilingual digital business cards',
+    'hero_h1_line2'    => 'for every employee on your team.',
     'hero_h1_line3'    => 'Designed once. Printed forever.',
     // r6-66: the first 40 words must contain one sentence that says what this
     // is. Without it a model reading the hero learns the pitch and never the

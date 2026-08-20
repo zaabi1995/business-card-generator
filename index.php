@@ -500,7 +500,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                             $cardifyDemoMsg = (currentLocale() === 'ar')
                                 ? 'مرحباً، أرغب بعرض توضيحي لكارديفاي لشركتي'
                                 : 'Hi, I would like a demo of Cardify for my company';
-                            $cardifyDemoUrl = 'https://wa.me/96899899100?text=' . rawurlencode($cardifyDemoMsg);
+                            $cardifyDemoUrl = 'https://api.whatsapp.com/send?phone=96898899100&text=' . rawurlencode($cardifyDemoMsg);
                         ?>
                         <a href="<?= htmlspecialchars($cardifyDemoUrl) ?>" target="_blank" rel="noopener" class="inline-flex items-center justify-center gap-2 px-7 py-4 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-xl transition-all text-lg">
                             <i class="fa-brands fa-whatsapp"></i>
@@ -1461,7 +1461,15 @@ echo Seo::organizationScriptOnce();
       "priceCurrency": "OMR",
       "description": "Free forever. Unlimited employees, unlimited templates, digital cards with QR vCard, bilingual EN+AR, analytics, WhatsApp and email share, no credit card required.",
       "availability": "https://schema.org/InStock",
-      "url": "https://cardify.om/company/register.php"
+      <?php /* r328: this named /company/register.php, which robots.txt
+         disallows under Disallow: /company/ (login and logout live there
+         too). The free-tier Offer therefore pointed at a URL Googlebot was
+         told not to fetch. robots.txt now carries an explicit
+         Allow: /company/register.php so the CTA itself is crawlable, and the
+         Offer moves to /get-started, which is a real indexable page outside
+         the disallowed prefix. Both halves, because either alone leaves the
+         Offer's landing page depending on a longest-match tie-break. */ ?>
+      "url": "https://cardify.om/get-started"
     },
     {
       "@type": "Offer",
@@ -1532,6 +1540,13 @@ echo Seo::organizationScriptOnce();
   "@type": "Product",
   "@id": "https://cardify.om/#product",
   "name": "Cardify Business Card Platform",
+  <?php /* r328: sku follows the CARDIFY-<KEY> convention Seo::product()
+     already uses for the four print tiers. No aggregateRating and no review
+     here on purpose: print_shop_reviews and employee_card_testimonials both
+     hold ZERO rows and nothing in the tree writes to either, so any rating
+     published under this @id would be invented. It stays absent until a
+     real one is collected. */ ?>
+  "sku": "CARDIFY-PLATFORM",
   "isRelatedTo": { "@id": "https://cardify.om/#webapp" },
   "image": "https://cardify.om/assets/images/cardify-og.png",
   "description": "SaaS for creating, managing, and printing branded digital + printed business cards for teams in Oman.",

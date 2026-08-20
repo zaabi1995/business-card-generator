@@ -88,6 +88,42 @@ class Seo
     }
 
     /**
+     * The minimal local body for https://bhd.om/#organization.
+     *
+     * Three edges on this estate point at the parent group by @id:
+     * Organization.parentOrganization here, and SoftwareApplication.publisher
+     * plus MobileApplication.publisher via AppEntity::PUBLISHER_ID. bhd.om
+     * defines that node, so none of them were dishonest, but @id resolution is
+     * per-page: nothing fetches bhd.om to complete the graph, so all three
+     * resolved to nothing on cardify.om.
+     *
+     * This is the ONE place cardify.om spells the parent out, and it is
+     * attached to Organization.parentOrganization, which every page carrying
+     * the owner node emits. AppEntity keeps its bare @id ref on purpose: a
+     * second body under the same @id on the same page is the exact defect the
+     * llm20-11 and r154 rounds spent themselves closing.
+     *
+     * Values are copied verbatim from bhd.om's live graph. @type is narrowed
+     * to Organization alone (bhd.om says ["Organization","LocalBusiness"]);
+     * that is a superclass statement, not a contradiction, and it keeps a
+     * five-key stub from claiming to be a storefront listing.
+     */
+    public static function groupOrganizationNode(): array
+    {
+        return [
+            "@type" => "Organization",
+            "@id" => "https://bhd.om/#organization",
+            "name" => "BHD Group",
+            "legalName" => "Bin Haider Darwish L.L.C.",
+            "url" => "https://bhd.om/",
+            "logo" => [
+                "@type" => "ImageObject",
+                "url" => "https://bhd.om/logos/bhd-group.svg",
+            ],
+        ];
+    }
+
+    /**
      * The ONE body behind https://cardify.om/#organization.
      *
      * llm20-11: publisherNode() used to return a second, 5-key body under this
@@ -119,9 +155,16 @@ class Seo
             "name" => "Cardify",
             "alternateName" => ["Cardify Oman", "Cardify GCC"],
             "url" => "https://cardify.om",
-            "parentOrganization" => [
-                "@id" => "https://bhd.om/#organization",
-            ],
+            // r328: this used to be a BARE @id. bhd.om really does define that
+            // node, so the reference was honest, but a consumer resolves @id
+            // WITHIN one page graph and never fetches bhd.om, so on cardify.om
+            // the parent was an identifier pointing at nothing. Every value
+            // below is copied verbatim from the live body bhd.om publishes for
+            // this same @id, so the two graphs cannot contradict each other:
+            // keep it a strict subset when bhd.om changes, never a paraphrase.
+            // Kept deliberately minimal (identity, not a second profile): the
+            // parent's own page stays the fuller description.
+            "parentOrganization" => self::groupOrganizationNode(),
             "disambiguatingDescription" => "Cardify is the digital business card platform published by BHD Group (Bin Haider Darwish L.L.C.) in Muscat, Oman. BHD Group is Bin Haider Darwish L.L.C., Commercial Registration 1334733, a family-owned printing and technology group founded in Muscat in 2018. It is not Mohsin Haider Darwish LLC (a separate and unrelated Omani company), and the initials BHD here stand for Bin Haider Darwish, not the Bahraini dinar currency code.",
             "logo" => "https://cardify.om/assets/images/logo.svg",
             "description" => "Business-identity platform for the Gulf: digital and printed business cards, public logo libraries, and the GCC Business Index. Built in Oman, expanding across Saudi Arabia, UAE, Qatar, Bahrain, and Kuwait through 2026.",
@@ -150,8 +193,13 @@ class Seo
                     "closes" => "19:00",
                 ],
             ],
+            // r328: same fix as parentOrganization above. Name and url are the
+            // exact strings bhd.om publishes under https://bhd.om/#founder.
             "founder" => [
+                "@type" => "Person",
                 "@id" => "https://bhd.om/#founder",
+                "name" => "Ali Adnan Haider Darwish",
+                "url" => "https://alizaabi.om/",
             ],
             "foundingDate" => "2024",
             "foundingLocation" => [
@@ -201,7 +249,21 @@ class Seo
                 ],
             ],
             "knowsLanguage" => ["en", "ar"],
-            "sameAs" => ["https://instagram.com/cardifyom"],
+            // r328: one profile is not entity consolidation. Each URL below was
+            // fetched and read before it was added. X was confirmed by its own
+            // page title, "Cardify.om (@Cardifyom) / X". The App Store URL is
+            // AppEntity::APPSTORE_URL, the one spelling this estate uses.
+            // DELIBERATELY ABSENT: a LinkedIn company page. We administer page
+            // id 111727648, but every public URL form of it (vanity and
+            // numeric) answers a login wall, so no public profile URL could be
+            // read and confirmed as Cardify's rather than another company also
+            // called Cardify. Add it the day someone pastes the URL they can
+            // open while signed out. A wrong sameAs merges us with a stranger.
+            "sameAs" => [
+                "https://instagram.com/cardifyom",
+                "https://x.com/cardifyom",
+                "https://apps.apple.com/om/app/cardify-business-card-scanner/id6790749589",
+            ],
             // r153 / llm148-1: a LIST, because press.php used to publish the
             // public-relations point inside a rival 12-key body under this same
             // @id. One contact route was the only thing that page said which
@@ -262,6 +324,17 @@ class Seo
      */
     public static function breadcrumbs(array $crumbs): void
     {
+        self::emit(self::breadcrumbNode($crumbs));
+    }
+
+    /**
+     * BreadcrumbList as a value, for pages that assemble $extraHead before the
+     * header runs. Same body breadcrumbs() emits, so the two cannot drift.
+     *
+     * @param array $crumbs List of [label, url] pairs, root-first.
+     */
+    public static function breadcrumbNode(array $crumbs): array
+    {
         $items = [];
         $i = 1;
         foreach ($crumbs as $c) {
@@ -274,11 +347,75 @@ class Seo
                 'item' => $url,
             ];
         }
-        self::emit([
+        return [
             '@context' => 'https://schema.org',
             '@type' => 'BreadcrumbList',
             'itemListElement' => $items,
-        ]);
+        ];
+    }
+
+    /**
+     * FAQPage as a value. Same reason as breadcrumbNode(): the $extraHead
+     * pattern needs a node, not an echo, and two spellings of one shape is
+     * how they drift.
+     *
+     * @param array $qa List of [question, answer] pairs.
+     */
+    public static function faqNode(array $qa): array
+    {
+        $entries = [];
+        foreach ($qa as [$q, $a]) {
+            $entries[] = [
+                '@type' => 'Question',
+                'name' => $q,
+                'acceptedAnswer' => ['@type' => 'Answer', 'text' => $a],
+            ];
+        }
+        return [
+            '@context' => 'https://schema.org',
+            '@type' => 'FAQPage',
+            'mainEntity' => $entries,
+        ];
+    }
+
+    /** The glossary's DefinedTermSet @id. Every term page points its
+     *  inDefinedTermSet here, and /glossary defines the body. */
+    public const GLOSSARY_ID = self::SITE . '/glossary#termset';
+
+    /**
+     * One DefinedTerm. $arName/$arDescription are the Arabic equivalents that
+     * genuinely exist in Omani commercial usage; pass null rather than
+     * transliterating an English word back at the reader.
+     */
+    public static function definedTermNode(
+        string $slug,
+        string $name,
+        string $description,
+        ?string $arName = null,
+        ?string $arDescription = null
+    ): array {
+        $url = self::SITE . '/glossary/' . $slug;
+        $node = [
+            '@context' => 'https://schema.org',
+            '@type' => 'DefinedTerm',
+            '@id' => $url . '#term',
+            'name' => $name,
+            'description' => $description,
+            'url' => $url,
+            'inDefinedTermSet' => ['@id' => self::GLOSSARY_ID],
+        ];
+        if ($arName !== null) {
+            $node['alternateName'] = $arName;
+        }
+        if ($arDescription !== null) {
+            // Both languages under one @id, tagged, rather than a second node
+            // asserting a rival body for the same term.
+            $node['description'] = [
+                ['@value' => $description, '@language' => 'en'],
+                ['@value' => $arDescription, '@language' => 'ar'],
+            ];
+        }
+        return $node;
     }
 
     /**

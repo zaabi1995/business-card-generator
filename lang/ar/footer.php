@@ -32,6 +32,11 @@ return [
     'link_browse_companies' => 'تصفّح 2,500+ شركة',
     'link_logos'       => 'مكتبة الشعارات العُمانية',
     'link_solutions'   => 'جميع الحلول',
+    'link_digital_card' => 'بطاقات العمل الرقمية',
+    'link_nfc_card'    => 'بطاقات NFC',
+    'link_virtual_card' => 'البطاقات الافتراضية',
+    'link_compare'     => 'مقارنة المنصات',
+    'link_glossary'    => 'المصطلحات',
 
     // للقطاعات
     'col_industries'   => 'للقطاعات',

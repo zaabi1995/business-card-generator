@@ -131,6 +131,16 @@ function smRouteDate($path) {
         'gcc/bahrain'       => 'gcc/country.php',
         'gcc/kuwait'        => 'gcc/country.php',
         'gcc/oman'          => 'gcc/country.php',
+        // r328. The glossary term pages are ONE renderer behind a slug, the
+        // same shape as gcc/country.php above. Without these six rows each
+        // /glossary/{slug} resolves to no file and takes the fallback, which
+        // this function's own docblock calls a finding rather than a date.
+        'glossary/nfc'                          => 'glossary/term.php',
+        'glossary/vcard'                        => 'glossary/term.php',
+        'glossary/qr-vcard'                     => 'glossary/term.php',
+        'glossary/digital-business-card'        => 'glossary/term.php',
+        'glossary/apple-wallet-pass'            => 'glossary/term.php',
+        'glossary/contactless-business-card'    => 'glossary/term.php',
     ];
     $roots = [];
     if (isset($RENDERER[$rel])) $roots[] = __DIR__ . '/' . $RENDERER[$rel];
@@ -425,6 +435,29 @@ if ($part === 'static') {
         ['/industries/logistics',    'monthly', '0.75'],
         ['/industries/oil-gas',      'monthly', '0.75'],
         ['/industries/government',   'monthly', '0.75'],
+        // r328: head-term landing pages. /digital-business-card and friends
+        // 404'd until this round, so every head-term asset the estate owned
+        // was geo-qualified and none of it could rank for the bare phrase.
+        ['/digital-business-card',   'monthly', '0.95'],
+        ['/nfc-business-card',       'monthly', '0.9'],
+        ['/virtual-business-card',   'monthly', '0.9'],
+        // r328: comparison cluster. Listed at a high priority deliberately:
+        // these are the queries a buyer runs immediately before deciding.
+        ['/compare',                                    'monthly', '0.85'],
+        ['/compare/cardify-vs-popl',                    'monthly', '0.85'],
+        ['/compare/cardify-vs-blinq',                   'monthly', '0.85'],
+        ['/compare/cardify-vs-hihello',                 'monthly', '0.85'],
+        ['/compare/best-digital-business-card-gcc',     'monthly', '0.85'],
+        // r328: glossary. Definition pages are what win a featured snippet
+        // and what an AI overview cites, which is where "what is a digital
+        // business card" actually resolves.
+        ['/glossary',                                   'monthly', '0.8'],
+        ['/glossary/digital-business-card',             'monthly', '0.75'],
+        ['/glossary/nfc',                               'monthly', '0.75'],
+        ['/glossary/vcard',                             'monthly', '0.75'],
+        ['/glossary/qr-vcard',                          'monthly', '0.75'],
+        ['/glossary/apple-wallet-pass',                 'monthly', '0.75'],
+        ['/glossary/contactless-business-card',         'monthly', '0.75'],
     ];
     foreach ($staticPages as [$path, $freq, $prio]) {
         smUrl($baseUrl . $path, smRouteDate($path), $freq, $prio);

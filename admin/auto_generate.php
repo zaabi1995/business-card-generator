@@ -512,7 +512,7 @@ function layoutGenerator() {
             return base + (CARDIFY_RESERVED_SLUGS.has(slug) ? '/card/' + slug : '/' + slug);
         },
         get waShareUrl() {
-            return 'https://wa.me/?text=' + encodeURIComponent('Here is my digital business card: ' + this.cardShareUrl);
+            return 'https://api.whatsapp.com/send?text=' + encodeURIComponent('Here is my digital business card: ' + this.cardShareUrl);
         },
         get continueUrl() {
             var p = this.isNew ? 'generated' : 'regenerated';
@@ -877,7 +877,7 @@ function autoGenerator() {
         },
         get waShareUrl() {
             const msg = encodeURIComponent('Here is my digital business card: ' + this.cardShareUrl);
-            return 'https://wa.me/?text=' + msg;
+            return 'https://api.whatsapp.com/send?text=' + msg;
         },
         get continueUrl() {
             const param = this.isRegenerate ? 'regenerated' : 'generated';

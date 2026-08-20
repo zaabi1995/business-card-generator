@@ -102,10 +102,15 @@
     # Oman Business Index, directory of Omani enterprises (flagship + curated top companies)
     RewriteRule ^oman-business-index/?$ oman-business-index.php [L,QSA]
     RewriteRule ^gcc-business-index/?$  gcc-business-index.php [L,QSA]
-    # No /ar/gcc-business-index rewrite yet because the page has no Arabic
-    # localization. Route (and hreflang / sitemap entries) will be added
-    # when translated content lands. Do NOT expose a locale route that
-    # serves the English page, which creates a duplicate indexed as AR.
+    # r328: this comment used to say "No /ar/gcc-business-index rewrite yet
+    # because the page has no Arabic localization". That was stale. The URL
+    # answers 200 today with a fully Arabic title, routed by the nginx table,
+    # so the comment described a state of the world that had already changed
+    # and warned a reader off a route that exists. The underlying RULE still
+    # stands and is the reason the sentence is kept rather than deleted: do
+    # NOT expose a locale route that serves the English body, because that is
+    # a duplicate indexed as Arabic. ArTwins is the gate on that, not this
+    # comment.
     RewriteRule ^companies/?$ companies.php [L,QSA]
     RewriteRule ^companies/sector/([a-z0-9-]+)/?$ companies.php?view=sector&slug=$1 [L,QSA]
     RewriteRule ^companies/wilayat/([a-z0-9-]+)/?$ companies.php?view=wilayat&slug=$1 [L,QSA]
@@ -143,6 +148,32 @@
     # Oman-specific solution pages (commercial intent SEO)
     RewriteRule ^solutions/?$ solutions.php [L,QSA]
     RewriteRule ^solutions/([a-z0-9-]+)/?$ solutions/$1.php [L,QSA]
+
+    # r328: head-term, comparison and glossary clusters.
+    #
+    # READ THIS BEFORE TRUSTING ANY RULE IN THIS FILE. cardify.om is served by
+    # nginx and there is no Apache in front of it, so nothing in this .htaccess
+    # is executed in production. The rules that actually route the live site
+    # live in the aaPanel file /www/server/panel/vhost/rewrite/cardify.om.conf,
+    # which is not in this repository. docs/head-terms-nginx-rewrites.conf
+    # holds the copy of the block below in nginx syntax, and that copy is the
+    # one that has to be applied to the box. These lines are kept in step so
+    # the repo does not lie about its own routes, and so a future move back to
+    # Apache does not silently drop five clusters.
+    RewriteRule ^digital-business-cards/?$ /digital-business-card [R=301,L]
+    RewriteRule ^digital-business-card/?$ digital-business-card.php [L,QSA]
+    RewriteRule ^nfc-business-cards/?$ /nfc-business-card [R=301,L]
+    RewriteRule ^nfc-business-card/?$ nfc-business-card.php [L,QSA]
+    RewriteRule ^virtual-business-cards/?$ /virtual-business-card [R=301,L]
+    RewriteRule ^virtual-business-card/?$ virtual-business-card.php [L,QSA]
+    RewriteRule ^(vs|alternatives)/?$ /compare [R=301,L]
+    RewriteRule ^(vs|compare)/popl/?$ /compare/cardify-vs-popl [R=301,L]
+    RewriteRule ^(vs|compare)/blinq/?$ /compare/cardify-vs-blinq [R=301,L]
+    RewriteRule ^(vs|compare)/hihello/?$ /compare/cardify-vs-hihello [R=301,L]
+    RewriteRule ^compare/?$ compare/index.php [L,QSA]
+    RewriteRule ^compare/([a-z0-9-]+)/?$ compare/$1.php [L,QSA]
+    RewriteRule ^glossary/?$ glossary/index.php [L,QSA]
+    RewriteRule ^glossary/([a-z0-9-]+)/?$ glossary/term.php?term=$1 [L,QSA]
 
     # Static page clean URLs
     RewriteRule ^faq/?$ faq.php [L,QSA]

@@ -482,7 +482,7 @@ if ($currentRole !== 'super_admin' && !empty($_SESSION['user_id'])) {
             $referralShareUrl = Referral::shareUrl($referralCode);
             $referralStats = Referral::statsForUser($_SESSION['user_id']);
             $waMsg = "👋 جربت Cardify مؤخراً, بطاقات أعمال رقمية احترافية في دقائق. جرّبها مجاناً:\n{$referralShareUrl}\n\nI've been using Cardify, digital business cards done right. Free to try:\n{$referralShareUrl}";
-            $referralWhatsAppHref = 'https://wa.me/?text=' . rawurlencode($waMsg);
+            $referralWhatsAppHref = 'https://api.whatsapp.com/send?text=' . rawurlencode($waMsg);
         }
     } catch (Throwable $e) {
         error_log('[dashboard] referral card failed: ' . $e->getMessage());
@@ -793,7 +793,7 @@ $ext = (defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slug'])) ? ''
 if ($currentRole !== 'super_admin' && !empty($companySlug)):
     $portalShareUrl = getTenantUrl($companySlug, '/portal');
     $portalWaMsg = "Hi team, our Cardify business card portal is ready. Request your card here:\n" . $portalShareUrl;
-    $portalWaHref = 'https://wa.me/?text=' . rawurlencode($portalWaMsg);
+    $portalWaHref = 'https://api.whatsapp.com/send?text=' . rawurlencode($portalWaMsg);
 ?>
 <div class="mb-8 rounded-2xl overflow-hidden shadow-lg" id="portal-share-card">
     <div class="p-6 sm:p-7 text-white" style="background:linear-gradient(135deg, var(--tbrand,#009bc1) 0%, var(--tbrand-2,#005f78) 100%);">
