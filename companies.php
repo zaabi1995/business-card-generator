@@ -652,7 +652,15 @@ function escq($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
                     </ul>
                 <?php endif; ?>
                 <div class="flex flex-wrap gap-3">
-                    <a href="<?= $isAr ? '/ar/get-started' : '/get-started' ?>" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700">
+                    <?php /* llm79-2 reopen: a hand-rolled ($isAr ? '/ar' : '') prefix CANNOT
+                       return null, so on the Arabic side it manufactured /ar/get-started, a URL
+                       the twin map denies and the edge answers 301. r79 repaired seven such call
+                       sites from a hand-walked list of 60 string literals and reported 7 -> 0;
+                       this one was outside that enumeration and is the LARGEST page family on the
+                       host, 2,502 Arabic company URLs, each emitting it as its primary conversion
+                       CTA. ArTwins::navLink() returns the English URL when there is no Arabic
+                       twin, which is the honest link. */ ?>
+                    <a href="<?= htmlspecialchars(ArTwins::navLink('get-started', '/', $isAr)) ?>" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700">
                         <?= escq(t('companies.start_free_for', ['name' => $displayName])) ?>
                         <i class="fa-solid fa-arrow-right text-xs"></i>
                     </a>
