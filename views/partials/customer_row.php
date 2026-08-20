@@ -64,7 +64,14 @@ $__isAr = function_exists('currentLocale') && currentLocale() === 'ar';
             <div class="rounded-xl border border-gray-200 bg-white px-5 py-4 text-center min-w-[10rem]">
                 <p class="font-display font-bold text-gray-900 text-sm leading-tight"><?= htmlspecialchars($__name) ?></p>
                 <p class="mt-1 text-xs text-gray-500">
-                    <?= htmlspecialchars(t('customers.people', ['n' => number_format($__n)])) ?>
+                    <?php
+                    // Arabic agreement is decided by the last two digits, so 4
+                    // takes the plural and 265 takes the singular. English uses
+                    // one form for both; the split lives in the lang files.
+                    $__mod = $__n % 100;
+                    $__key = ($__mod >= 3 && $__mod <= 10) ? 'customers.people_few' : 'customers.people_many';
+                    ?>
+                    <?= htmlspecialchars(t($__key, ['n' => number_format($__n)])) ?>
                 </p>
             </div>
             <?php endforeach; ?>
