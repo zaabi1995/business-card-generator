@@ -1800,3 +1800,55 @@ if (!function_exists('getBhdTemplateDefinitions')) {
         ];
     }
 }
+
+/**
+ * Timestamp convention: the database stores UTC, the screen shows Asia/Muscat.
+ *
+ * config.php sets date_default_timezone_set('Asia/Muscat') but the PDO
+ * connection never issues SET time_zone, so MySQL runs on UTC. That left two
+ * clocks in the same table: anything PHP stamped with date() sat four hours
+ * ahead of anything MySQL stamped with CURRENT_TIMESTAMP, and 43 queries
+ * compare a column against NOW(). MySQL is the side that cannot move without
+ * breaking those comparisons (OtpService documents a prior incident where
+ * exactly that made every login code die 4h early), so UTC wins for storage.
+ *
+ * Write a timestamp with dbNow(). Read one back with dbTs(). Never call
+ * date() or strtotime() directly on a database timestamp.
+ */
+
+/**
+ * UTC timestamp string for writing into a DATETIME/TIMESTAMP column.
+ */
+function dbNow(?int $ts = null): string
+{
+    return gmdate('Y-m-d H:i:s', $ts ?? time());
+}
+
+/**
+ * Parse a stored timestamp into a Unix epoch.
+ *
+ * A bare "Y-m-d H:i:s" out of MySQL carries no zone, and strtotime() would
+ * read it as Asia/Muscat and land four hours early. Values that already carry
+ * a Z or a +04:00 style offset are self-describing and pass through untouched,
+ * which keeps this safe to apply to API and ISO 8601 strings too.
+ *
+ * Feed the result to date() to render it in the viewer's local zone.
+ */
+function dbTs($value): int
+{
+    if ($value === null || $value === '' || $value === '0000-00-00 00:00:00') {
+        return 0;
+    }
+    if (is_int($value)) {
+        return $value;
+    }
+    $s = trim((string) $value);
+    if ($s === '') {
+        return 0;
+    }
+    // Already zone-qualified (…Z, …+04:00, …+0400): trust what it says.
+    if (preg_match('/(?:Z|[+-]\d{2}:?\d{2})$/', $s)) {
+        return (int) strtotime($s);
+    }
+    return (int) strtotime($s . ' UTC');
+}
