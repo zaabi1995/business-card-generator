@@ -69,14 +69,26 @@ $__isAr = function_exists('currentLocale') && currentLocale() === 'ar';
         <p class="text-center text-xs uppercase tracking-widest text-gray-500 mb-7">
             <?= htmlspecialchars(t('customers.headline')) ?>
         </p>
-        <ul class="flex flex-wrap items-center justify-center gap-x-10 gap-y-7 list-none m-0 p-0">
+        <?php
+        /*
+         * Gap and item width are inline, not Tailwind utilities. This project
+         * ships a purged build and gap-x-10 / gap-y-7 are not in it: measured
+         * on production, the ul computed column-gap: normal and the logos sat
+         * flush against each other with their captions running together as one
+         * string. gap-2 exists, gap-x-10 does not, and there is no way to tell
+         * from the markup which is which. Same reason text-white/85 and
+         * bg-black/15 were replaced on the hero card earlier today.
+         */
+        ?>
+        <ul class="flex flex-wrap items-start justify-center list-none m-0 p-0"
+            style="gap:28px 44px">
             <?php foreach ($__rows as [$__name, $__src]): ?>
-            <li class="flex flex-col items-center gap-2">
+            <li class="flex flex-col items-center text-center" style="gap:8px;width:150px">
                 <img src="<?= htmlspecialchars($__src) ?>"
                      alt="<?= htmlspecialchars($__name) ?>"
                      loading="lazy" decoding="async"
                      class="h-9 sm:h-10 w-auto max-w-[150px] object-contain opacity-75 grayscale transition duration-200 hover:opacity-100 hover:grayscale-0">
-                <span class="text-[11px] text-gray-500"><?= htmlspecialchars($__name) ?></span>
+                <span class="text-[11px] text-gray-500 leading-tight" style="overflow-wrap:anywhere"><?= htmlspecialchars($__name) ?></span>
             </li>
             <?php endforeach; ?>
         </ul>
