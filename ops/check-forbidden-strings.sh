@@ -30,9 +30,14 @@ PRUNE='-path ./node_modules -o -path ./vendor -o -path ./.git -o -path ./tests
        -o -path ./.claude -o -path ./.superpowers -o -path ./web-react/node_modules'
 
 served_files() {
+  # This script necessarily CONTAINS every string it forbids, so it excludes
+  # itself. Today the extension list would not match a .sh file anyway; the
+  # exclusion is here so that adding '-o -name "*.sh"' later cannot make the
+  # gate fail on its own source and look like a real violation.
   # shellcheck disable=SC2086
   find . \( $PRUNE \) -prune -o \
-    -type f \( -name '*.php' -o -name '*.js' -o -name '*.html' \) -print
+    -type f \( -name '*.php' -o -name '*.js' -o -name '*.html' \) \
+    ! -name 'check-forbidden-strings.*' -print
 }
 
 check() {
