@@ -559,36 +559,36 @@ require_once INCLUDES_DIR . '/ui-header.php';
                              aria-label="<?= htmlspecialchars(t('herocard.alt')) ?>">
                             <div class="cf-card__inner">
 
-                                <div class="cf-card__face cf-card__front" style="background:linear-gradient(150deg,#009bc1,#053b49)">
+                                <div class="cf-card__face cf-card__front" style="background:linear-gradient(150deg,#067a98,#053b49)">
                                     <div class="flex items-start justify-between px-5 pt-4 pb-2">
-                                        <p class="text-[11px] font-bold tracking-[0.16em] text-white/80 uppercase">Cardify</p>
-                                        <span class="text-[10px] font-bold tracking-widest text-white bg-white/20 rounded-full px-2 py-0.5">
+                                        <p class="text-[11px] font-bold tracking-[0.16em] uppercase" style="color:rgba(255,255,255,.85)">Cardify</p>
+                                        <span class="text-[10px] font-bold tracking-widest text-white rounded-full px-2 py-0.5" style="background:rgba(255,255,255,.22)">
                                             <?= htmlspecialchars(t('herocard.sample')) ?>
                                         </span>
                                     </div>
                                     <div class="px-5 pb-3 grid grid-cols-2 gap-3 items-start">
                                         <div dir="ltr" class="text-left">
                                             <p class="font-display font-bold text-white text-base sm:text-lg leading-tight">Aisha Al Balushi</p>
-                                            <p class="text-white/85 text-xs mt-1">Operations Manager</p>
+                                            <p class="text-xs mt-1" style="color:rgba(255,255,255,.92)">Operations Manager</p>
                                         </div>
                                         <div dir="rtl" class="text-right">
                                             <p class="font-display font-bold text-white text-base sm:text-lg leading-tight">عائشة البلوشي</p>
-                                            <p class="text-white/85 text-xs mt-1">مديرة العمليات</p>
+                                            <p class="text-xs mt-1" style="color:rgba(255,255,255,.92)">مديرة العمليات</p>
                                         </div>
                                     </div>
                                     <div class="px-5 pb-3 flex items-end justify-between gap-3">
-                                        <div class="space-y-1 text-white/85 text-xs" dir="ltr">
+                                        <div class="space-y-1 text-xs" dir="ltr" style="color:rgba(255,255,255,.92)">
                                             <p>aisha@example.om</p>
                                             <p>+968 2200 0000</p>
                                         </div>
-                                        <div class="shrink-0 w-12 h-12 rounded-lg bg-white/95 flex items-center justify-center" aria-hidden="true">
+                                        <div class="shrink-0 w-12 h-12 rounded-lg flex items-center justify-center" aria-hidden="true" style="background:rgba(255,255,255,.96)">
                                             <i class="fa-solid fa-qrcode text-2xl" style="color:#053b49"></i>
                                         </div>
                                     </div>
-                                    <div class="bg-black/15 px-5 py-2 flex items-center gap-2">
-                                        <i class="fa-brands fa-apple text-white/90" aria-hidden="true"></i>
-                                        <i class="fa-brands fa-google text-white/90" aria-hidden="true"></i>
-                                        <p class="text-white/85 text-xs"><?= htmlspecialchars(t('herocard.wallet')) ?></p>
+                                    <div class="px-5 py-2 flex items-center gap-2" style="background:rgba(0,0,0,.18)">
+                                        <i class="fa-brands fa-apple" aria-hidden="true" style="color:rgba(255,255,255,.95)"></i>
+                                        <i class="fa-brands fa-google" aria-hidden="true" style="color:rgba(255,255,255,.95)"></i>
+                                        <p class="text-xs" style="color:rgba(255,255,255,.92)"><?= htmlspecialchars(t('herocard.wallet')) ?></p>
                                     </div>
                                 </div>
 
