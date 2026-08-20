@@ -9,6 +9,15 @@ $canonicalUrl    = (!empty($isAr) && ArTwins::arPath('/logos/press') !== null)
     ? 'https://cardify.om' . ArTwins::arPath('/logos/press')
     : 'https://cardify.om/logos/press';
 
+// llm238-2 (r379): the crumb is DECIDED ONCE and both renderers -- the visible
+// <nav> and the BreadcrumbList node -- read it, so a reader and a crawler
+// cannot be sent into different language trees. It used to be hardcoded
+// '/logos' in both places, so the Arabic label t('logos.breadcrumb_library')
+// linked into the English tree while /ar/logos answers 200. Same rule as the
+// header and footer; the '/ar' prefix is never concatenated here (llm27-46).
+$crumbHomeHref  = ArTwins::navLink('',      '/', !empty($isAr));
+$crumbLogosHref = ArTwins::navLink('logos', '/', !empty($isAr));
+
 // r74 / bhd-group-seo-llm73-4. The API reference below was English under
 // <html lang="ar">: ten blocks, every parameter gloss and the CORS paragraph.
 // It survived because the rest of the page goes through t() and this one
@@ -94,8 +103,8 @@ $extraHead =
         "@context" => "https://schema.org",
         "@type"    => "BreadcrumbList",
         "itemListElement" => [
-            ["@type" => "ListItem", "position" => 1, "name" => "Cardify",      "item" => "https://cardify.om"],
-            ["@type" => "ListItem", "position" => 2, "name" => t('logos.breadcrumb_library'), "item" => "https://cardify.om/logos"],
+            ["@type" => "ListItem", "position" => 1, "name" => "Cardify",      "item" => ArTwins::SITE . $crumbHomeHref],
+            ["@type" => "ListItem", "position" => 2, "name" => t('logos.breadcrumb_library'), "item" => ArTwins::SITE . $crumbLogosHref],
             ["@type" => "ListItem", "position" => 3, "name" => t('logos.press_breadcrumb'), "item" => $canonicalUrl],
         ],
     ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>';
@@ -109,7 +118,7 @@ function logos_press_esc($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
 
         <nav class="flex items-center gap-1.5 text-sm text-gray-500 mb-6 flex-wrap">
-            <a href="/logos" class="hover:text-blue-600"><?= logos_press_esc(t('logos.breadcrumb_library')) ?></a>
+            <a href="<?= logos_press_esc($crumbLogosHref) ?>" class="hover:text-blue-600"><?= logos_press_esc(t('logos.breadcrumb_library')) ?></a>
             <i class="fa-solid fa-chevron-<?= $isAr ? 'left' : 'right' ?> text-[10px] text-gray-300"></i>
             <span class="text-gray-900 font-medium"><?= logos_press_esc(t('logos.press_breadcrumb')) ?></span>
         </nav>

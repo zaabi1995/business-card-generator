@@ -19,6 +19,21 @@ require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/includes/Datasets.php';
 require_once __DIR__ . '/includes/Seo.php';
 require_once INCLUDES_DIR . '/Auth.php';
+require_once INCLUDES_DIR . '/ArTwins.php';
+
+// llm238-2 (r379): the home crumb is decided ONCE and both the visible <nav>
+// and the BreadcrumbList node render from it. getBasePath() derives the app
+// root from SCRIPT_NAME and is LOCALE-BLIND (llm78-1), so on /ar/press-kit it
+// emitted an Arabic "home" label pointing at '/', into the English tree, while
+// /ar/ answers 200. ArTwins::navLink() is the one rule; it returns the English
+// path when no Arabic twin exists rather than inventing one.
+$_pressIsAr    = ArTwins::servingArabic();
+// getBasePath() lives in includes/functions.php, which config.php pulls in;
+// the guard is here because this call runs BEFORE ui-header.php (the LD node is
+// built above the render) and a fatal on the press page would be a worse bug
+// than the one being fixed. '/' is the app root on this host.
+$_pressBase    = function_exists('getBasePath') ? getBasePath() : '/';
+$crumbHomeHref = ArTwins::navLink('', $_pressBase, $_pressIsAr);
 
 $pageTitle       = t('press.page_title');
 $pageDescription = t('press.page_desc');
@@ -92,8 +107,8 @@ $breadcrumbLd = [
     '@context' => 'https://schema.org',
     '@type'    => 'BreadcrumbList',
     'itemListElement' => [
-        ['@type' => 'ListItem', 'position' => 1, 'name' => 'Home', 'item' => 'https://cardify.om/'],
-        ['@type' => 'ListItem', 'position' => 2, 'name' => 'Press', 'item' => $canonicalUrl],
+        ['@type' => 'ListItem', 'position' => 1, 'name' => t('press.crumb_home'), 'item' => ArTwins::SITE . $crumbHomeHref],
+        ['@type' => 'ListItem', 'position' => 2, 'name' => t('press.crumb_press'), 'item' => $canonicalUrl],
     ],
 ];
 
@@ -111,7 +126,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
     <section class="relative overflow-hidden bg-gradient-to-b from-blue-50 via-white to-white border-b border-gray-100 pt-28 pb-16">
         <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
             <nav class="text-sm text-gray-500 mb-4" aria-label="Breadcrumb">
-                <a href="<?= getBasePath() ?>" class="hover:text-blue-600 transition"><?= htmlspecialchars(t('press.crumb_home')) ?></a>
+                <a href="<?= htmlspecialchars($crumbHomeHref, ENT_QUOTES) ?>" class="hover:text-blue-600 transition"><?= htmlspecialchars(t('press.crumb_home')) ?></a>
                 <span class="mx-2">/</span>
                 <span class="text-gray-700"><?= htmlspecialchars(t('press.crumb_press')) ?></span>
             </nav>

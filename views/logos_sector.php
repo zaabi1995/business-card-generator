@@ -22,6 +22,22 @@ $bodyClass       = 'bg-white';
 $showNavigation  = true;
 $ogImage         = "https://cardify.om/storage/og/logos/{$sectorSlug}.png";
 
+// llm238-2 (r379): the crumb trail is DECIDED ONCE here and BOTH renderers --
+// the visible <nav> below and the BreadcrumbList node -- read this array, so a
+// reader and a crawler cannot be sent into different language trees. Before
+// this the two were hand-written twice and both hardcoded the English '/' and
+// '/logos', which put an Arabic label (the t('logos.breadcrumb_library')
+// string) on a link into the English tree on all 18 /ar/logos/{sector} pages
+// while /ar/logos answers 200. ArTwins::navLink() is the same rule the header
+// and footer use; this file concatenating '/ar' by hand is what llm27-46 named
+// as the root cause, so the prefix is never written here again. navLink()
+// returns the ENGLISH path when arPath() is null, which is the honest link,
+// not a manufactured /ar URL.
+require_once INCLUDES_DIR . '/ArTwins.php';
+$crumbHomeHref  = ArTwins::navLink('',      '/', $isAr);
+$crumbLogosHref = ArTwins::navLink('logos', '/', $isAr);
+$crumbLogosName = t('logos.breadcrumb_library');
+
 // JSON-LD: CollectionPage + BreadcrumbList + ItemList of up to 20 logo
 // samples (helps Google understand what's on the page for image carousels).
 $itemListEls = [];
@@ -54,8 +70,8 @@ $jsonLdBlocks = [
         "@context" => "https://schema.org",
         "@type"    => "BreadcrumbList",
         "itemListElement" => [
-            ["@type" => "ListItem", "position" => 1, "name" => "Cardify",       "item" => "https://cardify.om"],
-            ["@type" => "ListItem", "position" => 2, "name" => "Logo Library",  "item" => "https://cardify.om/logos"],
+            ["@type" => "ListItem", "position" => 1, "name" => "Cardify",         "item" => ArTwins::SITE . $crumbHomeHref],
+            ["@type" => "ListItem", "position" => 2, "name" => $crumbLogosName, "item" => ArTwins::SITE . $crumbLogosHref],
             ["@type" => "ListItem", "position" => 3, "name" => $sectorLabel,    "item" => $canonical],
         ],
     ],
@@ -94,9 +110,9 @@ $page = $data['page'];
 
         <!-- Breadcrumb -->
         <nav class="flex items-center gap-1.5 text-sm text-gray-500 mb-6 flex-wrap">
-            <a href="/" class="hover:text-blue-600">Cardify</a>
+            <a href="<?= logos_sector_esc($crumbHomeHref) ?>" class="hover:text-blue-600">Cardify</a>
             <i class="fa-solid fa-chevron-<?= $isAr ? 'left' : 'right' ?> text-[10px] text-gray-300"></i>
-            <a href="/logos" class="hover:text-blue-600"><?= logos_sector_esc(t('logos.breadcrumb_library')) ?></a>
+            <a href="<?= logos_sector_esc($crumbLogosHref) ?>" class="hover:text-blue-600"><?= logos_sector_esc($crumbLogosName) ?></a>
             <i class="fa-solid fa-chevron-<?= $isAr ? 'left' : 'right' ?> text-[10px] text-gray-300"></i>
             <span class="text-gray-900 font-medium"><?= logos_sector_esc($sectorLabel) ?></span>
         </nav>
@@ -125,7 +141,7 @@ $page = $data['page'];
                 <p class="text-sm text-gray-500 max-w-md mx-auto mb-5">
                     <?= logos_sector_esc(t('logos.sector_empty_body')) ?>
                 </p>
-                <a href="/logos" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold transition">
+                <a href="<?= logos_sector_esc($crumbLogosHref) ?>" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold transition">
                     <?= logos_sector_esc(t('logos.sector_back_library')) ?>
                 </a>
             </div>
@@ -223,7 +239,7 @@ $page = $data['page'];
         <!-- Cross-link -->
         <div class="mt-12 flex flex-wrap gap-2 justify-center text-sm text-gray-600">
             <?= logos_sector_esc(t('logos.sector_explore_also')) ?>
-            <a href="/logos" class="text-blue-600 hover:text-blue-700 font-medium hover:underline">
+            <a href="<?= logos_sector_esc($crumbLogosHref) ?>" class="text-blue-600 hover:text-blue-700 font-medium hover:underline">
                 <?= logos_sector_esc(t('logos.sector_full_library')) ?>
             </a>
             <span class="text-gray-300">·</span>
