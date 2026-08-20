@@ -561,7 +561,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
 
                                 <div class="cf-card__face cf-card__front" style="background:linear-gradient(150deg,#067a98,#053b49)">
                                     <div class="flex items-start justify-between px-5 pt-4 pb-2">
-                                        <p class="text-[11px] font-bold tracking-[0.16em] uppercase" style="color:rgba(255,255,255,.85)">Cardify</p>
+                                        <p class="text-[11px] font-bold tracking-[0.16em] uppercase" style="color:#ffffff">Cardify</p>
                                         <span class="text-[10px] font-bold tracking-widest text-white rounded-full px-2 py-0.5" style="background:rgba(255,255,255,.22)">
                                             <?= htmlspecialchars(t('herocard.sample')) ?>
                                         </span>
