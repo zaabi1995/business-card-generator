@@ -45,7 +45,7 @@ class PlatformStats
      */
     private const TTL = 300; // 5 min
 
-    public const CACHE_KEY = 'platform:stats:v2';
+    public const CACHE_KEY = 'platform:stats:v3'; // v3: adds issued_cards / issued_people
 
     /**
      * Tables whose row count this class publishes on a public page. A write to
@@ -74,13 +74,20 @@ class PlatformStats
         'Cardify', 'Adnan Haider Darwish', 'Bin Haider Darwish LLC',
     ];
 
-    /** @return array{companies:int,issuing:int,employees:int,cards:int,events:int,directory:int} */
+    /** @return array{companies:int,issuing:int,employees:int,cards:int,events:int,directory:int,issued_cards:int,issued_people:int} */
     public static function all(): array
     {
         return Cache::remember(self::CACHE_KEY, self::TTL, function () {
             return [
                 'companies' => self::count('companies'),
                 'issuing'   => self::issuingCompanies(),
+                // Same population as `issuing`, so the three numbers can sit in
+                // one sentence without contradicting each other. `cards` and
+                // `employees` below are raw table counts and are deliberately
+                // NOT published anywhere; they include demo fixtures and BHD's
+                // own entities, and would inflate the claim by ~200 cards.
+                'issued_cards'  => self::issuedScalar('COUNT(g.id)'),
+                'issued_people' => self::issuedScalar('COUNT(DISTINCT e.id)'),
                 'employees' => self::count('employees'),
                 'cards'     => self::count('generated_cards'),
                 'events'    => self::count('card_events'),
@@ -102,6 +109,32 @@ class PlatformStats
     public static function publishes(string $table): bool
     {
         return in_array(strtolower(trim($table, " \t\n\r`\"'")), self::SOURCE_TABLES, true);
+    }
+
+    /**
+     * One scalar over the same population issuingCompanies() counts: has issued
+     * at least one card, is not a demo or showcase fixture, and is not us.
+     * Kept as one query shape so "N cards for M people across K companies"
+     * cannot drift into three different definitions of who counts.
+     */
+    private static function issuedScalar(string $selectExpr): int
+    {
+        try {
+            $db = Database::getInstance()->getConnection();
+            $ph = implode(',', array_fill(0, count(self::NOT_A_CUSTOMER), '?'));
+            $st = $db->prepare(
+                "SELECT {$selectExpr} FROM companies c
+                   JOIN employees e ON e.company_id = c.id
+                   JOIN generated_cards g ON g.employee_id = e.id
+                  WHERE c.id NOT LIKE '%demo%'
+                    AND c.id NOT LIKE '%showcase%'
+                    AND c.name NOT IN ({$ph})"
+            );
+            $st->execute(self::NOT_A_CUSTOMER);
+            return (int) $st->fetchColumn();
+        } catch (Throwable $e) {
+            return 0;
+        }
     }
 
     private static function issuingCompanies(): int

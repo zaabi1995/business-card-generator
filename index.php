@@ -622,7 +622,9 @@ require_once INCLUDES_DIR . '/ui-header.php';
     <link rel="stylesheet" href="<?= htmlspecialchars(getBasePath()) ?>assets/css/cardify-hero-card.css">
     <script defer src="<?= htmlspecialchars(getBasePath()) ?>assets/js/cardify-hero-card.js"></script>
 
-<?php @include __DIR__ . '/views/partials/trust_logo_strip.php'; ?>
+<?php @include __DIR__ . '/views/partials/proof_stats.php'; ?>
+
+    <?php @include __DIR__ . '/views/partials/trust_logo_strip.php'; ?>
 
     <!-- ========== VALUE PROPOSITION BANNER ========== -->
     <section class="py-12 bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 text-white">
