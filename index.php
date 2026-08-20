@@ -560,32 +560,32 @@ require_once INCLUDES_DIR . '/ui-header.php';
                             <div class="cf-card__inner">
 
                                 <div class="cf-card__face cf-card__front" style="background:linear-gradient(150deg,#009bc1,#053b49)">
-                                    <div class="flex items-start justify-between p-6 pb-4">
+                                    <div class="flex items-start justify-between px-5 pt-4 pb-2">
                                         <p class="text-[11px] font-bold tracking-[0.16em] text-white/80 uppercase">Cardify</p>
                                         <span class="text-[10px] font-bold tracking-widest text-white bg-white/20 rounded-full px-2 py-0.5">
                                             <?= htmlspecialchars(t('herocard.sample')) ?>
                                         </span>
                                     </div>
-                                    <div class="px-6 pb-5 grid grid-cols-2 gap-4 items-start">
+                                    <div class="px-5 pb-3 grid grid-cols-2 gap-3 items-start">
                                         <div dir="ltr" class="text-left">
-                                            <p class="font-display font-bold text-white text-lg leading-tight">Aisha Al Balushi</p>
+                                            <p class="font-display font-bold text-white text-base sm:text-lg leading-tight">Aisha Al Balushi</p>
                                             <p class="text-white/85 text-xs mt-1">Operations Manager</p>
                                         </div>
                                         <div dir="rtl" class="text-right">
-                                            <p class="font-display font-bold text-white text-lg leading-tight">عائشة البلوشي</p>
+                                            <p class="font-display font-bold text-white text-base sm:text-lg leading-tight">عائشة البلوشي</p>
                                             <p class="text-white/85 text-xs mt-1">مديرة العمليات</p>
                                         </div>
                                     </div>
-                                    <div class="px-6 pb-5 flex items-end justify-between gap-4">
+                                    <div class="px-5 pb-3 flex items-end justify-between gap-3">
                                         <div class="space-y-1 text-white/85 text-xs" dir="ltr">
                                             <p>aisha@example.om</p>
                                             <p>+968 2200 0000</p>
                                         </div>
-                                        <div class="shrink-0 w-14 h-14 rounded-lg bg-white/95 flex items-center justify-center" aria-hidden="true">
+                                        <div class="shrink-0 w-12 h-12 rounded-lg bg-white/95 flex items-center justify-center" aria-hidden="true">
                                             <i class="fa-solid fa-qrcode text-2xl" style="color:#053b49"></i>
                                         </div>
                                     </div>
-                                    <div class="bg-black/15 px-6 py-3 flex items-center gap-2">
+                                    <div class="bg-black/15 px-5 py-2 flex items-center gap-2">
                                         <i class="fa-brands fa-apple text-white/90" aria-hidden="true"></i>
                                         <i class="fa-brands fa-google text-white/90" aria-hidden="true"></i>
                                         <p class="text-white/85 text-xs"><?= htmlspecialchars(t('herocard.wallet')) ?></p>
