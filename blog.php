@@ -380,10 +380,34 @@ require_once INCLUDES_DIR . '/ui-header.php';
                         $cardSlug    = $isAr && !empty($post['slug_ar']) ? $post['slug_ar'] : $post['slug'];
                     ?>
                     <?php if (!empty($post['featured_image'])): ?>
+                    <?php
+                    /*
+                     * The index renders these into a 160px-tall object-cover box, but
+                     * featured_image is the 1392x768 PNG that also serves as the post's
+                     * og:image and its sitemap image entry, so the original has to stay
+                     * exactly as it is. Measured 20 Aug 2026: 30 of those PNGs on this
+                     * one page totalled 48 MB and pushed the load event to 21.5s.
+                     *
+                     * A <name>.card.webp sibling at 800px wide (2x the card) is served
+                     * here instead, 1.9 MB down to about 60 KB. Guarded on file_exists
+                     * because <picture> commits to a <source> once it matches: a 404
+                     * there renders a broken image rather than falling back to the img.
+                     */
+                    $__img     = $post['featured_image'];
+                    $__cardWebp = preg_replace('/\.(png|jpe?g)$/i', '.card.webp', $__img);
+                    $__hasWebp = $__cardWebp !== $__img
+                        && is_file(BASE_DIR . '/' . ltrim($__cardWebp, '/'));
+                    ?>
                     <div class="h-40 overflow-hidden">
-                        <img src="<?= getBasePath() . htmlspecialchars($post['featured_image']) ?>"
-                             alt="<?= htmlspecialchars($cardTitle) ?>"
-                             class="w-full h-full object-cover" loading="lazy">
+                        <picture>
+                            <?php if ($__hasWebp): ?>
+                            <source type="image/webp" srcset="<?= getBasePath() . htmlspecialchars($__cardWebp) ?>">
+                            <?php endif; ?>
+                            <img src="<?= getBasePath() . htmlspecialchars($__img) ?>"
+                                 alt="<?= htmlspecialchars($cardTitle) ?>"
+                                 width="800" height="440"
+                                 class="w-full h-full object-cover" loading="lazy" decoding="async">
+                        </picture>
                     </div>
                     <?php else: ?>
                     <div class="h-32 <?php
