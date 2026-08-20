@@ -8,7 +8,22 @@
  * there so a reader (or the competitor) can check it.
  *
  * $checkedDate and $sources (list of [label, url]) come from the caller.
+ *
+ * r329: this file answered 200 on its own URL. The nginx slug class excludes
+ * underscore, so /compare/_verify-note was already blocked, but nothing
+ * blocked the raw /compare/_verify-note.php path, and with display_errors on
+ * in the production pool it served an indexable fragment whose body was a
+ * PHP warning naming the absolute docroot. A comment asserting a file "must
+ * not be reachable" is not a gate. This is the gate: a partial with no
+ * caller has no page, so it 404s instead of rendering half of one.
  */
+if (!isset($checkedDate) || !isset($sources) || !is_array($sources)) {
+    http_response_code(404);
+    if (defined('BASE_DIR') && is_file(BASE_DIR . '/404.php')) {
+        require BASE_DIR . '/404.php';
+    }
+    exit;
+}
 ?>
 <div class="not-prose my-10 rounded-xl border border-gray-200 bg-gray-50 px-5 py-5 text-sm text-gray-600">
     <p class="font-semibold text-gray-900 mb-2">

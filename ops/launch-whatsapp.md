@@ -8,7 +8,7 @@ Per memory:
 
 WhatsApp is more intimate than email; keep the copy tighter and
 personal. One message per recipient, localised, sent from the Anna
-line (+96899899100) via the Dardasha API that `includes/WhatsApp.php`
+line (+96898899100) via the Dardasha API that `includes/WhatsApp.php`
 already wraps.
 
 ## Segmentation
