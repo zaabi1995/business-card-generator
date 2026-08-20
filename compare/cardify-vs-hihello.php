@@ -12,9 +12,12 @@
  * Cite the PLAN CARDS only. If a future round finds a $3 figure somewhere,
  * it came from their structured data, not from their price list.
  *
- * NEVER write "HiHello does not support Arabic". Verified: the words Arabic,
- * RTL, multilingual and localisation were absent from the visible text of
- * their pricing page. Absence of a claim, not absence of a feature.
+ * NEVER make a negative claim about HiHello and Arabic AT ALL. r328 shipped
+ * "not advertised on the page checked". True of the pricing page, and still
+ * the wrong thing to publish: a pricing page is not where language support
+ * is listed, so the absence proved nothing and merely implied something. The
+ * comparison is now POSITIVE, describing what Cardify does concretely enough
+ * to be checked, with no assertion about HiHello either way.
  */
 require_once __DIR__ . '/../config.php';
 require_once INCLUDES_DIR . '/Auth.php';
@@ -81,7 +84,7 @@ $base = getBasePath();
                 Cardify vs HiHello
             </h1>
             <p class="text-gray-600 text-lg max-w-3xl leading-relaxed">
-                HiHello is a polished digital business card product with clear pricing and strong enterprise features. It also bands its plans by headcount and does not advertise Arabic. Here is the comparison, including where HiHello wins.
+                HiHello is a polished digital business card product with clear pricing and strong enterprise features. It also bands its plans by headcount, and Cardify is free at any headcount and bilingual by default. Here is the comparison, including where HiHello wins.
             </p>
             <p class="text-sm text-gray-500 mt-4">Competitor facts checked <?= $checkedDate ?>, sources linked at the foot of this page.</p>
         </div>
@@ -131,8 +134,8 @@ $base = getBasePath();
                     <tr><td class="px-4 py-3 border-b border-gray-100 font-medium text-gray-900">Free tier card limit</td><td class="px-4 py-3 border-b border-gray-100">Unlimited</td><td class="px-4 py-3 border-b border-gray-100">Four cards, one user</td></tr>
                     <tr><td class="px-4 py-3 border-b border-gray-100 font-medium text-gray-900">Team cost</td><td class="px-4 py-3 border-b border-gray-100">Free, unlimited employees</td><td class="px-4 py-3 border-b border-gray-100">$5 to $6 per user per month</td></tr>
                     <tr><td class="px-4 py-3 border-b border-gray-100 font-medium text-gray-900">Headcount band</td><td class="px-4 py-3 border-b border-gray-100">None</td><td class="px-4 py-3 border-b border-gray-100">Business is 5 to 100 users, Enterprise is 101+</td></tr>
-                    <tr><td class="px-4 py-3 border-b border-gray-100 font-medium text-gray-900">Arabic and English on one card</td><td class="px-4 py-3 border-b border-gray-100">Yes, by default</td><td class="px-4 py-3 border-b border-gray-100">Not advertised on the page checked</td></tr>
-                    <tr><td class="px-4 py-3 border-b border-gray-100 font-medium text-gray-900">Right-to-left rendering</td><td class="px-4 py-3 border-b border-gray-100">Yes</td><td class="px-4 py-3 border-b border-gray-100">Not advertised on the page checked</td></tr>
+                    <tr><td class="px-4 py-3 border-b border-gray-100 font-medium text-gray-900">Arabic and English on one card</td><td class="px-4 py-3 border-b border-gray-100">Yes, by default, with separate Arabic name and title fields</td><td class="px-4 py-3 border-b border-gray-100">Ask them, we have not tested it</td></tr>
+                    <tr><td class="px-4 py-3 border-b border-gray-100 font-medium text-gray-900">Right-to-left rendering</td><td class="px-4 py-3 border-b border-gray-100">Yes</td><td class="px-4 py-3 border-b border-gray-100">Ask them, we have not tested it</td></tr>
                     <tr><td class="px-4 py-3 border-b border-gray-100 font-medium text-gray-900">Apple and Google Wallet</td><td class="px-4 py-3 border-b border-gray-100">Yes</td><td class="px-4 py-3 border-b border-gray-100">Yes, on the free tier</td></tr>
                     <tr><td class="px-4 py-3 border-b border-gray-100 font-medium text-gray-900">Printing fulfilled in Oman</td><td class="px-4 py-3 border-b border-gray-100">Yes, from OMR 5.000 per 100</td><td class="px-4 py-3 border-b border-gray-100">No Oman fulfilment advertised</td></tr>
                     <tr><td class="px-4 py-3 border-b border-gray-100 font-medium text-gray-900">NFC cards with published price</td><td class="px-4 py-3 border-b border-gray-100">Yes, OMR 25.000 each</td><td class="px-4 py-3 border-b border-gray-100">NFC supported, no hardware price on the page checked</td></tr>
@@ -144,7 +147,7 @@ $base = getBasePath();
             </table>
         </div>
         <p class="text-sm text-gray-500">
-            "Not advertised on the page checked" means the claim did not appear in the visible text of HiHello's pricing page on <?= $checkedDate ?>. It is not a statement that the product lacks the capability.
+            Rows describing HiHello are quoted from HiHello's own pricing page on <?= $checkedDate ?>. Where we have not tested something ourselves, the row says so rather than guessing.
         </p>
 
         <h2 id="where-hihello-wins">Where HiHello is genuinely stronger</h2>

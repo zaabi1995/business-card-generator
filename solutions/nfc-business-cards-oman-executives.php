@@ -6,7 +6,11 @@ require_once __DIR__ . '/../config.php';
 require_once INCLUDES_DIR . '/Auth.php';
 require_once INCLUDES_DIR . '/Seo.php';
 
-$pageTitle = 'NFC Business Cards for Oman Executives, Cardify';
+// r329: retitled away from the bare head term. /nfc-business-card is the
+// general explainer for "nfc business card" and this page is the C-suite
+// use case. Both self-canonical and both targeting the same phrase is how
+// two good pages split one signal and neither ranks.
+$pageTitle = 'NFC Cards for C-Suite and Board-Level Meetings in Oman, Cardify';
 $pageDescription = 'Metal, wood or premium matte-black NFC cards for Oman C-suite. Tap to share, no app required. Delivered to Muscat, Sohar, Salalah within 3 working days.';
 $canonicalUrl = 'https://cardify.om/solutions/nfc-business-cards-oman-executives';
 $brandName = defined('SITE_NAME') ? SITE_NAME : 'Cardify';
@@ -49,6 +53,10 @@ require_once INCLUDES_DIR . '/ui-header.php';
             <h1 class="text-4xl font-bold text-gray-900 mb-4">NFC Business Cards for Oman Executives</h1>
             <p class="text-gray-600 text-lg max-w-3xl">
                 A single tap. The recipient's phone buzzes. Your name, title, CR number, WhatsApp, LinkedIn, and company profile appear, no app installed, no friction. For C-suite in Oman who meet ministers, ambassadors, and chairmen weekly.
+            </p>
+            <p class="text-sm text-gray-500 mt-4">
+                This page is about the executive use case. For how NFC works, which phones read it and what it costs, start with
+                <a href="<?php echo getBasePath(); ?>nfc-business-card" class="text-blue-600 font-medium">NFC business cards</a>.
             </p>
         </div>
     </div>

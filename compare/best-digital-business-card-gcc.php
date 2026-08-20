@@ -8,9 +8,14 @@
  * without hedging. That is not modesty, it is the only version of this page
  * that survives a sceptical reader or a competitor's lawyer.
  *
- * Same two rules as the head-to-head pages: no invented competitor prices
- * (Popl publishes none), and "does not advertise X" is never written as "does
- * not support X". All competitor facts read 2026-08-20, sources at the foot.
+ * Same rules as the head-to-head pages, plus the one r329 added: make NO
+ * negative claim about any competitor and Arabic. Popl publishes a
+ * Multi-language FAQ on a page r328 named as checked, which made the old
+ * "not advertised" construction literally true and materially misleading.
+ * State what Cardify does, concretely, and tell the reader to ask the others.
+ * Also: Popl publishes no prices of ANY kind, hardware included, and its
+ * storefront currently lists no products at all.
+ * All competitor facts read 2026-08-20, sources at the foot.
  */
 require_once __DIR__ . '/../config.php';
 require_once INCLUDES_DIR . '/Auth.php';
@@ -37,7 +42,7 @@ $faq = [
     ['Which digital business card platform is genuinely free for a whole team?',
      'Cardify. Its web platform has no employee limit, no template limit and no card limit, and no credit card is required. The free tiers of Blinq and HiHello are individual plans: Blinq gives two cards, HiHello gives four cards for one user. Popl publishes no pricing at all.'],
     ['Do any of these platforms support Arabic?',
-     'Cardify builds an Arabic and an English version of every card by default. On 20 August 2026 the words Arabic, RTL, multilingual and localisation did not appear in the visible text of the pricing pages of Popl, Blinq or HiHello. That is a statement about what those companies advertise on those pages, not a claim that their products cannot handle Arabic. If Arabic matters to you, ask each vendor directly.'],
+     'Cardify builds an Arabic and an English version of every card by default, with separate Arabic name and title fields entered by the employee, right-to-left rendering, and both spellings written into the saved contact. Popl states on its own site that it supports any and all languages. We have not tested how Popl, Blinq or HiHello render an Arabic card, so we make no claim about them either way. Ask each vendor to show you a rendered Arabic card rather than a feature list, and ask us for the same.'],
     ['Which platform is best for capturing leads at trade shows?',
      'Popl, on its published positioning. Its product is built around event lead capture, including an AI-native badge scanner, event campaigns and qualifying questions, and its plan inclusions are written around that use case. Blinq advertises Universal Lead Capture on its Business tier. Cardify\'s lead capture is basic and it does not do badge scanning.'],
     ['Which platform has the fewest surprises in the bill?',
@@ -101,7 +106,7 @@ $base = getBasePath();
             <strong>Cardify.</strong> This is the case Cardify was built for and the one where the gap is widest. Every employee card carries a genuine Arabic version alongside the English one, under a single URL and a single QR code, with real Arabic name and title fields rather than machine transliteration, and right-to-left rendering rather than mirrored English. Both spellings go into the recipient's phone when they save the contact.
         </p>
         <p>
-            On <?= $checkedDate ?>, the words Arabic, RTL, multilingual and localisation appeared nowhere in the visible text of the pricing pages of Popl, Blinq or HiHello. We are careful about what that proves: it proves those companies do not advertise it there. It does not prove their products cannot do it. If you are evaluating them, ask.
+            We are not going to tell you what the other three can or cannot do in Arabic, because we have not tested their cards and a pricing page is not evidence either way. Popl states on its own site that it supports any and all languages. What we will say is what to ask for: not a language toggle on the admin interface, but a rendered Arabic card, with the name written the way your colleague writes it, the layout genuinely right-to-left rather than mirrored, and both spellings in the contact file after you tap save. Ask all four of us for that. We will send you a live one.
         </p>
 
         <h3>"We need to card everyone, and the finance director will ask what it costs per head"</h3>
@@ -154,7 +159,7 @@ $base = getBasePath();
                     <tr>
                         <td class="px-4 py-3 border-b border-gray-100 font-medium text-gray-900">Free tier</td>
                         <td class="px-4 py-3 border-b border-gray-100">Unlimited cards, whole company</td>
-                        <td class="px-4 py-3 border-b border-gray-100">Free mobile app only</td>
+                        <td class="px-4 py-3 border-b border-gray-100">Not published</td>
                         <td class="px-4 py-3 border-b border-gray-100">Two cards, one person</td>
                         <td class="px-4 py-3 border-b border-gray-100">Four cards, one user</td>
                     </tr>
@@ -166,11 +171,11 @@ $base = getBasePath();
                         <td class="px-4 py-3 border-b border-gray-100">Business is 5 to 100 users</td>
                     </tr>
                     <tr>
-                        <td class="px-4 py-3 border-b border-gray-100 font-medium text-gray-900">Arabic advertised</td>
+                        <td class="px-4 py-3 border-b border-gray-100 font-medium text-gray-900">Arabic and RTL card, tested by us</td>
                         <td class="px-4 py-3 border-b border-gray-100">Yes</td>
-                        <td class="px-4 py-3 border-b border-gray-100">Not on pages checked</td>
-                        <td class="px-4 py-3 border-b border-gray-100">Not on pages checked</td>
-                        <td class="px-4 py-3 border-b border-gray-100">Not on pages checked</td>
+                        <td class="px-4 py-3 border-b border-gray-100">Not tested, ask them</td>
+                        <td class="px-4 py-3 border-b border-gray-100">Not tested, ask them</td>
+                        <td class="px-4 py-3 border-b border-gray-100">Not tested, ask them</td>
                     </tr>
                     <tr>
                         <td class="px-4 py-3 border-b border-gray-100 font-medium text-gray-900">Printing in Oman</td>
@@ -204,7 +209,7 @@ $base = getBasePath();
             </table>
         </div>
         <p class="text-sm text-gray-500">
-            "Not on pages checked" and "Not advertised" mean the claim was absent from the vendor pages listed at the foot of this page on <?= $checkedDate ?>. Neither is a statement that a product lacks the capability. Prices are quoted in the currency each vendor displays, with no conversion applied.
+            "Not advertised" means the claim was absent from the vendor pages listed at the foot of this page on <?= $checkedDate ?>, and is not a statement that a product lacks the capability. "Not tested, ask them" means exactly that: we have not evaluated it ourselves and will not guess. Prices are quoted in the currency each vendor displays, with no conversion applied.
         </p>
 
         <h2 id="the-oman-specific-part">The part that is specific to Oman</h2>

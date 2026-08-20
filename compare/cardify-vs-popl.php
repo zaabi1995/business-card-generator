@@ -10,10 +10,22 @@
  *      says they quote over a meeting instead. Any number a third-party
  *      review site attributes to Popl is unsourced, and repeating it here
  *      would be a false statement about a competitor's commercial terms.
- *   2. NEVER write "Popl does not support Arabic". What was verified is that
- *      Popl does not ADVERTISE Arabic or RTL on the pages checked. Absence of
- *      a claim is not absence of a feature, and the difference is the
- *      difference between a defensible page and a liability.
+ *   2. NEVER make a negative claim about Popl and Arabic AT ALL.
+ *      r328 shipped "does not advertise Arabic or right-to-left support on
+ *      the pages we checked". Every narrow term count behind that really was
+ *      zero, and the page defined the phrase. It was still wrong to publish,
+ *      because on popl.co/pages/digital-business-card, a page this file
+ *      NAMES as checked, Popl publishes a Multi-language feature block and an
+ *      FAQ reading: "Does Popl support multiple languages? Yes, Popl offers
+ *      support for any and all languages, allowing digital business cards to
+ *      be used seamlessly across any region." A statement that is literally
+ *      true and materially misleading is the one a lawyer wins with.
+ *      The comparison is now stated POSITIVELY: what Cardify does, described
+ *      concretely enough that a reader can check it, with no assertion about
+ *      what Popl does or does not do. That is both safer and stronger.
+ *   3. NEVER state a Popl price of any kind, including for hardware. Their
+ *      storefront currently publishes NO products: /products.json returns an
+ *      empty array and /collections/all redirects away.
  *
  * The "Where Popl is stronger" section is not a courtesy. It is there because
  * a comparison page that concedes nothing is read as marketing and ranked as
@@ -44,11 +56,11 @@ $faq = [
     ['How much does Cardify cost?',
      'The Cardify web platform is free with no employee limit, no template limit and no card limit, and no credit card is required. You pay only for physical cards: OMR 5.000 per 100 Standard, OMR 6.000 per 100 Premium, OMR 15.000 per 100 Luxury, and OMR 25.000 per NFC tap card.'],
     ['Which is better for an Arabic-speaking team?',
-     'Cardify, on the evidence available. Cardify builds an Arabic and an English version of every employee card under one URL, with genuine Arabic name and title fields rather than transliteration, and right-to-left rendering. Popl does not advertise Arabic or right-to-left support on the pages we checked on 20 August 2026. That is a statement about their published claims, not about their internal capabilities.'],
+     'Judge Cardify on what it does rather than on a claim about anyone else. Every Cardify employee card carries an Arabic version and an English version under one URL and one QR code. The Arabic name and job title are separate fields entered by the employee, not transliterated from the English by software, the card renders right-to-left rather than mirroring the English layout, and the saved contact carries both spellings so the recipient finds the same person searching in either script. Popl states on its own site that it supports any and all languages; we have not tested how its cards render in Arabic, so ask them to show you one. Ask us the same, and we will send you a live card.'],
     ['Is Popl better than Cardify for anything?',
-     'Yes, for several things. Popl advertises SOC 2 Type 2 security, self-serve CRM and calendar integrations, an AI-native badge scanner and dedicated customer success onboarding. Cardify has no SOC 2 Type 2 certification, no single sign-on, and no native CRM connectors. If your procurement process requires a SOC 2 report or SAML single sign-on, Popl meets a bar that Cardify currently does not.'],
+     'Yes, for several things. Popl advertises SOC 2 Type 2 security, self-serve CRM and calendar integrations, an AI-native badge scanner, and a dedicated customer success manager on its Teams offer. Cardify has no SOC 2 Type 2 certification, no single sign-on, and no native CRM connectors. If your procurement process requires a SOC 2 report or SAML single sign-on, Popl meets a bar that Cardify currently does not.'],
     ['Can I get printed cards from either?',
-     'Cardify prints and delivers physical cards in Oman as part of the same system, ordered from the same dashboard that manages the digital cards, from OMR 5.000 per 100. Popl sells physical products, but no hardware pricing appeared on the pages we checked on 20 August 2026.'],
+     'Cardify prints and delivers physical cards in Oman as part of the same system, ordered from the same dashboard that manages the digital cards, from OMR 5.000 per 100 for Standard stock. Popl publishes no prices of any kind, and on 20 August 2026 its online storefront listed no products, so we cannot tell you what it would cost you or whether it ships to Oman. Their sales team can.'],
 ];
 
 $extraHead = Seo::ldScript(
@@ -126,21 +138,21 @@ $base = getBasePath();
                 <tbody class="text-gray-600">
                     <tr><td class="px-4 py-3 border-b border-gray-100 font-medium text-gray-900">Published price</td><td class="px-4 py-3 border-b border-gray-100">Yes, in full</td><td class="px-4 py-3 border-b border-gray-100">No. Quoted over a meeting</td></tr>
                     <tr><td class="px-4 py-3 border-b border-gray-100 font-medium text-gray-900">Cost per employee</td><td class="px-4 py-3 border-b border-gray-100">Free, unlimited</td><td class="px-4 py-3 border-b border-gray-100">Not published. Popl states it is not charged per seat</td></tr>
-                    <tr><td class="px-4 py-3 border-b border-gray-100 font-medium text-gray-900">Arabic and English on one card</td><td class="px-4 py-3 border-b border-gray-100">Yes, by default</td><td class="px-4 py-3 border-b border-gray-100">Not advertised on the pages checked</td></tr>
-                    <tr><td class="px-4 py-3 border-b border-gray-100 font-medium text-gray-900">Right-to-left card rendering</td><td class="px-4 py-3 border-b border-gray-100">Yes</td><td class="px-4 py-3 border-b border-gray-100">Not advertised on the pages checked</td></tr>
+                    <tr><td class="px-4 py-3 border-b border-gray-100 font-medium text-gray-900">Arabic and English on one card</td><td class="px-4 py-3 border-b border-gray-100">Yes, by default, with separate Arabic name and title fields</td><td class="px-4 py-3 border-b border-gray-100">Popl states it supports any and all languages</td></tr>
+                    <tr><td class="px-4 py-3 border-b border-gray-100 font-medium text-gray-900">Right-to-left card rendering</td><td class="px-4 py-3 border-b border-gray-100">Yes</td><td class="px-4 py-3 border-b border-gray-100">Ask them, we have not tested it</td></tr>
                     <tr><td class="px-4 py-3 border-b border-gray-100 font-medium text-gray-900">Printing fulfilled in Oman</td><td class="px-4 py-3 border-b border-gray-100">Yes, from OMR 5.000 per 100</td><td class="px-4 py-3 border-b border-gray-100">No Oman fulfilment advertised</td></tr>
-                    <tr><td class="px-4 py-3 border-b border-gray-100 font-medium text-gray-900">NFC cards</td><td class="px-4 py-3 border-b border-gray-100">Yes, OMR 25.000 each</td><td class="px-4 py-3 border-b border-gray-100">Sells hardware, no price published</td></tr>
+                    <tr><td class="px-4 py-3 border-b border-gray-100 font-medium text-gray-900">NFC cards</td><td class="px-4 py-3 border-b border-gray-100">Yes, OMR 25.000 each</td><td class="px-4 py-3 border-b border-gray-100">No prices of any kind published</td></tr>
                     <tr><td class="px-4 py-3 border-b border-gray-100 font-medium text-gray-900">Apple and Google Wallet</td><td class="px-4 py-3 border-b border-gray-100">Yes</td><td class="px-4 py-3 border-b border-gray-100">Not listed in the plan inclusions checked</td></tr>
                     <tr><td class="px-4 py-3 border-b border-gray-100 font-medium text-gray-900">Native CRM integrations</td><td class="px-4 py-3 border-b border-gray-100 text-red-700">No</td><td class="px-4 py-3 border-b border-gray-100">Yes, self-serve CRM and calendar integrations</td></tr>
                     <tr><td class="px-4 py-3 border-b border-gray-100 font-medium text-gray-900">Single sign-on (SAML or SCIM)</td><td class="px-4 py-3 border-b border-gray-100 text-red-700">No</td><td class="px-4 py-3 border-b border-gray-100">Enterprise security advertised</td></tr>
                     <tr><td class="px-4 py-3 border-b border-gray-100 font-medium text-gray-900">SOC 2 Type 2</td><td class="px-4 py-3 border-b border-gray-100 text-red-700">No</td><td class="px-4 py-3 border-b border-gray-100">Yes, advertised</td></tr>
                     <tr><td class="px-4 py-3 border-b border-gray-100 font-medium text-gray-900">Event badge scanning</td><td class="px-4 py-3 border-b border-gray-100 text-red-700">No</td><td class="px-4 py-3 border-b border-gray-100">Yes, AI-native universal badge scanner</td></tr>
-                    <tr><td class="px-4 py-3 font-medium text-gray-900">Dedicated customer success manager</td><td class="px-4 py-3 text-red-700">No</td><td class="px-4 py-3">Yes, advertised in every plan</td></tr>
+                    <tr><td class="px-4 py-3 font-medium text-gray-900">Dedicated customer success manager</td><td class="px-4 py-3 text-red-700">No</td><td class="px-4 py-3">Yes, on the Teams offer</td></tr>
                 </tbody>
             </table>
         </div>
         <p class="text-sm text-gray-500">
-            "Not advertised on the pages checked" means the claim did not appear on Popl's pricing page or digital business card page on <?= $checkedDate ?>. It is not a statement that the product lacks the capability.
+            Rows describing Popl are drawn from Popl's own pricing page and digital business card page on <?= $checkedDate ?>. Where we have not tested something ourselves, the row says so instead of guessing.
         </p>
 
         <h2 id="where-popl-wins">Where Popl is genuinely stronger</h2>
@@ -152,7 +164,7 @@ $base = getBasePath();
             <li><strong>Single sign-on.</strong> Cardify has no SAML or SCIM support today. Companies that provision every application through their identity provider will find that a real gap.</li>
             <li><strong>CRM and calendar integrations.</strong> Popl advertises self-serve CRM and calendar integrations. Cardify has no native connectors to Salesforce, HubSpot or similar.</li>
             <li><strong>Event lead capture at scale.</strong> Popl's whole product is oriented around trade-show lead capture, including badge scanning, qualifying questions and event campaigns. If your problem is "we do thirty conferences a year and lose the leads", that is what Popl is built for and Cardify is not.</li>
-            <li><strong>Dedicated onboarding.</strong> Popl advertises a dedicated customer success manager on every plan. Cardify's support is a shared team.</li>
+            <li><strong>Dedicated onboarding.</strong> Popl advertises a dedicated customer success manager on its Teams offer. Cardify's support is a shared team.</li>
         </ul>
 
         <h2 id="where-cardify-wins">Where Cardify is stronger</h2>

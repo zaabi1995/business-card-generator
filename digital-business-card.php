@@ -44,6 +44,18 @@ $faq = [
      'No. The QR code is one way to open the card, not the card itself. The same profile can be opened by QR, by a link in an email signature, by tapping an NFC card, by a WhatsApp message, or by an Apple Wallet or Google Wallet pass. Replacing the QR image does not change the card, and changing the card does not require reprinting the QR.'],
     ['Do digital business cards work offline?',
      'Opening a card needs a connection, because it is a web page. Two things do not: a contact already saved to the phone stays saved forever, and a wallet pass added to Apple Wallet or Google Wallet keeps displaying its QR code with no signal, which is the case that matters in a basement exhibition hall.'],
+    ['How long does it take to set up digital business cards for a team?',
+     'An afternoon for most companies. The sequence that works is to generate every digital business card first from an HR roster, then send each employee a private link to correct their own details, rather than asking two hundred people to sign up and build a card individually. The second approach is what stalls at the enthusiasts.'],
+    ['Do digital business cards work on both iPhone and Android?',
+     'Yes, on both, and on anything else with a web browser. A digital business card is an ordinary web page, so the recipient installs nothing and creates no account. Only the optional NFC tap feature depends on hardware, which is why every Cardify NFC card also carries a QR code.'],
+    ['Can we use our own domain for our digital business cards?',
+     'Every Cardify company gets its own subdomain, in the form yourcompany.cardify.om, so every employee digital business card sits under a URL that reads as yours. That is included at no cost on the free platform.'],
+    ['Are digital business cards secure?',
+     'A digital business card publishes exactly what a paper card publishes: the professional contact details you choose to put on it. It holds no private data beyond that. Be aware of what it does record, which is that scans and views are logged for analytics, and of the reverse: a printed card gives you no record of anything at all.'],
+    ['What is the difference between a digital business card and an NFC card?',
+     'The digital business card is the profile. NFC is one way to open it, by tapping a phone against a chip embedded in a physical card. QR codes, links, wallet passes and messages are the other ways. You can have a digital business card with no NFC at all, and most people should start there because it is free.'],
+    ['Can a digital business card be used offline?',
+     'The page itself needs a connection, but two things do not. A wallet pass added to Apple Wallet or Google Wallet displays its code with no signal, and a contact once saved to a phone is permanent. In an exhibition hall basement, the wallet pass is the version that works.'],
     ['Can I still have printed cards as well?',
      'Most Cardify customers do. The usual arrangement is a printed card carrying the person\'s QR code on the back, so a meeting that starts with paper still ends with a saved contact. Printing is ordered from the same dashboard and fulfilled by verified Omani print shops, dispatched within one working day and delivered across Oman in two to four working days.'],
 ];
@@ -224,6 +236,73 @@ $base = getBasePath();
         </p>
         <p>
             Country-specific guidance sits on the <a href="<?= $base ?>gcc/oman">Oman</a>, <a href="<?= $base ?>gcc/saudi-arabia">Saudi Arabia</a>, <a href="<?= $base ?>gcc/uae">UAE</a>, <a href="<?= $base ?>gcc/qatar">Qatar</a>, <a href="<?= $base ?>gcc/bahrain">Bahrain</a> and <a href="<?= $base ?>gcc/kuwait">Kuwait</a> pages.
+        </p>
+
+        <h2 id="against-the-alternatives">A digital business card against the alternatives</h2>
+        <p>
+            "Should we use digital business cards" is rarely the real question. The real question is what a digital business card does that the thing you are already doing does not, and there are four incumbents worth taking seriously.
+        </p>
+        <p>
+            <strong>Against a paper card.</strong> Paper wins on ceremony and loses on everything else. It cannot be updated, it runs out, and it requires the recipient to retype your details before they own them, which most people never do. A digital business card keeps the ceremony if you print one with a QR on the back, and removes the transcription step entirely. This is why the sensible answer is usually both rather than either.
+        </p>
+        <p>
+            <strong>Against a LinkedIn profile.</strong> LinkedIn is a network, not a card. It shows your employment history to people evaluating you, which is a different job from handing your mobile number to someone who needs to call you tomorrow. It also does not work as a card in the Gulf, where a large share of counterparties in government and state-linked entities are not active on it. A digital business card carries the phone number, the office address and the Arabic spelling of your name, none of which a LinkedIn profile reliably does.
+        </p>
+        <p>
+            <strong>Against just saving a contact.</strong> "Send me your number on WhatsApp" works fine for one person. It does not scale to an organisation, because there is no template, no consistency, no analytics and nothing the company owns. Every digital business card in a company deployment sits under a URL the company controls, which is what makes a departure survivable.
+        </p>
+        <p>
+            <strong>Against a PDF or an image.</strong> Some companies circulate a card as a JPEG or a PDF attachment. It is a photograph of a card with all the disadvantages of paper plus none of the tactile advantages: it cannot be tapped to call, cannot be saved to contacts, cannot be updated, and is invisible to search. A digital business card is a page, and a page can do things.
+        </p>
+
+        <h2 id="how-to-choose">Choosing a digital business card platform: nine questions</h2>
+        <p>
+            Most digital business card platforms demo identically. These are the questions that separate them once you are six months in.
+        </p>
+        <ol>
+            <li><strong>What does it cost per employee, at our real headcount?</strong> Per-seat pricing that looks trivial at ten people is a standing line item at four hundred. Ask what the bill looks like at the size you expect to be, not the size you are.</li>
+            <li><strong>Is there a seat minimum or a headcount band?</strong> Some platforms will not sell you fewer than five seats, and some push you into a custom quote once you pass a hundred. Both are surprises that arrive at renewal.</li>
+            <li><strong>Who owns a digital business card when the employee leaves?</strong> If the card belongs to the person's account rather than to the company, every departure destroys an asset and every QR code already in circulation dies with it.</li>
+            <li><strong>Can the brand be enforced?</strong> A platform where every employee designs their own digital business card will produce as many designs as you have staff. You want one approved template and employees who can edit only their own data.</li>
+            <li><strong>Does it genuinely do Arabic?</strong> Not a language toggle on the interface. Real Arabic name and title fields, right-to-left layout on the card itself, and both spellings in the saved contact.</li>
+            <li><strong>What happens to the QR code if we change platform?</strong> Codes printed on brochures, vehicles and signage outlive software decisions. Ask whether the URL can be pointed elsewhere, or whether leaving means reprinting everything.</li>
+            <li><strong>Does it issue wallet passes?</strong> An Apple Wallet or Google Wallet pass is the only version of a digital business card that works with no signal, which is the exact condition inside most exhibition halls.</li>
+            <li><strong>Can we print from the same system?</strong> If printing is a second supplier, the printed card and the digital business card will drift apart within a year, because two systems holding the same data always do.</li>
+            <li><strong>What does the security review need?</strong> If your procurement requires SOC 2 or your identity team requires single sign-on, establish that early. We say plainly on our <a href="/compare/cardify-vs-popl">comparison pages</a> that Cardify has neither, because finding out in the third meeting wastes everybody's time.</li>
+        </ol>
+
+        <h2 id="objections">The objections worth taking seriously</h2>
+        <p>
+            <strong>"Does a digital business card look unprofessional?"</strong> It did in about 2015. It does not now, and the signal has arguably inverted: an organisation that hands over a QR code and a correctly spelled bilingual profile reads as more organised than one handing over a card with a crossed-out phone number. What does still look unprofessional is a card that opens slowly, renders badly on a phone, or carries a broken Arabic layout.
+        </p>
+        <p>
+            <strong>"What about counterparties who expect paper?"</strong> They exist, particularly in senior government and banking settings in the Gulf, and the answer is not to argue with them. Print cards for the people who meet them, with a QR on the back. The digital business card sits behind the paper rather than replacing it.
+        </p>
+        <p>
+            <strong>"What if there is no signal?"</strong> A fair objection, and the reason wallet passes matter. A pass added to Apple Wallet or Google Wallet displays its code with no connection at all. A contact already saved to a phone is permanent regardless.
+        </p>
+        <p>
+            <strong>"What if the platform disappears?"</strong> The most serious objection on this list, and the one vendors dodge. If a provider shuts down, every dynamic QR code you have printed stops resolving. Ask what the exit looks like before you print ten thousand codes, and prefer a provider whose free tier has no expiry that can lapse and whose URLs you could redirect.
+        </p>
+        <p>
+            <strong>"Will older recipients cope?"</strong> Scanning a QR code with a phone camera became universal during the pandemic across every age group. The genuine failure mode is not age, it is a phone with the screen off, and it is solved by saying "wake your phone" rather than by not having a card.
+        </p>
+
+        <h2 id="in-the-gulf">Digital business cards in the Gulf specifically</h2>
+        <p>
+            Most writing about digital business cards assumes a North American buyer. Three things are different here, and they change what a good digital business card looks like.
+        </p>
+        <p>
+            <strong>Arabic is not a localisation feature, it is half the card.</strong> Handing an English-only card to a procurement director whose internal correspondence runs in Arabic quietly asks them to do the translation. A digital business card built for this region carries both languages under one URL, with the Arabic entered by the person whose name it is rather than transliterated by software.
+        </p>
+        <p>
+            <strong>WhatsApp is the follow-up channel.</strong> A meeting in Muscat is followed by a WhatsApp message, not an email. A digital business card that opens cleanly from a WhatsApp link, with a working tap-to-chat button and a pre-filled opening line, is doing the thing that actually happens next.
+        </p>
+        <p>
+            <strong>Paper still carries weight, and printing is local.</strong> Formal meetings still involve a physical card. A supplier that prints in Muscat, dispatches within a working day and delivers to Salalah, Sohar or Duqm is solving a logistics problem that a platform shipping from abroad is not solving at all. That is why Cardify treats printing and the digital business card as one system rather than two vendors.
+        </p>
+        <p>
+            Guidance by industry and role sits under <a href="/solutions">solutions</a>, and the head-to-head platform comparisons are on <a href="/compare">compare</a>.
         </p>
 
         <h2 id="faq">Frequently asked questions</h2>

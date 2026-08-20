@@ -187,7 +187,7 @@ $base = getBasePath();
             <li><strong>Exhibition stands and conferences.</strong> High volume, short conversations, and a tap is faster than anything else available.</li>
             <li><strong>Reception desks.</strong> One NFC stand, every visitor leaves with the company profile.</li>
             <li><strong>Field sales.</strong> Staff meeting several new people a day, where the saved-contact rate is the whole point.</li>
-            <li><strong>Executives and senior representation.</strong> Where the card is doing signalling work as well as informational work.</li>
+            <li><strong>Executives and senior representation.</strong> Where the card is doing signalling work as well as informational work. We have a separate page for that case: <a href="<?= $base ?>solutions/nfc-business-cards-oman-executives">NFC cards for C-suite and board-level meetings in Oman</a>.</li>
             <li><strong>Vehicles and site offices.</strong> An NFC sticker on a service vehicle or a site cabin, pointing at the company profile.</li>
         </ul>
         <p>

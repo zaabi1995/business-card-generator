@@ -91,6 +91,32 @@ $base = getBasePath();
             <?php endforeach; ?>
         </div>
 
+        <div class="mt-12 prose prose-lg max-w-none">
+            <h2>How to read a digital business card comparison</h2>
+            <p>
+                Every platform in this category demos the same way: a phone taps a card, a profile opens, a contact saves. The differences that matter show up months later, and they cluster in four places.
+            </p>
+            <p>
+                <strong>The shape of the price, not the number.</strong> A per-user monthly fee is not inherently worse than a free platform, but it behaves differently as you grow. Ask what the bill looks like at the headcount you expect to reach, and check for the two things vendors bury: a seat minimum below which you pay for empty seats, and a headcount band above which you are moved to a custom quote. Blinq states a five-card minimum on Business. HiHello bands Business at 5 to 100 users. Popl publishes no price at all and quotes over a meeting.
+            </p>
+            <p>
+                <strong>Who owns the card when someone resigns.</strong> This is the question nobody asks in a demo and everybody discovers in year two. If the card belongs to the employee's personal account rather than to the company, every departure destroys an asset, and every QR code that person's card was printed on stops resolving.
+            </p>
+            <p>
+                <strong>Whether Arabic is real.</strong> A language switch on the admin interface is not the same as a card that renders right-to-left with a name your Arabic-speaking colleague actually recognises as their own. If this matters to your organisation, ask each vendor to show you a rendered Arabic card rather than a feature list.
+            </p>
+            <p>
+                <strong>What your security review will demand.</strong> If procurement requires a SOC 2 report or your identity team requires SAML single sign-on, that decides the shortlist before anything else does. Popl, Blinq and HiHello all advertise enterprise security assurance. Cardify does not have it, and we would rather you knew that from this page than from a wasted third meeting.
+            </p>
+            <h2>Where Cardify does not win</h2>
+            <p>
+                Publishing comparisons as one of the vendors only works if the losses are on the page. Ours are consistent across all three: no SOC 2 report, no SAML or SCIM single sign-on, no native CRM connectors, and no event badge scanning. If any one of those is a requirement rather than a preference, buy one of the others, and the individual pages say which one and why.
+            </p>
+            <p>
+                What Cardify does have is a genuinely bilingual card, no per-employee cost at any headcount, and printing fulfilled in Oman by the same system that manages the digital cards.
+            </p>
+        </div>
+
         <div class="mt-10 rounded-xl border border-gray-200 bg-white px-6 py-6 text-sm text-gray-600">
             <p class="font-semibold text-gray-900 mb-2">
                 <i class="fa-solid fa-scale-balanced mr-1.5" aria-hidden="true"></i>

@@ -11,9 +11,14 @@
  * exchange rate as if it were a fact about their pricing, and it would rot.
  * Compare on structure (per user per month vs nothing per user) instead.
  *
- * NEVER write "Blinq does not support Arabic". What was verified is that the
- * words Arabic, RTL, multilingual and localisation do not appear in the
- * visible text of their pricing page. That is absence of a claim.
+ * NEVER make a negative claim about Blinq and Arabic AT ALL. r328 shipped
+ * "not advertised on the page checked", which was true of the pricing page
+ * and still the wrong thing to publish: a pricing page is not where a vendor
+ * lists language support, so the absence proved nothing and merely implied
+ * something. On the sibling Popl page the same construction turned out to
+ * contradict a Multi-language FAQ on a page we ourselves named. The
+ * comparison is now stated POSITIVELY: what Cardify does, concretely enough
+ * to be checked, with no assertion about what Blinq does or does not do.
  */
 require_once __DIR__ . '/../config.php';
 require_once INCLUDES_DIR . '/Auth.php';
@@ -42,7 +47,7 @@ $faq = [
     ['Is Blinq better than Cardify for anything?',
      'Yes. Blinq advertises enforced single sign-on, SCIM user provisioning, native CRM integrations, an AI notetaker, a universal contact scanner and SOC 2 Type II compliance. Cardify has none of those. If your company provisions software through an identity provider or your security review requires a SOC 2 report, Blinq clears a bar Cardify does not.'],
     ['Which is better for an Arabic-speaking team?',
-     'Cardify, on the evidence available. Cardify builds an Arabic and an English version of every employee card under one URL, with real Arabic name and title fields rather than transliteration, and right-to-left rendering. The words Arabic, RTL, multilingual and localisation did not appear anywhere in the visible text of Blinq\'s pricing page on 20 August 2026. That is a statement about what they advertise, not about what their product can do.'],
+     'Judge Cardify on what it does. Every Cardify employee card carries an Arabic version and an English version under one URL and one QR code. The Arabic name and job title are separate fields entered by the employee rather than transliterated by software, the card renders right-to-left rather than mirroring the English layout, and the saved contact carries both spellings. We have not tested how Blinq renders an Arabic card, so ask them to show you one, and ask us the same. We will send you a live card.'],
 ];
 
 $extraHead = Seo::ldScript(
@@ -80,7 +85,7 @@ $base = getBasePath();
                 Cardify vs Blinq
             </h1>
             <p class="text-gray-600 text-lg max-w-3xl leading-relaxed">
-                Blinq is a well-built digital business card product with a genuine free tier and a mature enterprise offering. It also charges per user per month and does not advertise Arabic. Here is the comparison, including where Blinq wins.
+                Blinq is a well-built digital business card product with a genuine free tier and a mature enterprise offering. It also charges per user per month with a five-card minimum, and Cardify is free for unlimited employees and bilingual by default. Here is the comparison, including where Blinq wins.
             </p>
             <p class="text-sm text-gray-500 mt-4">Competitor facts checked <?= $checkedDate ?>, sources linked at the foot of this page.</p>
         </div>
@@ -130,8 +135,8 @@ $base = getBasePath();
                     <tr><td class="px-4 py-3 border-b border-gray-100 font-medium text-gray-900">Free tier card limit</td><td class="px-4 py-3 border-b border-gray-100">Unlimited</td><td class="px-4 py-3 border-b border-gray-100">Two cards</td></tr>
                     <tr><td class="px-4 py-3 border-b border-gray-100 font-medium text-gray-900">Team cost</td><td class="px-4 py-3 border-b border-gray-100">Free, unlimited employees</td><td class="px-4 py-3 border-b border-gray-100">$4.99 to $6.99 per user per month</td></tr>
                     <tr><td class="px-4 py-3 border-b border-gray-100 font-medium text-gray-900">Seat minimum</td><td class="px-4 py-3 border-b border-gray-100">None</td><td class="px-4 py-3 border-b border-gray-100">Five Team Cards minimum on Business</td></tr>
-                    <tr><td class="px-4 py-3 border-b border-gray-100 font-medium text-gray-900">Arabic and English on one card</td><td class="px-4 py-3 border-b border-gray-100">Yes, by default</td><td class="px-4 py-3 border-b border-gray-100">Not advertised on the page checked</td></tr>
-                    <tr><td class="px-4 py-3 border-b border-gray-100 font-medium text-gray-900">Right-to-left rendering</td><td class="px-4 py-3 border-b border-gray-100">Yes</td><td class="px-4 py-3 border-b border-gray-100">Not advertised on the page checked</td></tr>
+                    <tr><td class="px-4 py-3 border-b border-gray-100 font-medium text-gray-900">Arabic and English on one card</td><td class="px-4 py-3 border-b border-gray-100">Yes, by default, with separate Arabic name and title fields</td><td class="px-4 py-3 border-b border-gray-100">Ask them, we have not tested it</td></tr>
+                    <tr><td class="px-4 py-3 border-b border-gray-100 font-medium text-gray-900">Right-to-left rendering</td><td class="px-4 py-3 border-b border-gray-100">Yes</td><td class="px-4 py-3 border-b border-gray-100">Ask them, we have not tested it</td></tr>
                     <tr><td class="px-4 py-3 border-b border-gray-100 font-medium text-gray-900">Apple and Google Wallet</td><td class="px-4 py-3 border-b border-gray-100">Yes</td><td class="px-4 py-3 border-b border-gray-100">Yes, on the free tier</td></tr>
                     <tr><td class="px-4 py-3 border-b border-gray-100 font-medium text-gray-900">Printing fulfilled in Oman</td><td class="px-4 py-3 border-b border-gray-100">Yes, from OMR 5.000 per 100</td><td class="px-4 py-3 border-b border-gray-100">No Oman fulfilment advertised</td></tr>
                     <tr><td class="px-4 py-3 border-b border-gray-100 font-medium text-gray-900">NFC cards with published price</td><td class="px-4 py-3 border-b border-gray-100">Yes, OMR 25.000 each</td><td class="px-4 py-3 border-b border-gray-100">Sold, no price on the page checked</td></tr>
@@ -143,7 +148,7 @@ $base = getBasePath();
             </table>
         </div>
         <p class="text-sm text-gray-500">
-            "Not advertised on the page checked" means the claim did not appear in the visible text of Blinq's pricing page on <?= $checkedDate ?>. It is not a statement that the product lacks the capability.
+            Rows describing Blinq are quoted from Blinq's own pricing page on <?= $checkedDate ?>. Where we have not tested something ourselves, the row says so rather than guessing.
         </p>
 
         <h2 id="where-blinq-wins">Where Blinq is genuinely stronger</h2>
