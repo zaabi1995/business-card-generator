@@ -23,8 +23,26 @@ import { test, expect } from '@playwright/test';
 
 const pages = ['/', '/pricing', '/status', '/faq', '/contact'];
 
+/**
+ * Tab-driven assertions run on Chromium only.
+ *
+ * WebKit inherits Safari's default "Press Tab to highlight each item on a
+ * webpage" = OFF, so Tab moves between form controls and <summary> and never
+ * reaches <a> or <button>. Measured 20 Aug 2026 against production: /status
+ * has 52 links and 11 buttons and WebKit tabs to exactly zero of them, while
+ * /contact tabs only to its input/select/textarea. The pages are correctly
+ * marked up; the browser preference is what differs.
+ *
+ * Leaving these on WebKit produced a false signal in both directions: three
+ * spurious failures, and /faq "passing" only because its <summary> elements
+ * have distinct text. The markup invariants these tests care about are
+ * browser-independent, so Chromium is the honest place to assert them.
+ */
+const tabbable = (browserName: string) => browserName === 'chromium';
+
 for (const url of pages) {
-  test(`keyboard tab order advances on ${url}`, async ({ page }) => {
+  test(`keyboard tab order advances on ${url}`, async ({ page, browserName }) => {
+    test.skip(!tabbable(browserName), 'Safari/WebKit Tab reaches form controls only, see note above');
     await page.goto(url, { waitUntil: 'domcontentloaded' });
 
     // Baseline: body is the starting activeElement.
@@ -56,7 +74,8 @@ for (const url of pages) {
       .toBeGreaterThanOrEqual(5);
   });
 
-  test(`first focused element on ${url} has a visible focus indicator`, async ({ page }) => {
+  test(`first focused element on ${url} has a visible focus indicator`, async ({ page, browserName }) => {
+    test.skip(!tabbable(browserName), 'Safari/WebKit Tab reaches form controls only, see note above');
     await page.goto(url, { waitUntil: 'domcontentloaded' });
     await page.keyboard.press('Tab');
     const indicator = await page.evaluate(() => {
