@@ -126,6 +126,19 @@ if [ "$errs" -gt 0 ]; then
 fi
 echo "Pre-flight OK (no lint errors)"
 
+# --- Pre-flight: forbidden strings in the served tree (r330) ---
+# Runs on the WHOLE served tree, not just the changed files, because the
+# defect this exists to catch survived a sweep that reported it fixed: a
+# changed-files-only check passes whenever the bad string is in a file this
+# particular deploy did not touch. Aborts before migrations and before the
+# FPM reload, so the old code stays live on a violation.
+if ! bash ops/check-forbidden-strings.sh; then
+  echo "Pre-flight: forbidden-string gate failed. Rolling back to $BEFORE."
+  git reset --hard "$BEFORE" >/dev/null
+  echo "Deploy aborted. Old code still active in OPcache."
+  exit 4
+fi
+
 # --- Schema-first: apply every pending migration before activating new code ---
 if ! "$PHP_BIN" ops/run-pending-migrations.php; then
   echo "Pre-flight: database migration failed. Rolling back code to $BEFORE."
