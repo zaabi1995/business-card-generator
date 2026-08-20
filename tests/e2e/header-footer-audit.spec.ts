@@ -187,7 +187,11 @@ test.describe('header + footer · public', () => {
   for (const a of [...PUBLIC, ...RTL]) {
     test(`${a.label} (${a.url})`, async ({ page }) => {
       const diag = await collect(page);
-      const res = await page.goto(a.url, { waitUntil: 'networkidle' });
+      const res = await page.goto(a.url, { waitUntil: 'load' });
+    // FA is loaded async; assertAudit checks the glyph actually painted.
+    // networkidle never settles on these pages, and domcontentloaded is
+    // too early. load + fonts.ready is the deterministic middle.
+    await page.evaluate(() => document.fonts && document.fonts.ready);
       expect(res?.status(), `${a.label}: status`).toBe(200);
       const r = await evalAudit(page, a);
       if (a.url.startsWith('/ar')) expect(r.dir, `${a.label}: dir=rtl`).toBe('rtl');
@@ -217,7 +221,11 @@ test.describe('header + footer · tenant', () => {
   test('tenant public profile keeps its own brand (no cyan leak)', async ({ page }) => {
     const a: Arch = { url: `https://${slug}.cardify.om/`, label: `tenant ${slug}`, footer: 'custom', marketing: false };
     const diag = await collect(page);
-    const res = await page.goto(a.url, { waitUntil: 'networkidle' });
+    const res = await page.goto(a.url, { waitUntil: 'load' });
+    // FA is loaded async; assertAudit checks the glyph actually painted.
+    // networkidle never settles on these pages, and domcontentloaded is
+    // too early. load + fonts.ready is the deterministic middle.
+    await page.evaluate(() => document.fonts && document.fonts.ready);
     expect(res?.status(), 'tenant status').toBe(200);
     const r = await evalAudit(page, a);
     expect(r.hasLogo, 'tenant header logo').toBeTruthy();
@@ -240,7 +248,8 @@ test.describe('header + footer · authed', () => {
     await page.fill('input[type="email"], input[name="email"]', process.env.CARDIFY_ADMIN_USER!);
     await page.fill('input[type="password"], input[name="password"]', process.env.CARDIFY_ADMIN_PASS || '');
     await page.click('button[type="submit"]');
-    await page.goto('/admin', { waitUntil: 'networkidle' });
+    await page.goto('/admin', { waitUntil: 'load' });
+    await page.evaluate(() => document.fonts && document.fonts.ready);
     const r = await evalAudit(page, { url: '/admin', label: 'admin', footer: 'custom', marketing: true });
     expect(r.faStatus, 'admin FA loaded').toBe('loaded');
     expect(r.iconWidth, 'admin FA icon width').toBeGreaterThan(0);
