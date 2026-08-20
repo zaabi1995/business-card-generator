@@ -406,6 +406,14 @@ $cardifyOgLocale = ($cardifyLocale === 'ar') ? 'ar_OM' : 'en_US';
         <link rel="stylesheet" href="https://design.bhd.om/skeleton.css" />
     </noscript>
     <script src="https://design.bhd.om/cmdk.js" defer></script>
+    <?php
+    // Ambient 3D layer, site-wide. Self-hosted Three, never a CDN. The loader
+    // is ~5 KB and does nothing until after window load, then bails without
+    // importing Three at all on reduced-motion, Save-Data, small screens, low
+    // memory or no WebGL, so most visitors never fetch the 163 KB payload.
+    // Append ?no3d=1 to any URL to force it off (the E2E suite uses that).
+    ?>
+    <script defer src="<?= htmlspecialchars(getBasePath()) ?>assets/js/cardify-ambient-3d.js"></script>
     <script>
       document.addEventListener('DOMContentLoaded', function () {
         if (!window.BHDCmdK) return;
