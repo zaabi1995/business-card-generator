@@ -622,7 +622,9 @@ require_once INCLUDES_DIR . '/ui-header.php';
     <link rel="stylesheet" href="<?= htmlspecialchars(getBasePath()) ?>assets/css/cardify-hero-card.css">
     <script defer src="<?= htmlspecialchars(getBasePath()) ?>assets/js/cardify-hero-card.js"></script>
 
-<?php @include __DIR__ . '/views/partials/proof_stats.php'; ?>
+<?php @include __DIR__ . '/views/partials/customer_row.php'; ?>
+
+    <?php @include __DIR__ . '/views/partials/proof_stats.php'; ?>
 
     <?php @include __DIR__ . '/views/partials/trust_logo_strip.php'; ?>
 
