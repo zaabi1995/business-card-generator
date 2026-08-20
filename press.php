@@ -34,6 +34,9 @@ $_pressIsAr    = ArTwins::servingArabic();
 // than the one being fixed. '/' is the app root on this host.
 $_pressBase    = function_exists('getBasePath') ? getBasePath() : '/';
 $crumbHomeHref = ArTwins::navLink('', $_pressBase, $_pressIsAr);
+// Same for the SELF crumb: the served canonical on /ar/press-kit is the Arabic
+// URL, so the last crumb row must name it too.
+$crumbSelfHref = ArTwins::navLink('press-kit', '/', $_pressIsAr);
 
 $pageTitle       = t('press.page_title');
 $pageDescription = t('press.page_desc');
@@ -108,7 +111,7 @@ $breadcrumbLd = [
     '@type'    => 'BreadcrumbList',
     'itemListElement' => [
         ['@type' => 'ListItem', 'position' => 1, 'name' => t('press.crumb_home'), 'item' => ArTwins::SITE . $crumbHomeHref],
-        ['@type' => 'ListItem', 'position' => 2, 'name' => t('press.crumb_press'), 'item' => $canonicalUrl],
+        ['@type' => 'ListItem', 'position' => 2, 'name' => t('press.crumb_press'), 'item' => ArTwins::SITE . $crumbSelfHref],
     ],
 ];
 

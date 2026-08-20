@@ -37,6 +37,12 @@ require_once INCLUDES_DIR . '/ArTwins.php';
 $crumbHomeHref  = ArTwins::navLink('',      '/', $isAr);
 $crumbLogosHref = ArTwins::navLink('logos', '/', $isAr);
 $crumbLogosName = t('logos.breadcrumb_library');
+// The SELF crumb too: ui-header serves this page's canonical as the /ar URL, so
+// a BreadcrumbList whose last row names the English URL disagrees with the
+// page's own canonical. arPath() is asked, never concatenated, and it returns
+// null (English) for a sector with no Arabic twin.
+$_crumbSelf     = ArTwins::arPath('/logos/' . $sectorSlug);
+$crumbSelfHref  = ($isAr && $_crumbSelf !== null) ? $_crumbSelf : '/logos/' . $sectorSlug;
 
 // JSON-LD: CollectionPage + BreadcrumbList + ItemList of up to 20 logo
 // samples (helps Google understand what's on the page for image carousels).
@@ -72,7 +78,7 @@ $jsonLdBlocks = [
         "itemListElement" => [
             ["@type" => "ListItem", "position" => 1, "name" => "Cardify",         "item" => ArTwins::SITE . $crumbHomeHref],
             ["@type" => "ListItem", "position" => 2, "name" => $crumbLogosName, "item" => ArTwins::SITE . $crumbLogosHref],
-            ["@type" => "ListItem", "position" => 3, "name" => $sectorLabel,    "item" => $canonical],
+            ["@type" => "ListItem", "position" => 3, "name" => $sectorLabel,   "item" => ArTwins::SITE . $crumbSelfHref],
         ],
     ],
 ];
