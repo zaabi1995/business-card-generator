@@ -18,6 +18,17 @@ git pull --ff-only origin main
 AFTER=$(git rev-parse HEAD)
 PHP_BIN="/www/server/php/83/bin/php"
 [ -x "$PHP_BIN" ] || PHP_BIN="$(command -v php || echo /usr/bin/php)"
+
+# r330: `git reset --hard` runs as root and rewrites every file it restores as
+# root:root. php-fpm runs as www, so a rollback that does not hand ownership
+# back leaves the site answering 403 on exactly the files it just "restored".
+# Two of the five rollback sites in this script did the chown and three did
+# not, which is the kind of drift a shared function exists to stop. Every
+# rollback goes through here now.
+rollback_to_before() {
+  git reset --hard "$BEFORE" >/dev/null
+  find . -type f ! -user www -not -path "./.git/*" -exec chown www:www {} + 2>/dev/null || true
+}
 scan_cleanup_cron_backup=""
 scan_cleanup_cron_had_previous=0
 restore_scan_account_cleanup_cron() {
@@ -96,7 +107,7 @@ install_scan_account_cleanup_cron() {
 # old code still live in OPcache.
 if ! bash ops/check-forbidden-strings.sh; then
   echo "Pre-flight: forbidden-string gate failed. Rolling back to $BEFORE."
-  git reset --hard "$BEFORE" >/dev/null
+  rollback_to_before
   echo "Deploy aborted. Old code still active in OPcache."
   exit 6
 fi
@@ -133,7 +144,7 @@ done < <(git diff --name-only --diff-filter=ACMR "$BEFORE" "$AFTER")
 
 if [ "$errs" -gt 0 ]; then
   echo "Pre-flight: $errs PHP file(s) failed lint. Rolling back to $BEFORE."
-  git reset --hard "$BEFORE" >/dev/null
+  rollback_to_before
   echo "Deploy aborted. Old code still active in OPcache."
   exit 2
 fi
@@ -142,7 +153,7 @@ echo "Pre-flight OK (no lint errors)"
 # --- Schema-first: apply every pending migration before activating new code ---
 if ! "$PHP_BIN" ops/run-pending-migrations.php; then
   echo "Pre-flight: database migration failed. Rolling back code to $BEFORE."
-  git reset --hard "$BEFORE" >/dev/null
+  rollback_to_before
   echo "Deploy aborted. Review the migration error before retrying."
   exit 4
 fi
@@ -230,8 +241,7 @@ done
 
 if [ "$smoke_fail" -gt 0 ]; then
   echo "Post-flight: $smoke_fail URL(s) failed smoke test. Rolling back to $BEFORE."
-  git reset --hard "$BEFORE" >/dev/null
-  find . -type f ! -user www -exec chown www:www {} + 2>/dev/null || true
+  rollback_to_before
   systemctl reload php8.3-fpm 2>/dev/null || systemctl reload php-fpm 2>/dev/null || true
   echo "Deploy aborted. Rolled back + FPM reloaded on previous tree."
   exit 3
@@ -240,8 +250,7 @@ echo "Post-flight OK (5/5 URLs healthy)"
 if ! install_scan_account_cleanup_cron; then
   restore_scan_account_cleanup_cron || true
   echo "Account cleanup schedule installation failed. Rolling back."
-  git reset --hard "$BEFORE" >/dev/null
-  find . -type f ! -user www -exec chown www:www {} + 2>/dev/null || true
+  rollback_to_before
   systemctl reload php8.3-fpm 2>/dev/null \
     || systemctl reload php-fpm 2>/dev/null \
     || true
