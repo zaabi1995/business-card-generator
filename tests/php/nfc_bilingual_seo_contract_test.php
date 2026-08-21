@@ -7,6 +7,7 @@ require_once dirname(__DIR__, 2) . '/includes/seo_title.php';
 
 $root = dirname(__DIR__, 2);
 $page = file_get_contents($root . '/nfc-business-card.php');
+$seo = file_get_contents($root . '/includes/Seo.php');
 $twins = file_get_contents($root . '/includes/ArTwins.php');
 $apache = file_get_contents($root . '/.htaccess');
 $nginxHeadTerms = file_get_contents($root . '/docs/head-terms-nginx-rewrites.conf');
@@ -55,10 +56,14 @@ nfcContractCheck(
 );
 
 nfcContractCheck(
-    str_contains($apache, 'RewriteRule ^ar/nfc-business-card/?$ nfc-business-card.php?lang=ar [L,QSA]')
+    str_contains($apache, 'RewriteRule ^nfc-business-card/$ /nfc-business-card [R=301,L]')
+        && str_contains($apache, 'RewriteRule ^ar/nfc-business-card/$ /ar/nfc-business-card [R=301,L]')
+        && str_contains($apache, 'RewriteRule ^ar/nfc-business-card/?$ nfc-business-card.php?lang=ar [L,QSA]')
+        && str_contains($nginxHeadTerms, 'rewrite ^/nfc-business-card/$')
+        && str_contains($nginxHeadTerms, 'rewrite ^/ar/nfc-business-card/$')
         && str_contains($nginxHeadTerms, 'rewrite ^/ar/nfc-business-card/?$')
         && str_contains($nginxTwins, 'rewrite ^/ar/nfc-business-card/?$'),
-    'Apache intent and both nginx records route the Arabic body'
+    'Apache and nginx normalize trailing slashes and route the Arabic body'
 );
 
 nfcContractCheck(
@@ -81,8 +86,14 @@ nfcContractCheck(
         && str_contains($page, 'Seo::faqNode($faq)')
         && str_contains($page, 'developer.apple.com/documentation/corenfc')
         && str_contains($page, 'developer.android.com/develop/connectivity/nfc/nfc')
-        && str_contains($page, 'www.nxp.com/products/NTAG213_215_216'),
+        && str_contains($page, 'nfc-forum.org/learn/nfc-technology/'),
     'page provides extractable answers, FAQ schema and primary technical sources'
+);
+
+nfcContractCheck(
+    str_contains($seo, "'@id' => \$url . '#webpage'")
+        && str_contains($seo, "gmdate('Y-m-d', \$mtime)"),
+    'Article schema references the shared page entity and uses the sitemap UTC date'
 );
 
 nfcContractCheck(
@@ -90,6 +101,17 @@ nfcContractCheck(
         && str_contains($en['page_desc'], 'OMR 25.000')
         && str_contains($ar['page_desc'], '25.000'),
     'NFC price copy is copied from the canonical pricing source'
+);
+
+$enPricing = require $root . '/lang/en/pricing.php';
+$arPricing = require $root . '/lang/ar/pricing.php';
+nfcContractCheck(
+    str_contains($enPricing['product_nfc_spec'], 'compatible NFC-enabled phones')
+        && str_contains($enPricing['product_nfc_spec'], 'QR fallback')
+        && !str_contains($enPricing['product_nfc_spec'], 'any phone')
+        && str_contains($arPricing['product_nfc_spec'], 'للهواتف المتوافقة')
+        && str_contains($arPricing['product_nfc_spec'], 'QR'),
+    'NFC Product schema states compatibility limits and QR fallback in both locales'
 );
 
 nfcContractCheck(
@@ -126,12 +148,15 @@ nfcContractCheck(
 
 $edited = [
     'nfc-business-card.php' => $page,
+    'includes/Seo.php' => $seo,
     'includes/ArTwins.php' => $twins,
     '.htaccess' => $apache,
     'docs/head-terms-nginx-rewrites.conf' => $nginxHeadTerms,
     'docs/ar-twins-nginx-rewrites.conf' => $nginxTwins,
     'lang/en/nfc.php' => file_get_contents($root . '/lang/en/nfc.php'),
     'lang/ar/nfc.php' => file_get_contents($root . '/lang/ar/nfc.php'),
+    'lang/en/pricing.php' => file_get_contents($root . '/lang/en/pricing.php'),
+    'lang/ar/pricing.php' => file_get_contents($root . '/lang/ar/pricing.php'),
     'llms.txt' => $llms,
 ];
 $emDash = "\xE2\x80\x94";

@@ -528,7 +528,7 @@ class Seo
             'headline' => $title,
             'description' => $description,
             'url' => $url,
-            'mainEntityOfPage' => ['@type' => 'WebPage', '@id' => $url],
+            'mainEntityOfPage' => ['@type' => 'WebPage', '@id' => $url . '#webpage'],
             // A REFERENCE, not a second definition. Author and publisher are the
             // same entity here, and spelling the payload out twice would define
             // #organization twice on one page with two different bodies, which
@@ -547,7 +547,7 @@ class Seo
         $published = self::publishedDate($sourceFile);
         if ($published) $node['datePublished'] = $published;
         $mtime = @filemtime($sourceFile);
-        if ($mtime) $node['dateModified'] = date('Y-m-d', $mtime);
+        if ($mtime) $node['dateModified'] = gmdate('Y-m-d', $mtime);
 
         // llm20-11: the Article's author and publisher are both bare @id refs
         // now, so the page must carry the node they refer to. Returned as a

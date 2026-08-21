@@ -43,7 +43,7 @@ return [
     'product_luxury_unit'    => 'لكل 100 بطاقة',
 
     'product_nfc_name'       => 'بطاقات NFC باللمس',
-    'product_nfc_spec'       => 'شريحة NFC قابلة لإعادة البرمجة مع QR، المس الهاتف لمشاركة البطاقة',
+    'product_nfc_spec'       => 'شريحة NFC قابلة لإعادة البرمجة للهواتف المتوافقة، مع رمز QR كخيار بديل',
     'product_nfc_price'      => '25.000 ريال',
     'product_nfc_unit'       => 'للبطاقة الواحدة',
 

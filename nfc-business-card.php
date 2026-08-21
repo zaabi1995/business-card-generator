@@ -185,7 +185,7 @@ function nfcRich(string $key): string
         <ul>
             <li><a href="https://developer.apple.com/documentation/corenfc/adding-support-for-background-tag-reading" target="_blank" rel="noopener noreferrer"><?= nfcEsc('source_apple') ?></a></li>
             <li><a href="https://developer.android.com/develop/connectivity/nfc/nfc" target="_blank" rel="noopener noreferrer"><?= nfcEsc('source_android') ?></a></li>
-            <li><a href="https://www.nxp.com/products/NTAG213_215_216" target="_blank" rel="noopener noreferrer"><?= nfcEsc('source_nxp') ?></a></li>
+            <li><a href="https://nfc-forum.org/learn/nfc-technology/" target="_blank" rel="noopener noreferrer"><?= nfcEsc('source_forum') ?></a></li>
         </ul>
 
         <h2 id="faq"><?= nfcEsc('faq_h2') ?></h2>

@@ -71,7 +71,7 @@ return [
     'sources_intro' => 'The device and chip explanations above are checked against primary technical documentation:',
     'source_apple' => 'Apple Developer, background NFC tag reading',
     'source_android' => 'Android Developers, NFC basics',
-    'source_nxp' => 'NXP, NTAG213, NTAG215 and NTAG216 specifications',
+    'source_forum' => 'NFC Forum, technical overview of NFC',
 
     'faq_h2' => 'Frequently asked questions',
     'faq_q1' => 'What is an NFC business card?',
