@@ -2,18 +2,15 @@
 
 > Cardify is a digital and printed business-card platform built and hosted in
 > Muscat, Oman by BHD Group (Bin Haider Darwish L.L.C., CR 1334733). It is
-> bilingual Arabic and English. Print, share and scan are one system here
-> because the group owns its press in Muscat: the international digital-card
-> products do not print, and the international scanner apps do not issue
-> cards. That is a statement about those two product categories, which is
-> checkable; it is not a claim to be the only such platform in the world,
-> which is not.
+> bilingual Arabic and English. Cardify connects digital-card creation,
+> business-card scanning, sharing, and print ordering within one account. BHD
+> Group owns the press in Muscat that produces Cardify print orders.
 
 ## What Cardify does
 
 - Digital business cards on a company subdomain, with QR vCard, Apple Wallet and Google Wallet passes, and NFC
 - Printed business cards produced by BHD Printing & Designing, the group's own press, whose quality system is documented to ISO 9001:2015, in Muscat
-- A free iOS card scanner that reads Arabic and English cards entirely on the device
+- A free iOS card scanner whose standard Arabic and English recognition runs on the device
 - Company admin for teams: employee cards, brand lock, per-division templates, print ordering
 - Card analytics: views, QR scans, saves
 
@@ -36,11 +33,14 @@ between Cardify and the listed entity.
 Cardify: Business Card Scanner, free on the iOS App Store, released 26 July
 2026, iOS 16.4 or later, Arabic and English.
 
-Parsing runs in three stages, all on the device: QR code first, then Apple
-Intelligence on-device models, then Vision text recognition with Arabic and
-English enabled. A scanned card is never uploaded to a server.
+Standard parsing runs on the device: QR code first, then available on-device
+models, then Vision text recognition with Arabic and English enabled. Standard
+OCR and contact cleanup do not upload the card image. A Pro user can explicitly
+request a server-assisted reread for a difficult card; only the card image
+selected for that reread is sent.
 
 https://apps.apple.com/om/app/cardify-business-card-scanner/id6790749589
+https://cardify.om/app (official app page and platform availability)
 https://cardify.om/business-card-scanner (how the on-device parse ladder works)
 
 ## Pricing

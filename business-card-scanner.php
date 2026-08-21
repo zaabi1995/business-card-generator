@@ -12,12 +12,11 @@
  * Lens on any axis we can evidence. The two claims below ARE defensible and
  * are the whole argument of the page:
  *
- *   1. The OCR runs on the device, in Arabic and English, and the card image
- *      is never uploaded. That is a property of the build, not a boast.
- *   2. Print, share and scan are one system. The international digital-card
- *      products do not print; the international scanner apps do not issue
- *      cards. That is a structural fact about the product, and it is the only
- *      claim here a competitor cannot simply copy into their own copy deck.
+ *   1. Standard OCR runs on the device, in Arabic and English. A card image
+ *      is sent only when a Pro user explicitly requests a server reread.
+ *   2. Print, share and scan are connected in one Cardify account. This is a
+ *      direct product capability, so the page describes it without making a
+ *      sweeping or untestable claim about every competing product.
  */
 require_once __DIR__ . '/config.php';
 require_once INCLUDES_DIR . '/Auth.php';
@@ -35,8 +34,8 @@ $pageTitle = $isAr
     ? 'ماسح بطاقات العمل: قراءة عربية وإنجليزية على الجهاز | كارديفاي'
     : 'Business Card Scanner: Arabic & English, On-Device | Cardify';
 $pageDescription = $isAr
-    ? 'ماسح بطاقات عمل مجاني من كارديفاي لأجهزة iPhone يقرأ البطاقات العربية والإنجليزية على جهازك نفسه، دون رفع صورة البطاقة. ومنه تُصدر بطاقتك الرقمية وتطبعها.'
-    : 'A free iPhone business card scanner that reads Arabic and English cards entirely on the device, with no card image ever uploaded. The same app issues and prints your own card.';
+    ? 'ماسح بطاقات عمل مجاني لـ iPhone يقرأ العربية والإنجليزية. المسح القياسي على الجهاز، وإعادة القراءة عبر الخادم اختيارية لمستخدم Pro.'
+    : 'A free iPhone business card scanner for Arabic and English cards. Standard scanning stays on-device, with an optional Pro server-assisted reread only when you choose it.';
 $canonicalUrl = 'https://cardify.om/business-card-scanner';
 // llm27-34: $canonicalUrl is the ENGLISH address and is used below as the
 // locale-invariant app URL. The FAQ node is NOT locale-invariant: its questions
@@ -50,31 +49,31 @@ $showNavigation = true;
 
 $faq = $isAr ? [
     ['هل تُرفع صورة البطاقة إلى خادم؟',
-     'لا. تتم القراءة الضوئية بالكامل على جهازك عبر إطار Vision المدمج في iOS، ولا تغادر صورة البطاقة الجهاز. هذا وصف لطريقة بناء التطبيق، لا وعد تسويقي.'],
+     'المسح القياسي وتنظيف بيانات الاتصال يتمان على جهازك، ولا تُرفع صورة البطاقة. وإذا اخترت بنفسك ميزة Pro لإعادة قراءة بطاقة صعبة عبر الخادم، تُرسل صورة البطاقة التي حددتها لتلك المرة فقط.'],
     ['هل يقرأ البطاقات العربية؟',
      'نعم، العربية والإنجليزية، بما في ذلك البطاقات التي تحمل اللغتين على الوجه نفسه. تُعرض النتيجة للمراجعة قبل الحفظ، لأن أي قارئ ضوئي يخطئ أحياناً في الأسماء والألقاب.'],
     ['كم يكلّف؟',
-     'المسح والحفظ في التطبيق مجاناً. الاشتراك المدفوع يخصّ بطاقتك أنت: النطاق الفرعي للشركة، وقفل الهوية البصرية، والطباعة.'],
+     'المسح القياسي ومراجعة الحقول وحفظ جهات الاتصال مجانية. تضيف Pro ميزات Apple Wallet، والنسخ الاحتياطي والمزامنة بين الأجهزة، واستيراد جهات اتصال iPhone، والقوالب المميزة ورفع الشعار، وإعادة القراءة الاختيارية عبر الخادم. طلبات الطباعة منفصلة.'],
     ['ما الفرق عن تطبيقات المسح الأخرى؟',
-     'تطبيقات المسح العالمية لا تُصدر لك بطاقة ولا تطبعها، ومنصّات البطاقات الرقمية العالمية لا تطبع. في Cardify البطاقة التي تمسحها والبطاقة التي تشاركها والبطاقة التي تطبعها في مطبعة المجموعة في مسقط نظام واحد.'],
+     'يجمع كارديفاي بين مسح بطاقات العمل، وبطاقتك الرقمية، والمشاركة عبر QR وNFC وApple Wallet، وطلب بطاقاتك المطبوعة من مطبعة مجموعة BHD في مسقط، وذلك ضمن حساب كارديفاي نفسه.'],
 ] : [
     ['Is the card image uploaded to a server?',
-     'No. Recognition runs entirely on your device through the Vision framework built into iOS, and the card image never leaves the phone. That is a description of how the app is built, not a marketing promise.'],
+     'Standard scanning and contact cleanup run on your device, so the card image is not uploaded. If you explicitly choose the Pro server-assisted reread for a difficult card, only the card image selected for that reread is sent.'],
     ['Does it read Arabic cards?',
      'Yes, Arabic and English, including cards that carry both on the same face. Every result is shown for review before it is saved, because any optical reader gets names and titles wrong sometimes.'],
     ['What does it cost?',
-     'Scanning and saving contacts is free. The paid subscription is about your own card: the company subdomain, brand lock, and printing.'],
+     'Standard scanning, field review, and saving contacts are free. Pro adds Apple Wallet, cross-device backup and sync, iPhone contact import, premium card templates and logo upload, and the optional server-assisted reread. Printed card orders are separate.'],
     ['How is this different from the other scanner apps?',
-     'The international scanner apps do not issue you a card and cannot print one, and the international digital-card platforms do not print. In Cardify the card you scan, the card you share and the card printed at the group\'s own press in Muscat are one system.'],
+     'Cardify combines business card scanning, your own digital card, QR, NFC and Apple Wallet sharing, and printed-card ordering from BHD Group\'s press in Muscat within the same Cardify account.'],
 ];
 
 $features = $isAr ? [
-    ['fa-microchip', 'قراءة على الجهاز', 'يعمل التعرّف الضوئي محلياً على الـ iPhone. لا تُرفع صورة البطاقة، ولا يلزم اتصال بالإنترنت للمسح.'],
+    ['fa-microchip', 'مسح قياسي على الجهاز', 'يعمل التعرّف الضوئي القياسي محلياً على iPhone ولا يلزم اتصال بالإنترنت. إعادة القراءة عبر الخادم خيار منفصل لمستخدم Pro.'],
     ['fa-language', 'عربي وإنجليزي', 'يقرأ الوجه العربي والوجه الإنجليزي، والبطاقات التي تجمع اللغتين، ويحفظ الاسم بالنصّين حين يتوفّران.'],
     ['fa-list-check', 'مراجعة قبل الحفظ', 'تُعرض الحقول المستخرجة للتصحيح قبل إضافتها إلى جهات الاتصال، بدل حفظ قراءة خاطئة بصمت.'],
     ['fa-address-card', 'بطاقتك أنت أيضاً', 'التطبيق نفسه يحمل بطاقتك الرقمية وبطاقة Apple Wallet، ويطلب طباعتها من مطبعة المجموعة في مسقط.'],
 ] : [
-    ['fa-microchip', 'On-device recognition', 'Optical recognition runs locally on the iPhone. The card image is not uploaded, and scanning does not need a connection.'],
+    ['fa-microchip', 'Standard on-device scanning', 'Standard optical recognition runs locally on the iPhone without a connection. The server-assisted reread is a separate Pro action you choose.'],
     ['fa-language', 'Arabic and English', 'Reads the Arabic face, the English face, and cards that carry both, keeping the name in both scripts where the card provides them.'],
     ['fa-list-check', 'Review before saving', 'Extracted fields are shown for correction before they reach your contacts, instead of silently saving a misread.'],
     ['fa-address-card', 'Your own card too', 'The same app carries your digital card and its Apple Wallet pass, and orders it printed at the group\'s press in Muscat.'],
@@ -125,8 +124,8 @@ $e = static fn($s) => htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8');
             </h1>
             <p class="text-lg text-gray-600 leading-relaxed mb-8">
                 <?= $isAr
-                    ? 'يقرأ Cardify البطاقة على الـ iPhone نفسه عبر إطار Vision في iOS. صورة البطاقة لا تُرفع إلى أي خادم، لا خادمنا ولا غيره. وحين تنتهي من مسح بطاقة غيرك، التطبيق نفسه يحمل بطاقتك ويطبعها.'
-                    : 'Cardify reads the card on the iPhone itself, through the Vision framework in iOS. The card image is not uploaded to any server, ours or anyone else\'s. And once you are done scanning somebody else\'s card, the same app carries yours and prints it.' ?>
+                    ? 'يقرأ كارديفاي البطاقة بالعربية أو الإنجليزية على iPhone، ثم يعرض الحقول لمراجعتها قبل الحفظ. المسح القياسي يبقى على الجهاز، ويُرسل مسح محدد فقط إذا اخترت ميزة Pro لإعادة القراءة عبر الخادم.'
+                    : 'Cardify reads Arabic and English business cards on the iPhone, then shows every field for review before saving. Standard scanning stays on your device. A selected scan is sent only if you choose the optional Pro server-assisted reread.' ?>
             </p>
             <a href="<?= $e($appStoreUrl) ?>" class="inline-flex items-center gap-2 rounded-xl px-7 py-4 text-white font-semibold" style="background:#009bc1">
                 <i class="fa-brands fa-apple" aria-hidden="true"></i>
@@ -161,8 +160,8 @@ $e = static fn($s) => htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8');
             </h2>
             <p class="text-gray-600 leading-relaxed mb-4">
                 <?= $isAr
-                    ? 'تطبيقات مسح البطاقات العالمية تُدخل بطاقة غيرك إلى هاتفك ثم تتوقّف عند هذا الحدّ: لا تُصدر لك بطاقة، ولا تطبع شيئاً. ومنصّات البطاقات الرقمية العالمية تُصدر بطاقة ولا تطبعها. في المقابل، Cardify جزء من مجموعة BHD التي تملك مطبعتها في مسقط والحاصلة على شهادة ISO 9001:2015، فالبطاقة التي تمسحها والبطاقة التي تشاركها والبطاقة التي تُطبع لك واحدة.'
-                    : 'The international scanner apps bring somebody else\'s card into your phone and stop there: they do not issue you a card and they cannot print one. The international digital-card platforms issue a card and do not print it. Cardify sits inside BHD Group, which owns its press with a quality system documented to ISO 9001:2015 in Muscat, so the card you scan, the card you share and the card that gets printed for you are the same system.' ?>
+                    ? 'يجمع كارديفاي ماسح بطاقات العمل وبطاقتك الرقمية وطلبات الطباعة ضمن حساب واحد. وكارديفاي جزء من مجموعة BHD التي تملك مطبعتها في مسقط، ونظام جودتها موثق وفق ISO 9001:2015. لذلك يمكنك مسح بطاقة ومشاركة بطاقتك وطلبها مطبوعة من كارديفاي.'
+                    : 'Cardify combines business card scanning, your own digital card, and printed-card ordering within one account. Cardify is part of BHD Group, which owns its press in Muscat and documents its quality system to ISO 9001:2015. You can scan a card, share yours, and order it in print through Cardify.' ?>
             </p>
             <p class="text-gray-600 leading-relaxed">
                 <?= $isAr

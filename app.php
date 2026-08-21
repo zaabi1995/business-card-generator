@@ -3,11 +3,14 @@ require_once __DIR__ . '/config.php';
 require_once INCLUDES_DIR . '/Auth.php';
 require_once INCLUDES_DIR . '/UrlSafety.php';
 $isAr = (class_exists('I18n') && I18n::getLocale() === 'ar') || (($_GET['lang'] ?? '') === 'ar');
-$pageTitle = $isAr ? 'تطبيق كارديفاي لأجهزة iPhone: امسح البطاقات وشاركها' : 'Cardify for iPhone';
+$pageTitle = $isAr
+    ? 'تطبيق كارديفاي لـ iPhone: ماسح بطاقات عمل وبطاقة رقمية'
+    : 'Cardify iPhone App: Business Card Scanner & Digital Card';
 $pageDescription = $isAr
-    ? 'تطبيق كارديفاي الأصلي لأجهزة iPhone: امسح بطاقات العمل بالعربية والإنجليزية على جهازك، احفظ جهات الاتصال في دفترك، وشارك بطاقتك الرقمية برمز QR أو NFC.'
-    : 'Scan business cards, save contacts, and share your digital card from the native Cardify app.';
+    ? 'حمّل كارديفاي على iPhone وiPad. امسح بطاقات العمل بالعربية والإنجليزية، راجع البيانات قبل الحفظ، وشارك بطاقتك بـ QR وNFC وApple Wallet.'
+    : 'Download Cardify for iPhone and iPad. Scan Arabic and English business cards, review contacts before saving, and share your digital card by QR, NFC, or Apple Wallet.';
 $canonicalUrl = 'https://cardify.om/app';
+$localeUrl = $isAr ? 'https://cardify.om/ar/app' : $canonicalUrl;
 $showNavigation = true;
 $openUrl = normalizeCardifyUrl((string) ($_GET['url'] ?? '')) ?? '';
 $nativeUrl = $openUrl !== '' ? 'cardifyscan://app/open?url=' . rawurlencode($openUrl) : 'cardifyscan://';
@@ -20,9 +23,51 @@ $appStoreUrl = AppEntity::APPSTORE_URL;
 // competing @ids were a fragment of, and it published no app node at all.
 // Now it defines the entity its own URL identifies, so a consumer that
 // dereferences https://cardify.om/app#ios-app lands on the thing.
+$faq = $isAr ? [
+    ['ما هو تطبيق كارديفاي لـ iPhone؟',
+     'كارديفاي ماسح بطاقات عمل ومنصة بطاقات رقمية لأجهزة iPhone وiPad. تستطيع مسح بطاقة، مراجعة بياناتها قبل الحفظ، وإنشاء بطاقتك لمشاركتها عبر QR أو NFC أو vCard.'],
+    ['هل يمسح التطبيق بطاقات العمل بالعربية والإنجليزية؟',
+     'نعم. يقرأ كارديفاي البطاقات العربية والإنجليزية والثنائية اللغة، ثم يعرض الحقول لمراجعتها قبل إضافتها إلى جهات الاتصال.'],
+    ['هل يتوفر ماسح كارديفاي على Android؟',
+     'تطبيق الماسح الأصلي متاح حالياً على iPhone وiPad. ويمكنك استخدام منصة كارديفاي على الويب من متصفح Android حديث لإنشاء بطاقتك الرقمية وإدارتها ومشاركتها.'],
+    ['هل تغادر صورة بطاقة العمل هاتفي؟',
+     'يتم المسح القياسي وتنظيف بيانات الاتصال على جهازك، ولا تُرفع صورة البطاقة. وإذا اخترت بنفسك ميزة Pro لإعادة قراءة بطاقة صعبة عبر الخادم، تُرسل صورة البطاقة التي حددتها لتلك المرة فقط.'],
+    ['هل يحتاج مستلم بطاقتي إلى تطبيق كارديفاي؟',
+     'لا. تفتح بطاقتك الرقمية كصفحة ويب في متصفح المستلم، ويمكنه حفظ بياناتك دون تثبيت التطبيق.'],
+    ['ما الميزات المجانية؟',
+     'تحميل التطبيق والمسح القياسي ومراجعة الحقول وحفظ جهات الاتصال مجانية. تضيف Pro ميزات Apple Wallet، والنسخ الاحتياطي والمزامنة بين الأجهزة، واستيراد جهات اتصال iPhone، والقوالب المميزة ورفع الشعار، وإعادة القراءة الاختيارية عبر الخادم. طلبات الطباعة منفصلة.'],
+] : [
+    ['What is the Cardify iPhone app?',
+     'Cardify is a business card scanner and digital business card platform for iPhone and iPad. Scan a card, review its details before saving, then create your own card to share by QR, NFC, or vCard.'],
+    ['Does Cardify scan Arabic and English business cards?',
+     'Yes. Cardify reads Arabic, English, and bilingual business cards, then shows the fields for review before adding them to your contacts.'],
+    ['Is the Cardify scanner available on Android?',
+     'The native scanner is currently available for iPhone and iPad. You can use the Cardify web platform in a modern Android browser to create, manage, and share your digital business card.'],
+    ['Does a business card image leave my phone?',
+     'Standard scanning and contact cleanup run on your device, so the card image is not uploaded. If you explicitly choose the optional Pro server-assisted reread for a difficult card, only the card image selected for that reread is sent.'],
+    ['Does someone need the Cardify app to view my card?',
+     'No. Your digital card opens as a web page in the recipient\'s browser, and they can save your details without installing the app.'],
+    ['What can I use for free?',
+     'Downloading the app, standard scanning, reviewing fields, and saving contacts are free. Pro adds Apple Wallet, cross-device backup and sync, iPhone contact import, premium card templates and logo upload, and the optional server-assisted reread. Printed card orders are separate.'],
+];
+$ld = [
+    '@context' => 'https://schema.org',
+    '@graph' => [
+        AppEntity::node(),
+        [
+            '@type' => 'FAQPage',
+            '@id' => $localeUrl . '#faq',
+            'inLanguage' => $isAr ? 'ar' : 'en',
+            'mainEntity' => array_map(static fn($q) => [
+                '@type' => 'Question',
+                'name' => $q[0],
+                'acceptedAnswer' => ['@type' => 'Answer', 'text' => $q[1]],
+            ], $faq),
+        ],
+    ],
+];
 $extraHead = '<script type="application/ld+json">'
-    . json_encode(['@context' => 'https://schema.org'] + AppEntity::node(),
-                  JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)
+    . json_encode($ld, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)
     . '</script>';
 require_once INCLUDES_DIR . '/ui-header.php';
 ?>
@@ -68,12 +113,12 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     <?= $isAr ? 'تطبيق أصلي لأجهزة iPhone وiPad' : 'Native on iPhone and iPad' ?>
                 </div>
                 <h1 class="text-5xl sm:text-6xl font-extrabold tracking-tight app-heading leading-tight mb-6">
-                    <?= $isAr ? 'كل بطاقة عمل، جاهزة للتواصل.' : 'Every business card, ready to connect.' ?>
+                    <?= $isAr ? 'امسح بطاقات العمل وشارك بطاقتك.' : 'Scan business cards. Share yours.' ?>
                 </h1>
                 <p class="text-xl text-gray-600 leading-relaxed max-w-xl mb-8">
                     <?= $isAr
-                        ? 'امسح البطاقة بالكاميرا، راجع البيانات، واحفظها كجهة اتصال. بطاقتك الرقمية وفريقك وتصاميمك متزامنة مع cardify.om.'
-                        : 'Scan with the camera, review the details, and save the contact. Your digital card, team, designs, and analytics stay in sync with cardify.om.' ?>
+                        ? 'كارديفاي تطبيق مجاني للتحميل يمسح بطاقات العمل بالعربية والإنجليزية على iPhone وiPad. راجع الحقول قبل الحفظ، ثم أنشئ بطاقتك الرقمية لمشاركتها عبر QR أو NFC أو vCard.'
+                        : 'Cardify is a free-to-download business card scanner for iPhone and iPad. Read Arabic and English cards on your device, review every field before saving, then create your own digital card to share by QR, NFC, or vCard.' ?>
                 </p>
                 <div class="flex flex-wrap gap-3">
                     <?php if ($openUrl !== ''): ?>
@@ -156,6 +201,17 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     <i class="fa-solid fa-arrow-right-to-bracket" aria-hidden="true"></i>
                     <?= $isAr ? 'فتح حسابي على الويب' : 'Open my web account' ?>
                 </a>
+            </div>
+        </div>
+        <div class="mt-16 max-w-4xl mx-auto">
+            <h2 class="text-3xl font-bold app-heading mb-8"><?= $isAr ? 'أسئلة عن تطبيق كارديفاي' : 'Questions about the Cardify app' ?></h2>
+            <div class="space-y-4">
+                <?php foreach ($faq as [$question, $answer]): ?>
+                    <article class="rounded-2xl bg-white border border-gray-100 p-6 shadow-sm">
+                        <h3 class="font-bold app-heading mb-2"><?= htmlspecialchars($question, ENT_QUOTES, 'UTF-8') ?></h3>
+                        <p class="text-gray-600 leading-relaxed"><?= htmlspecialchars($answer, ENT_QUOTES, 'UTF-8') ?></p>
+                    </article>
+                <?php endforeach; ?>
             </div>
         </div>
     </section>
