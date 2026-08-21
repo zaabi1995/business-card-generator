@@ -6,6 +6,7 @@
  * @var array  $company
  * @var bool   $isAr
  * @var array  $SECTORS
+ * @var string $basePrefix
  * @var Database $db  (from companies.php scope)
  */
 if (!defined('INCLUDES_DIR')) { http_response_code(404); exit; }
@@ -32,7 +33,7 @@ try {
             AND (logo_svg_path IS NOT NULL
                  OR logo_png_path IS NOT NULL
                  OR logo_webp_path IS NOT NULL)
-          ORDER BY RAND()
+          ORDER BY FIELD(logo_status,'verified','indexed'), name_en ASC, slug ASC
           LIMIT 12",
         [':s' => $sectorSlug, ':cur' => $currentSlug]
     );
@@ -50,7 +51,7 @@ if (!$related) return;
                 <?= $isAr ? 'من نفس القطاع في مكتبة الشعارات العمانية.' : 'From the same sector in the Omani Logo Library.' ?>
             </p>
         </div>
-        <a href="/logos/<?= logos_related_esc($sectorSlug) ?>"
+        <a href="<?= logos_related_esc(ArTwins::navLink('logos/' . $sectorSlug, '/', $isAr)) ?>"
            class="hidden sm:inline-flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-700 font-medium whitespace-nowrap">
             <?= $isAr ? 'عرض القطاع كاملاً' : 'View full sector' ?>
             <i class="fa-solid fa-arrow-<?= $isAr ? 'left' : 'right' ?> text-xs"></i>
@@ -65,7 +66,7 @@ if (!$related) return;
                 ?: $r['logo_svg_path'];
             $bg = $r['logo_dominant_color'] ?: '#f9fafb';
         ?>
-            <a href="/companies/<?= logos_related_esc($r['slug']) ?>"
+            <a href="<?= logos_related_esc($basePrefix . '/' . $r['slug']) ?>"
                class="group block bg-white rounded-lg border border-gray-200 hover:border-blue-300 hover:shadow-md transition overflow-hidden">
                 <div class="aspect-square flex items-center justify-center p-3 bg-gradient-to-br from-gray-50 to-white">
                     <img src="<?= logos_related_esc($src) ?>"
@@ -83,7 +84,7 @@ if (!$related) return;
     </div>
 
     <div class="mt-5 sm:hidden">
-        <a href="/logos/<?= logos_related_esc($sectorSlug) ?>"
+        <a href="<?= logos_related_esc(ArTwins::navLink('logos/' . $sectorSlug, '/', $isAr)) ?>"
            class="inline-flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700 font-medium">
             <?= $isAr ? 'عرض القطاع كاملاً' : 'View full sector' ?>
             <i class="fa-solid fa-arrow-<?= $isAr ? 'left' : 'right' ?> text-xs"></i>

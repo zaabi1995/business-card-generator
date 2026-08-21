@@ -152,7 +152,9 @@ elseif (!empty($minimalFooter)):
 <?php
 // r6-95: the machine-readable half of the same fact. A visible line a parser
 // cannot bind to a URL is not a freshness signal, so the date is emitted on a
-// WebPage node keyed to this page's own canonical.
+// page node keyed to this page's own canonical. Most routes use WebPage;
+// entity directories can opt into a more specific subtype and bind the page
+// to its main entity without publishing a second page node.
 if (empty($skipFooter) && $freshIso) {
     $__canon = $GLOBALS['canonicalUrl'] ?? ('https://cardify.om' . strtok($_SERVER['REQUEST_URI'] ?? '/', '?'));
     // r20-22: the WebPage node carried no inLanguage, so /ar/#webpage was
@@ -161,16 +163,33 @@ if (empty($skipFooter) && $freshIso) {
     // path test the header uses for canonical + hreflang, so the three can
     // never disagree about which side of the pair this page is.
     require_once __DIR__ . '/ArTwins.php';
-    echo '<script type="application/ld+json">' . json_encode([
+    $__pageType = $GLOBALS['pageSchemaType'] ?? 'WebPage';
+    if (!is_string($__pageType) || $__pageType === '') {
+        $__pageType = 'WebPage';
+    }
+    $__pageNode = [
         '@context'     => 'https://schema.org',
-        '@type'        => 'WebPage',
+        '@type'        => $__pageType,
         '@id'          => $__canon . '#webpage',
         'url'          => $__canon,
         'inLanguage'   => ArTwins::isArabic($__canon) ? 'ar' : 'en',
         'dateModified' => $freshIso,
         'isPartOf'     => ['@id' => 'https://cardify.om/#website'],
         'publisher'    => ['@id' => 'https://cardify.om/#organization'],
-    ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>' . "\n";
+    ];
+    if (!empty($GLOBALS['pageSchemaName']) && is_string($GLOBALS['pageSchemaName'])) {
+        $__pageNode['name'] = $GLOBALS['pageSchemaName'];
+    }
+    if (!empty($GLOBALS['pageSchemaDescription']) && is_string($GLOBALS['pageSchemaDescription'])) {
+        $__pageNode['description'] = $GLOBALS['pageSchemaDescription'];
+    }
+    if (!empty($GLOBALS['pageSchemaMainEntity']) && is_array($GLOBALS['pageSchemaMainEntity'])) {
+        $__pageNode['mainEntity'] = $GLOBALS['pageSchemaMainEntity'];
+    }
+    echo '<script type="application/ld+json">' . json_encode(
+        $__pageNode,
+        JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE
+    ) . '</script>' . "\n";
 }
 ?>
 

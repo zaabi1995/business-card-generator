@@ -19,9 +19,17 @@
 
 ## The Oman Business Index
 
-Cardify maintains an open directory of more than 2,500 Omani companies and their logos,
-used to pre-fill company details when a card is created. It is, as far as we
-know, the largest structured public index of Omani company identities.
+Cardify maintains a public, bilingual directory of more than 2,500 large and
+medium enterprises in Oman. Directory records are derived from the public
+register of the Ministry of Commerce, Industry and Investment Promotion, with
+sector and governorate classifications added by Cardify. A directory entry is
+independent reference information and does not imply a commercial relationship
+between Cardify and the listed entity.
+
+- [Oman Business Index overview](https://cardify.om/oman-business-index)
+- [Browse companies in English](https://cardify.om/companies)
+- [تصفح الشركات بالعربية](https://cardify.om/ar/companies)
+- [Omani Logo Library](https://cardify.om/logos)
 
 ## The scanner
 

@@ -29,17 +29,6 @@ $isAr = $lang === 'ar';
 // footer) reads currentLocale(), so force I18n to match $lang here.
 if (class_exists('I18n')) { I18n::setLocale($lang); }
 
-// Sector + wilayat content libraries (populated by content agents)
-// Arabic pages MUST read the Arabic libraries. Falling back to the English
-// file here is what made 2,536 /ar/companies/ URLs serve an English body
-// under an Arabic shell (ledger bhd-r6-45): an untranslated key now renders
-// nothing rather than English.
-$_ccSuffix = $isAr ? '_ar' : '';
-$_secFile  = __DIR__ . '/data/company_content/sectors' . $_ccSuffix . '.php';
-$_wilFile  = __DIR__ . '/data/company_content/wilayats' . $_ccSuffix . '.php';
-$SECTOR_CONTENT  = is_file($_secFile) ? (require $_secFile) : [];
-$WILAYAT_CONTENT = is_file($_wilFile) ? (require $_wilFile) : [];
-
 $baseUrl = 'https://cardify.om';
 $basePrefix = $isAr ? '/ar/companies' : '/companies';
 $altPrefix  = $isAr ? '/companies'    : '/ar/companies';
@@ -84,7 +73,6 @@ $WILAYATS = [
     'al-wusta'           => ['en' => 'Al Wusta',            'ar' => 'الوسطى'],
 ];
 
-function cmpT($en, $ar, $isAr) { return $isAr ? $ar : $en; }
 function labelOf($key, $dict, $isAr) {
     return $dict[$key][$isAr ? 'ar' : 'en'] ?? ucwords(str_replace('-', ' ', $key));
 }
@@ -139,7 +127,7 @@ if ($view === 'company' && $slug) {
                  WHERE sector = :s
                    AND slug != :slug
                  ORDER BY FIELD(logo_status,'verified','indexed','pending','none'),
-                          size_bucket ASC, RAND()
+                          size_bucket ASC, name_en ASC, slug ASC
                  LIMIT 6",
                 [':s' => $company['sector'], ':slug' => $slug]
             );
@@ -244,26 +232,20 @@ if ($company) {
         t('companies.company_page_title_short', ['name' => $displayName]),
     ], 'Cardify');
 
-    // Per-company unique meta description (Google dedupes near-identical descriptions).
-    // Priority: curated summary (first ~160 chars) → sector "what_they_do" personalised → factual fallback.
+    // Per-company unique meta description. Curated summaries keep their full
+    // authored text until seo_fit_desc() applies a clean word-boundary fit.
+    // Uncurated rows use only fields present in the directory record.
     $curatedSummaryEn = (string) ($company['summary_en'] ?? '');
     $curatedSummaryAr = (string) ($company['summary_ar'] ?? '');
-    $secBlockMeta = $SECTOR_CONTENT[$company['sector']] ?? null;
     if ($isAr) {
         if ($curatedSummaryAr !== '') {
-            $pageDescription = mb_substr(preg_replace('/\s+/', ' ', strip_tags($curatedSummaryAr)), 0, 155);
+            $pageDescription = preg_replace('/\s+/', ' ', strip_tags($curatedSummaryAr));
         } else {
             $pageDescription = t('companies.company_page_desc_fallback', ['name' => $displayName, 'sector' => $secLabel, 'wilayat' => $wilLabel]);
         }
     } else {
         if ($curatedSummaryEn !== '') {
-            $first = mb_substr(preg_replace('/\s+/', ' ', strip_tags($curatedSummaryEn)), 0, 155);
-            $pageDescription = $first;
-        } elseif ($secBlockMeta && !empty($secBlockMeta['what_they_do'])) {
-            // Sector-specific composed description (first sentence of what_they_do, prefixed with company)
-            $wtd = $secBlockMeta['what_they_do'];
-            $firstSent = preg_split('/(?<=[.!?])\s+/', $wtd, 2)[0] ?? $wtd;
-            $pageDescription = mb_substr("{$displayName} ({$secLabel}, {$wilLabel}). {$firstSent}", 0, 155);
+            $pageDescription = preg_replace('/\s+/', ' ', strip_tags($curatedSummaryEn));
         } else {
             $pageDescription = t('companies.company_page_desc_fallback', ['name' => $displayName, 'sector' => $secLabel, 'wilayat' => $wilLabel]);
         }
@@ -272,7 +254,9 @@ if ($company) {
     // authored strings all fit, the interpolated legal name is what overran.
     $pageDescription = seo_fit_desc($pageDescription);
     $canonicalUrl = $baseUrl . $basePrefix . '/' . $company['slug'];
-    $ogType = 'profile';
+    // Open Graph's profile type is for people. Organization directory pages
+    // use the generic website type while JSON-LD carries the precise entity.
+    $ogType = 'website';
     // Per-company composed OG image (sector background + name overlay)
     $ogImage = $baseUrl . '/og/company/' . $company['slug'] . '.jpg';
 
@@ -292,25 +276,32 @@ if ($company) {
         if (!empty($company['logo_png_2048_path'])) $availableFormats[] = 'PNG 2048';
         if (!empty($company['logo_webp_path']))     $availableFormats[] = 'WebP';
         $formatsStr = implode(' + ', $availableFormats);
-        $verifiedTag = $company['logo_status'] === 'verified' ? t('companies.verified_tag') : '';
-        // The logo override composes its own title and bypassed seo_pick_title,
-        // which is why two AR company titles still published at 67 and 70.
-        $pageTitle = seo_fit_title(t('companies.logo_title_en', ['name' => $displayName, 'formats' => $formatsStr, 'verified' => $verifiedTag]));
+        // Keep the searched company name and the word "logo" at the front.
+        // Format details belong in the description and visible download panel,
+        // not in a title where they used to truncate the entity name.
+        $pageTitle = seo_pick_title([
+            t('companies.logo_page_title',       ['name' => $displayName]),
+            t('companies.logo_page_title_mid',   ['name' => $displayName]),
+            t('companies.logo_page_title_short', ['name' => $displayName]),
+        ], 'Cardify');
         $pageDescription = seo_fit_desc(t('companies.logo_desc_en', ['name' => $displayName, 'formats' => $formatsStr, 'sector' => $secLabel, 'wilayat' => $wilLabel]));
     }
 
+    $companyEntityUrl = $baseUrl . '/companies/' . $company['slug'];
+    $companyEntityId = $companyEntityUrl . '#organization';
     $orgLd = [
         '@context' => 'https://schema.org',
         '@type' => 'Organization',
+        '@id' => $companyEntityId,
         'name' => $company['name_en'],
-        'alternateName' => $company['name_ar'],
-        'url' => $company['website'] ?: $canonicalUrl,
+        'url' => $company['website'] ?: $companyEntityUrl,
         'address' => [
             '@type' => 'PostalAddress',
             'addressCountry' => 'OM',
             'addressRegion' => labelOf($company['wilayat'], $WILAYATS, false),
         ],
     ];
+    if (!empty($company['name_ar'])) $orgLd['alternateName'] = $company['name_ar'];
     if (!empty($company['logo_url'])) $orgLd['logo'] = $company['logo_url'];
 
     // Prefer Logo Library sources over deprecated logo_url
@@ -355,6 +346,10 @@ if ($company) {
                . '<script type="application/ld+json">' . json_encode($crumbLd, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>'
                . ($imageLd ? '<script type="application/ld+json">' . json_encode($imageLd, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>' : '')
                . ArTwins::pairLinks('/companies/' . $company['slug']);
+    $GLOBALS['pageSchemaType'] = 'ProfilePage';
+    $GLOBALS['pageSchemaName'] = $displayName;
+    $GLOBALS['pageSchemaDescription'] = $pageDescription;
+    $GLOBALS['pageSchemaMainEntity'] = ['@id' => $companyEntityId];
 } elseif ($hubSector) {
     $secLabel = labelOf($hubSector, $SECTORS, $isAr);
     $pageTitle = t('companies.hub_sector_page_title', ['label' => $secLabel]);
@@ -535,21 +530,17 @@ function escq($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
                 $curatedSummary = $isAr ? ($company['summary_ar'] ?: '') : ($company['summary_en'] ?: '');
                 $secKey   = $company['sector'];
                 $wilKey   = $company['wilayat'];
-                $secBlock = $SECTOR_CONTENT[$secKey] ?? null;
-                $wilBlock = $WILAYAT_CONTENT[$wilKey] ?? null;
                 $secLabelEn = labelOf($secKey, $SECTORS, $isAr);
                 $wilLabelEn = labelOf($wilKey, $WILAYATS, $isAr);
-                $sizeTextEn = $company['size_bucket'] === 'large'
-                    ? ($isAr ? t('companies.size_large') : 'large')
-                    : ($isAr ? t('companies.size_medium') : 'medium');
+                $sizeText = $company['size_bucket'] === 'large'
+                    ? t('companies.size_large')
+                    : t('companies.size_medium');
                 $displayName = $isAr ? ($company['name_ar'] ?: $company['name_en']) : $company['name_en'];
 
                 // Detect sovereign / ministerial / authority entities. They
                 // are state-sector bodies, none of them "roll out business
-                // cards for their team" via Cardify, and commercial-banking
-                // sector boilerplate is wrong for them. We drop the upsell
-                // section entirely for sovereign entities and restrict the
-                // About content to their curated summary only.
+                // cards for their team" via Cardify. The separate Cardify
+                // product section is omitted for these records.
                 $sovereignNamePatterns = [
                     '/^ministry\s+of\b/i',
                     '/\bauthority\b/i',
@@ -572,40 +563,44 @@ function escq($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
                     if (strpos($srcUrl, 'MoCIIP ministerial pack') === 0) $isSovereign = true;
                 }
 
-                // Build "About" paragraphs
+                // Curated summaries are rendered as authored. Every uncurated
+                // record gets a compact source-backed statement instead of
+                // generic sector prose that could describe a different entity.
                 $aboutParas = [];
                 if ($curatedSummary) {
                     foreach (preg_split("/\n\s*\n/", trim($curatedSummary)) as $p) {
                         $p = trim($p);
                         if ($p !== '') $aboutParas[] = $p;
                     }
-                } elseif ($isSovereign) {
-                    // Sovereign entity with no curated summary yet, keep it
-                    // factual and minimal. No commercial-sector boilerplate.
-                    $aboutParas[] = t('companies.about_sovereign', [
-                        'name' => $displayName, 'sector' => $secLabelEn, 'wilayat' => $wilLabelEn,
-                    ]);
-                    $aboutParas[] = t('companies.about_logo_note');
                 } else {
-                    if ($secBlock && !empty($secBlock['what_they_do'])) {
-                        $aboutParas[] = str_replace(['{company}', '{name}'], $displayName, $secBlock['what_they_do']);
-                    }
-                    if ($secBlock && !empty($secBlock['team_reality'])) {
-                        $aboutParas[] = $secBlock['team_reality'];
-                    }
-                    if ($wilBlock && !empty($wilBlock['snapshot'])) {
-                        $aboutParas[] = t('companies.about_based_in', [
-                            'name' => $displayName, 'wilayat' => $wilLabelEn,
-                        ]) . ' ' . $wilBlock['snapshot'];
-                    }
                     $aboutParas[] = t('companies.about_register_line', [
-                        'name' => $displayName, 'size' => $sizeTextEn,
+                        'name' => $displayName, 'size' => $sizeText,
                         'sector' => $secLabelEn, 'wilayat' => $wilLabelEn,
                     ]);
                 }
             ?>
 
-            <!-- About section (curated summary or composed from sector/wilayat libraries) -->
+            <section class="mt-8 rounded-xl border border-blue-100 bg-blue-50/70 p-5" aria-labelledby="profile-snapshot-heading">
+                <h2 id="profile-snapshot-heading" class="text-lg font-bold text-gray-900">
+                    <?= escq(t('companies.profile_snapshot_heading', ['name' => $displayName])) ?>
+                </h2>
+                <p class="mt-2 text-gray-700 leading-relaxed">
+                    <?= escq(t('companies.profile_snapshot', [
+                        'name' => $displayName,
+                        'sector' => $secLabelEn,
+                        'wilayat' => $wilLabelEn,
+                        'size' => $sizeText,
+                    ])) ?>
+                </p>
+                <p class="mt-2 text-sm text-gray-600 leading-relaxed">
+                    <?= escq(t('companies.profile_independence', ['name' => $displayName])) ?>
+                    <a href="<?= escq(ArTwins::navLink('contact', '/', $isAr)) ?>" class="font-medium text-blue-700 underline hover:text-blue-800">
+                        <?= escq(t('companies.profile_correction')) ?>
+                    </a>
+                </p>
+            </section>
+
+            <!-- About section: curated summary or source-backed directory record -->
             <section class="mt-8">
                 <h2 class="text-xl font-bold text-gray-900 mb-3"><?= escq(t('companies.about_heading', ['name' => $displayName])) ?></h2>
                 <div class="space-y-4 text-gray-700 leading-relaxed">
@@ -629,28 +624,14 @@ function escq($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
             ?>
 
             <?php if (!$isSovereign): /* Commercial upsell only for private-sector companies */ ?>
-            <!-- Why Cardify fits this team (sector-specific) -->
+            <!-- Cardify product information, explicitly separate from the directory record -->
             <section class="mt-10 pt-8 border-t border-gray-200">
                 <h2 class="text-xl font-bold text-gray-900 mb-3">
-                    <?= escq(t('companies.how_cardify_fits', ['name' => $displayName])) ?>
+                    <?= escq(t('companies.business_card_tools_heading', ['sector' => $secLabelEn])) ?>
                 </h2>
-                <?php if ($secBlock && !empty($secBlock['cardify_fit'])): ?>
-                    <p class="text-gray-700 leading-relaxed mb-5"><?= escq($secBlock['cardify_fit']) ?></p>
-                <?php else: ?>
-                    <p class="text-gray-700 leading-relaxed mb-5">
-                        <?= escq(t('companies.cardify_fit_default')) ?>
-                    </p>
-                <?php endif; ?>
-                <?php if ($secBlock && !empty($secBlock['use_cases']) && is_array($secBlock['use_cases'])): ?>
-                    <ul class="space-y-2.5 mb-6">
-                        <?php foreach ($secBlock['use_cases'] as $uc): ?>
-                            <li class="flex items-start gap-3 text-gray-700">
-                                <i class="fa-solid fa-check-circle text-blue-600 mt-1 flex-shrink-0"></i>
-                                <span><?= escq($uc) ?></span>
-                            </li>
-                        <?php endforeach; ?>
-                    </ul>
-                <?php endif; ?>
+                <p class="text-gray-700 leading-relaxed mb-5">
+                    <?= escq(t('companies.cardify_tools_body')) ?>
+                </p>
                 <div class="flex flex-wrap gap-3">
                     <?php /* llm79-2 reopen: a hand-rolled ($isAr ? '/ar' : '') prefix CANNOT
                        return null, so on the Arabic side it manufactured /ar/get-started, a URL
@@ -661,7 +642,7 @@ function escq($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
                        CTA. ArTwins::navLink() returns the English URL when there is no Arabic
                        twin, which is the honest link. */ ?>
                     <a href="<?= htmlspecialchars(ArTwins::navLink('get-started', '/', $isAr)) ?>" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700">
-                        <?= escq(t('companies.start_free_for', ['name' => $displayName])) ?>
+                        <?= escq(t('companies.create_cardify_team')) ?>
                         <i class="fa-solid fa-arrow-right text-xs"></i>
                     </a>
                     <a href="/tools/vcard-qr-generator" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-gray-100 text-gray-800 font-semibold hover:bg-gray-200">
@@ -699,11 +680,11 @@ function escq($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
         <!-- Related: other companies in same sector + wilayat -->
         <?php
             $related = $db->fetchAll(
-                "SELECT slug, name_en, name_ar, wilayat FROM om_companies WHERE sector = ? AND slug != ? ORDER BY RAND() LIMIT 6",
+                "SELECT slug, name_en, name_ar, wilayat FROM om_companies WHERE sector = ? AND slug != ? ORDER BY size_bucket ASC, name_en ASC, slug ASC LIMIT 6",
                 [$company['sector'], $company['slug']]
             );
             $relatedWilayat = $db->fetchAll(
-                "SELECT slug, name_en, name_ar, sector FROM om_companies WHERE wilayat = ? AND slug != ? ORDER BY RAND() LIMIT 6",
+                "SELECT slug, name_en, name_ar, sector FROM om_companies WHERE wilayat = ? AND slug != ? ORDER BY size_bucket ASC, name_en ASC, slug ASC LIMIT 6",
                 [$company['wilayat'], $company['slug']]
             );
         ?>
@@ -801,8 +782,9 @@ function escq($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
 
         <p class="mt-10 text-xs text-gray-400 text-center">
             <?= escq(t('companies.source_footer')) ?>
-            <?= date('F Y', dbTs($company['updated_at'])) ?>
-            · <a href="/contact" class="underline hover:text-gray-600"><?= escq(t('companies.request_edit_takedown')) ?></a>
+            <?php $sourceUpdatedTs = dbTs($company['updated_at']); ?>
+            <time datetime="<?= date('Y-m-d', $sourceUpdatedTs) ?>"><?= escq(I18n::formatDate($sourceUpdatedTs, $lang)) ?></time>
+            · <a href="<?= escq(ArTwins::navLink('contact', '/', $isAr)) ?>" class="underline hover:text-gray-600"><?= escq(t('companies.request_edit_takedown')) ?></a>
         </p>
     </div>
 
