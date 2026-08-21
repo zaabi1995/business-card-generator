@@ -1092,7 +1092,7 @@ if ($introIso):
                 <div class="flex items-center justify-center gap-4">
                     <div class="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold text-lg">A</div>
                     <div class="text-left">
-                        <div class="font-bold text-gray-900">Ali Al-Zaabi</div>
+                        <div class="font-bold text-gray-900">Ali Adnan Haider Darwish</div>
                         <div class="text-gray-500 text-sm">CEO, BHD Group</div>
                     </div>
                 </div>

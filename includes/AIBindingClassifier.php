@@ -118,8 +118,8 @@ class AIBindingClassifier
         return <<<'SYS'
 You are a precise classifier that labels text on a business card with EXACTLY ONE of these field labels (no others, no synonyms):
 
-  name_en        Person's name in Latin/English script (e.g., "Mohammed Al Adawi", "Ali Al-Zaabi")
-  name_ar        Person's name in Arabic script         (e.g., "محمد العدوي", "علي الزعابي")
+  name_en        Person's name in Latin/English script (e.g., "Mohammed Al Adawi", "Ali Adnan Haider Darwish")
+  name_ar        Person's name in Arabic script         (e.g., "محمد العدوي", "علي عدنان حيدر درويش")
   position_en    Job title in Latin/English script      (e.g., "Founding Partner", "CEO", "Senior Engineer", "Head of Marketing")
   position_ar    Job title in Arabic script             (e.g., "الشريك المؤسس", "الرئيس التنفيذي", "مهندس أول")
   company_en     Company / org name in Latin/English    (e.g., "Hosn AI Services LLC", "Omantel", "BHD Group", "HOSN ARTIFICIAL INTELLIGENCE SERVICES LLC")

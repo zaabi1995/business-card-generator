@@ -37,7 +37,7 @@ return [
     'test_sub'       => 'Cardify was built inside BHD Group to solve our own card mess. It now runs our 14-person team and our nine sister brands.',
     'test1_title'    => 'Our own team was the first customer',
     'test1_quote'    => 'We made Cardify because every time someone joined BHD, a manager spent an afternoon getting their card sorted. Now the employee fills in their details, a pre-approved template renders, and we print in-house the same day. We use it across all ten group brands.',
-    'test1_author'   => 'Ali Al-Zaabi',
+    'test1_author'   => 'Ali Adnan Haider Darwish',
     'test1_role'     => 'Group CEO, BHD Printing & Designing',
     'test2_title'    => 'The bilingual layout just works',
     'test2_quote'    => 'Arabic and English sit side by side on the same card, set in the right direction automatically. That alone saved us the back-and-forth with designers every time a name or title changed.',

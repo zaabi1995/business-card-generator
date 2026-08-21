@@ -103,7 +103,7 @@ CREATE TABLE print_shop_operators (
 Either `phone` or `email` must be set (not both required). Login by phone uses WhatsApp OTP; login by email uses email OTP. Both via `OtpService::send($identifier, $channel, 'printshop_login')`.
 
 Seed at deploy:
-- `(print_shop_id=2, name='Ali Al-Zaabi', phone='+96871616161')`
+- `(print_shop_id=2, name='Ali Adnan Haider Darwish', phone='+96871616161')`
 
 Arshad + Hussain added later through the operators admin page.
 

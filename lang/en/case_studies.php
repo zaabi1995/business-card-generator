@@ -30,7 +30,7 @@ return [
     'bhd_result_h'     => 'What changed',
     'bhd_result_b'     => 'New-hire card turnaround dropped from about four hours of manager time to under ten minutes of self-service. The group now prints roughly forty cards a month with zero designer hours spent on repeats.',
     'bhd_quote'        => 'We made Cardify because our own team was bleeding designer hours on repeat work. Now the designer only touches the template, and the team handles the rest.',
-    'bhd_quote_author' => 'Ali Al-Zaabi, Group CEO',
+    'bhd_quote_author' => 'Ali Adnan Haider Darwish, Group CEO',
 
     // CupsByAA
     'cup_name'         => 'CupsByAA',

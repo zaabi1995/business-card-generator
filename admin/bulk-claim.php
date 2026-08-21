@@ -478,7 +478,7 @@ adminHeader(t('adminchrome.bulk_claim'), 'reports');
                     <label class="block text-xs font-medium text-gray-700 mb-1"><?= htmlspecialchars(t('bulkclaim.field_paste')) ?></label>
                     <textarea name="csv_text" rows="8"
                         class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm font-mono focus:border-purple-400 focus:ring-purple-200"
-                        placeholder="name,phone,company_name,title,email&#10;Ali Al-Zaabi,96899889100,BHD Group,CEO,ali@bhd.om"><?= sanitize($previewCsv) ?></textarea>
+                        placeholder="name,phone,company_name,title,email&#10;Ali Adnan Haider Darwish,96899889100,BHD Group,CEO,ali@bhd.om"><?= sanitize($previewCsv) ?></textarea>
                 </div>
 
                 <div class="flex items-center justify-between">

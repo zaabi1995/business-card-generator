@@ -4,7 +4,7 @@ require_once INCLUDES_DIR . '/CardPDFRenderer.php';
 $db = Database::getInstance();
 $co = $db->fetchOne("SELECT id FROM companies WHERE slug='mhd'");
 $depts = $db->fetchAll("SELECT id,slug FROM departments WHERE company_id=:c AND portal_enabled=1 ORDER BY slug",['c'=>$co['id']]);
-$base=['name_en'=>'Ali Al-Zaabi','name_ar'=>'علي الزعابي',
+$base=['name_en'=>'Ali Adnan Haider Darwish','name_ar'=>'علي عدنان حيدر درويش',
  'position_en'=>'Jr. Specialist Culture & Engagement','position_ar'=>'أخصائي مبتدئ للثقافة والمشاركة',
  'position_en_2'=>'Engagement','position_ar_2'=>'مسؤول المشاركة',
  'mobile'=>'91117795','mobile_ar'=>'٩١١١٧٧٩٥','email'=>'ali@mhd.co.om','status'=>'active'];

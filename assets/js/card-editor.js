@@ -848,7 +848,7 @@ class CardEditor {
         // Auto-shrink Latin text when it would overflow field.width. The
         // PDF parser bbox was sized for the source design's literal text;
         // a longer dynamic name (e.g. "Ali Adnan Haider Darwish" replacing
-        // "Ali Al-Zaabi") would otherwise spill into adjacent elements
+        // "Ali Adnan Haider Darwish") would otherwise spill into adjacent elements
         // (logo, gold accent line). Step down 0.5pt at a time (the same
         // unit HR sees in the template editor) until it fits, or hits the
         // per-field floor (default 70% of original). 0.5pt = 300/72 * 0.5

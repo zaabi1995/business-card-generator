@@ -91,7 +91,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
 
         <h2>Founder Community & Giving Back</h2>
         <p>
-            Cardify is built by founders (BHD Group, the company behind Cardify, is led by an Omani founder, Ali Al Zaabi). We offer a free "founder plan" to early-stage Omani startups through partnerships with Riyada, KOM, and Oman Technology Fund, if you're a registered Omani startup pre-Series A, contact us for the founder plan access code. We believe the Oman startup ecosystem succeeds when founders can punch above their weight in every investor meeting. A better business card is a small but real part of that.
+            Cardify is built by founders (BHD Group, the company behind Cardify, is led by an Omani founder, Ali Adnan Haider Darwish). We offer a free "founder plan" to early-stage Omani startups through partnerships with Riyada, KOM, and Oman Technology Fund, if you're a registered Omani startup pre-Series A, contact us for the founder plan access code. We believe the Oman startup ecosystem succeeds when founders can punch above their weight in every investor meeting. A better business card is a small but real part of that.
         </p>
 
         <div class="not-prose bg-blue-50 border-l-4 border-blue-500 rounded-lg p-6 my-8">

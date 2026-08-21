@@ -87,39 +87,12 @@ class Seo
         self::emit(self::organizationNode());
     }
 
-    /**
-     * The minimal local body for https://bhd.om/#organization.
-     *
-     * Three edges on this estate point at the parent group by @id:
-     * Organization.parentOrganization here, and SoftwareApplication.publisher
-     * plus MobileApplication.publisher via AppEntity::PUBLISHER_ID. bhd.om
-     * defines that node, so none of them were dishonest, but @id resolution is
-     * per-page: nothing fetches bhd.om to complete the graph, so all three
-     * resolved to nothing on cardify.om.
-     *
-     * This is the ONE place cardify.om spells the parent out, and it is
-     * attached to Organization.parentOrganization, which every page carrying
-     * the owner node emits. AppEntity keeps its bare @id ref on purpose: a
-     * second body under the same @id on the same page is the exact defect the
-     * llm20-11 and r154 rounds spent themselves closing.
-     *
-     * Values are copied verbatim from bhd.om's live graph. @type is narrowed
-     * to Organization alone (bhd.om says ["Organization","LocalBusiness"]);
-     * that is a superclass statement, not a contradiction, and it keeps a
-     * five-key stub from claiming to be a storefront listing.
-     */
+    /** Canonical typed reference to the parent entity owned by bhd.om. */
     public static function groupOrganizationNode(): array
     {
         return [
             "@type" => "Organization",
             "@id" => "https://bhd.om/#organization",
-            "name" => "BHD Group",
-            "legalName" => "Bin Haider Darwish L.L.C.",
-            "url" => "https://bhd.om/",
-            "logo" => [
-                "@type" => "ImageObject",
-                "url" => "https://bhd.om/logos/bhd-group.svg",
-            ],
         ];
     }
 
@@ -155,15 +128,9 @@ class Seo
             "name" => "Cardify",
             "alternateName" => ["Cardify Oman", "Cardify GCC"],
             "url" => "https://cardify.om",
-            // r328: this used to be a BARE @id. bhd.om really does define that
-            // node, so the reference was honest, but a consumer resolves @id
-            // WITHIN one page graph and never fetches bhd.om, so on cardify.om
-            // the parent was an identifier pointing at nothing. Every value
-            // below is copied verbatim from the live body bhd.om publishes for
-            // this same @id, so the two graphs cannot contradict each other:
-            // keep it a strict subset when bhd.om changes, never a paraphrase.
-            // Kept deliberately minimal (identity, not a second profile): the
-            // parent's own page stays the fuller description.
+            // bhd.om owns this identity and its descriptive body. Cardify only
+            // publishes the typed edge, so one canonical @id cannot drift into
+            // two competing definitions across the group estate.
             "parentOrganization" => self::groupOrganizationNode(),
             "disambiguatingDescription" => "Cardify is the digital business card platform published by BHD Group (Bin Haider Darwish L.L.C.) in Muscat, Oman. BHD Group is Bin Haider Darwish L.L.C., Commercial Registration 1334733, a family-owned printing and technology group founded in Muscat in 2018. It is not Mohsin Haider Darwish LLC (a separate and unrelated Omani company), and the initials BHD here stand for Bin Haider Darwish, not the Bahraini dinar currency code.",
             "logo" => "https://cardify.om/assets/images/logo.svg",
@@ -193,13 +160,10 @@ class Seo
                     "closes" => "19:00",
                 ],
             ],
-            // r328: same fix as parentOrganization above. Name and url are the
-            // exact strings bhd.om publishes under https://bhd.om/#founder.
+            // The founder identity is also owned and described by bhd.om.
             "founder" => [
                 "@type" => "Person",
                 "@id" => "https://bhd.om/#founder",
-                "name" => "Ali Adnan Haider Darwish",
-                "url" => "https://alizaabi.om/",
             ],
             "foundingDate" => "2024",
             "foundingLocation" => [

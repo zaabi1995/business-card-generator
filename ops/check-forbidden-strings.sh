@@ -78,8 +78,20 @@ check 'wa\.me/' \
 check '96899899100' \
   'Wrong WhatsApp number. The staffed line is 96898899100 (note ...98899100).'
 
+# 3. The group founder's legal name must not be shortened to an unrelated
+# family name. Email handles and legacy URL slugs are identifiers and are not
+# matched by these exact display-name forms.
+check 'Ali Al-Zaabi' \
+  'Use the exact founder name: Ali Adnan Haider Darwish.'
+check 'Ali Al Zaabi' \
+  'Use the exact founder name: Ali Adnan Haider Darwish.'
+check 'Ali Adnan Haider Darwish Al-Zaabi' \
+  'Use the exact founder name: Ali Adnan Haider Darwish.'
+check 'علي الزعابي' \
+  'Use the exact Arabic founder name: علي عدنان حيدر درويش.'
+
 if [ "$fail" -ne 0 ]; then
   echo "Forbidden-string gate FAILED."
   exit 1
 fi
-echo "Forbidden-string gate OK (wa.me, phone typo)"
+echo "Forbidden-string gate OK (WhatsApp host, phone typo, founder identity)"

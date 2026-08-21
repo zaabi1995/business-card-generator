@@ -118,7 +118,7 @@ class AppEntity
      * The estate cannot arbitrate its own two answers, so the registry that
      * OWNS the record was asked instead. itunes.apple.com/lookup?id=6790749589
      * (re-read 10 Aug 2026) returns sellerName "Bin Haider Darwish L.L.C.",
-     * artistName "Ali Adnan Haider Darwish Al-Zaabi", sellerUrl
+     * artistName "Ali Adnan Haider Darwish", sellerUrl
      * https://cardify.om, bundleId om.cardify.scan. The legal seller of record
      * is BHD, so the publisher edge resolves to the group node on EVERY
      * surface. cardify.om is the seller URL, which is what `url` already says;

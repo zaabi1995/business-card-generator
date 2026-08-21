@@ -64,7 +64,7 @@ keep working exactly as they were.
 One favour: if anything looks off, hit reply or WhatsApp us on
 +968 9889 9100 — a real person answers within office hours.
 
-Ali Al-Zaabi
+Ali Adnan Haider Darwish
 Group CEO, BHD Printing & Designing
 cardify.om
 ```
@@ -110,7 +110,7 @@ cardify.om
 طلب واحد: إذا لاحظتَ شيئاً غير طبيعي، ردّ على هذه الرسالة أو راسلنا
 على واتساب 96898899100 — يجيبك شخص حقيقي في ساعات العمل.
 
-علي الزعابي
+علي عدنان حيدر درويش
 الرئيس التنفيذي للمجموعة، BHD للطباعة والتصميم
 cardify.om
 ```

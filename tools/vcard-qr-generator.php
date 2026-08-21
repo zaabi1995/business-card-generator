@@ -107,7 +107,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 <form id="vcardForm" class="space-y-4" onsubmit="return false;">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Full name <span class="text-red-500">*</span></label>
-                        <input type="text" id="fullName" required placeholder="Ali Al-Zaabi"
+                        <input type="text" id="fullName" required placeholder="Ali Adnan Haider Darwish"
                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                     </div>
                     <div>

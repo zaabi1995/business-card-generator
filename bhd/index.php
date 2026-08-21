@@ -123,7 +123,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 <div class="flex items-center gap-3 mb-3">
                     <div class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold text-sm">AZ</div>
                     <div>
-                        <div class="font-bold text-gray-900 text-sm">Ali Al Zaabi</div>
+                        <div class="font-bold text-gray-900 text-sm">Ali Adnan Haider Darwish</div>
                         <div class="text-gray-500 text-xs">Managing Director</div>
                     </div>
                 </div>
