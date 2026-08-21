@@ -28,7 +28,7 @@ between Cardify and the listed entity.
 
 - [Oman Business Index overview](https://cardify.om/oman-business-index)
 - [Browse companies in English](https://cardify.om/companies)
-- [تصفح الشركات بالعربية](https://cardify.om/ar/companies)
+- [Browse companies in Arabic](https://cardify.om/ar/companies)
 - [Omani Logo Library](https://cardify.om/logos)
 
 ## The scanner
