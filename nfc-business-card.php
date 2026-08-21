@@ -70,6 +70,22 @@ function nfcRich(string $key): string
 }
 ?>
 
+<style>
+    .nfc-actions { display: flex; flex-direction: column; gap: .75rem; }
+    .nfc-copy > h2 { margin: 2.75rem 0 1rem; color: #111827; font-size: 1.625rem; font-weight: 800; line-height: 1.25; letter-spacing: -.02em; }
+    .nfc-copy > h2:first-child { margin-top: 0; }
+    .nfc-copy > h3 { margin: 1.75rem 0 .5rem; color: #111827; font-size: 1.125rem; font-weight: 700; line-height: 1.4; }
+    .nfc-copy > p { margin: .9rem 0; color: #374151; font-size: 1.0625rem; line-height: 1.85; }
+    .nfc-copy > ul { margin: 1rem 0; padding-inline-start: 1.4rem; color: #374151; list-style: disc; }
+    .nfc-copy > ul > li { margin: .65rem 0; line-height: 1.75; }
+    .nfc-copy > p a, .nfc-copy > ul a { color: #1d4ed8; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+    .nfc-copy > p a:hover, .nfc-copy > ul a:hover { text-decoration: none; }
+    @media (min-width: 640px) {
+        .nfc-actions { flex-direction: row; }
+        .nfc-actions > a { width: auto; }
+    }
+</style>
+
 <main id="main-content" tabindex="-1" class="min-h-screen bg-gray-50">
     <header class="bg-white pt-28 pb-12 border-b border-gray-100">
         <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -84,7 +100,7 @@ function nfcRich(string $key): string
             <p class="text-gray-600 text-lg max-w-3xl leading-relaxed" data-speakable="summary">
                 <?= nfcEsc('hero_lede') ?>
             </p>
-            <div class="flex flex-col sm:flex-row gap-3 mt-7">
+            <div class="nfc-actions mt-7">
                 <a href="<?= htmlspecialchars($registerUrl, ENT_QUOTES) ?>" class="inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl shadow-lg shadow-blue-600/25 transition">
                     <?= nfcEsc('cta_build') ?>
                     <i class="fa-solid fa-arrow-<?= $arrow ?>" aria-hidden="true"></i>
@@ -97,7 +113,7 @@ function nfcRich(string $key): string
         </div>
     </header>
 
-    <article class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12 prose prose-lg" data-speakable="article-body">
+    <article class="nfc-copy max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12" data-speakable="article-body">
         <h2 id="what-is-an-nfc-business-card" class="mt-0"><?= nfcEsc('definition_h2') ?></h2>
         <p><?= nfcEsc('definition_p1') ?></p>
         <p><?= nfcEsc('definition_p2') ?></p>
