@@ -46,8 +46,22 @@ https://cardify.om/business-card-scanner (how the on-device parse ladder works)
 ## Pricing
 
 - The digital platform is free to use.
-- Printed cards: Standard OMR 6.000 per 100, Premium OMR 8.000 per 100, Luxury OMR 15.000 per 100.
+- Printed cards: Standard OMR 5.000 per 100, Premium OMR 6.000 per 100, Luxury OMR 15.000 per 100.
 - NFC cards: OMR 25.000 per card.
+
+## NFC business cards
+
+Cardify's NFC card is a physical, re-pointable tap card with a printed QR
+fallback. Both methods open the same live Cardify profile. The recipient does
+not need the Cardify app. The published price is OMR 25.000 per card, including
+the chip, printing and programming. Device support varies, which is why the QR
+fallback is present on every NFC card.
+
+- [NFC business cards in Oman, English](https://cardify.om/nfc-business-card)
+- [بطاقات أعمال NFC في عُمان](https://cardify.om/ar/nfc-business-card)
+- [Current Cardify pricing, English](https://cardify.om/pricing)
+- [أسعار كارديفاي الحالية](https://cardify.om/ar/pricing)
+- [Technical setup guide](https://cardify.om/tools/nfc-business-card-guide)
 
 ## Scale
 

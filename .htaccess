@@ -164,6 +164,7 @@
     RewriteRule ^digital-business-card/?$ digital-business-card.php [L,QSA]
     RewriteRule ^nfc-business-cards/?$ /nfc-business-card [R=301,L]
     RewriteRule ^nfc-business-card/?$ nfc-business-card.php [L,QSA]
+    RewriteRule ^ar/nfc-business-card/?$ nfc-business-card.php?lang=ar [L,QSA]
     RewriteRule ^virtual-business-cards/?$ /virtual-business-card [R=301,L]
     RewriteRule ^virtual-business-card/?$ virtual-business-card.php [L,QSA]
     RewriteRule ^(vs|alternatives)/?$ /compare [R=301,L]
