@@ -1,6 +1,9 @@
 # Cardify - Business Card Generator SaaS - Apache Configuration
 # For cardify.om
 
+# Preserve Arabic text in plain-text discovery files such as llms.txt.
+AddDefaultCharset UTF-8
+
 # Enable Rewrite Engine
 <IfModule mod_rewrite.c>
     RewriteEngine On

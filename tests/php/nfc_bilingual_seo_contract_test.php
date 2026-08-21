@@ -101,6 +101,12 @@ nfcContractCheck(
     'AI discovery names both NFC locales and matches canonical print pricing'
 );
 
+nfcContractCheck(
+    str_contains($apache, 'AddDefaultCharset UTF-8')
+        && str_contains($nginxTwins, 'charset utf-8;'),
+    'Apache and nginx deployment records declare UTF-8 for Arabic AI discovery text'
+);
+
 $enTitle = seo_compose_title($en['page_title'], 'Cardify');
 $arTitle = seo_compose_title($ar['page_title'], 'Cardify');
 nfcContractCheck(
