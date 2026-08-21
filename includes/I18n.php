@@ -12,7 +12,8 @@
  * Namespaces auto-load on first dotted-key lookup: t('admin.dashboard.title')
  * loads lang/{locale}/admin.php once.
  *
- * Lookup: param `?lang=` -> cookie `cardify_lang` -> session -> Accept-Language -> default.
+ * Public canonical URLs own their locale. Other routes use query, cookie,
+ * session, then the English default.
  */
 class I18n
 {
@@ -33,6 +34,39 @@ class I18n
     // stuck honouring an old preference even if the user reaches us via
     // a cached HTML body (the Set-Cookie response header still fires).
     private const LEGACY_COOKIE_KEYS = ['cardify_lang', 'cardify_lang_v2'];
+
+    /** Load the public URL locale map without introducing an autoloader. */
+    private static function loadArTwins(): bool
+    {
+        if (!class_exists('ArTwins')) {
+            $twins = __DIR__ . '/ArTwins.php';
+            if (is_file($twins)) require_once $twins;
+        }
+        return class_exists('ArTwins');
+    }
+
+    /**
+     * Return the locale dictated by a public canonical path, or null when the
+     * route intentionally keeps the app's query and cookie locale behaviour.
+     */
+    public static function canonicalLocaleForPath(string $urlOrPath, ?string $host = null): ?string
+    {
+        if (!self::loadArTwins()) return null;
+
+        if (ArTwins::isArabic($urlOrPath)) {
+            return ArTwins::arPath($urlOrPath) !== null ? 'ar' : null;
+        }
+
+        // Preserve the existing path rule for real bilingual twins on every
+        // host. The new monolingual policy is deliberately limited to the
+        // configured Cardify site so tenant and custom-domain routes do not
+        // inherit an SEO route family merely because their slug looks similar.
+        if (ArTwins::arPath($urlOrPath) !== null) return 'en';
+
+        $host = $host ?? ($_SERVER['HTTP_HOST'] ?? '');
+        if (ArTwins::isCanonicalSiteHost($host) && ArTwins::isEnglishOnly($urlOrPath)) return 'en';
+        return null;
+    }
 
     public static function boot(): void
     {
@@ -105,10 +139,12 @@ class I18n
      * Rules, deliberately narrow:
      *   A. path under /ar/  -> locale is ar, full stop. An explicit ?lang=en
      *      is read as "give me the English page" and 301s to the EN twin.
-     *   B. path not under /ar/ with ?lang=ar -> 301 to the Arabic twin, but
-     *      ONLY when ArTwins knows one exists. Everything ArTwins does not
-     *      map (/admin, /portal, /company, the app surfaces) keeps the old
-     *      query toggle untouched, which is what those pages opt into.
+     *   B. path not under /ar/ with ?lang=ar -> 301 to the Arabic twin when
+     *      ArTwins knows one exists.
+     *   C. public EN-only path on the Cardify host -> render English and strip
+     *      a stale lang query. It has no honest Arabic destination.
+     *   D. other unmapped routes (/admin, /portal, /company and app surfaces)
+     *      keep the query and cookie toggle they explicitly opt into.
      */
     private static function reconcilePathAndQuery(): void
     {
@@ -127,10 +163,7 @@ class I18n
             ? $_GET['lang'] : null;
         $isArPath = ($path === '/ar' || $path === '/ar/' || strpos($path, '/ar/') === 0);
 
-        if (!class_exists('ArTwins')) {
-            $twins = __DIR__ . '/ArTwins.php';
-            if (is_file($twins)) require_once $twins;
-        }
+        self::loadArTwins();
 
         if ($isArPath) {
             if ($wanted === 'en' && class_exists('ArTwins')) {
@@ -157,7 +190,29 @@ class I18n
             }
         }
 
-        // C. The COOKIE is a preference, not an address. 27-2.
+        // Public EN-only routes have no /ar/ destination, but their canonical
+        // URL still dictates English. Strip stale language query parameters,
+        // prevent a stored Arabic preference from changing lang or direction,
+        // and preserve an explicit switch back to English for later app pages.
+        $englishOnly = class_exists('ArTwins')
+            && ArTwins::isCanonicalSiteHost($_SERVER['HTTP_HOST'] ?? '')
+            && ArTwins::isEnglishOnly($path);
+        if ($englishOnly) {
+            if ($wanted === 'en') {
+                self::persistCookie('en');
+                $_COOKIE[self::COOKIE_KEY] = 'en';
+                if (function_exists('session_status') && session_status() === PHP_SESSION_ACTIVE) {
+                    $_SESSION['cardify_lang'] = 'en';
+                }
+            }
+            if ($wanted !== null) {
+                self::redirect(ArTwins::normalise($path), $uri);
+            }
+            self::$pathLocale = 'en';
+            return;
+        }
+
+        // E. The COOKIE is a preference, not an address. 27-2.
         //
         // r6-47 made the path outrank ?lang= and stopped there, so detect()
         // step 2 still read the cookie with no path check at all. Measured on
@@ -177,12 +232,13 @@ class I18n
         // the only reading of "the URL is authoritative" that leaves the
         // switcher working.
         //
-        // Scope is the same carve-out rule B uses: only paths ArTwins maps,
-        // i.e. exactly the URLs that publish a canonical + hreflang pair.
+        // Scope includes mapped bilingual paths. Public English-only paths are
+        // handled above, while app and account routes retain their opt-in
+        // cookie behaviour.
         // /admin, /portal, /company and the app surfaces are unmapped and keep
         // the cookie toggle they opt into.
         if ($wanted === null && class_exists('ArTwins')
-            && ArTwins::arPath($path) !== null) {
+            && self::canonicalLocaleForPath($path, $_SERVER['HTTP_HOST'] ?? '') === 'en') {
             self::$pathLocale = 'en';
         }
     }

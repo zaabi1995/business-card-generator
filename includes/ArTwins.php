@@ -88,6 +88,45 @@ class ArTwins
         '/case-studies',
     ];
 
+    /**
+     * Public, indexable EN routes that deliberately have no Arabic body.
+     *
+     * These routes still need a URL-authoritative locale. Without this list,
+     * an Arabic preference cookie can render Arabic chrome, lang="ar" and RTL
+     * at an English canonical URL even though no Arabic twin exists.
+     */
+    private const ENGLISH_ONLY_PATHS = [
+        '/blog',
+        '/compare',
+        '/cookies',
+        '/delete-account',
+        '/digital-business-card',
+        '/get-started',
+        '/glossary',
+        '/industries',
+        '/intro',
+        '/media-kit',
+        '/nfc-business-card',
+        '/press',
+        '/security',
+        '/virtual-business-card',
+    ];
+
+    /**
+     * Public EN-only route families. A family hub that has a real Arabic twin,
+     * such as /tools or /solutions, is excluded by the arPath() check first.
+     */
+    private const ENGLISH_ONLY_SUBTREES = [
+        '/blog',
+        '/careers',
+        '/compare',
+        '/gcc',
+        '/glossary',
+        '/industries',
+        '/solutions',
+        '/tools',
+    ];
+
     /** All EN paths with an Arabic twin. */
     public static function paths(): array
     {
@@ -113,10 +152,50 @@ class ArTwins
         return $path === '/ar' || $path === '/ar/' || strpos($path, '/ar/') === 0;
     }
 
+    /** True only for the configured Cardify site host, never a tenant host. */
+    public static function isCanonicalSiteHost(string $host): bool
+    {
+        $normaliseHost = static function (string $value): string {
+            $value = strtolower(trim($value));
+            if ($value === '') return '';
+            if (strpos($value, '://') !== false) {
+                $parsed = parse_url($value, PHP_URL_HOST);
+                $value = is_string($parsed) ? $parsed : '';
+            }
+            $value = preg_replace('/:\d+$/', '', $value) ?? '';
+            return rtrim($value, '.');
+        };
+
+        $expected = defined('APP_HOST') ? (string) APP_HOST : (string) parse_url(self::SITE, PHP_URL_HOST);
+        $expected = $normaliseHost($expected);
+        $actual = $normaliseHost($host);
+        if ($expected === '' || $actual === '') return false;
+
+        if (strpos($expected, 'www.') === 0) $expected = substr($expected, 4);
+        if (strpos($actual, 'www.') === 0) $actual = substr($actual, 4);
+
+        return $actual === $expected;
+    }
+
     /** True when this path (either side) has a real Arabic twin. */
     public static function has(string $urlOrPath): bool
     {
         return in_array(self::normalise($urlOrPath), self::PATHS, true);
+    }
+
+    /** True when a public canonical route must always render in English. */
+    public static function isEnglishOnly(string $urlOrPath): bool
+    {
+        $p = self::normalise($urlOrPath);
+
+        // A real Arabic twin always wins, including parameterised subtrees.
+        if (self::arPath($p) !== null) return false;
+        if (in_array($p, self::ENGLISH_ONLY_PATHS, true)) return true;
+
+        foreach (self::ENGLISH_ONLY_SUBTREES as $prefix) {
+            if (strpos($p, $prefix . '/') === 0) return true;
+        }
+        return false;
     }
 
     /** Absolute EN URL for a path (accepts either side of the pair). */
