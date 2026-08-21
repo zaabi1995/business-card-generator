@@ -533,8 +533,8 @@ function escq($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
                 $secLabelEn = labelOf($secKey, $SECTORS, $isAr);
                 $wilLabelEn = labelOf($wilKey, $WILAYATS, $isAr);
                 $sizeText = $company['size_bucket'] === 'large'
-                    ? t('companies.size_large')
-                    : t('companies.size_medium');
+                    ? t('companies.size_large_inline')
+                    : t('companies.size_medium_inline');
                 $displayName = $isAr ? ($company['name_ar'] ?: $company['name_en']) : $company['name_en'];
 
                 // Detect sovereign / ministerial / authority entities. They
@@ -563,20 +563,15 @@ function escq($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
                     if (strpos($srcUrl, 'MoCIIP ministerial pack') === 0) $isSovereign = true;
                 }
 
-                // Curated summaries are rendered as authored. Every uncurated
-                // record gets a compact source-backed statement instead of
-                // generic sector prose that could describe a different entity.
+                // Curated summaries are rendered as authored. Uncurated rows
+                // use the source-backed snapshot below and do not repeat it in
+                // a second About section.
                 $aboutParas = [];
                 if ($curatedSummary) {
                     foreach (preg_split("/\n\s*\n/", trim($curatedSummary)) as $p) {
                         $p = trim($p);
                         if ($p !== '') $aboutParas[] = $p;
                     }
-                } else {
-                    $aboutParas[] = t('companies.about_register_line', [
-                        'name' => $displayName, 'size' => $sizeText,
-                        'sector' => $secLabelEn, 'wilayat' => $wilLabelEn,
-                    ]);
                 }
             ?>
 
@@ -593,14 +588,23 @@ function escq($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
                     ])) ?>
                 </p>
                 <p class="mt-2 text-sm text-gray-600 leading-relaxed">
-                    <?= escq(t('companies.profile_independence', ['name' => $displayName])) ?>
-                    <a href="<?= escq(ArTwins::navLink('contact', '/', $isAr)) ?>" class="font-medium text-blue-700 underline hover:text-blue-800">
+                    <?= escq(t('companies.profile_independence')) ?>
+                    <a href="<?= escq(ArTwins::navLink('contact', '/', $isAr)) ?>" class="inline-block mt-1 font-medium text-blue-700 underline hover:text-blue-800">
                         <?= escq(t('companies.profile_correction')) ?>
                     </a>
                 </p>
+                <?php if (!empty($company['website'])): ?>
+                    <p class="mt-3">
+                        <a href="<?= escq($company['website']) ?>" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 text-blue-700 hover:text-blue-800 font-medium">
+                            <i class="fa-solid fa-up-right-from-square text-sm"></i>
+                            <?= escq(t('companies.visit_website')) ?>
+                        </a>
+                    </p>
+                <?php endif; ?>
             </section>
 
-            <!-- About section: curated summary or source-backed directory record -->
+            <?php if ($aboutParas): ?>
+            <!-- About section: rendered only when the company has curated source text -->
             <section class="mt-8">
                 <h2 class="text-xl font-bold text-gray-900 mb-3"><?= escq(t('companies.about_heading', ['name' => $displayName])) ?></h2>
                 <div class="space-y-4 text-gray-700 leading-relaxed">
@@ -608,15 +612,8 @@ function escq($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
                         <p><?= escq($p) ?></p>
                     <?php endforeach; ?>
                 </div>
-                <?php if (!empty($company['website'])): ?>
-                    <p class="mt-4">
-                        <a href="<?= escq($company['website']) ?>" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium">
-                            <i class="fa-solid fa-up-right-from-square text-sm"></i>
-                            <?= escq(t('companies.visit_website')) ?>
-                        </a>
-                    </p>
-                <?php endif; ?>
             </section>
+            <?php endif; ?>
 
             <?php
                 /* "More logos from {sector}" strip, only for rows with a public logo. */

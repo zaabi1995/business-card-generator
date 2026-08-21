@@ -83,8 +83,10 @@ companySeoCheck(
 );
 companySeoCheck(
     !str_contains($ar['company_page_desc_fallback'], 'يستخدم فريقها')
-        && str_contains($en['profile_independence'], 'does not claim a commercial relationship')
-        && str_contains($ar['profile_independence'], 'ولا تدعي كارديفاي وجود علاقة تجارية'),
+        && str_contains($en['profile_independence'], 'commercial relationship')
+        && str_contains($ar['profile_independence'], 'ولا يدل على وجود علاقة تجارية')
+        && !str_contains($en['profile_independence'], ':name')
+        && !str_contains($ar['profile_independence'], ':name'),
     'directory copy does not imply a listed company uses Cardify'
 );
 
@@ -92,14 +94,18 @@ companySeoCheck(
     !str_contains($companies, 'SECTOR_CONTENT')
         && !str_contains($companies, 'WILAYAT_CONTENT')
         && !str_contains($companies, "['what_they_do']")
-        && !str_contains($companies, "['team_reality']"),
+        && !str_contains($companies, "['team_reality']")
+        && !array_key_exists('about_register_line', $en)
+        && !array_key_exists('about_register_line', $ar),
     'uncurated profiles cannot inherit generic sector or governorate narratives'
 );
 companySeoCheck(
     str_contains($companies, "t('companies.profile_snapshot'")
         && str_contains($companies, "t('companies.profile_independence'")
-        && str_contains($companies, "ArTwins::navLink('contact', '/', \$isAr)"),
-    'visible answer block carries source context, independence and a locale-aware correction route'
+        && str_contains($companies, "ArTwins::navLink('contact', '/', \$isAr)")
+        && str_contains($companies, '<?php if ($aboutParas): ?>')
+        && str_contains($companies, "t('companies.visit_website')"),
+    'visible answer block carries source context, correction and any verified website without duplicate fallback copy'
 );
 companySeoCheck(
     !str_contains($companies, 'ORDER BY RAND()')
