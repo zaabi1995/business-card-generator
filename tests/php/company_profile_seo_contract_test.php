@@ -11,6 +11,7 @@ require_once dirname(__DIR__, 2) . '/includes/Seo.php';
 $root = dirname(__DIR__, 2);
 $companies = file_get_contents($root . '/companies.php');
 $footer = file_get_contents($root . '/includes/ui-footer.php');
+$structuredDataDate = file_get_contents($root . '/includes/StructuredDataDate.php');
 $relatedLogos = file_get_contents($root . '/views/partials/company_logo_related.php');
 $llms = file_get_contents($root . '/llms.txt');
 $en = require $root . '/lang/en/companies.php';
@@ -122,12 +123,28 @@ companySeoCheck(
     'ProfilePage schema binds each locale page to one stable company entity ID'
 );
 companySeoCheck(
+    str_contains($companies, "StructuredDataDate::databaseTimestamp(\$company['updated_at'] ?? null)")
+        && str_contains($companies, "\$GLOBALS['pageSchemaDateModified'] = StructuredDataDate::fromUnixTimestamp")
+        && !str_contains($companies, "dbTs(\$company['updated_at'] ?? 'now')")
+        && str_contains($footer, "array_key_exists('pageSchemaDateModified', \$GLOBALS)")
+        && str_contains($footer, 'StructuredDataDate::withDateModified')
+        && str_contains($footer, "'url'          => \$__canon")
+        && str_contains($footer, "'inLanguage'   => ArTwins::isArabic(\$__canon) ? 'ar' : 'en'")
+        && str_contains($footer, "\$__pageNode['name']")
+        && str_contains($footer, "\$__pageNode['description']")
+        && str_contains($footer, "\$__pageNode['mainEntity']")
+        && str_contains($footer, 'if (empty($skipFooter))')
+        && !str_contains($footer, 'if (empty($skipFooter) && $freshIso)')
+        && str_contains($structuredDataDate, "unset(\$node['dateModified'])"),
+    'ProfilePage dateModified is strict without dropping URL or language identity'
+);
+companySeoCheck(
     str_contains($companies, "\$ogType = 'website'")
         && !str_contains($companies, "\$ogType = 'profile'"),
     'organization pages do not use the person-only Open Graph profile type'
 );
 companySeoCheck(
-    str_contains($companies, 'I18n::formatDate($sourceUpdatedTs, $lang)'),
+    str_contains($companies, 'I18n::formatDate($companyUpdatedAtTs, $lang)'),
     'source verification date uses the active English or Arabic locale'
 );
 
@@ -151,6 +168,7 @@ companySeoCheck(
 $edited = [
     'companies.php' => $companies,
     'includes/ui-footer.php' => $footer,
+    'includes/StructuredDataDate.php' => $structuredDataDate,
     'views/partials/company_logo_related.php' => $relatedLogos,
     'lang/en/companies.php' => file_get_contents($root . '/lang/en/companies.php'),
     'lang/ar/companies.php' => file_get_contents($root . '/lang/ar/companies.php'),

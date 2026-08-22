@@ -18,6 +18,7 @@ require_once __DIR__ . '/config.php';
 require_once INCLUDES_DIR . '/Auth.php';
 require_once INCLUDES_DIR . '/LogoLibrary.php'; // shouldUseDarkVariantOnLight + helpers used by every view branch
 require_once INCLUDES_DIR . '/ArTwins.php';
+require_once INCLUDES_DIR . '/StructuredDataDate.php';
 
 $db = Database::getInstance();
 $view = $_GET['view'] ?? 'index';
@@ -92,25 +93,27 @@ if ($view === 'company' && $slug) {
         include __DIR__ . '/404.php';
         exit;
     }
-    // Conditional crawl support
-    $lastMod = dbTs($company['updated_at'] ?? 'now');
+    // Conditional crawl support. om_companies.updated_at is stored in UTC.
+    // Parse the raw value strictly so a missing or malformed timestamp cannot
+    // turn into the current time through strtotime()'s relative-date parser.
+    $companyUpdatedAtTs = StructuredDataDate::databaseTimestamp($company['updated_at'] ?? null);
+    $GLOBALS['pageSchemaDateModified'] = StructuredDataDate::fromUnixTimestamp($companyUpdatedAtTs);
     // r250, bhd-r6-95: this row's own date is what the sitemap publishes for
     // this URL, so it is what the page must publish too. Without this the page
     // channel reports companies.php's render closure for every company alike,
     // which after r250 is the shared layout date and therefore AHEAD of the
     // row date on 57 of 60 sampled URLs. r66 settled which way that goes:
     // behind is stale and honest, ahead is the lie. Only set when the row
-    // actually carries a date; 'now' above is a fallback for the header, not
-    // a freshness claim.
-    if (!empty($company['updated_at'])) {
-        $GLOBALS['pageContentDate'] = $lastMod;
-    }
-    $lastModHttp = gmdate('D, d M Y H:i:s \G\M\T', $lastMod);
-    header('Last-Modified: ' . $lastModHttp);
-    $ifModSince = $_SERVER['HTTP_IF_MODIFIED_SINCE'] ?? '';
-    if ($ifModSince && strtotime($ifModSince) >= $lastMod) {
-        header('HTTP/1.1 304 Not Modified');
-        exit;
+    // carries a valid factual timestamp.
+    if ($companyUpdatedAtTs !== null) {
+        $GLOBALS['pageContentDate'] = $companyUpdatedAtTs;
+        $lastModHttp = gmdate('D, d M Y H:i:s \G\M\T', $companyUpdatedAtTs);
+        header('Last-Modified: ' . $lastModHttp);
+        $ifModSince = $_SERVER['HTTP_IF_MODIFIED_SINCE'] ?? '';
+        if ($ifModSince && strtotime($ifModSince) >= $companyUpdatedAtTs) {
+            header('HTTP/1.1 304 Not Modified');
+            exit;
+        }
     }
 
     // Related brands: same sector, prefer ones with logos. Skip when this
@@ -778,9 +781,12 @@ function escq($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
         <?php endif; ?>
 
         <p class="mt-10 text-xs text-gray-400 text-center">
-            <?= escq(t('companies.source_footer')) ?>
-            <?php $sourceUpdatedTs = dbTs($company['updated_at']); ?>
-            <time datetime="<?= date('Y-m-d', $sourceUpdatedTs) ?>"><?= escq(I18n::formatDate($sourceUpdatedTs, $lang)) ?></time>
+            <?= escq(t($companyUpdatedAtTs !== null
+                ? 'companies.source_footer'
+                : 'companies.source_footer_undated')) ?>
+            <?php if ($companyUpdatedAtTs !== null): ?>
+            <time datetime="<?= escq(StructuredDataDate::fromUnixTimestamp($companyUpdatedAtTs)) ?>"><?= escq(I18n::formatDate($companyUpdatedAtTs, $lang)) ?></time>
+            <?php endif; ?>
             · <a href="<?= escq(ArTwins::navLink('contact', '/', $isAr)) ?>" class="underline hover:text-gray-600"><?= escq(t('companies.request_edit_takedown')) ?></a>
         </p>
     </div>

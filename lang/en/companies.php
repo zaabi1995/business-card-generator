@@ -70,6 +70,7 @@ return [
     'other_in_sector'            => 'Other :label companies in Oman',
     'other_in_wilayat'           => 'Other companies in :label',
     'source_footer'              => 'Source: MoCIIP public register, Last verified: ',
+    'source_footer_undated'      => 'Source: MoCIIP public register',
     'request_edit_takedown'      => 'Request edit / takedown',
 
     // Logo SEO

@@ -268,12 +268,11 @@ class Freshness
 
     /**
      * True when this page's date came from a DECLARED row timestamp rather
-     * than a file mtime. r231's rule, and it is a rule about the timestamp:
-     * filemtime() is an absolute instant, so gmdate(); a DB updated_at is a
-     * wall-clock string already written in Asia/Muscat, so date() round-trips
-     * it in its own calendar and gmdate() would shift a 02:00 Muscat row back
-     * a day. MEASURED: /companies/aramex-muscat read 2026-05-30 under gmdate
-     * while its own sitemap leg said 2026-05-31.
+     * than a file mtime. Database values are stored in UTC and parsed to an
+     * absolute epoch before they reach this class. The visible calendar date
+     * is still rendered in the application's Asia/Muscat display zone, which
+     * is why date() is used here. Full structured-data DateTime values are
+     * emitted separately in UTC by StructuredDataDate.
      */
     public static function isDeclared(): bool
     {

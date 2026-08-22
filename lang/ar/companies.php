@@ -71,6 +71,7 @@ return [
     'other_in_sector'            => 'شركات أخرى في قطاع :label',
     'other_in_wilayat'           => 'شركات أخرى في :label',
     'source_footer'              => 'المصدر: السجل العام لوزارة التجارة · آخر تحديث: ',
+    'source_footer_undated'      => 'المصدر: السجل العام لوزارة التجارة',
     'request_edit_takedown'      => 'طلب تعديل / إزالة',
 
     // Logo SEO

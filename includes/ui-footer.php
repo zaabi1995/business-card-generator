@@ -32,11 +32,13 @@ $footLink = static function (string $slug) use ($bp, $_footIsAr): string {
     return ArTwins::navLink($slug, $bp, $_footIsAr);
 };
 
-// r6-95: freshness. Both the visible line and the schema dateModified come
-// from the mtime of the file that produced this page, never from today.
+// r6-95: static-page freshness comes from the render timestamp, never today.
+// Row-backed pages may provide their own validated schema timestamp below.
 require_once __DIR__ . '/Freshness.php';
-$freshIso     = Freshness::isoDate();
-$freshDisplay = Freshness::displayDate();
+require_once __DIR__ . '/StructuredDataDate.php';
+$freshIso      = Freshness::isoDate();
+$freshDisplay  = Freshness::displayDate();
+$freshDateTime = StructuredDataDate::fromUnixTimestamp(Freshness::timestamp());
 
 // Pages that own their footer entirely (e.g. branded company portals) can
 // set $skipFooter = true; before including this file. Scripts below still run.
@@ -155,7 +157,7 @@ elseif (!empty($minimalFooter)):
 // page node keyed to this page's own canonical. Most routes use WebPage;
 // entity directories can opt into a more specific subtype and bind the page
 // to its main entity without publishing a second page node.
-if (empty($skipFooter) && $freshIso) {
+if (empty($skipFooter)) {
     $__canon = $GLOBALS['canonicalUrl'] ?? ('https://cardify.om' . strtok($_SERVER['REQUEST_URI'] ?? '/', '?'));
     // r20-22: the WebPage node carried no inLanguage, so /ar/#webpage was
     // indistinguishable from its English twin to anything reading the graph
@@ -167,16 +169,22 @@ if (empty($skipFooter) && $freshIso) {
     if (!is_string($__pageType) || $__pageType === '') {
         $__pageType = 'WebPage';
     }
-    $__pageNode = [
+    // A row-backed page sets pageSchemaDateModified explicitly, including
+    // null when its source timestamp is absent or invalid. That explicit null
+    // prevents the render-file timestamp from laundering bad row data into a
+    // freshness claim. Other pages use their factual render timestamp.
+    $__dateSource = array_key_exists('pageSchemaDateModified', $GLOBALS)
+        ? $GLOBALS['pageSchemaDateModified']
+        : $freshDateTime;
+    $__pageNode = StructuredDataDate::withDateModified([
         '@context'     => 'https://schema.org',
         '@type'        => $__pageType,
         '@id'          => $__canon . '#webpage',
         'url'          => $__canon,
         'inLanguage'   => ArTwins::isArabic($__canon) ? 'ar' : 'en',
-        'dateModified' => $freshIso,
         'isPartOf'     => ['@id' => 'https://cardify.om/#website'],
         'publisher'    => ['@id' => 'https://cardify.om/#organization'],
-    ];
+    ], $__dateSource);
     if (!empty($GLOBALS['pageSchemaName']) && is_string($GLOBALS['pageSchemaName'])) {
         $__pageNode['name'] = $GLOBALS['pageSchemaName'];
     }
