@@ -275,34 +275,18 @@ $homeHreflang = '<link rel="alternate" hreflang="en" href="https://cardify.om/">
               . '<link rel="alternate" hreflang="x-default" href="https://cardify.om/">';
 $bodyClass = 'bg-white';
 
-// Homepage pricing: compute display strings in the visitor's currency once,
-// so the currency pill in the header switches ALL shown prices. Source of
-// truth is OMR (rates live in Currency.php fx table); formatNumber respects
-// per-currency decimals and separators.
+// Homepage pricing: public marketing must stay on canonical OMR pricing.
+// Do not auto-detect visitor currency here: it can convert and marketing-round
+// into invented values that leak into crawlers. Currency switching remains
+// available in logged-in and checkout surfaces.
 require_once INCLUDES_DIR . '/Currency.php';
-$homeCur     = Currency::getUserCurrency();
-$homeCurName = $homeCur;
-// Convert, then marketing-round (keeps OMR exact, rounds AED/USD/etc to
-// clean psychological numbers like 50 / 150 / 1,500 instead of 47.72).
-// BHD and KWD are rounded to the nearest whole number AND displayed with
-// no decimals (4 instead of 4.000) since Ali asked for the "closest total".
-$fmt = function ($omr) use ($homeCur) {
-    $converted = Currency::convert((float)$omr, $homeCur);
-    $rounded   = Currency::marketingRound($converted, $homeCur);
-    if (in_array($homeCur, ['BHD', 'KWD'], true) && floor($rounded) == $rounded) {
-        return number_format($rounded, 0);
-    }
-    return Currency::formatNumber($rounded, $homeCur);
-};
-// Tier-based subscription pricing was removed Apr 2026. Platform is free forever,
-// revenue comes from per-order print products (see lang/en/pricing.php and /pricing).
+$homeCur = 'OMR';
+$homeCurName = (function_exists('currentLocale') && currentLocale() === 'ar')
+    ? t('currency.names.OMR')
+    : 'OMR';
 
-// Cheapest print product, Standard at OMR 5.000 per 100, converted to the
-// visitor's currency. The hero's "Prints from :amount :currency" line lost its
-// value in that Apr 2026 removal and had been rendering "Prints from  OMR" with
-// an empty amount ever since, logging an undefined-variable warning on every
-// homepage hit. Keep in step with /pricing and the Product JSON-LD below.
-$priceStarterFrom = $fmt(5);
+// Cheapest print product, Standard at OMR 5.000 per 100 cards (see /pricing).
+$priceStarterFrom = Currency::formatNumber(5.000, 'OMR');
 
 // Latest blog posts for homepage SEO (internal links + freshness signal).
 //
