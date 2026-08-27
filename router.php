@@ -6,6 +6,17 @@
  */
 require_once __DIR__ . '/config.php';
 
+// Thin legacy-path cleanup: redirect old entry points to the live offer path.
+$__path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
+$__norm = $__path === '/' ? '/' : rtrim($__path, '/');
+if ($__norm === '/order' || $__norm === '/create') {
+    $target = getBasePath() . 'print-shops';
+    $qs = $_SERVER['QUERY_STRING'] ?? '';
+    if ($qs !== '') $target .= '?' . $qs;
+    header('Location: ' . $target, true, 302);
+    exit;
+}
+
 // Get company slug from query string (set by .htaccess) or URI
 $companySlug = $_GET['company_slug'] ?? null;
 
