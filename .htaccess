@@ -16,6 +16,10 @@ AddDefaultCharset UTF-8
     RewriteRule ^admin/login/?$ /login.php [R=301,L]
     RewriteRule ^company/login/?$ /login.php [R=301,L]
     RewriteRule ^printshop/login/?$ /login.php [R=301,L]
+
+    # Legacy path cleanup
+    RewriteRule ^order/?$ /print-shops [R=302,L]
+    RewriteRule ^create/?$ /print-shops [R=302,L]
     
     # Force HTTPS in production (uncomment when SSL is configured)
     # RewriteCond %{HTTPS} off
