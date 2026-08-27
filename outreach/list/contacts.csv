@@ -1,0 +1,12 @@
+segment,outlet_or_company,contact_name,email,role,country,language,source_url,verified_on,pitchable,notes
+tech-press,Times of Oman,,webeditor@timesofoman.com,Editorial inquiries,Oman,en,https://timesofoman.com/contact-us,2026-08-20,yes,"Muscat Media Group SAOC. Generic desk, use ""Hello"" not a first name."
+tech-press,Times of Oman,,adsales@timesofoman.com,Advertising,Oman,en,https://timesofoman.com/contact-us,2026-08-20,no,Paid advertising line. Not an editorial pitch target.
+tech-press,Times of Oman,Anand,anand@timesofoman.com,Online advertising,Oman,en,https://timesofoman.com/contact-us,2026-08-20,no,Paid advertising line. Not an editorial pitch target.
+tech-press,Oman Observer,,editor@omanobserver.om,Editorial department,Oman,en,https://www.omanobserver.om/about-us,2026-08-20,yes,"Business desk phone 22651208 if a follow-up call is wanted."
+tech-press,Zawya (LSEG),,editorial.zawya@lseg.com,Editorial inquiries,UAE/regional,en,https://www.zawya.com/en/contact-us,2026-08-20,yes,LSEG-owned. Regional business and finance.
+tech-press,Zawya (LSEG),,pressrelease.zawya@lseg.com,Press release submissions,UAE/regional,en,https://www.zawya.com/en/contact-us,2026-08-20,yes,"Correct line for a launch note rather than a personal pitch."
+tech-press,Zawya (LSEG),,zawya.arabic@lseg.com,Arabic editorial and PR,UAE/regional,ar,https://www.zawya.com/en/contact-us,2026-08-20,yes,"Send the ARABIC version here. Best fit for the RTL angle."
+tech-press,Zawya (LSEG),,adsales.zawya@lseg.com,Advertising and sponsorship,UAE/regional,en,https://www.zawya.com/en/contact-us,2026-08-20,no,Paid line. Not an editorial pitch target.
+tech-press,Zawya (LSEG),,mena.sales@lseg.com,Company data sales,UAE/regional,en,https://www.zawya.com/en/contact-us,2026-08-20,no,Data sales. Not a pitch target.
+tech-press,Menabytes,,hello@menabytes.com,General contact (only address published),MENA,en,https://www.menabytes.com/contact/,2026-08-20,yes,"MENA startup news. Single published address, so use ""Hello"" not a first name."
+tech-press,Muscat Daily (Apex Media),,info@apexmedia.co.om,Publisher general contact,Oman,en,http://www.apexmedia.co.om/contact/,2026-08-20,yes,"Muscat Daily's own /contact-us 404s and links here. Publisher desk, not an editor."

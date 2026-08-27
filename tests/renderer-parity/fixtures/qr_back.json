@@ -1,0 +1,30 @@
+{
+  "id": "qr_back",
+  "side": "back",
+  "description": "D5 trigger. A QR field on the back, in the modern px shape the importer emits.",
+  "provenance": "qr_code shape (enabled/x/y/size + optional qr_style) from includes/CardifyTemplateImporter.php:172-186. Size 380px = 0.90 of a detected ~101pt QR square at 300 DPI, the importer's own rule at includes/CardifyTemplateImporter.php:161.",
+  "settings": {
+    "cardSize": "custom",
+    "customWidth": 92.62,
+    "customHeight": 59.93,
+    "customUnit": "mm",
+    "dpi": 300,
+    "fields_format": "px",
+    "backgroundColor": "#ffffff"
+  },
+  "fields": {
+    "name_en": {
+      "enabled": true, "is_static": false, "render_in_bg": false,
+      "x": 132, "y": 202, "width": 420, "height": 60,
+      "fontSize": 55, "fontFamily": "Inter", "fontWeight": 500,
+      "fill": "#10243b", "color": "#10243b",
+      "textAlign": "left", "originX": "left", "originY": "top"
+    },
+    "qr_code": {
+      "enabled": true,
+      "x": 640,
+      "y": 250,
+      "size": 380
+    }
+  }
+}

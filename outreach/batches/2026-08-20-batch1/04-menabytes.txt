@@ -1,0 +1,25 @@
+To: hello@menabytes.com
+Outlet: Menabytes (MENA startup news)
+Subject: Arabic-first digital business cards, built in Oman
+
+Hello,
+
+I run BHD Group in Muscat. We built Cardify because every digital business card
+tool we tried treated Arabic as an afterthought: the name renders left to right,
+the layout does not mirror, and the wallet pass drops the Arabic entirely.
+Cardify shows Arabic and English side by side with real RTL, and issues Apple
+and Google Wallet passes in both.
+
+Where it stands today: 24 companies issue cards on it. The platform is free with
+no expiry and no card required, unlimited employees and templates. We make money
+on the printing, from OMR 5.000 per 100 cards. We also publish a free directory
+of 2,502 Omani enterprises alongside it.
+
+If a bilingual SaaS built in Oman is useful to you, I can open a live tenant for
+you to test in either language, no signup, and I am happy to answer anything on
+the record.
+
+https://bhd.om/wjp9tj
+
+If this is not the right desk, tell me and I will not write again.
+BHD Group, P.O. Box 2237, P.C. 133, Bousher, Muscat, Sultanate of Oman

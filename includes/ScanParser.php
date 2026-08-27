@@ -47,10 +47,19 @@ class ScanParser {
         if (is_array($clean['phones'])) {
             foreach (array_slice($clean['phones'], 0, 10) as $p) {
                 if (!is_array($p)) continue;
-                $phones[] = [
+                $phone = [
                     'number' => self::capString($p['number'] ?? ''),
                     'type'   => self::capString($p['type'] ?? ''),
                 ];
+                // The device parses an extension off the number ("+968 24 556677 Ext. 214")
+                // and sends it as its own field. Rebuilding the phone without it silently
+                // dropped it here, and because sync overwrites the local parse from the
+                // server, the extension vanished on the next pull. Digits only, matching
+                // the client's own validation. The key is omitted when there is no
+                // extension so a card without one serialises exactly as it always did.
+                $ext = preg_replace('/\D/', '', (string)($p['ext'] ?? ''));
+                if ($ext !== '') $phone['ext'] = mb_substr($ext, 0, 8);
+                $phones[] = $phone;
             }
         }
         $clean['phones'] = $phones;
@@ -62,11 +71,43 @@ class ScanParser {
         }
         $clean['emails'] = $emails;
         $clean['confidence'] = is_array($clean['confidence']) ? $clean['confidence'] : [];
+        // The device routes a LinkedIn profile URL to its own field instead of letting it
+        // land in `website` on a card that prints no website. `linkedin` is not in
+        // emptyParsed(), so array_intersect_key above has already dropped it; read it from
+        // the raw draft. Without this the value survives the scan and is then wiped on the
+        // next sync pull, because sync overwrites the local parse from the server. The key
+        // is omitted when empty so a card without a LinkedIn URL serialises exactly as it
+        // always did.
+        $linkedin = self::capString(is_scalar($draft['linkedin'] ?? null) ? $draft['linkedin'] : '');
+        if ($linkedin !== '') $clean['linkedin'] = $linkedin;
         return $clean;
     }
 
     private static function capString($v): string {
         return mb_substr(is_scalar($v) ? (string)$v : '', 0, 500);
+    }
+
+    // Merge provenance: what a merge kept, what it replaced, and the losing value.
+    // The app writes it as JSON and renders it in the user's own language, so the
+    // server stores it verbatim and never interprets it.
+    //
+    // Returns the storable string, or null when the value must not be stored.
+    // Deliberately REJECTS oversized input rather than truncating: cutting a valid
+    // JSON array at the column limit yields one with no closing bracket, which then
+    // fails to parse on every pull forever, and no validity check downstream can
+    // catch it because the server itself would have created the broken value after
+    // validating a good one. The client trims oldest entries to fit before sending.
+    //
+    // Callers decide what null MEANS for them. On INSERT there is no prior value,
+    // so null is simply "store nothing". On UPDATE the caller must skip the column
+    // rather than write null, or a malformed write would erase a good history.
+    public const MERGE_PROVENANCE_MAX = 65535;
+
+    public static function mergeProvenanceOrNull($raw): ?string {
+        if (!is_scalar($raw)) return null;
+        $s = trim((string)$raw);
+        if ($s === '' || strlen($s) > self::MERGE_PROVENANCE_MAX) return null;
+        return is_array(json_decode($s, true)) ? $s : null;
     }
 
     public static function extractJson(string $modelText): ?array {

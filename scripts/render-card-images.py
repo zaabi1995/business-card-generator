@@ -14,6 +14,13 @@ import qrcode
 from PIL import Image, ImageColor, ImageDraw, ImageFont
 
 
+# Legacy fallback canvas. Used only when the template carries no physical size
+# (customWidth/customHeight), i.e. the stock/preset templates that were authored
+# against this canvas. A PDF-imported template DOES carry its real size, and
+# rendering it here squashed it: an Otech-family 92.62x59.93mm card is 1094x708
+# at 300 DPI (AR 1.545), not 1050x600 (AR 1.750), so every field drifted
+# downward by up to 11.4% of the card height relative to the same template's
+# vector PDF and its Fabric preview. See _canvas_dims.
 WIDTH = 1050
 HEIGHT = 600
 ROOT = Path(__file__).resolve().parents[1]
@@ -37,6 +44,33 @@ def _template_value(template: dict, camel: str, snake: str, fallback: Any) -> An
     return value
 
 
+def _canvas_dims(template: dict) -> tuple[int, int]:
+    """Pixel canvas for this template, matching getTemplatePixelDims().
+
+    Port of generate_card_html.php:302-319, so the WebP this script writes has
+    the same proportions as the Fabric card the customer approves and the
+    vector PDF the print shop receives. Falls back to the legacy 1050x600 when
+    the template has no stored physical size, which keeps every stock/preset
+    template rendering byte-identically to before.
+    """
+    settings = _template_value(template, "settings", "settings_json", {}) or {}
+    try:
+        cw = float(settings.get("customWidth") or 0)
+        ch = float(settings.get("customHeight") or 0)
+        dpi = float(settings.get("dpi") or 300) or 300.0
+    except (TypeError, ValueError):
+        return WIDTH, HEIGHT
+    if not cw or not ch:
+        return WIDTH, HEIGHT
+    unit = str(settings.get("customUnit") or "mm").lower()
+    to_in = 1 / 25.4 if unit == "mm" else 1 / 72 if unit == "pt" else 1 if unit == "in" else 1 / 25.4
+    w = int(round(cw * to_in * dpi))
+    h = int(round(ch * to_in * dpi))
+    if w <= 0 or h <= 0:
+        return WIDTH, HEIGHT
+    return w, h
+
+
 def _resolve_path(value: Any, input_dir: Path) -> Path | None:
     if not value:
         return None
@@ -55,7 +89,8 @@ def _resolve_path(value: Any, input_dir: Path) -> Path | None:
 
 def _background(template: dict, input_dir: Path) -> Image.Image:
     settings = _template_value(template, "settings", "settings_json", {}) or {}
-    canvas = Image.new("RGB", (WIDTH, HEIGHT), _color(settings.get("backgroundColor"), "#ffffff"))
+    width, height = _canvas_dims(template)
+    canvas = Image.new("RGB", (width, height), _color(settings.get("backgroundColor"), "#ffffff"))
     path = _resolve_path(
         _template_value(template, "backgroundImage", "background_image_path", ""),
         input_dir,
@@ -69,22 +104,22 @@ def _background(template: dict, input_dir: Path) -> Image.Image:
 
                 rendered = cairosvg.svg2png(
                     url=str(path),
-                    output_width=WIDTH,
-                    output_height=HEIGHT,
+                    output_width=width,
+                    output_height=height,
                 )
             except ImportError:
                 rsvg = shutil.which("rsvg-convert")
                 if rsvg is None:
                     raise RuntimeError("svg_renderer_unavailable")
                 rendered = subprocess.run(
-                    [rsvg, "--width", str(WIDTH), "--height", str(HEIGHT), str(path)],
+                    [rsvg, "--width", str(width), "--height", str(height), str(path)],
                     check=True,
                     capture_output=True,
                 ).stdout
             layer = Image.open(io.BytesIO(rendered)).convert("RGBA")
         else:
             layer = Image.open(path).convert("RGBA")
-        layer = layer.resize((WIDTH, HEIGHT), Image.Resampling.LANCZOS)
+        layer = layer.resize((width, height), Image.Resampling.LANCZOS)
         canvas.paste(layer, (0, 0), layer)
     except Exception as exc:
         raise RuntimeError(f"background_render_failed:{path.name}") from exc
@@ -221,8 +256,9 @@ def _coords(field: dict, template: dict) -> tuple[float, float]:
         or settings.get("fieldsFormat")
     )
     if field_format != "px" and 0 <= x <= 100 and 0 <= y <= 100:
-        x = x * WIDTH / 100
-        y = y * HEIGHT / 100
+        width, height = _canvas_dims(template)
+        x = x * width / 100
+        y = y * height / 100
     return x, y
 
 
@@ -236,12 +272,33 @@ def _draw_text(draw: ImageDraw.ImageDraw, template: dict, key: str, field: dict,
     align = str(field.get("textAlign", field.get("text_align", "right" if arabic else "left"))).lower()
     origin = str(field.get("originX", field.get("origin_x", align))).lower()
     width = float(field.get("width", 0) or 0)
-    if width > 0 and not field.get("is_static"):
+    if field.get("is_static"):
+        # Static decorations carry a bbox sized tightly to the original glyph
+        # run, so both Fabric (generate_card_html.php:644) and this script
+        # bypass the width constraint for them.
+        width = 0.0
+    if width > 0:
         requested_size = max(8, int(round(float(field.get("fontSize", field.get("font_size", 24))))))
         while requested_size > 8 and draw.textlength(text, font=font) > width:
             requested_size -= 1
             font = _font(field, arabic, requested_size)
-    anchor = "rt" if origin == "right" else "mt" if origin == "center" else "lt"
+
+    # Derive the anchor from (x, width, originX). `x` is the bbox LEFT edge
+    # (CardifyTemplateImporter.php:100-105), so a right-aligned field sits its
+    # visible right edge at x + width and a centred one at x + width/2. This is
+    # the same math CardEditor.addTextField does (assets/js/card-editor.js:730-737)
+    # and the same edge render-card-pdf.py anchors to (x_pt + w_pt,
+    # render-card-pdf.py:818-821). Anchoring about `x` instead, as this script
+    # did, put a right-aligned field a full field-width to the left: on a 500px
+    # wide field that is 45% of the card, and the measured case ran clean off
+    # the left edge to x=0. width<=0 keeps the old left anchor at x.
+    if width > 0 and origin == "right":
+        anchor_x, anchor = x + width, "rt"
+    elif width > 0 and origin == "center":
+        anchor_x, anchor = x + width / 2.0, "mt"
+    else:
+        anchor_x, anchor = x, "lt"
+    x = anchor_x
     kwargs = {"fill": fill, "font": font, "anchor": anchor, "align": align}
     if arabic:
         kwargs["direction"] = "rtl"
@@ -258,7 +315,13 @@ def _draw_qr(canvas: Image.Image, template: dict, field: dict, public_url: str) 
     if not public_url:
         return
     x, y = _coords(field, template)
-    size = max(96, min(360, int(field.get("size", field.get("width", 180)) or 180)))
+    # Upper bound scales with the canvas instead of being pinned to 360, which
+    # was the 60% cap for the legacy 1050x600 canvas. On 1050x600 this is still
+    # exactly 360 (nothing moves); on a real 1094x708 imported card it stops
+    # shrinking a template's own QR, which R2 and R3 both draw at full size.
+    canvas_w, canvas_h = _canvas_dims(template)
+    ceiling = max(360, int(min(canvas_w, canvas_h) * 0.6))
+    size = max(96, min(ceiling, int(field.get("size", field.get("width", 180)) or 180)))
     qr = qrcode.QRCode(version=None, error_correction=qrcode.constants.ERROR_CORRECT_M, box_size=8, border=4)
     qr.add_data(public_url)
     qr.make(fit=True)
@@ -308,7 +371,16 @@ def _render(payload: dict, template: dict, side: str, input_dir: Path) -> Image.
             continue
         _draw_text(draw, template, key, field, _employee_value(key, payload, field))
     if side == "back" and not qr_drawn:
-        _draw_qr(canvas, template, {"x": 805, "y": 330, "size": 190}, str(payload.get("public_url") or ""))
+        # Fallback QR for a back with no qr_code field. The literals were
+        # 805/330/190, i.e. fractions of the legacy 1050x600 canvas; expressed
+        # as fractions they land identically there and stay in the same corner
+        # on a real imported card size instead of drifting inward.
+        cw, ch = _canvas_dims(template)
+        _draw_qr(canvas, template, {
+            "x": round(cw * 805 / 1050),
+            "y": round(ch * 330 / 600),
+            "size": round(cw * 190 / 1050),
+        }, str(payload.get("public_url") or ""))
     return canvas
 
 

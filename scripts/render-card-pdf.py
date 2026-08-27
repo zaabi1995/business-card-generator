@@ -199,6 +199,67 @@ def _pick_font(family: str, weight: int, font_buffers: dict, text: str = '') -> 
     return best_key, candidates[best_key]
 
 
+class FontResolutionError(RuntimeError):
+    """A drawn field names a font family that this fonts_dir cannot satisfy."""
+
+
+def _preflight_fonts(template: dict, employee: dict, font_buffers: dict,
+                     fonts_dir: str, company_fonts_dir=None) -> None:
+    """Abort BEFORE writing anything if any field's family is unresolvable.
+
+    _pick_font returns (None, None) for a family with no matching file, and the
+    draw loop then `continue`s past that field. That is silent data loss on a
+    PHYSICALLY PRINTED artifact: measured on the live ITHCA card with Roboto
+    removed from its fonts dir, the renderer exited 0 with empty stderr and
+    produced a 72KB PDF that was missing the name, job title, mobile, email and
+    website, 19.2% of the card's ink, with nothing downstream able to notice
+    (CardPDFRenderer only inspects the exit code, the file size, and WARN lines
+    that this path never emitted).
+
+    Failing here instead means CardPDFRenderer::render sees rc != 0, returns
+    success=false, and the callers fall back to the raster path they already
+    have for "fonts_dir missing" (CardPDFRenderer.php:214, card-pdf.php:91-93,
+    api/print-ready.php:374). The customer gets a COMPLETE card from the
+    fallback renderer instead of an incomplete one from this renderer.
+
+    Deliberately NOT a substitute-and-warn: swapping the typeface on a
+    brand-controlled printed card for MHD / Otech / ITHCA is a defect you would
+    ship silently, and another warning line is the same failure shape as the
+    unshaped-Arabic degradation this file already carries.
+
+    Runs before out_doc is created so a partial PDF is never left at cachePath
+    (CardPDFRenderer only unlinks artifacts smaller than 1024 bytes).
+
+    Verified inert: evaluated against the fields_json of all 38 live vector
+    templates, 0 drawn fields fail to resolve, so this cannot fire on today's
+    data. See tests/renderer-parity/prod_font_audit.py.
+    """
+    missing = []
+    for page_spec in template.get('pages', []):
+        for field in page_spec.get('fields', []):
+            if field.get('render_in_bg'):
+                continue
+            static_text = field.get('static_text')
+            text = static_text if static_text else _resolve_employee_value(
+                field.get('field_key', ''), employee,
+                template_default=field.get('detected_text', ''))
+            if not text:
+                continue          # the draw loop skips empty fields too
+            family = field.get('font_family', 'Lato')
+            weight = int(field.get('font_weight', 400) or 400)
+            name, _ = _pick_font(family, weight, font_buffers, text=text)
+            if name is None:
+                missing.append((field.get('field_key', '?'), family))
+    if not missing:
+        return
+    have = ', '.join(sorted(font_buffers)) or '(none)'
+    detail = '; '.join(f'{k} needs {fam!r}' for k, fam in missing)
+    raise FontResolutionError(
+        f'unresolvable font family for {len(missing)} field(s): {detail}. '
+        f'fonts_dir={fonts_dir} company_fonts_dir={company_fonts_dir} '
+        f'available={have}')
+
+
 # Fields that are identical for every employee at a tenant. Only these may
 # fall back to the design's own sample text when the employee row is blank.
 _TENANT_CONSTANT_BASES = ('website', 'company', 'address', 'fax', 'social')
@@ -1043,6 +1104,8 @@ def render(template_path: str, employee_path: str, out_path: str,
     # subsets which only contain the source PDF's character set.
     font_buffers = _load_font_buffers(fonts_dir, company_fonts_dir=company_fonts_dir)
 
+    _preflight_fonts(template, employee, font_buffers, fonts_dir, company_fonts_dir)
+
     # Read each font's actual ascender (em units) once and cache it.
     # Lato-Medium = 0.987, Sora-Regular = 0.970 (from fitz.Font.ascender).
     # baseline_y = y_pt + ascender * font_size gives sub-0.1pt drift vs
@@ -1261,6 +1324,10 @@ def render(template_path: str, employee_path: str, out_path: str,
 
             font_name, font_buf = _pick_font(family, weight, font_buffers, text=raw_text)
             if font_name is None:
+                # Unreachable: _preflight_fonts already aborted the whole render
+                # for this case. Kept as defence in depth, because silently
+                # dropping the field here is how the name/mobile/email went
+                # missing from a printed card at exit code 0.
                 continue  # skip field if no matching font found
 
             # Arabic on any GSUB-shaping font -> route through MuPDF's HarfBuzz
@@ -1541,10 +1608,18 @@ def main():
                          '(designer sample redacted) instead of the raster bg, '
                          'for an all-vector card.')
     args = ap.parse_args()
-    sys.exit(render(args.template, args.employee, args.out, args.vcard,
+    try:
+        rc = render(args.template, args.employee, args.out, args.vcard,
                     profile=args.profile, for_print=args.for_print,
                     watermark=args.watermark, cmyk_cfg_path=args.cmyk,
-                    vector_bg=args.vector_bg, no_qr=args.no_qr))
+                    vector_bg=args.vector_bg, no_qr=args.no_qr)
+    except FontResolutionError as exc:
+        # One clean line rather than a traceback: CardPDFRenderer merges stderr
+        # into $out and error_log()s it on rc != 0, so this is what lands in the
+        # log the operator actually reads.
+        print(f'ERROR: {exc}', file=sys.stderr)
+        sys.exit(3)
+    sys.exit(rc)
 
 
 if __name__ == '__main__':

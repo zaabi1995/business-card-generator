@@ -1,0 +1,40 @@
+{
+  "id": "legacy_percent",
+  "side": "back",
+  "description": "Legacy percentage-format template: x/y are 0-100 percentages of the card, no settings.fields_format marker.",
+  "provenance": "Format described by includes/functions.php:1305-1312 ('Convert legacy percentage-based field positions to pixel positions'), which is the only in-repo definition of the legacy shape. Field key set and styling keys copied from the stock template builder at admin/save_template.php:233-256. Percentages chosen so each field lands outside the 50-80 guard band of includes/functions.php:1326 so BOTH engines agree it is a percentage - this fixture isolates D2/D4, not D1.",
+  "settings": {
+    "cardSize": "custom",
+    "customWidth": 92.62,
+    "customHeight": 59.93,
+    "customUnit": "mm",
+    "dpi": 300,
+    "backgroundColor": "#10243b"
+  },
+  "fields": {
+    "name_en": {
+      "enabled": true, "x": 12, "y": 20, "width": 420, "height": 60,
+      "fontSize": 46, "fontFamily": "Inter", "fontWeight": "bold",
+      "fill": "#ffffff", "color": "#ffffff",
+      "textAlign": "left", "originX": "left", "originY": "top"
+    },
+    "position_en": {
+      "enabled": true, "x": 12, "y": 34, "width": 420, "height": 40,
+      "fontSize": 28, "fontFamily": "Inter", "fontWeight": "normal",
+      "fill": "#ffffff", "color": "#ffffff",
+      "textAlign": "left", "originX": "left", "originY": "top"
+    },
+    "mobile": {
+      "enabled": true, "x": 12, "y": 82, "width": 420, "height": 34,
+      "fontSize": 22, "fontFamily": "Inter", "fontWeight": "normal",
+      "fill": "#ffffff", "color": "#ffffff",
+      "textAlign": "left", "originX": "left", "originY": "top"
+    },
+    "email": {
+      "enabled": true, "x": 12, "y": 90, "width": 420, "height": 34,
+      "fontSize": 22, "fontFamily": "Inter", "fontWeight": "normal",
+      "fill": "#ffffff", "color": "#ffffff",
+      "textAlign": "left", "originX": "left", "originY": "top"
+    }
+  }
+}

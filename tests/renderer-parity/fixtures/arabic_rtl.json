@@ -1,0 +1,45 @@
+{
+  "id": "arabic_rtl",
+  "side": "back",
+  "description": "Arabic RTL fields alongside their English counterparts, modern px format.",
+  "provenance": "Key naming (_ar suffix), right alignment and Cairo family from admin/save_template.php:238-253. The _ar key convention drives Arabic handling in scripts/render-card-images.py:242, generate_card_html.php:625 and scripts/render-card-pdf.py:1298 (en_left_x lookup on field_key[:-3]).",
+  "settings": {
+    "cardSize": "custom",
+    "customWidth": 92.62,
+    "customHeight": 59.93,
+    "customUnit": "mm",
+    "dpi": 300,
+    "fields_format": "px",
+    "backgroundColor": "#10243b"
+  },
+  "fields": {
+    "name_en": {
+      "enabled": true, "is_static": false, "render_in_bg": false,
+      "x": 132, "y": 150, "width": 420, "height": 60,
+      "fontSize": 50, "fontFamily": "Inter", "fontWeight": 500,
+      "fill": "#ffffff", "color": "#ffffff",
+      "textAlign": "left", "originX": "left", "originY": "top"
+    },
+    "name_ar": {
+      "enabled": true, "is_static": false, "render_in_bg": false,
+      "x": 552, "y": 150, "width": 410, "height": 60,
+      "fontSize": 50, "fontFamily": "Noto Sans Arabic", "fontWeight": 500,
+      "fill": "#ffffff", "color": "#ffffff",
+      "textAlign": "right", "originX": "right", "originY": "top"
+    },
+    "position_en": {
+      "enabled": true, "is_static": false, "render_in_bg": false,
+      "x": 132, "y": 240, "width": 420, "height": 40,
+      "fontSize": 32, "fontFamily": "Inter", "fontWeight": 400,
+      "fill": "#ffffff", "color": "#ffffff",
+      "textAlign": "left", "originX": "left", "originY": "top"
+    },
+    "position_ar": {
+      "enabled": true, "is_static": false, "render_in_bg": false,
+      "x": 552, "y": 240, "width": 410, "height": 40,
+      "fontSize": 32, "fontFamily": "Noto Sans Arabic", "fontWeight": 400,
+      "fill": "#ffffff", "color": "#ffffff",
+      "textAlign": "right", "originX": "right", "originY": "top"
+    }
+  }
+}

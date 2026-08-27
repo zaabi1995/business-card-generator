@@ -1,0 +1,38 @@
+{
+  "id": "align_anchors",
+  "side": "back",
+  "description": "D6 trigger. Three fields sharing one x and one width, aligned left / center / right, so the anchor convention each engine uses is directly readable.",
+  "provenance": "textAlign/originX pairing from includes/CardifyTemplateImporter.php:109-110 ('origin tracks alignment'). Anchor conventions under test: scripts/render-card-images.py:244 (Pillow anchor lt/mt/rt about x), includes/CardPDFRenderer.php:19-21 and scripts/render-card-pdf.py:818-821 (anchor from the field RIGHT edge x_pt+w_pt), generate_card_html.php:625-626 (Fabric originX about left).",
+  "settings": {
+    "cardSize": "custom",
+    "customWidth": 92.62,
+    "customHeight": 59.93,
+    "customUnit": "mm",
+    "dpi": 300,
+    "fields_format": "px",
+    "backgroundColor": "#10243b"
+  },
+  "fields": {
+    "name_en": {
+      "enabled": true, "is_static": false, "render_in_bg": false,
+      "x": 300, "y": 150, "width": 500, "height": 60,
+      "fontSize": 44, "fontFamily": "Inter", "fontWeight": 400,
+      "fill": "#ffffff", "color": "#ffffff",
+      "textAlign": "left", "originX": "left", "originY": "top"
+    },
+    "position_en": {
+      "enabled": true, "is_static": false, "render_in_bg": false,
+      "x": 300, "y": 280, "width": 500, "height": 60,
+      "fontSize": 44, "fontFamily": "Inter", "fontWeight": 400,
+      "fill": "#f59e0b", "color": "#f59e0b",
+      "textAlign": "center", "originX": "center", "originY": "top"
+    },
+    "email": {
+      "enabled": true, "is_static": false, "render_in_bg": false,
+      "x": 300, "y": 410, "width": 500, "height": 60,
+      "fontSize": 44, "fontFamily": "Inter", "fontWeight": 400,
+      "fill": "#34d399", "color": "#34d399",
+      "textAlign": "right", "originX": "right", "originY": "top"
+    }
+  }
+}

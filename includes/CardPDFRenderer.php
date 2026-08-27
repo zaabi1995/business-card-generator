@@ -19,8 +19,12 @@ class CardPDFRenderer
      * v15 (10 Jun 2026): Latin right/center alignment anchors from the
      *   field right edge (x_pt + w_pt), matching Fabric + Arabic htmlbox
      *   (rule 47 convention: x = bbox LEFT edge).
+     * v25 (Aug 2026): STATIC decorations anchor from x_pt, not x_pt + w_pt.
+     *   v15's right-edge anchor is correct for DYNAMIC fields (verified: it
+     *   matches Fabric to 0.02% of the card) but a static's stored `width` is
+     *   not reliably its ink width, and Fabric zeroes it for statics anyway.
      */
-    const RENDERER_VERSION = 24;
+    const RENDERER_VERSION = 25;
 
     /**
      * Render or fetch a cached vector PDF for one employee.
@@ -483,6 +487,51 @@ class CardPDFRenderer
         $svgRel = $settings['background_svg_path'] ?? str_replace('.png', '.svg', basename((string)($tpl['background_image_path'] ?? '')));
         $pngRel = basename((string)($tpl['background_image_path'] ?? '')) ?: str_replace('.svg', '.png', $svgRel);
 
+        // Legacy percentage guard.
+        //
+        // Do NOT assume "everything here carries fields_format='px'". That is
+        // false: 31 of the 131 live templates have has_vector_source=1 and NO
+        // fields_format marker at all, including every MHD division card, both
+        // Al Maha cards and several imported personal cards. They reach this
+        // method with $isLegacyPct = true. They are built by
+        // scripts/mhd/build-division-templates.php, which clones a reference row
+        // rather than going through CardifyTemplateImporter::buildSettings (the
+        // only thing that stamps the marker, line 285).
+        //
+        // What makes this branch safe is the CONDITION, not the marker: it was
+        // evaluated against the fields_json of all 131 production templates and
+        // converts 0 fields and 0 QR slots, because every field on those 31
+        // markerless templates has x>100 or y>100 or sits inside the 50..80
+        // guard band. Re-run that audit before widening this condition.
+        // It exists because the px->pt path
+        // below (x / 4.166) is a silent catastrophe if a percentage template ever
+        // does reach it: a field at x=12 lands at 2.9pt, 1.1% across a 262.5pt
+        // card instead of 12%, collapsing the whole card into the top-left corner.
+        // The condition is copied verbatim from convertLegacyFieldPositions
+        // (includes/functions.php:1326) so a percentage template would resolve to
+        // the same place here, in Fabric, and in the PNG.
+        $isLegacyPct = (($settings['fields_format'] ?? null) !== 'px');
+        $pctToPt = static function (array $f, float $wPt, float $hPt): ?array {
+            $x = $f['x'] ?? 0;
+            $y = $f['y'] ?? 0;
+            if (!is_numeric($x) || !is_numeric($y)) return null;
+            if (!($x <= 100 && $y <= 100 && ($x < 50 || $y < 50 || $x > 80 || $y > 80))) return null;
+            // `width` has no defined unit in the legacy shape: some rows carry a
+            // percentage, some a leftover pixel value. Only read it as a
+            // percentage when it could be one; anything above 100 falls through
+            // to the px path below rather than producing a w_pt several times
+            // the card, which would throw a right-aligned field off the page.
+            $w = $f['width'] ?? 0;
+            $out = [
+                'x_pt' => ((float)$x / 100) * $wPt,
+                'y_pt' => ((float)$y / 100) * $hPt,
+            ];
+            if (is_numeric($w) && $w > 0 && $w <= 100) {
+                $out['w_pt'] = ((float)$w / 100) * $wPt;
+            }
+            return $out;
+        };
+
         $fieldList = [];
         foreach ($fields as $key => $f) {
             if (!is_array($f)) continue;
@@ -501,6 +550,12 @@ class CardPDFRenderer
             // Pass a static_text field for the latter so render-card-pdf.py
             // can draw the literal instead of trying to resolve a binding.
             $staticText = !empty($f['is_static']) ? (string)($f['detected_text'] ?? $f['static_text'] ?? '') : null;
+            $pct = $isLegacyPct ? $pctToPt($f, $widthPt, $heightPt) : null;
+            if ($pct !== null && !isset($f['x_pt'])) {
+                $f['x_pt'] = $pct['x_pt'];
+                $f['y_pt'] = $pct['y_pt'];
+                if (!isset($f['w_pt']) && isset($pct['w_pt'])) $f['w_pt'] = $pct['w_pt'];
+            }
             $fieldList[] = [
                 'field_key'    => $key,
                 'static_text'  => $staticText,
@@ -510,17 +565,69 @@ class CardPDFRenderer
                 'detected_text' => (string)($f['detected_text'] ?? ''),
                 'x_pt'         => (float)($f['x_pt']     ?? ($f['x'] ?? 0) / 4.166),
                 'y_pt'         => (float)($f['y_pt']     ?? ($f['y'] ?? 0) / 4.166),
-                'w_pt'         => (float)($f['w_pt'] ?? (($f['width'] ?? 0) / 4.166)),
+                // A STATIC decoration gets w_pt 0, so render-card-pdf.py anchors
+                // it from x_pt (its detected LEFT edge) instead of x_pt + w_pt.
+                // This mirrors generate_card_html.php:644, which passes width 0
+                // for statics, and card-editor.js:736, which then forces
+                // originX 'left'. Dynamic fields keep w_pt and keep the right-edge
+                // anchor, which is correct and matches Fabric exactly.
+                //
+                // Why: a static's `width` is not reliably its ink width. The MHD
+                // division cards share one cloned width (553.7px) across every
+                // Arabic static, so right-anchoring pushed division_ar/entity_ar
+                // to a right edge of 1032.7px when the source PDF puts that ink at
+                // 873.1px: 159.6px, ~13.5mm, off the right side of a 91mm card, on
+                // 7 live division templates. Left-anchoring lands them at 478.0px
+                // against a design left edge of 472.0px. Where a static's bbox IS
+                // tight the two agree: the ITHCA card's 'www.ITHCA.om' (width 143,
+                // ink width 142.8) measured -0.2px right-anchored and +0.2px
+                // left-anchored. Both numbers are measured, see
+                // tests/renderer-parity/out/prod/.
+                // NOTE: w_pt 0 alone is NOT enough, and gets it wrong in the
+                // opposite direction. render-card-pdf.py:1404 falls back to
+                // `anchor_x = text_x` and then subtracts the whole measured
+                // width, i.e. it puts the text's RIGHT edge on x_pt. Measured:
+                // that moved the ITHCA card's 'www.ITHCA.om' from a correct
+                // 373.2..516.0 to 230.1..373.0, 143px wrong. The origin has to
+                // be forced to 'left' as well, which is what Fabric does
+                // (card-editor.js:736 sets originX 'left' when width<=0).
+                'w_pt'         => !empty($f['is_static'])
+                                    ? 0.0
+                                    : (float)($f['w_pt'] ?? (($f['width'] ?? 0) / 4.166)),
                 'font_family'  => (string)($f['fontFamily'] ?? $f['font_family'] ?? 'Lato'),
                 'font_weight'  => (int)($f['fontWeight'] ?? $f['font_weight'] ?? 400),
                 'font_size_pt' => (float)($f['font_size_pt'] ?? ($f['fontSize'] ?? 10) / 4.166),
                 'color'        => (string)($f['fill'] ?? $f['color'] ?? '#ffffff'),
-                'text_align'   => (string)($f['textAlign'] ?? 'left'),
+                // Statics anchor from their detected LEFT edge, see w_pt above.
+                // In render-card-pdf.py text_align IS the origin selector for
+                // both the LTR path (line 1377) and the Arabic htmlbox path
+                // (line 818), so forcing 'left' here is the faithful translation
+                // of Fabric zeroing the width and setting originX 'left'.
+                'text_align'   => !empty($f['is_static'])
+                                    ? 'left'
+                                    : (string)($f['textAlign'] ?? 'left'),
             ];
         }
         // Pass the qr_code field spec separately so render-card-pdf.py
         // can generate a real styled QR (the field-list loop skips qr_code).
         $qrSpec = isset($fields['qr_code']) && is_array($fields['qr_code']) ? $fields['qr_code'] : null;
+        // Same legacy-percentage guard for the QR slot. render-card-pdf.py:1001-1003
+        // multiplies qr x/y/size by 72/300, so a percentage QR would land at 5% of
+        // the card instead of 60% while the text around it rendered correctly.
+        // Converted to canvas px (not pt) because that is what the renderer expects.
+        if ($isLegacyPct && $qrSpec !== null && !isset($qrSpec['x_px'])) {
+            $qx = $qrSpec['x'] ?? null;
+            $qy = $qrSpec['y'] ?? null;
+            $qs = $qrSpec['size'] ?? null;
+            if (is_numeric($qx) && is_numeric($qy) && is_numeric($qs)
+                && $qx <= 100 && $qy <= 100 && $qs <= 100) {
+                $canvasW = $widthPt  * 300 / 72;
+                $canvasH = $heightPt * 300 / 72;
+                $qrSpec['x']    = ((float)$qx / 100) * $canvasW;
+                $qrSpec['y']    = ((float)$qy / 100) * $canvasH;
+                $qrSpec['size'] = ((float)$qs / 100) * $canvasW;
+            }
+        }
 
         return [
             'side'                 => $side,

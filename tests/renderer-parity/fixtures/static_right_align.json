@@ -1,0 +1,33 @@
+{
+  "id": "static_right_align",
+  "side": "back",
+  "description": "A static (decoration) field that is right-aligned. Static fields bypass the width constraint in Fabric (generate_card_html.php:644 passes width 0, card-editor.js:735 then forces originX left at x), but CardPDFRenderer still hands render-card-pdf.py a w_pt, so R2 anchors it from x + width.",
+  "provenance": "static_N key naming and the is_static/detected_text/render_in_bg trio from includes/CardifyTemplateImporter.php:67-142. render_in_bg is false because the parser redacted the text from the background, which is the case the importer comment at :113-121 calls out.",
+  "settings": {
+    "cardSize": "custom",
+    "customWidth": 92.62,
+    "customHeight": 59.93,
+    "customUnit": "mm",
+    "dpi": 300,
+    "fields_format": "px",
+    "backgroundColor": "#10243b"
+  },
+  "fields": {
+    "name_en": {
+      "enabled": true, "is_static": false, "render_in_bg": false,
+      "x": 132, "y": 150, "width": 420, "height": 60,
+      "fontSize": 44, "fontFamily": "Inter", "fontWeight": 400,
+      "fill": "#ffffff", "color": "#ffffff",
+      "textAlign": "left", "originX": "left", "originY": "top"
+    },
+    "static_1": {
+      "enabled": true, "is_static": true, "render_in_bg": false,
+      "label": "Decoration: An Omantel Company",
+      "detected_text": "An Omantel Company",
+      "x": 300, "y": 300, "width": 500, "height": 40,
+      "fontSize": 34, "fontFamily": "Inter", "fontWeight": 400,
+      "fill": "#f59e0b", "color": "#f59e0b",
+      "textAlign": "right", "originX": "right", "originY": "top"
+    }
+  }
+}

@@ -56,7 +56,7 @@ try {
     // computed in the same statement so both come from one NOW() evaluation.
     $now = $db->fetchOne("SELECT NOW() n, DATE_SUB(NOW(), INTERVAL 1 SECOND) n1");
     $rows = $db->fetchAll(
-        "SELECT id, device_uuid, parsed, tags, met_at, met_where, status, image_path, image_path_back, created_at, updated_at
+        "SELECT id, device_uuid, parsed, tags, met_at, met_where, merge_provenance, status, image_path, image_path_back, created_at, updated_at
          FROM scans WHERE $where ORDER BY updated_at ASC, id ASC LIMIT 500", $params);
 
     $scans = array_map(function ($r) {
@@ -67,6 +67,9 @@ try {
             'tags' => $r['tags'],
             'met_at' => $r['met_at'],
             'met_where' => $r['met_where'],
+            // Carried verbatim. The device is the only place that can render it,
+            // because it is structured data the app localises rather than prose.
+            'merge_provenance' => $r['merge_provenance'],
             'status' => $r['status'],
             'image_url' => $r['image_path'] ? '/' . $r['image_path'] : null,
             'image_back_url' => $r['image_path_back'] ? '/' . $r['image_path_back'] : null,

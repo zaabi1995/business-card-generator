@@ -1,0 +1,56 @@
+{
+  "id": "modern_px",
+  "side": "back",
+  "description": "Modern PDF-imported template. Absolute 300-DPI pixel coordinates, settings.fields_format='px'.",
+  "provenance": "Field shape copied from includes/CardifyTemplateImporter.php:123-142 (buildFields) and settings from includes/CardifyTemplateImporter.php:274-292 (buildSettings). Coordinates are the Otech-family magnitudes referenced in tests/python/test_render_card_pdf.py:33-48 converted pt->px at 300 DPI (x_pt 31.8 -> 132px etc).",
+  "settings": {
+    "cardSize": "custom",
+    "customWidth": 92.62,
+    "customHeight": 59.93,
+    "customUnit": "mm",
+    "dpi": 300,
+    "fields_format": "px",
+    "width_pt": 262.55,
+    "height_pt": 169.89,
+    "backgroundColor": "#10243b",
+    "imported_from": "pdf"
+  },
+  "fields": {
+    "name_en": {
+      "enabled": true, "is_static": false, "render_in_bg": false,
+      "label": "Name", "detected_text": "Muhammed Ali",
+      "x": 132, "y": 202, "width": 420, "height": 60,
+      "fontSize": 55, "fontFamily": "Inter", "fontWeight": 500,
+      "italic": false, "fontStyle": "normal",
+      "fill": "#ffffff", "color": "#ffffff",
+      "textAlign": "left", "originX": "left", "originY": "top"
+    },
+    "position_en": {
+      "enabled": true, "is_static": false, "render_in_bg": false,
+      "label": "Position", "detected_text": "Product Manager",
+      "x": 134, "y": 276, "width": 420, "height": 40,
+      "fontSize": 36, "fontFamily": "Inter", "fontWeight": 400,
+      "italic": false, "fontStyle": "normal",
+      "fill": "#ffffff", "color": "#ffffff",
+      "textAlign": "left", "originX": "left", "originY": "top"
+    },
+    "mobile": {
+      "enabled": true, "is_static": false, "render_in_bg": false,
+      "label": "Mobile", "detected_text": "M +968 9771 2345",
+      "x": 136, "y": 407, "width": 420, "height": 34,
+      "fontSize": 32, "fontFamily": "Inter", "fontWeight": 400,
+      "italic": false, "fontStyle": "normal",
+      "fill": "#ffffff", "color": "#ffffff",
+      "textAlign": "left", "originX": "left", "originY": "top"
+    },
+    "email": {
+      "enabled": true, "is_static": false, "render_in_bg": false,
+      "label": "Email", "detected_text": "E muhammed.ali@otech.om",
+      "x": 136, "y": 448, "width": 420, "height": 34,
+      "fontSize": 32, "fontFamily": "Inter", "fontWeight": 400,
+      "italic": false, "fontStyle": "normal",
+      "fill": "#ffffff", "color": "#ffffff",
+      "textAlign": "left", "originX": "left", "originY": "top"
+    }
+  }
+}
