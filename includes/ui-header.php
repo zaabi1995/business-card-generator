@@ -209,11 +209,8 @@ $cardifyOgLocale = ($cardifyLocale === 'ar') ? 'ar_OM' : 'en_US';
     <!-- Fonts via fonts.bhd.om (BHD-Group canonical CDN, not Google) -->
     <link rel="preconnect" href="https://fonts.bhd.om">
     <link rel="preconnect" href="https://fonts.bhd.om" crossorigin>
-    <?php if ($cardifyDir === 'rtl'): ?>
-    <link href="https://fonts.bhd.om/css2?family=Sora:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <?php else: ?>
     <link href="https://fonts.bhd.om/css2?family=Sora:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <?php endif; ?>
+    <link rel="stylesheet" href="https://fonts.bhd.om/css/NotoSansArabic.css">
     
     <!-- Preconnect to CDNs (parallel DNS+TLS) -->
     <!-- design.bhd.om serves the preloaded FA woff2 (crossorigin) + FA/cmdk/skeleton CSS (same-origin),
@@ -280,9 +277,9 @@ $cardifyOgLocale = ($cardifyLocale === 'ar') ? 'ar_OM' : 'en_US';
     
     <style>
         /* Latin pages render in Plus Jakarta Sans (body) + Sora (display,
-           set in cardify-brand-2026.css); Arabic pages render in IBM Plex
-           Sans Arabic end-to-end. Applying the Arabic face via [dir="rtl"]
-           so it wins over any tailwind or theme resets. */
+           set in cardify-brand-2026.css); Arabic pages render in Noto Sans
+           Arabic from fonts.bhd.om css/NotoSansArabic.css. Applying the
+           Arabic face via [dir="rtl"] so it wins over tailwind/theme resets. */
         body { font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif; }
         html[dir="rtl"], html[dir="rtl"] body,
         html[dir="rtl"] h1, html[dir="rtl"] h2, html[dir="rtl"] h3,
@@ -290,7 +287,7 @@ $cardifyOgLocale = ($cardifyLocale === 'ar') ? 'ar_OM' : 'en_US';
         html[dir="rtl"] p,  html[dir="rtl"] a,  html[dir="rtl"] span,
         html[dir="rtl"] button, html[dir="rtl"] input, html[dir="rtl"] select,
         html[dir="rtl"] textarea, html[dir="rtl"] label, html[dir="rtl"] li {
-            font-family: 'IBM Plex Sans Arabic', 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+            font-family: 'Noto Sans Arabic', 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
         }
         [x-cloak] { display: none !important; }
         .bg-blur { backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
