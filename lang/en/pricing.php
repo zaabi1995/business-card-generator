@@ -44,7 +44,7 @@ return [
 
     'product_nfc_name'       => 'NFC Tap Cards',
     'product_nfc_spec'       => 'Re-programmable NFC chip for compatible NFC-enabled phones, with QR fallback',
-    'product_nfc_price'      => 'OMR 25.000',
+    'product_nfc_price'      => 'OMR 10.000',
     'product_nfc_unit'       => 'per card',
 
     'product_cta'   => 'Order prints',

@@ -667,7 +667,7 @@ if ($introIso):
                                     </div>
                                     <div class="bg-gray-50 rounded-lg p-3">
                                         <div class="text-gray-500">NFC Tap</div>
-                                        <div class="font-bold text-gray-900">OMR 25.000</div>
+                                        <div class="font-bold text-gray-900">OMR 10.000</div>
                                         <div class="text-xs text-gray-500">per card</div>
                                     </div>
                                 </div>

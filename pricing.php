@@ -3,7 +3,7 @@
  * Cardify, Pricing page.
  *
  * Free platform plus pay-per-print product catalogue (Standard 6 OMR,
- * Premium 8 OMR, Luxury 15 OMR, NFC 25 OMR). No SaaS tiers, no seat
+ * Premium 8 OMR, Luxury 15 OMR, NFC 10 OMR). No SaaS tiers, no seat
  * caps, no trials. Unlimited everything on the platform side.
  *
  * Fully bilingual via lang/{en,ar}/pricing.php. Uses Seo::product for
@@ -45,7 +45,7 @@ Seo::breadcrumbs([
 Seo::product('standard', 'pricing.product_standard_name', 'pricing.product_standard_spec', '5',  'card-standard.jpg');
 Seo::product('premium',  'pricing.product_premium_name',  'pricing.product_premium_spec',  '6',  'card-premium.jpg');
 Seo::product('luxury',   'pricing.product_luxury_name',   'pricing.product_luxury_spec',   '15', 'card-luxury.jpg');
-Seo::product('nfc',      'pricing.product_nfc_name',      'pricing.product_nfc_spec',      '25', 'card-nfc.jpg');
+Seo::product('nfc',      'pricing.product_nfc_name',      'pricing.product_nfc_spec',      '10', 'card-nfc.jpg');
 Seo::faqPage([
     [t('pricing.faq_q1'), t('pricing.faq_a1')],
     [t('pricing.faq_q2'), t('pricing.faq_a2')],
