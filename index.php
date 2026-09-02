@@ -1523,15 +1523,15 @@ echo Seo::organizationScriptOnce();
     {
       "@type": "Offer",
       "name": "NFC Tap Cards",
-      "price": "25.000",
+      "price": "10.000",
       "priceCurrency": "OMR",
       "priceSpecification": {
         "@type": "UnitPriceSpecification",
-        "price": "25.000",
+        "price": "10.000",
         "priceCurrency": "OMR",
         "referenceQuantity": { "@type": "QuantitativeValue", "value": "1", "unitText": "card" }
       },
-      "description": "Re-programmable NFC chip plus QR. Tap-to-share on any phone. OMR 25.000 per card.",
+      "description": "Re-programmable NFC chip plus QR. Tap-to-share on any phone. OMR 10.000 per card.",
       "availability": "https://schema.org/InStock",
       "url": "https://cardify.om/pricing"
     }
@@ -1559,7 +1559,7 @@ echo Seo::organizationScriptOnce();
     "@type": "AggregateOffer",
     "priceCurrency": "OMR",
     "lowPrice": "0",
-    "highPrice": "25",
+    "highPrice": "15",
     "offerCount": "5",
     "availability": "https://schema.org/InStock",
     "hasMerchantReturnPolicy": {

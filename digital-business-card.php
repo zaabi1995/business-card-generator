@@ -37,7 +37,7 @@ $faq = [
     ['Can one card be in both Arabic and English?',
      'Yes, and on Cardify it is the default rather than an add-on. Each employee card carries an Arabic side and an English side under one URL. The card opens in the language of the visitor\'s device and offers a one-tap switch, and both versions save into the contacts app with correctly spelled names in each script.'],
     ['How much does a digital business card cost?',
-     'The Cardify platform is free with no employee limit, no template limit and no card limit, and no credit card is required. You only pay if you order physical cards: OMR 5.000 per 100 Standard cards, OMR 6.000 per 100 Premium, OMR 15.000 per 100 Luxury, and OMR 25.000 for a re-programmable NFC tap card.'],
+     'The Cardify platform is free with no employee limit, no template limit and no card limit, and no credit card is required. You only pay if you order physical cards: OMR 5.000 per 100 Standard cards, OMR 6.000 per 100 Premium, OMR 15.000 per 100 Luxury, and OMR 10.000 for a re-programmable NFC tap card.'],
     ['What happens to a card when an employee leaves?',
      'The company keeps the card, not the employee. An administrator revokes the person\'s access, and the profile URL, the QR code and the scan history stay with the business. The same URL can be reassigned to a replacement, so QR codes already printed on brochures, vehicles or signage keep working instead of leading to a dead page.'],
     ['Is a digital business card the same as a QR code?',
@@ -190,7 +190,7 @@ $base = getBasePath();
                         <td class="px-4 py-3 font-medium text-gray-900">NFC card</td>
                         <td class="px-4 py-3">Exhibition stands, reception desks, sales staff meeting many people a day</td>
                         <td class="px-4 py-3">Yes, and the chip can be re-pointed without reprinting</td>
-                        <td class="px-4 py-3">OMR 25.000 per card</td>
+                        <td class="px-4 py-3">OMR 10.000 per card</td>
                     </tr>
                 </tbody>
             </table>
@@ -224,7 +224,7 @@ $base = getBasePath();
             <li><strong>Standard cards</strong>, 300gsm matt, full colour both sides: OMR 5.000 per 100</li>
             <li><strong>Premium cards</strong>, 350gsm soft-touch, full colour both sides: OMR 6.000 per 100</li>
             <li><strong>Luxury cards</strong>, 450gsm with spot UV or foil accents: OMR 15.000 per 100</li>
-            <li><strong>NFC tap cards</strong>, re-programmable chip plus QR: OMR 25.000 per card</li>
+            <li><strong>NFC tap cards</strong>, re-programmable chip plus QR: OMR 10.000 per card</li>
         </ul>
         <p>
             Printing is fulfilled by verified Omani print shops, dispatched within one working day and delivered across Oman in two to four working days. Pickup from Muscat is same-day. Full detail is on the <a href="<?= $base ?>pricing">pricing page</a>.

@@ -156,7 +156,7 @@ $base = getBasePath();
             The platform is free, permanently, with no employee limit, no template limit and no card limit, and no credit card is required. Nothing about the virtual card costs money at any headcount.
         </p>
         <p>
-            Physical cards are the only paid item: OMR 5.000 per 100 Standard, OMR 6.000 per 100 Premium, OMR 15.000 per 100 Luxury, and OMR 25.000 per NFC tap card, fulfilled by verified Omani print shops and delivered across Oman in two to four working days. See the <a href="<?= $base ?>pricing">pricing page</a>.
+            Physical cards are the only paid item: OMR 5.000 per 100 Standard, OMR 6.000 per 100 Premium, OMR 15.000 per 100 Luxury, and OMR 10.000 per NFC tap card, fulfilled by verified Omani print shops and delivered across Oman in two to four working days. See the <a href="<?= $base ?>pricing">pricing page</a>.
         </p>
 
         <h2 id="faq">Frequently asked questions</h2>

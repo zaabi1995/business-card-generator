@@ -96,15 +96,47 @@ nfcContractCheck(
     'Article schema references the shared page entity and uses the sitemap UTC date'
 );
 
+$enPricing = require $root . '/lang/en/pricing.php';
+$arPricing = require $root . '/lang/ar/pricing.php';
+$enFaq = require $root . '/lang/en/faq.php';
+$arFaq = require $root . '/lang/ar/faq.php';
 nfcContractCheck(
-    preg_match("/Seo::product\('nfc',\s*'pricing\.product_nfc_name',\s*'pricing\.product_nfc_spec',\s*'25'/", $pricing) === 1
-        && str_contains($en['page_desc'], 'OMR 25.000')
-        && str_contains($ar['page_desc'], '25.000'),
+    preg_match("/Seo::product\('nfc',\s*'pricing\.product_nfc_name',\s*'pricing\.product_nfc_spec',\s*'10'/", $pricing) === 1
+        && $enPricing['product_nfc_price'] === 'OMR 10.000'
+        && $arPricing['product_nfc_price'] === '10.000 ريال'
+        && str_contains($en['page_desc'], 'OMR 10.000')
+        && str_contains($ar['page_desc'], '10.000')
+        && !str_contains($en['page_desc'], 'OMR 25.000')
+        && !str_contains($ar['page_desc'], '25.000'),
     'NFC price copy is copied from the canonical pricing source'
 );
 
-$enPricing = require $root . '/lang/en/pricing.php';
-$arPricing = require $root . '/lang/ar/pricing.php';
+nfcContractCheck(
+    $enPricing['product_standard_price'] === 'OMR 5.000'
+        && $enPricing['product_premium_price'] === 'OMR 6.000'
+        && $enPricing['product_luxury_price'] === 'OMR 15.000'
+        && $arPricing['product_standard_price'] === '5.000 ريال'
+        && $arPricing['product_premium_price'] === '6.000 ريال'
+        && $arPricing['product_luxury_price'] === '15.000 ريال',
+    'Standard, Premium and Luxury published prices stay unchanged'
+);
+
+nfcContractCheck(
+    str_contains($enFaq['gs3_a'], 'OMR 10.000 per card')
+        && str_contains($enFaq['pr4_a'], 'OMR 10.000 each')
+        && str_contains($enFaq['dc3_a'], 'OMR 10.000')
+        && str_contains($arFaq['gs3_a'], '10.000 ريال للبطاقة')
+        && str_contains($arFaq['pr4_a'], '10.000 ريال للبطاقة')
+        && str_contains($arFaq['dc3_a'], '10.000 ريال')
+        && !str_contains($enFaq['gs3_a'], '25')
+        && !str_contains($enFaq['pr4_a'], '25')
+        && !str_contains($enFaq['dc3_a'], '25')
+        && !str_contains($arFaq['gs3_a'], '25')
+        && !str_contains($arFaq['pr4_a'], '25')
+        && !str_contains($arFaq['dc3_a'], '25'),
+    'FAQ NFC tap-card price matches the published OMR 10.000 sell price'
+);
+
 nfcContractCheck(
     str_contains($enPricing['product_nfc_spec'], 'compatible NFC-enabled phones')
         && str_contains($enPricing['product_nfc_spec'], 'QR fallback')
@@ -119,7 +151,11 @@ nfcContractCheck(
         && str_contains($llms, 'https://cardify.om/ar/nfc-business-card')
         && str_contains($llms, 'Standard OMR 5.000 per 100')
         && str_contains($llms, 'Premium OMR 6.000 per 100')
-        && !str_contains($llms, 'Premium OMR 8.000 per 100'),
+        && str_contains($llms, 'Luxury OMR 15.000 per 100')
+        && str_contains($llms, 'NFC cards: OMR 10.000 per card')
+        && str_contains($llms, 'OMR 10.000 per card, including')
+        && !str_contains($llms, 'Premium OMR 8.000 per 100')
+        && !str_contains($llms, 'OMR 25.000'),
     'AI discovery names both NFC locales and matches canonical print pricing'
 );
 

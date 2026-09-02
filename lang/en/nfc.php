@@ -1,11 +1,11 @@
 <?php
 return [
     'page_title' => 'NFC Business Cards Oman, Tap and QR',
-    'page_desc' => 'Cardify NFC business cards open a bilingual digital profile by phone tap, include a QR fallback, can be re-pointed, and cost OMR 25.000 each across Oman.',
+    'page_desc' => 'Cardify NFC business cards open a bilingual digital profile by phone tap, include a QR fallback, can be re-pointed, and cost OMR 10.000 each across Oman.',
     'breadcrumb_home' => 'Home',
     'breadcrumb_current' => 'NFC Business Cards',
     'hero_h1' => 'NFC business cards in Oman that tap to share',
-    'hero_lede' => 'Hold a phone near the card and your Arabic and English profile opens. A QR code on the same card covers phones that cannot tap. Each Cardify NFC card costs OMR 25.000 and can be re-pointed to another profile.',
+    'hero_lede' => 'Hold a phone near the card and your Arabic and English profile opens. A QR code on the same card covers phones that cannot tap. Each Cardify NFC card costs OMR 10.000 and can be re-pointed to another profile.',
     'cta_build' => 'Build your card free, then order NFC',
     'cta_pricing' => 'See verified pricing',
 
@@ -46,7 +46,7 @@ return [
     'row_4_nfc' => 'The live Cardify profile',
     'row_4_qr' => 'The same live Cardify profile',
     'row_5_label' => 'Cardify price',
-    'row_5_nfc' => 'OMR 25.000 per card',
+    'row_5_nfc' => 'OMR 10.000 per card',
     'row_5_qr' => 'Included on every NFC card',
     'compare_summary' => 'NFC is useful for people who exchange cards frequently. QR makes the same card accessible when NFC is unavailable. Cardify combines both rather than asking a buyer to choose one.',
 
@@ -65,7 +65,7 @@ return [
 
     'ordering_h2' => 'How to order NFC business cards in Oman',
     'ordering_p1' => 'Create the digital card first, confirm the Arabic and English details, and choose which employees need the physical NFC product. The same destination is used for the NFC chip and the printed QR code.',
-    'ordering_p2' => 'The published Cardify price is OMR 25.000 per NFC card, including the chip, printing and programming. Cardify pricing states delivery across Oman in two to four working days, with same-day pickup in Muscat. Check the pricing page for the current terms before ordering.',
+    'ordering_p2' => 'The published Cardify price is OMR 10.000 per NFC card, including the chip, printing and programming. Cardify pricing states delivery across Oman in two to four working days, with same-day pickup in Muscat. Check the pricing page for the current terms before ordering.',
 
     'sources_h2' => 'Technical sources',
     'sources_intro' => 'The device and chip explanations above are checked against primary technical documentation:',
@@ -83,7 +83,7 @@ return [
     'faq_q4' => 'Can a Cardify NFC card be reprogrammed?',
     'faq_a4' => 'Cardify NFC cards can be re-pointed to a different Cardify profile. This lets a company update the destination when a card is reassigned while keeping the physical card.',
     'faq_q5' => 'How much does a Cardify NFC business card cost?',
-    'faq_a5' => 'The published price is OMR 25.000 per card, including the chip, printing and programming. The digital Cardify platform itself is free for unlimited employees.',
+    'faq_a5' => 'The published price is OMR 10.000 per card, including the chip, printing and programming. The digital Cardify platform itself is free for unlimited employees.',
     'faq_q6' => 'Is tapping an NFC business card safe?',
     'faq_a6' => 'The passive card chip returns a stored web address at very short range. It does not pair with the phone, read the phone, or contain payment credentials.',
     'faq_q7' => 'Does the recipient need the Cardify app?',
@@ -92,7 +92,7 @@ return [
     'faq_a8' => 'Yes. Every Cardify NFC card combines both. NFC provides the tap experience, while QR covers phones without compatible NFC support.',
 
     'closing_h2' => 'Start with the free profile, add NFC where it helps',
-    'closing_p' => 'Create the Arabic and English digital card first. Order the OMR 25.000 NFC product only for the people who need a physical tap card.',
+    'closing_p' => 'Create the Arabic and English digital card first. Order the OMR 10.000 NFC product only for the people who need a physical tap card.',
     'closing_cta' => 'Get started free',
     'read_h2' => 'Keep reading',
     'read_digital' => 'Digital business cards, the profile behind the chip',
