@@ -83,6 +83,7 @@ printshopHeader($company['name'] . ' , ' . $shop['name'], 'clients');
            class="inline-flex items-center gap-2 px-4 py-2 bg-[#009bc1] hover:bg-[#0086a6] text-white rounded-lg text-sm font-medium shadow-sm">
             <i class="fa-solid fa-users"></i> <?= htmlspecialchars(t('printshopinternal.manage_cards_btn')) ?>
         </a>
+        <?php if (!empty($shop['is_internal_provider'])): ?>
         <a href="client-templates.php?company=<?= urlencode($companyId) ?>"
            class="inline-flex items-center gap-2 px-4 py-2 bg-[#00718c] hover:bg-[#005b73] text-white rounded-lg text-sm font-medium shadow-sm">
             <i class="fa-solid fa-id-card"></i> Apply a design
@@ -91,6 +92,7 @@ printshopHeader($company['name'] . ' , ' . $shop['name'], 'clients');
                 class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium shadow-sm">
             <i class="fa-solid fa-plus"></i> <?= htmlspecialchars(t('printshopinternal.create_design_btn')) ?>
         </button>
+        <?php endif; ?>
     </div>
 
     <?php if (!empty($designs)): ?>
