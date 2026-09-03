@@ -72,7 +72,7 @@ class DatabaseAdapter {
             'staging','stage','dev','demo','blog','logos','logo','companies','company',
             'pricing','about','contact','terms','privacy','help','support','faq',
             'status','health','card','cards','qr','vcf','vcard','share','edit','print',
-            'printshop','billing','pay','payment','payments','paymob','callback',
+            'printshop','print-shops','print-shop','partners','billing','pay','payment','payments','paymob','callback',
             'webhook','webhooks','ftp','smtp','imap','pop','pop3','ns1','ns2','dns','mx',
             'autodiscover','autoconfig','cpanel','whm','webmail','email','noreply',
             'no-reply','info','sales','security','secure','ssl','account','accounts',

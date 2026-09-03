@@ -494,6 +494,8 @@ The canvas internally renders at 1050x600, but CSS scales the display to fit the
 | `/about` | about.php | About page |
 | `/contact` | contact.php | Contact form |
 | `/print-shops` | print-shops.php | Public print shop directory |
+| `/print-shops/register` | printshop/register.php | Print partner signup (any country) |
+| `/partners` | printshop/register.php | Alias for print partner signup |
 | `/privacy`, `/terms`, `/cookies` | Static pages | Legal pages |
 
 ### Company-Specific URLs

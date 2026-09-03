@@ -6,8 +6,9 @@
  */
 require_once __DIR__ . '/../config.php';
 require_once INCLUDES_DIR . '/PrintShopAuth.php';
+require_once INCLUDES_DIR . '/PrintShopClients.php';
 
-$ctx = PrintShopAuth::requireInternalProvider();
+$ctx = PrintShopAuth::requireLogin();
 $shop = $ctx['shop'];
 
 $companyId = trim($_GET['company'] ?? '');
@@ -23,6 +24,12 @@ $company = $pdo->prepare("SELECT * FROM companies WHERE id = ? LIMIT 1");
 $company->execute([$companyId]);
 $company = $company->fetch(PDO::FETCH_ASSOC);
 if (!$company) {
+    header('Location: ' . getBasePath() . 'printshop/clients.php');
+    exit;
+}
+
+$attachedIds = PrintShopClients::listAttachedCompanyIds((int) $shop['id']);
+if (!PrintShopClients::canAccessCompanyAdmin($shop, (string) $company['id'], $attachedIds)) {
     header('Location: ' . getBasePath() . 'printshop/clients.php');
     exit;
 }
@@ -72,6 +79,11 @@ printshopHeader($company['name'] . ' , ' . $shop['name'], 'clients');
             <h1 class="text-2xl font-bold text-gray-900"><?= sanitize($company['name']) ?></h1>
             <p class="text-sm text-gray-500">/<?= sanitize($company['slug']) ?> &middot; <?= count($employees) ?> employees &middot; <?= count($designs) ?> designs</p>
         </div>
+        <a href="<?= htmlspecialchars(getTenantUrl($company['slug'], '/admin/employees')) ?>"
+           class="inline-flex items-center gap-2 px-4 py-2 bg-[#009bc1] hover:bg-[#0086a6] text-white rounded-lg text-sm font-medium shadow-sm">
+            <i class="fa-solid fa-users"></i> <?= htmlspecialchars(t('printshopinternal.manage_cards_btn')) ?>
+        </a>
+        <?php if (!empty($shop['is_internal_provider'])): ?>
         <a href="client-templates.php?company=<?= urlencode($companyId) ?>"
            class="inline-flex items-center gap-2 px-4 py-2 bg-[#00718c] hover:bg-[#005b73] text-white rounded-lg text-sm font-medium shadow-sm">
             <i class="fa-solid fa-id-card"></i> Apply a design
@@ -80,6 +92,7 @@ printshopHeader($company['name'] . ' , ' . $shop['name'], 'clients');
                 class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium shadow-sm">
             <i class="fa-solid fa-plus"></i> <?= htmlspecialchars(t('printshopinternal.create_design_btn')) ?>
         </button>
+        <?php endif; ?>
     </div>
 
     <?php if (!empty($designs)): ?>

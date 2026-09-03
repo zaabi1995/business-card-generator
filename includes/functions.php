@@ -596,18 +596,42 @@ function requireAdmin() {
         exit;
     }
 
-    // Check company context
-    if (!isset($_SESSION['company_id'])) {
+    $adminRoles = ['super_admin', 'admin', 'company', 'company_admin'];
+    $userRole = $_SESSION['user_role'] ?? '';
+    if (!class_exists('PrintShopClients') && defined('INCLUDES_DIR')) {
+        $clientsPath = INCLUDES_DIR . '/PrintShopClients.php';
+        if (is_file($clientsPath)) require_once $clientsPath;
+    }
+    $urlCompanyId = class_exists('PrintShopClients')
+        ? PrintShopClients::urlTenantCompanyId()
+        : null;
+    $partnerOk = class_exists('PrintShopClients')
+        && PrintShopClients::isPartnerRole($userRole)
+        && PrintShopClients::currentSessionCanStayInCompanyAdmin($urlCompanyId);
+
+    // Regular company admins still need a session tenant. Print partners
+    // may arrive from Create client company with an empty session and a
+    // valid URL tenant.
+    if (!isset($_SESSION['company_id']) && !$partnerOk) {
         header('Location: ' . getBasePath() . 'login.php');
         exit;
     }
 
-    // Verify user has admin-level role
-    $adminRoles = ['super_admin', 'admin', 'company', 'company_admin'];
-    $userRole = $_SESSION['user_role'] ?? '';
-    if (!in_array($userRole, $adminRoles)) {
+    if (!in_array($userRole, $adminRoles) && !$partnerOk) {
         header('Location: ' . getBasePath() . 'login.php?error=unauthorized');
         exit;
+    }
+
+    if ($partnerOk && class_exists('PrintShopClients')) {
+        $viewed = PrintShopClients::viewedCompanyId(
+            $urlCompanyId,
+            isset($_SESSION['company_id']) ? (string) $_SESSION['company_id'] : null
+        );
+        if ($viewed !== '' && !empty($GLOBALS['company']['id']) && (string) $GLOBALS['company']['id'] === $viewed) {
+            PrintShopClients::adoptClientContext($GLOBALS['company']);
+        } elseif ($viewed !== '') {
+            $_SESSION['company_id'] = $viewed;
+        }
     }
 
     // Redirect to company-specific admin URL if not already there
@@ -635,11 +659,23 @@ function redirectToCompanyAdmin() {
         return;
     }
     
-    // Redirect print shop users to their dashboard
+    // Redirect print shop users to their dashboard unless they are
+    // operating an attached client company through company admin.
     $userRole = $_SESSION['user_role'] ?? null;
-    if ($userRole === 'print_shop') {
-        header('Location: ' . getBasePath() . 'printshop/dashboard.php');
-        exit;
+    if ($userRole === 'print_shop' || $userRole === 'print_shop_operator') {
+        if (!class_exists('PrintShopClients') && defined('INCLUDES_DIR')) {
+            $clientsPath = INCLUDES_DIR . '/PrintShopClients.php';
+            if (is_file($clientsPath)) require_once $clientsPath;
+        }
+        $urlCompanyId = class_exists('PrintShopClients')
+            ? PrintShopClients::urlTenantCompanyId()
+            : null;
+        $partnerOk = class_exists('PrintShopClients')
+            && PrintShopClients::currentSessionCanStayInCompanyAdmin($urlCompanyId);
+        if (!$partnerOk) {
+            header('Location: ' . getBasePath() . 'printshop/dashboard.php');
+            exit;
+        }
     }
     
     // Get company slug

@@ -118,10 +118,10 @@ class PrintShop {
             
             $stmt = $pdo->prepare("
                 INSERT INTO print_shops 
-                (name, slug, description, logo_path, email, phone, website, 
+                (name, slug, description, logo_url, email, phone, website, 
                  address, city, state, country, postal_code, user_id,
-                 paper_types, finishes, pricing_tiers,
-                 currency, min_quantity, turnaround_days, status)
+                 paper_types, finishes, pricing,
+                 currency, min_order_quantity, turnaround_days, status)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ");
             
@@ -129,7 +129,7 @@ class PrintShop {
                 $data['name'],
                 $data['slug'],
                 $data['description'] ?? null,
-                $data['logo_path'] ?? $data['logo_url'] ?? null,
+                $data['logo_url'] ?? $data['logo_path'] ?? null,
                 $data['email'],
                 $data['phone'] ?? null,
                 $data['website'] ?? null,
@@ -141,9 +141,9 @@ class PrintShop {
                 $data['user_id'] ?? null,
                 json_encode($data['paper_types'] ?? $defaultPaperTypes),
                 json_encode($data['finishes'] ?? $defaultFinishes),
-                json_encode($data['pricing_tiers'] ?? $data['pricing'] ?? $defaultPricing),
+                json_encode($data['pricing'] ?? $data['pricing_tiers'] ?? $defaultPricing),
                 $data['currency'] ?? 'OMR',
-                $data['min_quantity'] ?? $data['min_order_quantity'] ?? 50,
+                $data['min_order_quantity'] ?? $data['min_quantity'] ?? 50,
                 $data['turnaround_days'] ?? 5,
                 $data['status'] ?? 'pending'
             ]);
@@ -751,16 +751,38 @@ class PrintShop {
             $stmt = $pdo->prepare("
                 SELECT c.id, c.name, c.slug
                 FROM companies c
-                INNER JOIN print_orders po ON po.company_id = c.id
-                WHERE po.print_shop_id = ?
-                GROUP BY c.id, c.name, c.slug
+                WHERE c.id IN (
+                    SELECT po.company_id FROM print_orders po
+                    WHERE po.print_shop_id = :shop_orders
+                    UNION
+                    SELECT psc.company_id FROM print_shop_companies psc
+                    WHERE psc.print_shop_id = :shop_attached
+                )
                 ORDER BY c.name ASC
             ");
-            $stmt->execute([$printShopId]);
+            $stmt->execute([
+                'shop_orders' => $printShopId,
+                'shop_attached' => $printShopId,
+            ]);
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
             error_log("PrintShop::getClientCompanies error: " . $e->getMessage());
-            return [];
+            try {
+                $pdo = $db->getConnection();
+                $stmt = $pdo->prepare("
+                    SELECT c.id, c.name, c.slug
+                    FROM companies c
+                    INNER JOIN print_orders po ON po.company_id = c.id
+                    WHERE po.print_shop_id = ?
+                    GROUP BY c.id, c.name, c.slug
+                    ORDER BY c.name ASC
+                ");
+                $stmt->execute([$printShopId]);
+                return $stmt->fetchAll(PDO::FETCH_ASSOC);
+            } catch (PDOException $e2) {
+                error_log("PrintShop::getClientCompanies fallback: " . $e2->getMessage());
+                return [];
+            }
         }
     }
 

@@ -194,6 +194,11 @@ class PrintShopAuth {
                 // Cross-tenant browse is admin-tier only.
                 return ($shopTier === 'admin') && ($opRole !== 'viewer');
 
+            case 'manage_client_tenants':
+                // Any signed-in shop owner/admin operator can create and
+                // operate attached client companies. Viewers stay read-only.
+                return $opRole !== 'viewer';
+
             case 'manage_operators':
             case 'manage_pricing':
             case 'manage_settings':

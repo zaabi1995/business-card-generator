@@ -5,6 +5,22 @@
  */
 require_once __DIR__ . '/config.php';
 
+// /print-shops/register and /partners 404 on nginx until Master applies
+// docs/print-partner-nginx-rewrites.conf. If this 404 page is the
+// error_page target, recover those signup URLs instead of a dead end.
+$requestPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '';
+$isArPartnerPath = (bool) preg_match('#^/ar/#', $requestPath);
+$partnerPath = preg_replace('#^/ar/#', '/', $requestPath);
+$partnerPath = rtrim((string) $partnerPath, '/') ?: '/';
+if ($partnerPath === '/partners' || $partnerPath === '/print-shops/register') {
+    if ($isArPartnerPath && empty($_GET['lang'])) {
+        $_GET['lang'] = 'ar';
+    }
+    http_response_code(200);
+    require __DIR__ . '/printshop/register.php';
+    exit;
+}
+
 $brandName = defined('SITE_NAME') ? SITE_NAME : 'Cardify';
 // llm27-28: this template shipped no robots meta at all, so every soft and hard
 // 404 on the property was indexable-by-default. follow, not none: the links out

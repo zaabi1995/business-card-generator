@@ -12,7 +12,7 @@ return [
     'reg_failed'          => 'Registration failed: :msg',
 
     // Header
-    'page_sub'            => 'Join our marketplace and receive business card orders from companies',
+    'page_sub'            => 'Register from any country. After you sign in, create a client company, lock one brand template, add the team, and print locally at your prices.',
 
     // Success state
     'submitted_h'         => 'Registration Submitted!',
@@ -57,10 +57,10 @@ return [
     'sign_in_link'        => 'Sign in',
 
     // Benefits
-    'benefit_1_h'         => 'Reach Companies',
-    'benefit_1_b'         => 'Connect with businesses looking for print services',
-    'benefit_2_h'         => 'Grow Revenue',
-    'benefit_2_b'         => 'Receive orders directly through the platform',
-    'benefit_3_h'         => 'Easy Management',
-    'benefit_3_b'         => 'Manage orders and track deliveries easily',
+    'benefit_1_h'         => 'Operate client companies',
+    'benefit_1_b'         => 'Create a company tenant, lock one template, and add the roster',
+    'benefit_2_h'         => 'Print locally',
+    'benefit_2_b'         => 'Fulfill print and NFC at your shop, at the prices you set',
+    'benefit_3_h'         => 'Same company dashboard',
+    'benefit_3_b'         => 'CSV roster, locked template, and bulk generate, no new editor',
 ];
