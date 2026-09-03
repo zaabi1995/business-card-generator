@@ -213,4 +213,4 @@ Format: `YYYY-MM-DD HH:MM | #NNN | sha | outcome`
 2026-08-21 | #SEO-001 | pending | Public canonical routes now own their URL locale. English-only tools, solutions, industries, GCC, comparison, glossary, blog, careers and campaign pages ignore stale Arabic cookies, while app and account surfaces keep preference-based language behavior.
 2026-09-02 | #NFC-PRICE | 8ec725c | Published NFC tap-card sell price is OMR 10.000 per card on home, FAQ, pricing, NFC landing, and AI discovery copy. Standard 5 / Premium 6 / Luxury 15 unchanged.
 2026-09-03 | #861-862 | 1a6eec6 | Print partners can sign up at /print-shops/register or /partners and operate attached client company tenants through the existing company admin. BHD marketplace prices unchanged.
-2026-09-03 | #863 | aaa0679 | Partner can stay in client company admin: requireAdmin/adminHeader use the URL tenant. Session company_id is set only after attach. createCompany email collision was not real.
+2026-09-03 | #863 | 3407f79 | Partner can stay in client company admin: requireAdmin/adminHeader use the URL tenant. Session company_id is set only after attach. createCompany email collision was not real.
