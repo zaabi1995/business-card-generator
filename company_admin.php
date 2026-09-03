@@ -15,6 +15,7 @@ set_error_handler(function($severity, $message, $file, $line) {
 try {
     require_once __DIR__ . '/config.php';
     require_once INCLUDES_DIR . '/Auth.php';
+    require_once INCLUDES_DIR . '/PrintShopClients.php';
     
     // Only show errors in development
     if (function_exists('isProduction') && !isProduction()) {
@@ -171,8 +172,10 @@ try {
     // Non-admin roles (e.g. employees) go to their own home, never back through
     // login (stale session would redirect them here again and loop).
     $adminRoles = ['super_admin', 'admin', 'company', 'company_admin'];
-    if (!in_array($userRole, $adminRoles)) {
-        if ($userRole === 'print_shop') {
+    $partnerOk = PrintShopClients::isPartnerRole($userRole)
+        && PrintShopClients::currentSessionCanAccessCompanyAdmin($company['id']);
+    if (!in_array($userRole, $adminRoles) && !$partnerOk) {
+        if (PrintShopClients::isPartnerRole($userRole)) {
             header('Location: ' . getBasePath() . 'printshop/dashboard.php');
         } elseif ($userRole === 'employee' && !empty($_SESSION['company_slug'])) {
             header('Location: ' . getTenantUrl($_SESSION['company_slug']));
@@ -184,7 +187,9 @@ try {
 
     // Admin-level user but wrong company: bounce to their OWN company admin
     // instead of /login.php (which could send them right back and loop).
-    if ($userRole !== 'super_admin' && $userCompanyId && $userCompanyId !== $company['id']) {
+    // Print partners may manage more than one attached client, so skip
+    // this bounce when the shop is attached to the requested tenant.
+    if ($userRole !== 'super_admin' && !$partnerOk && $userCompanyId && $userCompanyId !== $company['id']) {
         $ownSlug = $_SESSION['company_slug'] ?? null;
         if (!$ownSlug) {
             $ownCompany = findCompanyById($userCompanyId);

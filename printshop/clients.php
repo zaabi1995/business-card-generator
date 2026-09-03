@@ -6,10 +6,17 @@
  */
 require_once __DIR__ . '/../config.php';
 require_once INCLUDES_DIR . '/PrintShopAuth.php';
+require_once INCLUDES_DIR . '/PrintShopClients.php';
 
-$ctx = PrintShopAuth::requireInternalProvider();
+$ctx = PrintShopAuth::requireLogin();
 $shop = $ctx['shop'];
 $shopId = (int) $shop['id'];
+if (!PrintShopClients::canOperateClientTenants($shop)) {
+    http_response_code(403);
+    echo '<h1>403</h1><p>' . htmlspecialchars(t('printshopinternal.create_forbidden')) . '</p>';
+    exit;
+}
+$listsAll = PrintShopClients::listsAllCompanies($shop);
 
 $db = Database::getInstance();
 $pdo = $db->getConnection();
@@ -21,6 +28,10 @@ $offset = ($page - 1) * $perPage;
 
 $where = "WHERE 1=1";
 $params = [];
+if (!$listsAll) {
+    $where .= " AND c.id IN (SELECT company_id FROM print_shop_companies WHERE print_shop_id = :owner_shop)";
+    $params['owner_shop'] = $shopId;
+}
 if ($q !== '') {
     $where .= " AND (c.name LIKE :q_name OR c.slug LIKE :q_slug)";
     $params['q_name'] = '%' . $q . '%';
@@ -47,14 +58,18 @@ $stmt->bindValue(':shop_id',       $shopId, PDO::PARAM_INT);
 $stmt->bindValue(':shop_id_count', $shopId, PDO::PARAM_INT);
 $stmt->bindValue(':lim', $perPage, PDO::PARAM_INT);
 $stmt->bindValue(':off', $offset, PDO::PARAM_INT);
-$stmt->execute();
-$rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
-
-// Total for pagination
-$countStmt = $pdo->prepare("SELECT COUNT(*) FROM companies c $where");
-foreach ($params as $k => $v) $countStmt->bindValue(':' . $k, $v);
-$countStmt->execute();
-$total = (int) $countStmt->fetchColumn();
+try {
+    $stmt->execute();
+    $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    $countStmt = $pdo->prepare("SELECT COUNT(*) FROM companies c $where");
+    foreach ($params as $k => $v) $countStmt->bindValue(':' . $k, $v);
+    $countStmt->execute();
+    $total = (int) $countStmt->fetchColumn();
+} catch (Throwable $e) {
+    error_log('printshop/clients.php: ' . $e->getMessage());
+    $rows = [];
+    $total = 0;
+}
 $pageCount = max(1, (int) ceil($total / $perPage));
 
 require_once INCLUDES_DIR . '/printshop-layout.php';
@@ -63,8 +78,12 @@ printshopHeader(t('printshopinternal.clients_title', ['shop' => $shop['name']]),
     <div class="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
             <h1 class="text-2xl font-bold text-gray-900"><?= htmlspecialchars(t('printshopinternal.clients_heading')) ?></h1>
-            <p class="text-gray-600 mt-1 max-w-2xl"><?= htmlspecialchars(t('printshopinternal.clients_subheading')) ?></p>
+            <p class="text-gray-600 mt-1 max-w-2xl"><?= htmlspecialchars($listsAll ? t('printshopinternal.clients_subheading') : t('printshopinternal.clients_subheading_partner')) ?></p>
         </div>
+        <div class="flex flex-wrap items-center gap-3">
+        <a href="create-client.php" class="inline-flex items-center gap-2 px-4 py-2 bg-[#009bc1] hover:bg-[#0086a6] text-white rounded-lg text-sm font-medium">
+            <i class="fa-solid fa-plus"></i> <?= htmlspecialchars(t('printshopinternal.create_client_btn')) ?>
+        </a>
         <form method="GET" class="flex items-center gap-2" role="search">
             <label for="clients-q" class="sr-only"><?= htmlspecialchars(t('printshopinternal.search_placeholder')) ?></label>
             <input type="text" name="q" id="clients-q" value="<?= sanitize($q) ?>"
@@ -73,13 +92,19 @@ printshopHeader(t('printshopinternal.clients_title', ['shop' => $shop['name']]),
                    class="px-3 py-2 border border-gray-300 rounded-lg w-64">
             <button type="submit" aria-label="<?= htmlspecialchars(t('printshopinternal.search_placeholder')) ?>" title="<?= htmlspecialchars(t('printshopinternal.search_placeholder')) ?>" class="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i></button>
         </form>
+        </div>
     </div>
 
     <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
         <?php if (empty($rows)): ?>
         <div class="p-12 text-center">
             <i class="fa-solid fa-building text-4xl text-gray-300 mb-3"></i>
-            <p class="text-gray-700 font-medium"><?= htmlspecialchars(t('printshopinternal.no_clients')) ?></p>
+            <p class="text-gray-700 font-medium"><?= htmlspecialchars($listsAll ? t('printshopinternal.no_clients') : t('printshopinternal.no_clients_partner')) ?></p>
+            <?php if (!$listsAll): ?>
+            <a href="create-client.php" class="inline-flex items-center gap-2 mt-4 px-4 py-2 bg-[#009bc1] hover:bg-[#0086a6] text-white rounded-lg text-sm font-medium">
+                <i class="fa-solid fa-plus"></i> <?= htmlspecialchars(t('printshopinternal.create_client_btn')) ?>
+            </a>
+            <?php endif; ?>
         </div>
         <?php else: ?>
         <table class="w-full text-sm">
@@ -113,9 +138,12 @@ printshopHeader(t('printshopinternal.clients_title', ['shop' => $shop['name']]),
                     <td class="px-4 py-3 text-gray-700 tabular-nums"><?= (int)$r['employee_count'] ?></td>
                     <td class="px-4 py-3 text-gray-700 tabular-nums"><?= (int)$r['shop_order_count'] ?></td>
                     <td class="px-4 py-3 text-xs text-gray-500 tabular-nums"><?= $r['last_order_at'] ? sanitize(date('Y-m-d', dbTs($r['last_order_at']))) : '<span class="text-gray-400">,</span>' ?></td>
-                    <td class="px-4 py-3 text-end">
-                        <a href="client.php?company=<?= urlencode($r['id']) ?>" class="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-md text-sm font-medium">
-                            <i class="fa-solid fa-arrow-right"></i> <?= htmlspecialchars(t('printshopinternal.open_btn')) ?>
+                    <td class="px-4 py-3 text-end whitespace-nowrap">
+                        <a href="<?= htmlspecialchars(getTenantUrl($r['slug'], '/admin/employees')) ?>" class="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-md text-sm font-medium">
+                            <i class="fa-solid fa-id-card"></i> <?= htmlspecialchars(t('printshopinternal.manage_cards_btn')) ?>
+                        </a>
+                        <a href="client.php?company=<?= urlencode($r['id']) ?>" class="inline-flex items-center gap-1 px-3 py-1.5 bg-gray-50 hover:bg-gray-100 text-gray-700 rounded-md text-sm font-medium">
+                            <i class="fa-solid fa-print"></i> <?= htmlspecialchars(t('printshopinternal.print_btn')) ?>
                         </a>
                     </td>
                 </tr>

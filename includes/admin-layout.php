@@ -145,12 +145,22 @@ function getPendingRequestsCount() {
 function adminHeader($pageTitle = 'Dashboard', $currentPage = 'dashboard', $showTitleBar = true) {
     global $currentUser, $brandName;
     
-    // Redirect print shop users to their dashboard - they shouldn't access admin pages
+    // Print partners may use company admin for attached client tenants.
+    // Unattached shop sessions still bounce to the print-shop dashboard.
     if (class_exists('Auth') && Auth::isLoggedIn()) {
         $role = Auth::getCurrentRole();
-        if ($role === 'print_shop') {
-            header('Location: ' . getBasePath() . 'printshop/dashboard.php');
-            exit;
+        if ($role === 'print_shop' || $role === 'print_shop_operator') {
+            if (!class_exists('PrintShopClients') && defined('INCLUDES_DIR')) {
+                $clientsPath = INCLUDES_DIR . '/PrintShopClients.php';
+                if (is_file($clientsPath)) require_once $clientsPath;
+            }
+            $partnerCompanyId = $_SESSION['company_id'] ?? null;
+            $partnerOk = class_exists('PrintShopClients')
+                && PrintShopClients::currentSessionCanAccessCompanyAdmin($partnerCompanyId);
+            if (!$partnerOk) {
+                header('Location: ' . getBasePath() . 'printshop/dashboard.php');
+                exit;
+            }
         }
     }
     
@@ -613,7 +623,10 @@ function adminHeader($pageTitle = 'Dashboard', $currentPage = 'dashboard', $show
                     $__wsName = $__isSuper && !$__onTenant
                         ? t('admin.chip_all_companies')
                         : ($tBrandName ?: ($brandName ?: 'Workspace'));
-                    $__roleLabel = ($__isSuper && !$__onTenant) ? t('admin.chip_role_super') : t('admin.chip_role_admin');
+                    $__isPartner = ($__role === 'print_shop' || $__role === 'print_shop_operator');
+                    $__roleLabel = ($__isSuper && !$__onTenant)
+                        ? t('admin.chip_role_super')
+                        : ($__isPartner ? t('printshopinternal.chip_role_partner') : t('admin.chip_role_admin'));
                     ?>
                     <div class="hidden md:flex items-center gap-2 mr-4 lg:mr-6 pl-3 pr-3.5 py-1.5 rounded-xl border border-gray-200 bg-gray-50/80 max-w-[16rem]"
                          title="<?= htmlspecialchars(t('admin.chip_signed_in_as', ['name' => $userName]) . ' · ' . $__roleLabel, ENT_QUOTES) ?>">
@@ -623,6 +636,11 @@ function adminHeader($pageTitle = 'Dashboard', $currentPage = 'dashboard', $show
                             <span class="block text-[11px] text-gray-500 truncate"><?= htmlspecialchars($userName) ?> · <?= htmlspecialchars($__roleLabel) ?></span>
                         </span>
                     </div>
+                    <?php if (!empty($__isPartner)): ?>
+                    <a href="<?php echo getBasePath(); ?>printshop/clients.php" class="hidden md:inline-flex items-center gap-1.5 mr-3 text-xs font-medium text-[#00708c] hover:underline">
+                        <i class="fa-solid fa-store"></i> <?= htmlspecialchars(t('printshopinternal.back_to_print_shop')) ?>
+                    </a>
+                    <?php endif; ?>
 
                     <!-- Search (desktop) -->
                     <form action="#" method="GET" class="hidden lg:block lg:pl-2">

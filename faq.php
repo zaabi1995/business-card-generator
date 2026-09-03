@@ -80,6 +80,13 @@ Seo::faqPage($faqPairs);
                             </summary>
                             <div class="px-6 pb-5 text-gray-600 leading-relaxed border-t border-gray-100 pt-4">
                                 <?= htmlspecialchars(t('faq.' . $k . '_a')) ?>
+                                <?php if ($k === 'pr2'): ?>
+                                <p class="mt-3">
+                                    <a href="<?= htmlspecialchars(getBasePath() . 'print-shops/register' . ($isAr ? '?lang=ar' : '')) ?>" class="text-blue-600 font-semibold hover:underline">
+                                        <?= htmlspecialchars(t('printshops.cta_btn')) ?>
+                                    </a>
+                                </p>
+                                <?php endif; ?>
                             </div>
                         </details>
                     <?php endforeach; ?>

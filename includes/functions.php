@@ -605,7 +605,15 @@ function requireAdmin() {
     // Verify user has admin-level role
     $adminRoles = ['super_admin', 'admin', 'company', 'company_admin'];
     $userRole = $_SESSION['user_role'] ?? '';
-    if (!in_array($userRole, $adminRoles)) {
+    $partnerCompanyId = $_SESSION['company_id'] ?? null;
+    if (!class_exists('PrintShopClients') && defined('INCLUDES_DIR')) {
+        $clientsPath = INCLUDES_DIR . '/PrintShopClients.php';
+        if (is_file($clientsPath)) require_once $clientsPath;
+    }
+    $partnerOk = class_exists('PrintShopClients')
+        && PrintShopClients::isPartnerRole($userRole)
+        && PrintShopClients::currentSessionCanAccessCompanyAdmin($partnerCompanyId);
+    if (!in_array($userRole, $adminRoles) && !$partnerOk) {
         header('Location: ' . getBasePath() . 'login.php?error=unauthorized');
         exit;
     }
@@ -635,11 +643,21 @@ function redirectToCompanyAdmin() {
         return;
     }
     
-    // Redirect print shop users to their dashboard
+    // Redirect print shop users to their dashboard unless they are
+    // operating an attached client company through company admin.
     $userRole = $_SESSION['user_role'] ?? null;
-    if ($userRole === 'print_shop') {
-        header('Location: ' . getBasePath() . 'printshop/dashboard.php');
-        exit;
+    if ($userRole === 'print_shop' || $userRole === 'print_shop_operator') {
+        if (!class_exists('PrintShopClients') && defined('INCLUDES_DIR')) {
+            $clientsPath = INCLUDES_DIR . '/PrintShopClients.php';
+            if (is_file($clientsPath)) require_once $clientsPath;
+        }
+        $partnerCompanyId = $_SESSION['company_id'] ?? null;
+        $partnerOk = class_exists('PrintShopClients')
+            && PrintShopClients::currentSessionCanAccessCompanyAdmin($partnerCompanyId);
+        if (!$partnerOk) {
+            header('Location: ' . getBasePath() . 'printshop/dashboard.php');
+            exit;
+        }
     }
     
     // Get company slug

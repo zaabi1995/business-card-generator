@@ -22,8 +22,20 @@ if (!$companySlug) {
 $knownPaths = [
     'admin', 'login', 'logout', 'install', 'share', 's', 'r', 'company',
     'webhooks', 'amwalpay', 'generate_card_html.php', 'download_card.php',
-    'index.php', 'router.php', 's.php', 'r.php', 'assets', 'uploads', 'data'
+    'index.php', 'router.php', 's.php', 'r.php', 'assets', 'uploads', 'data',
+    'partners', 'print-shops', 'printshop',
 ];
+
+// /partners is a public print-shop register URL. The nginx catch-all
+// sends unknown single-segment paths here, so handle it in PHP even
+// before the VPS rewrite file is updated.
+if ($companySlug === 'partners') {
+    if (empty($_GET['lang']) && preg_match('#^/ar/#', $_SERVER['REQUEST_URI'] ?? '')) {
+        $_GET['lang'] = 'ar';
+    }
+    require __DIR__ . '/printshop/register.php';
+    exit;
+}
 
 // Check if it's a known path
 if (empty($companySlug) || in_array($companySlug, $knownPaths) || strpos($companySlug, '.') !== false) {

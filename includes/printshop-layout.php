@@ -25,8 +25,9 @@ require_once __DIR__ . '/PrintShopAuth.php';
 
 if (!function_exists('printshopNavConfig')) {
     /**
-     * Build the nav item config for a given shop. Internal-provider
-     * shops (BHD shop_id=2) get extra Clients + Operators links.
+     * Build the nav item config for a given shop. Every shop gets
+     * Clients (attached tenants, or all companies for BHD internal
+     * provider). Operators stay internal-provider only.
      *
      * @return array<string, array{label_key:string, url:string, icon:string, hide_below:?string}>
      */
@@ -36,22 +37,14 @@ if (!function_exists('printshopNavConfig')) {
         $items = [
             'dashboard'         => ['label_key' => 'printshoplayout.nav_dashboard',         'url' => 'dashboard.php',         'icon' => 'fa-chart-pie',         'hide_below' => null],
             'orders'            => ['label_key' => 'printshoplayout.nav_orders',            'url' => 'orders.php',            'icon' => 'fa-box',               'hide_below' => null],
+            'clients'           => ['label_key' => 'printshoplayout.nav_clients',           'url' => 'clients.php',           'icon' => 'fa-building',          'hide_below' => 'sm'],
             'analytics'         => ['label_key' => 'printshoplayout.nav_analytics',         'url' => 'analytics.php',         'icon' => 'fa-chart-line',        'hide_below' => 'sm'],
             'credit'            => ['label_key' => 'printshoplayout.nav_credit',            'url' => 'credit-accounts.php',   'icon' => 'fa-building-columns',  'hide_below' => 'md'],
             'client_pricing'    => ['label_key' => 'printshoplayout.nav_client_pricing',    'url' => 'client-pricing.php',    'icon' => 'fa-tags',              'hide_below' => 'lg'],
             'template_requests' => ['label_key' => 'printshoplayout.nav_template_requests', 'url' => 'template-requests.php', 'icon' => 'fa-file-pen',          'hide_below' => 'lg'],
         ];
         if ($isInternal) {
-            // Insert internal-provider only items between orders and analytics
-            $internal = [
-                'clients'   => ['label_key' => 'printshoplayout.nav_clients',   'url' => 'clients.php',   'icon' => 'fa-building',     'hide_below' => 'sm'],
-                'operators' => ['label_key' => 'printshoplayout.nav_operators', 'url' => 'operators.php', 'icon' => 'fa-users-gear',   'hide_below' => 'lg'],
-            ];
-            $items = array_merge(
-                ['dashboard' => $items['dashboard'], 'orders' => $items['orders']],
-                $internal,
-                ['analytics' => $items['analytics'], 'credit' => $items['credit'], 'client_pricing' => $items['client_pricing'], 'template_requests' => $items['template_requests']]
-            );
+            $items['operators'] = ['label_key' => 'printshoplayout.nav_operators', 'url' => 'operators.php', 'icon' => 'fa-users-gear', 'hide_below' => 'lg'];
         }
         return $items;
     }

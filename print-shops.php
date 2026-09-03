@@ -265,7 +265,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
             <p class="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
                 <?= htmlspecialchars(t('printshops.cta_body')) ?>
             </p>
-            <a href="<?php echo getBasePath(); ?>printshop/register.php"
+            <a href="<?php echo getBasePath(); ?>print-shops/register"
                class="inline-flex items-center gap-2 px-8 py-4 bg-white text-blue-600 rounded-xl font-semibold hover:bg-blue-50 transition-colors">
                 <i class="fa-solid fa-store"></i>
                 <?= htmlspecialchars(t('printshops.cta_btn')) ?>

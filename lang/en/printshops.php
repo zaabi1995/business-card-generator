@@ -36,6 +36,6 @@ return [
     'visit_website'        => 'Visit website',
 
     'cta_h2'               => 'Are You a Print Shop?',
-    'cta_body'             => 'Join our marketplace and receive business card orders from companies using Cardify.',
+    'cta_body'             => 'Register from any country. Create a client company, lock one brand template, add the team, and print locally at your prices.',
     'cta_btn'              => 'Register Your Print Shop',
 ];

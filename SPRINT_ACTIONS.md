@@ -913,3 +913,8 @@
 - [ ] 858. Propagate CardLayouts arabic-mirror option into individual layouts (follow-up to 590): update each of the 10 front/back layout methods (Classic, Modern, Corporate, Elegant, Tech) to read $d['dir'] + $d['font'] + $d['arabic'] and apply the correct direction + Arabic font stack when $d['arabic'] is true. Keep the existing EN+AR side-by-side rendering when $d['arabic'] is false.
 - [ ] 859. Adopt auto-contrast data bag in existing CardLayouts layouts (follow-up to 591): replace hardcoded text colors in the 10 front/back methods (Classic, Modern, Corporate, Elegant, Tech) with $d['textOnPrimary'] / $d['textOnSecondary'] where text sits over $d['accent'] / $d['secondary'] backgrounds. Keep gray defaults (#111827, #374151, #6b7280) on white cards.
 - [ ] 860. Font-picker UI in template editor (follow-up to 592): render GoogleFonts::getCuratedFonts() as the default <select>, with a "More fonts" disclosure that expands to GoogleFonts::getFontsGrouped() rendered as <optgroup>s (section labels via dashboard.font_group_* i18n keys). On change, write into template.settings_json.font_family and trigger Fabric.js re-render. Lazy-load the Google Fonts CSS link when a non-curated font is first chosen.
+
+## Appended, print partner client tenants
+
+- [x] 861. Public print-partner signup URLs: `/print-shops/register` and `/partners` serve the existing `printshop/register.php` form (router + 404 recovery + .htaccess + nginx snippet for Master).
+- [x] 862. `print_shop_companies` attachment + `PrintShopClients` policy: regular shops operate only attached client tenants; BHD internal provider keeps listing every company. Company admin reused for roster / locked template / bulk generate. No new prices or commission.

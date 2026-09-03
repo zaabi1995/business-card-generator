@@ -39,7 +39,7 @@ return [
     'pr1_q' => 'How do I order printed cards?',
     'pr1_a' => 'After designing in Cardify, order prints directly from the dashboard. Pick paper type, finish and quantity; a local print shop produces and delivers them.',
     'pr2_q' => 'Which print shops do you work with?',
-    'pr2_a' => 'Our flagship partner is BHD Printing & Designing in Muscat, plus a network of vetted shops across Oman. Print shops can register and receive marketplace orders.',
+    'pr2_a' => 'Our flagship partner is BHD Printing & Designing in Muscat, plus a network of vetted shops across Oman. Print shops can register at /print-shops/register or /partners, then operate a client company and print locally.',
     'pr3_q' => 'How long does printing take?',
     'pr3_a' => 'Standard turnaround inside Muscat is 2-3 working days. Rush orders deliver next day for an extra fee. Status updates flow as the order moves from production to delivery.',
     'pr4_q' => 'How much does printing cost?',

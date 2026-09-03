@@ -751,16 +751,38 @@ class PrintShop {
             $stmt = $pdo->prepare("
                 SELECT c.id, c.name, c.slug
                 FROM companies c
-                INNER JOIN print_orders po ON po.company_id = c.id
-                WHERE po.print_shop_id = ?
-                GROUP BY c.id, c.name, c.slug
+                WHERE c.id IN (
+                    SELECT po.company_id FROM print_orders po
+                    WHERE po.print_shop_id = :shop_orders
+                    UNION
+                    SELECT psc.company_id FROM print_shop_companies psc
+                    WHERE psc.print_shop_id = :shop_attached
+                )
                 ORDER BY c.name ASC
             ");
-            $stmt->execute([$printShopId]);
+            $stmt->execute([
+                'shop_orders' => $printShopId,
+                'shop_attached' => $printShopId,
+            ]);
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
             error_log("PrintShop::getClientCompanies error: " . $e->getMessage());
-            return [];
+            try {
+                $pdo = $db->getConnection();
+                $stmt = $pdo->prepare("
+                    SELECT c.id, c.name, c.slug
+                    FROM companies c
+                    INNER JOIN print_orders po ON po.company_id = c.id
+                    WHERE po.print_shop_id = ?
+                    GROUP BY c.id, c.name, c.slug
+                    ORDER BY c.name ASC
+                ");
+                $stmt->execute([$printShopId]);
+                return $stmt->fetchAll(PDO::FETCH_ASSOC);
+            } catch (PDOException $e2) {
+                error_log("PrintShop::getClientCompanies fallback: " . $e2->getMessage());
+                return [];
+            }
         }
     }
 
