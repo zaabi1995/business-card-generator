@@ -36,6 +36,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $old['country'] = strtoupper(trim((string) ($_POST['country'] ?? '')));
         $result = PrintShopClients::createClientCompany($shop, $old);
         if (!empty($result['success']) && !empty($result['company']['slug'])) {
+            PrintShopClients::adoptClientContext($result['company']);
             header('Location: ' . getTenantUrl($result['company']['slug'], '/admin/employees'));
             exit;
         }

@@ -130,6 +130,94 @@ partnerCheck(
     false
 );
 
+// requireAdmin / adminHeader must use the URL tenant, not session company_id.
+// Empty session after Create client company is the live bounce.
+if (!method_exists('PrintShopClients', 'viewedCompanyId')
+    || !method_exists('PrintShopClients', 'partnerMayAdminister')) {
+    echo "FAIL partner admin helpers exist for URL-tenant access\n";
+    exit(1);
+}
+
+partnerCheck(
+    'URL tenant wins over a different session company_id',
+    PrintShopClients::viewedCompanyId($clientA, $clientB),
+    $clientA
+);
+partnerCheck(
+    'empty URL falls back to session company_id',
+    PrintShopClients::viewedCompanyId('', $clientA),
+    $clientA
+);
+partnerCheck(
+    'empty URL and empty session is empty',
+    PrintShopClients::viewedCompanyId(null, null),
+    ''
+);
+
+partnerCheck(
+    'partner with empty session company_id may stay on an attached URL tenant',
+    PrintShopClients::partnerMayAdminister($clientA, null, $londonShop, $attachedToLondon),
+    true
+);
+partnerCheck(
+    'partner with empty session company_id is denied an unattached URL tenant',
+    PrintShopClients::partnerMayAdminister($clientB, null, $londonShop, $attachedToLondon),
+    false
+);
+partnerCheck(
+    'partner session pointing at an unattached tenant still allows the attached URL tenant',
+    PrintShopClients::partnerMayAdminister($clientA, $clientB, $londonShop, $attachedToLondon),
+    true
+);
+partnerCheck(
+    'partner session pointing at an unattached tenant is denied that unattached tenant',
+    PrintShopClients::partnerMayAdminister($clientB, $clientB, $londonShop, $attachedToLondon),
+    false
+);
+partnerCheck(
+    'stuffing session with an unattached tenant does not grant admin access',
+    PrintShopClients::partnerMayAdminister(null, $clientB, $londonShop, $attachedToLondon),
+    false
+);
+partnerCheck(
+    'later admin pages may use session when the session tenant is attached',
+    PrintShopClients::partnerMayAdminister(null, $clientA, $londonShop, $attachedToLondon),
+    true
+);
+partnerCheck(
+    'pending shop with empty session may stay on an attached URL tenant',
+    PrintShopClients::partnerMayAdminister($clientA, null, $pendingShop, $attachedToLondon),
+    true
+);
+
+if (!method_exists('PrintShopClients', 'partnerCompanyAdminEmail')) {
+    echo "FAIL partnerCompanyAdminEmail exists so createClientCompany can reuse the shop user\n";
+    exit(1);
+}
+
+partnerCheck(
+    'client company admin email is the shop email, not a fake mailbox',
+    PrintShopClients::partnerCompanyAdminEmail(['id' => 88, 'email' => 'shop@printer.co.uk'], null),
+    'shop@printer.co.uk'
+);
+partnerCheck(
+    'missing shop email uses the signed-in user email',
+    PrintShopClients::partnerCompanyAdminEmail(['id' => 88, 'email' => ''], 'owner@printer.co.uk'),
+    'owner@printer.co.uk'
+);
+partnerCheck(
+    'no shop email and no session email is empty, not a fake mailbox',
+    PrintShopClients::partnerCompanyAdminEmail(['id' => 88, 'email' => ''], ''),
+    ''
+);
+
+$clientsSource = (string) file_get_contents($clientsPath);
+partnerCheck(
+    'createClientCompany does not invent an @invalid.cardify.om admin login',
+    strpos($clientsSource, '@invalid.cardify.om') === false,
+    true
+);
+
 if ($fails > 0) {
     echo "FAILED {$fails}\n";
     exit(1);

@@ -68,6 +68,7 @@ return [
     'err_company_slug'      => 'Company URL may contain lowercase letters, numbers, and hyphens only.',
     'err_company_country'   => 'Country must be a 2-letter code.',
     'err_attach'            => 'Company created but could not attach it to this print shop.',
+    'err_admin_email'       => 'Sign in with a shop email before creating a client company.',
     'invalid_request'       => 'Invalid request',
     'field_company_name'    => 'Client company name',
     'field_company_name_ph' => 'Example Company LLC',

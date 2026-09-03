@@ -208,6 +208,10 @@ try {
     $_SESSION['company_slug'] = $companySlug;
     $_SESSION['company_id'] = $company['id'];
     $_SESSION['company_name'] = $company['name'] ?? $company['name_en'] ?? $companySlug;
+    $GLOBALS['company'] = $company;
+    if ($partnerOk) {
+        PrintShopClients::adoptClientContext($company);
+    }
     
     // Check if page exists in map
     if (!isset($pageMap[$page])) {
@@ -217,6 +221,7 @@ try {
     
     // Set base path for admin pages to use company-specific URLs
     define('COMPANY_ADMIN_BASE', getTenantUrl($companySlug, '/admin/'));
+    define('COMPANY_ADMIN_ID', (string) $company['id']);
     
     // Include the admin page. Buffered so that if a Throwable fires
     // mid-render we discard the partially-emitted markup instead of

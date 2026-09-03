@@ -69,6 +69,28 @@ routeCheck(
     strpos($printShops, 'print-shops/register') !== false
 );
 
+$requireAdmin = (string) file_get_contents($root . '/includes/functions.php');
+routeCheck(
+    'requireAdmin partner check uses the URL tenant, not session company_id alone',
+    strpos($requireAdmin, 'currentSessionCanStayInCompanyAdmin') !== false
+);
+$adminHeader = (string) file_get_contents($root . '/includes/admin-layout.php');
+routeCheck(
+    'adminHeader partner check uses the URL tenant, not session company_id alone',
+    strpos($adminHeader, 'currentSessionCanStayInCompanyAdmin') !== false
+);
+$createClient = (string) file_get_contents($root . '/printshop/create-client.php');
+routeCheck(
+    'create-client adopts the new company into session before redirect',
+    strpos($createClient, 'adoptClientContext') !== false
+);
+$createCompanySrc = (string) file_get_contents($root . '/includes/DatabaseAdapter.php');
+routeCheck(
+    'createCompany inserts a companies row, not a second users row',
+    strpos($createCompanySrc, "insert('companies'") !== false
+        && strpos($createCompanySrc, "insert('users'") === false
+);
+
 if ($fails > 0) {
     echo "FAILED {$fails}\n";
     exit(1);

@@ -918,3 +918,4 @@
 
 - [x] 861. Public print-partner signup URLs: `/print-shops/register` and `/partners` serve the existing `printshop/register.php` form (router + 404 recovery + .htaccess + nginx snippet for Master).
 - [x] 862. `print_shop_companies` attachment + `PrintShopClients` policy: regular shops operate only attached client tenants; BHD internal provider keeps listing every company. Company admin reused for roster / locked template / bulk generate. No new prices or commission.
+- [x] 863. Partner company admin stay-in: `requireAdmin()` / `adminHeader()` use the URL tenant, not session `company_id`. Create-client adopts the new company into session. No fake `@invalid.cardify.om` mailbox.

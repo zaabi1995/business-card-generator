@@ -53,6 +53,97 @@ class PrintShopClients
     }
 
     /**
+     * Tenant a partner is administering. The URL/slug company wins.
+     * Session company_id is only a fallback for later admin pages
+     * that do not carry a tenant in the URL.
+     */
+    public static function viewedCompanyId(?string $urlCompanyId, ?string $sessionCompanyId): string
+    {
+        $url = trim((string) $urlCompanyId);
+        if ($url !== '') {
+            return $url;
+        }
+        return trim((string) $sessionCompanyId);
+    }
+
+    /**
+     * requireAdmin() / adminHeader() partner check. Uses the URL tenant
+     * when present so an empty or stale session company_id cannot bounce
+     * an attached client or grant an unattached one.
+     */
+    public static function partnerMayAdminister(
+        ?string $urlCompanyId,
+        ?string $sessionCompanyId,
+        array $shop,
+        array $attachedCompanyIds
+    ): bool {
+        $viewed = self::viewedCompanyId($urlCompanyId, $sessionCompanyId);
+        if ($viewed === '') {
+            return false;
+        }
+        return self::canAccessCompanyAdmin($shop, $viewed, $attachedCompanyIds);
+    }
+
+    /**
+     * Admin login email stored on the new company row. Reuses the
+     * signed-in shop contact. Never invents a mailbox.
+     */
+    public static function partnerCompanyAdminEmail(array $shop, ?string $sessionEmail = null): string
+    {
+        $shopEmail = trim((string) ($shop['email'] ?? ''));
+        if ($shopEmail !== '' && filter_var($shopEmail, FILTER_VALIDATE_EMAIL)) {
+            return $shopEmail;
+        }
+        if ($sessionEmail === null) {
+            $sessionEmail = (string) ($_SESSION['user_email'] ?? '');
+        }
+        $sessionEmail = trim($sessionEmail);
+        if ($sessionEmail !== '' && filter_var($sessionEmail, FILTER_VALIDATE_EMAIL)) {
+            return $sessionEmail;
+        }
+        return '';
+    }
+
+    /**
+     * Company id from the tenant URL / company_admin router.
+     * Does not read session company_id.
+     */
+    public static function urlTenantCompanyId(): ?string
+    {
+        if (defined('COMPANY_ADMIN_ID') && COMPANY_ADMIN_ID) {
+            return (string) COMPANY_ADMIN_ID;
+        }
+        if (!empty($GLOBALS['company']['id'])) {
+            return (string) $GLOBALS['company']['id'];
+        }
+        return null;
+    }
+
+    /**
+     * Write session company context only after the shop may operate
+     * that tenant. Stuffing an unattached id is a no-op.
+     */
+    public static function adoptClientContext(array $company): bool
+    {
+        $companyId = trim((string) ($company['id'] ?? ''));
+        if ($companyId === '' || !self::currentSessionCanAccessCompanyAdmin($companyId)) {
+            return false;
+        }
+        if (function_exists('setCompanyContext')) {
+            setCompanyContext($company);
+            return true;
+        }
+        $_SESSION['company_id'] = $companyId;
+        if (!empty($company['slug'])) {
+            $_SESSION['company_slug'] = $company['slug'];
+        }
+        if (!empty($company['name']) || !empty($company['name_en'])) {
+            $_SESSION['company_name'] = $company['name'] ?? $company['name_en'];
+        }
+        return true;
+    }
+
+    /**
      * Session helper used by company_admin.php, requireAdmin(), and
      * adminHeader(). False when the caller is not a print partner or
      * the current shop cannot manage that tenant.
@@ -74,6 +165,26 @@ class PrintShopClients
             return self::canOperateClientTenants($shop);
         }
         return self::canAccessCompanyAdmin($shop, $companyId, self::listAttachedCompanyIds((int) $shop['id']));
+    }
+
+    /**
+     * Partner stay-in-admin check for requireAdmin() / adminHeader().
+     * URL tenant wins over session company_id.
+     */
+    public static function currentSessionCanStayInCompanyAdmin(?string $urlCompanyId = null): bool
+    {
+        $sessionCompanyId = isset($_SESSION['company_id']) ? (string) $_SESSION['company_id'] : null;
+        $shop = self::currentShop();
+        if (!$shop) {
+            $viewed = self::viewedCompanyId($urlCompanyId, $sessionCompanyId);
+            return self::currentSessionCanAccessCompanyAdmin($viewed !== '' ? $viewed : null);
+        }
+        return self::partnerMayAdminister(
+            $urlCompanyId,
+            $sessionCompanyId,
+            $shop,
+            self::listAttachedCompanyIds((int) $shop['id'])
+        );
     }
 
     public static function isAttached(int $shopId, string $companyId): bool
@@ -173,9 +284,13 @@ class PrintShopClients
             return ['success' => false, 'error' => $t('printshopinternal.create_failed', 'Could not create the client company.')];
         }
 
-        $adminEmail = trim((string) ($shop['email'] ?? ''));
-        if ($adminEmail === '' || !filter_var($adminEmail, FILTER_VALIDATE_EMAIL)) {
-            $adminEmail = 'shop-' . (int) $shop['id'] . '@invalid.cardify.om';
+        // Reuse the signed-in shop contact as companies.admin_email.
+        // createCompany inserts a companies row only, not a second users
+        // row, so users.email uniqueness is not involved. Do not invent
+        // a mailbox as a login.
+        $adminEmail = self::partnerCompanyAdminEmail($shop);
+        if ($adminEmail === '') {
+            return ['success' => false, 'error' => $t('printshopinternal.err_admin_email', 'Sign in with a shop email before creating a client company.')];
         }
 
         $result = createCompany($name, $adminEmail, bin2hex(random_bytes(16)), null, $slug !== '' ? $slug : null);

@@ -154,12 +154,17 @@ function adminHeader($pageTitle = 'Dashboard', $currentPage = 'dashboard', $show
                 $clientsPath = INCLUDES_DIR . '/PrintShopClients.php';
                 if (is_file($clientsPath)) require_once $clientsPath;
             }
-            $partnerCompanyId = $_SESSION['company_id'] ?? null;
+            $urlCompanyId = class_exists('PrintShopClients')
+                ? PrintShopClients::urlTenantCompanyId()
+                : null;
             $partnerOk = class_exists('PrintShopClients')
-                && PrintShopClients::currentSessionCanAccessCompanyAdmin($partnerCompanyId);
+                && PrintShopClients::currentSessionCanStayInCompanyAdmin($urlCompanyId);
             if (!$partnerOk) {
                 header('Location: ' . getBasePath() . 'printshop/dashboard.php');
                 exit;
+            }
+            if (!empty($GLOBALS['company']) && is_array($GLOBALS['company'])) {
+                PrintShopClients::adoptClientContext($GLOBALS['company']);
             }
         }
     }
