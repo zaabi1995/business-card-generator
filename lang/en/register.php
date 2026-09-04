@@ -47,9 +47,14 @@ return [
     'feat_free'            => 'Free forever, no credit card required',
     'back_home'            => 'Back to homepage',
 
-    'testimonial_quote'    => 'Cardify transformed how we manage business cards across our organization. Setup took minutes and our team loves it.',
-    'testimonial_author'   => 'Sarah Johnson',
-    'testimonial_role'     => 'Head of Marketing, TechCorp',
+    // The panel beside the form. No attributed quote lives here: the previous
+    // one named a customer who does not exist. Every line below is a statement
+    // about what the product does, which anyone can check after signing up.
+    'panel_title'          => 'One design. Every person on your team.',
+    'panel_sub'            => 'Approve a single card layout, add your people, and Cardify builds each card in English and Arabic.',
+    'panel_point_bilingual'=> 'Each card carries both languages, with the Arabic side laid out right to left.',
+    'panel_point_noapp'    => 'Share by link, QR or NFC. The person receiving it installs nothing.',
+    'panel_point_print'    => 'Order the printed cards from the same roster, delivered across Oman.',
 
     // PDPL (Oman Personal Data Protection Law)
     'pdpl_notice'          => 'We store your data in Oman and comply with the Personal Data Protection Law (PDPL).',

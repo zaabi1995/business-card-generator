@@ -404,13 +404,29 @@ $cardifyOgLocale = ($cardifyLocale === 'ar') ? 'ar_OM' : 'en_US';
     </noscript>
     <script src="https://design.bhd.om/cmdk.js" defer></script>
     <?php
-    // Ambient 3D layer, site-wide. Self-hosted Three, never a CDN. The loader
-    // is ~5 KB and does nothing until after window load, then bails without
-    // importing Three at all on reduced-motion, Save-Data, small screens, low
-    // memory or no WebGL, so most visitors never fetch the 163 KB payload.
+    // Ambient 3D layer. Self-hosted Three, never a CDN. The loader is ~5 KB and
+    // does nothing until after window load, then bails without importing Three
+    // at all on reduced-motion, Save-Data, small screens, low memory or no
+    // WebGL, so most visitors never fetch the 163 KB payload.
     // Append ?no3d=1 to any URL to force it off (the E2E suite uses that).
+    //
+    // Marketing pages only. The layer works by lifting body's background onto
+    // <html> and making body transparent, which is fine behind a designed hero
+    // but on the auth pages leaves the drifting cards painting THROUGH the
+    // sign-in and registration forms: grey shards landed over the Cardify
+    // logo, the "Company URL" field and the WhatsApp helper text. Forms need a
+    // calm ground, so the auth routes opt out. A page may override either way
+    // with $cardifyAmbient3D.
+    $cardifyAuthPath = strtok((string) ($_SERVER['REQUEST_URI'] ?? ''), '?');
+    $cardifyIsAuthPage = (bool) preg_match(
+        '#(^|/)(login|logout|company/register|print-shops/register|forgot-password|reset-password|delete-account)(\.php)?/?$#',
+        $cardifyAuthPath
+    );
+    $cardifyAmbient3D = $cardifyAmbient3D ?? !$cardifyIsAuthPage;
     ?>
+    <?php if ($cardifyAmbient3D): ?>
     <script defer src="<?= htmlspecialchars(getBasePath()) ?>assets/js/cardify-ambient-3d.js"></script>
+    <?php endif; ?>
     <script>
       document.addEventListener('DOMContentLoaded', function () {
         if (!window.BHDCmdK) return;

@@ -42,7 +42,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 Free forever for unlimited employees. No design skills needed.
             </p>
             <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                <a href="<?= getBasePath() ?>login.php?action=register"
+                <a href="<?= getBasePath() ?>company/register.php"
                    class="bg-white text-blue-700 font-bold px-10 py-4 rounded-xl text-lg hover:bg-blue-50 transition-all shadow-lg hover:shadow-xl">
                     Create Free Account
                     <i class="fa-solid fa-arrow-right ml-2"></i>
@@ -129,7 +129,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                        class="bg-blue-700 text-white font-bold px-8 py-3 rounded-xl hover:bg-blue-800 transition-all">
                         <?= htmlspecialchars(t('getstarted.demo_view')) ?>
                     </a>
-                    <a href="<?= getBasePath() ?>login.php?action=register"
+                    <a href="<?= getBasePath() ?>company/register.php"
                        class="border-2 border-gray-300 text-gray-700 font-semibold px-8 py-3 rounded-xl hover:bg-gray-50 transition-all">
                         <?= htmlspecialchars(t('getstarted.demo_signup')) ?>
                     </a>
@@ -265,7 +265,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
             <p class="text-lg text-gray-600 mb-8">
                 Free forever for unlimited employees. No credit card required. Takes 2 minutes to set up.
             </p>
-            <a href="<?= getBasePath() ?>login.php?action=register"
+            <a href="<?= getBasePath() ?>company/register.php"
                class="inline-block bg-blue-600 text-white font-bold px-12 py-4 rounded-xl text-lg hover:bg-blue-700 transition-all shadow-lg hover:shadow-xl">
                 Create Free Account
                 <i class="fa-solid fa-arrow-right ml-2"></i>

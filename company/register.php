@@ -744,29 +744,38 @@ require_once INCLUDES_DIR . '/ui-header.php';
             </div>
         </div>
 
-        <!-- Right Side - Background Image -->
+        <!-- Right side. Was a stock photo behind an attributed customer quote
+             ("Sarah Johnson, Head of Marketing, TechCorp") that no customer ever
+             gave, over a stock portrait. A fabricated endorsement on the signup
+             page is the one thing that cannot stay. What replaces it is true and
+             checkable, and it sits at the TOP of the panel because that is where
+             the form is: the old gradient ran from-blue-900/90 downward, so at
+             the scroll position where people actually read, the panel was a flat
+             opaque slab. -->
         <div class="relative hidden w-0 flex-1 lg:block">
-            <img class="absolute inset-0 h-full w-full object-cover" 
-                 src="<?php echo assetUrl('images/salient/background-auth.jpg'); ?>" 
+            <img class="absolute inset-0 h-full w-full object-cover"
+                 src="<?php echo assetUrl('images/salient/background-auth.jpg'); ?>"
                  alt="">
-            <!-- Overlay -->
-            <div class="absolute inset-0 bg-gradient-to-t from-blue-900/90 via-blue-800/70 to-blue-600/50"></div>
-            
-            <!-- Content on image -->
-            <div class="absolute inset-0 flex flex-col justify-end p-12 text-white">
-                <div class="max-w-lg">
-                    <blockquote class="text-xl font-medium leading-relaxed">
-                        &ldquo;<?= htmlspecialchars(t('register.testimonial_quote')) ?>&rdquo;
-                    </blockquote>
-                    <div class="mt-6 flex items-center gap-4">
-                        <img class="h-12 w-12 rounded-full object-cover ring-2 ring-white/30"
-                             src="<?php echo assetUrl('images/users/bonnie-green.png'); ?>"
-                             alt="">
-                        <div>
-                            <p class="font-semibold"><?= htmlspecialchars(t('register.testimonial_author')) ?></p>
-                            <p class="text-sm text-blue-200"><?= htmlspecialchars(t('register.testimonial_role')) ?></p>
-                        </div>
-                    </div>
+            <div class="absolute inset-0 bg-gradient-to-b from-[#04384a]/95 via-[#04384a]/80 to-[#04384a]/55"></div>
+
+            <div class="absolute inset-0 flex flex-col justify-start p-12 pt-20 text-white">
+                <div class="max-w-md">
+                    <p class="text-3xl font-bold leading-tight"><?= htmlspecialchars(t('register.panel_title')) ?></p>
+                    <p class="mt-4 text-base leading-relaxed text-white/80"><?= htmlspecialchars(t('register.panel_sub')) ?></p>
+                    <ul class="mt-10 space-y-4 text-[15px]">
+                        <li class="flex items-start gap-3">
+                            <i class="fa-solid fa-language mt-1 text-cyan-300"></i>
+                            <span><?= htmlspecialchars(t('register.panel_point_bilingual')) ?></span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <i class="fa-solid fa-qrcode mt-1 text-cyan-300"></i>
+                            <span><?= htmlspecialchars(t('register.panel_point_noapp')) ?></span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <i class="fa-solid fa-print mt-1 text-cyan-300"></i>
+                            <span><?= htmlspecialchars(t('register.panel_point_print')) ?></span>
+                        </li>
+                    </ul>
                 </div>
             </div>
         </div>
