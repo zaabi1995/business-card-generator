@@ -130,7 +130,14 @@ class SecurityHeaders
         // worth having later.
         $hosts = [
             'script' => [
-                "'self'", "'unsafe-inline'",
+                // 'unsafe-eval' is here because Alpine evaluates every x- binding
+                // as a string. Shipping without it blanked the interactive layer
+                // across the whole site: "Alpine Expression Error: Evaluating a
+                // string as JavaScript violates the following Content Security
+                // Policy directive" on 16 of 22 pages, one minute after deploy.
+                // Alpine's CSP build removes the need, and rewriting every
+                // x-data expression into a component object is the price.
+                "'self'", "'unsafe-inline'", "'unsafe-eval'",
                 'https://design.bhd.om',
                 'https://cdn.jsdelivr.net',
                 'https://cdnjs.cloudflare.com',
