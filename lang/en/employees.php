@@ -75,6 +75,12 @@ return [
     'ctx_to_generate'     => 'to generate',
     'more_actions'        => 'More',
     'guided_title'        => 'Your team is added. Now make their cards.',
+    // Placeholder people seeded into a brand-new tenant. They are ordinary
+    // active rows, so without these strings the page presented them as the
+    // customer's real staff and offered to publish cards for them.
+    'sample_pill'         => 'Sample',
+    'demo_banner'         => ':n of these are sample people we added so the page is not empty. Remove them before you add your team.',
+    'demo_clear'          => 'Remove samples',
     'guided_body'         => 'One click generates a bilingual front and back for everyone who still needs a card.',
     'status_ready'        => 'Ready',
     'status_no_card'      => 'No card',

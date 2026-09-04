@@ -35,9 +35,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'apply
     }
 }
 if (isset($_GET['applied'])) {
+    $appliedCount = (int)($_GET['n'] ?? 0);
     $message = str_replace([':preset', ':n'],
-        [htmlspecialchars((string)$_GET['applied']), (int)($_GET['n'] ?? 0)],
-        t('templates.applied_ok'));
+        [htmlspecialchars((string)$_GET['applied']), $appliedCount],
+        t($appliedCount === 1 ? 'templates.applied_ok_one' : 'templates.applied_ok'));
 }
 
 $company = $db->fetchOne("SELECT * FROM companies WHERE id = :id", ['id' => $companyId]);

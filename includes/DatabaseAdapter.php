@@ -4,6 +4,8 @@
  * Provides database-backed implementations of data functions
  * Falls back to JSON if database not available
  */
+
+require_once __DIR__ . '/db_time.php';
 class DatabaseAdapter {
     private static $db = null;
     private static $useDatabase = false;
@@ -135,6 +137,22 @@ class DatabaseAdapter {
             'status' => 'active',
             'created_at' => dbNow()
         ];
+
+        // Currency. The companies.currency column defaults to 'USD' while
+        // country defaults to 'OM', so every Omani tenant was created priced in
+        // dollars and saw dollars on its own billing screens until someone
+        // noticed. Set it from the country at creation instead of inheriting a
+        // default that contradicts the neighbouring column.
+        if (self::$db->columnExists('companies', 'currency')) {
+            $companyCountry = self::$db->columnExists('companies', 'country')
+                ? ($company['country'] ?? 'OM')
+                : 'OM';
+            $currencyByCountry = [
+                'OM' => 'OMR', 'AE' => 'AED', 'SA' => 'SAR', 'QA' => 'QAR',
+                'BH' => 'BHD', 'KW' => 'KWD',
+            ];
+            $company['currency'] = $currencyByCountry[strtoupper((string) $companyCountry)] ?? 'USD';
+        }
 
         if ($hasParentCompany) {
             $company['parent_company_id'] = $parentCompanyId;

@@ -5,7 +5,7 @@ return [
     'page_title_general'    => 'ابدأ مع كارديفاي',
 
     // Templates (BHD set)
-    'tpl_classic_name'      => 'BHD كلاسيك',
+    'tpl_classic_name'      => 'كلاسيك',
     'tpl_classic_desc'      => 'خلفية بيضاء نقية مع لمسات زرقاء من BHD',
     'tpl_navy_name'         => 'BHD كحلي',
     'tpl_navy_desc'         => 'كحلي داكن بمظهر احترافي',

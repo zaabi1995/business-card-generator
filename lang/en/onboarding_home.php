@@ -5,7 +5,7 @@ return [
     'page_title_general'    => 'Get Started with Cardify',
 
     // Templates (BHD set)
-    'tpl_classic_name'      => 'BHD Classic',
+    'tpl_classic_name'      => 'Classic',
     'tpl_classic_desc'      => 'Clean white with BHD blue accents',
     'tpl_navy_name'         => 'BHD Navy',
     'tpl_navy_desc'         => 'Bold dark navy, professional look',

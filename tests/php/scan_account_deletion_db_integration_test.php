@@ -205,6 +205,20 @@ function deletionDbExecSchema(PDO $pdo): void
             id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
             employee_id VARCHAR(36) NOT NULL
         ) ENGINE=InnoDB",
+        // The delete endpoint clears this table too. It was missing from the
+        // fixture, so every commit path answered 500 with "Base table or view
+        // not found: profile_wallet_preferences" and twelve assertions failed
+        // together. The failures were invisible for longer than that: this file
+        // died on an undefined dbNow() before it ever reached them.
+        "CREATE TABLE profile_wallet_preferences (
+            id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+            employee_id VARCHAR(64) NOT NULL,
+            company_id VARCHAR(64) NOT NULL,
+            wallet_theme_id VARCHAR(36) NULL,
+            overrides_json LONGTEXT NULL,
+            updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE KEY uniq_profile_wallet_preference (employee_id)
+        ) ENGINE=InnoDB",
         "CREATE TABLE generated_cards (
             id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
             employee_id VARCHAR(36) NOT NULL,

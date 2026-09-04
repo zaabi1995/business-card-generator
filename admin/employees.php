@@ -1035,6 +1035,24 @@ adminHeader(t('employees.page_title'), 'employees');
     $__ready = 0;
     foreach ($employees as $__e) { if (!empty($cardsByEmployee[$__e['id']])) { $__ready++; } }
     $__toGen = $__total - $__ready;
+
+    // A brand-new tenant is seeded with five placeholder people so the
+    // dashboard is not empty on the first visit. They are ordinary active
+    // employee rows, so this page used to present them as the customer's real
+    // staff: "5 team members", "Your team is added", and a primary button that
+    // would publish five public cards for people who do not exist. The dashboard
+    // has a banner for them; this page had nothing. Mark them here.
+    $__demoIds = [];
+    try {
+        require_once INCLUDES_DIR . '/DemoData.php';
+        $__demoIds = array_flip(DemoData::seededIds((string) $companyId));
+    } catch (Throwable $__e) {
+        $__demoIds = [];
+    }
+    $__demoCount = 0;
+    foreach ($employees as $__e) { if (isset($__demoIds[$__e['id']])) { $__demoCount++; } }
+    $__allDemo = $__demoCount > 0 && $__demoCount === $__total;
+    $__adminBase = rtrim(getAdminBasePath(), '/');
     $employeesWithoutCards = $__toGen; // kept for downstream references
     $__companyName = $company['name'] ?? (defined('SITE_NAME') ? SITE_NAME : 'Your team');
     $__bulkInviteCount = count(array_filter($employees, function($__e) { return ($__e['status'] ?? 'active') === 'active' && (!empty($__e['mobile']) || !empty($__e['phone']) || !empty($__e['email'])); }));
@@ -1180,7 +1198,22 @@ adminHeader(t('employees.page_title'), 'employees');
         [dir="rtl"] .cf-flipbtn { right:auto; left:.25rem; }
     </style>
 
-    <?php if (!empty($employees) && $__ready === 0): ?>
+    <?php if ($__demoCount > 0): ?>
+    <div class="mb-6 rounded-2xl border border-purple-200 bg-purple-50 p-4 flex flex-col sm:flex-row sm:items-center gap-3">
+        <div class="flex items-start gap-3 flex-1 min-w-0 text-purple-900">
+            <i class="fa-solid fa-flask mt-0.5 text-purple-600"></i>
+            <p class="text-sm"><?= htmlspecialchars(t('employees.demo_banner', ['n' => $__demoCount])) ?></p>
+        </div>
+        <form method="POST" action="<?= htmlspecialchars($__adminBase) ?>/demo-clear<?= htmlspecialchars($ext) ?>" class="m-0 flex-shrink-0">
+            <?= csrfField() ?>
+            <button type="submit" class="px-3 py-2 text-xs font-semibold text-purple-700 hover:text-purple-900 hover:bg-purple-100 rounded-lg whitespace-nowrap">
+                <i class="fa-solid fa-broom me-1"></i><?= htmlspecialchars(t('employees.demo_clear')) ?>
+            </button>
+        </form>
+    </div>
+    <?php endif; ?>
+
+    <?php if (!empty($employees) && $__ready === 0 && !$__allDemo): ?>
     <!-- Guided next step: team is added but no card exists yet. -->
     <div class="mb-6 rounded-2xl border border-amber-200 bg-gradient-to-br from-amber-50 to-white p-5 flex flex-col sm:flex-row sm:items-center gap-4">
         <div class="w-11 h-11 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center flex-shrink-0">
@@ -1249,6 +1282,8 @@ adminHeader(t('employees.page_title'), 'employees');
         $cardsDir = getCompanyCardsDir($companyId);
         $hasFrontPdf = $frontFilename && file_exists($cardsDir . '/' . str_replace('.png', '.pdf', $frontFilename));
         $hasBackPdf = $backFilename && file_exists($cardsDir . '/' . str_replace('.png', '.pdf', $backFilename));
+
+        $isDemoSeed = isset($__demoIds[$emp['id']]);
 
         // Is this the company's chosen sample card?
         $isSample = $frontFilename && $backFilename &&
@@ -1321,7 +1356,10 @@ adminHeader(t('employees.page_title'), 'employees');
                         <?php echo strtoupper(substr($emp['name_en'] ?? 'E', 0, 2)); ?>
                     </div>
                     <div class="min-w-0">
-                        <p class="font-semibold text-gray-900 truncate group-hover/id:text-blue-600 transition-colors"><?php echo sanitize($emp['name_en'] ?? ''); ?></p>
+                        <p class="font-semibold text-gray-900 truncate group-hover/id:text-blue-600 transition-colors">
+                            <?php echo sanitize($emp['name_en'] ?? ''); ?>
+                            <?php if ($isDemoSeed): ?><span class="ms-1 align-middle inline-block rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide bg-purple-100 text-purple-700"><?= htmlspecialchars(t('employees.sample_pill')) ?></span><?php endif; ?>
+                        </p>
                         <?php if (!empty($emp['name_ar'])): ?><p class="text-gray-500 text-sm truncate" dir="rtl"><?php echo sanitize($emp['name_ar']); ?></p><?php endif; ?>
                         <p class="text-gray-500 text-[13px] truncate mt-0.5"><?php echo sanitize($emp['position_en'] ?? $emp['email'] ?? ''); ?></p>
                     </div>

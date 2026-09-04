@@ -13,6 +13,7 @@ return [
     'apply_confirm'     => 'Apply this design to your team cards?',
     'apply_note'        => 'Applying a design rebuilds the card for all :n team members.',
     'applied_ok'        => 'Design ":preset" applied. :n cards rebuilt.',
+    'applied_ok_one'    => 'Design ":preset" applied. 1 card rebuilt.',
     'no_preview'        => 'No preview',
     'untitled'          => 'Untitled design',
     'no_logo_warn'      => 'Add your company logo first so designs are branded properly.',

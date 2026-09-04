@@ -6,6 +6,8 @@
  * Employee email and phone fields belong to the card profile. They are editable
  * content and must never grant tenant membership or elevated privileges.
  */
+
+require_once __DIR__ . '/db_time.php';
 class ScanIdentity
 {
     public static function identifierHash(string $identifier, string $type): string
