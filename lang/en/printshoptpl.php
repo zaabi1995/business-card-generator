@@ -89,4 +89,8 @@ return [
     'required_hint'      => 'Customers must fill this',
     'fields_on_canvas'   => 'Fields on Canvas',
     'no_fields_added'    => 'No fields added yet. Click a field type above.',
+    'font_group_bilingual'     => 'Bilingual (draws Arabic)',
+    'font_group_brand'         => 'Brand fonts',
+    'font_group_system'        => 'System fonts',
+    'safe_area_note'           => 'The dashed line is the 3mm safe area. Keep text inside it: anything past it risks the trim.',
 ];

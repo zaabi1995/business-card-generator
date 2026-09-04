@@ -110,6 +110,9 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 <option value="1050,600"><?= htmlspecialchars(t('printshoptpl.size_large')) ?></option>
                 <option value="900,900"><?= htmlspecialchars(t('printshoptpl.size_square')) ?></option>
             </select>
+        <span class="ms-3 text-[11px] text-fuchsia-700 hidden sm:inline">
+            <i class="fa-solid fa-vector-square me-1"></i><?= htmlspecialchars(t('printshoptpl.safe_area_note')) ?>
+        </span>
         </div>
     </div>
     <div class="flex-1 flex items-center justify-center overflow-auto p-4">
@@ -199,14 +202,36 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 </div>
                 <div>
                     <label class="text-xs text-gray-600 block mb-1"><?= htmlspecialchars(t('printshoptpl.font_label')) ?></label>
+                    <?php
+                    // The head of this page already loads Cairo, Lato, Sora, Inter,
+                    // Roboto, Open Sans, Montserrat and Poppins from fonts.bhd.om,
+                    // and the dropdown offered none of them: seven Latin-only
+                    // system faces, so a print shop building a bilingual card had
+                    // no font that draws Arabic. Cairo leads the list because that
+                    // is the one that does.
+                    ?>
                     <select id="prop-font" class="w-full text-xs border border-gray-200 rounded px-2 py-1.5 focus:ring-1 focus:ring-blue-500">
-                        <option>Arial</option>
-                        <option>Georgia</option>
-                        <option>Times New Roman</option>
-                        <option>Courier New</option>
-                        <option>Verdana</option>
-                        <option>Trebuchet MS</option>
-                        <option>Impact</option>
+                        <optgroup label="<?= htmlspecialchars(t('printshoptpl.font_group_bilingual')) ?>">
+                            <option>Cairo</option>
+                        </optgroup>
+                        <optgroup label="<?= htmlspecialchars(t('printshoptpl.font_group_brand')) ?>">
+                            <option>Inter</option>
+                            <option>Lato</option>
+                            <option>Sora</option>
+                            <option>Montserrat</option>
+                            <option>Open Sans</option>
+                            <option>Poppins</option>
+                            <option>Roboto</option>
+                        </optgroup>
+                        <optgroup label="<?= htmlspecialchars(t('printshoptpl.font_group_system')) ?>">
+                            <option>Arial</option>
+                            <option>Georgia</option>
+                            <option>Times New Roman</option>
+                            <option>Courier New</option>
+                            <option>Verdana</option>
+                            <option>Trebuchet MS</option>
+                            <option>Impact</option>
+                        </optgroup>
                     </select>
                 </div>
                 <div class="flex gap-2">
@@ -257,7 +282,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
     <input type="hidden" name="canvas_height" id="form-canvas-height">
 </form>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
+<script src="<?= htmlspecialchars(getBasePath()) ?>assets/js/fabric-5.3.1.min.js"></script>
 <script>
 (function() {
     const basePath = <?= json_encode(getBasePath()) ?>;
@@ -309,6 +334,38 @@ require_once INCLUDES_DIR . '/ui-header.php';
         selection: true,
     });
 
+    // ── Safe area ──
+    //
+    // The canvas IS the trim: whatever reaches its edge is where the guillotine
+    // lands. The editor drew no trim or safe-zone guide at all, so a print shop
+    // laying out a card had nothing telling it how close to the cut it was
+    // working, on a product whose whole output is printed and cut.
+    //
+    // 3mm is the usual safe margin. The standard canvas is 88.9mm wide (3.5in,
+    // matching the 1050x600 at 300dpi the render path produces), so the inset is
+    // derived from the live canvas width rather than hardcoded, and it survives
+    // a canvas-size change.
+    const SAFE_MM = 3, CARD_MM_W = 88.9;
+    let safeRect = null;
+    function drawSafeArea() {
+        if (safeRect) { canvas.remove(safeRect); safeRect = null; }
+        const inset = Math.round(canvasWidth * (SAFE_MM / CARD_MM_W));
+        safeRect = new fabric.Rect({
+            left: inset, top: inset,
+            width: canvasWidth - inset * 2, height: canvasHeight - inset * 2,
+            fill: 'transparent', stroke: '#c026d3', strokeWidth: 1,
+            strokeDashArray: [6, 4],
+            selectable: false, evented: false, hoverCursor: 'default',
+            // Fabric 5 honours this in toJSON(), so the guide never becomes part
+            // of the saved template or of anything a customer receives.
+            excludeFromExport: true,
+            name: 'guide_safe_area',
+        });
+        canvas.add(safeRect);
+        canvas.sendToBack(safeRect);
+        canvas.renderAll();
+    }
+
     // Scale canvas to fit container
     function scaleCanvas() {
         const wrap = document.getElementById('canvas-wrap');
@@ -326,6 +383,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
         canvasWidth = w; canvasHeight = h;
         canvas.setWidth(w); canvas.setHeight(h);
         canvas.setZoom(1);
+        drawSafeArea();
         scaleCanvas();
         canvas.renderAll();
     });
@@ -346,12 +404,13 @@ require_once INCLUDES_DIR . '/ui-header.php';
             preloadFonts(savedSpecs).then(() => {
                 canvas.loadFromJSON(existingTemplate.canvas_json, function() {
                     canvas.setWidth(canvasWidth); canvas.setHeight(canvasHeight);
+                    drawSafeArea();
                     scaleCanvas();
                     canvas.renderAll();
                     updateFieldList();
                 });
             });
-        } catch(e) { scaleCanvas(); }
+        } catch(e) { drawSafeArea(); scaleCanvas(); }
     } else if (existingTemplate && existingTemplate.background_path) {
         fabric.Image.fromURL(basePath + existingTemplate.background_path.replace(/^\//, ''), function(img) {
             img.scaleToWidth(canvasWidth);
@@ -361,8 +420,10 @@ require_once INCLUDES_DIR . '/ui-header.php';
             canvas.sendToBack(img);
             canvas.renderAll();
         });
+        drawSafeArea();
         scaleCanvas();
     } else {
+        drawSafeArea();
         scaleCanvas();
     }
 

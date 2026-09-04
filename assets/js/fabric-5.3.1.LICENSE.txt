@@ -1,0 +1,10 @@
+Fabric.js 5.3.1
+https://github.com/fabricjs/fabric.js
+
+Copyright (c) 2008-2015 Printio (Juriy Zaytsev, Maxim Chernyak)
+Released under the MIT License.
+
+Vendored rather than loaded from cdnjs. This is the canvas engine the print
+shop template editor runs on: if the CDN is unreachable at the moment somebody
+opens the editor, the page has no editor at all. Same reasoning as the QR
+library and html2canvas next to it.
