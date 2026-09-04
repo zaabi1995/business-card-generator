@@ -1,6 +1,6 @@
 <?php
 /**
- * Settings — admin users, integrations, account preferences.
+ * Settings: admin users, integrations, account preferences.
  *
  * Commit 1 (sidebar IA consolidation) ships this as a minimal hub.
  * Future commits add the admin-user list, integrations (Odoo/WhatsApp),
@@ -30,14 +30,14 @@ adminHeader('Settings', 'settings');
 
 <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <header class="mb-8">
-        <h1 class="text-2xl font-bold text-gray-900">Settings</h1>
-        <p class="text-sm text-gray-500 mt-1">Admin users, integrations, account preferences.</p>
+        <h1 class="text-2xl font-bold text-gray-900"><?= htmlspecialchars(t('settingshub.title')) ?></h1>
+        <p class="text-sm text-gray-500 mt-1"><?= htmlspecialchars(t('settingshub.lead')) ?></p>
     </header>
 
     <section class="mb-8 bg-white rounded-2xl border border-gray-200 overflow-hidden">
         <div class="p-5 border-b border-gray-100">
-            <h2 class="font-semibold text-gray-900">Admin users</h2>
-            <p class="text-sm text-gray-500">People who can log in to manage this tenant.</p>
+            <h2 class="font-semibold text-gray-900"><?= htmlspecialchars(t('settingshub.admin_users')) ?></h2>
+            <p class="text-sm text-gray-500"><?= htmlspecialchars(t('settingshub.admin_users_sub')) ?></p>
         </div>
         <div class="divide-y divide-gray-100">
             <?php foreach ($admins as $u): ?>
@@ -61,8 +61,8 @@ adminHeader('Settings', 'settings');
     </section>
 
     <section class="bg-white rounded-2xl border border-gray-200 p-5">
-        <h2 class="font-semibold text-gray-900 mb-2">Integrations</h2>
-        <p class="text-sm text-gray-500">More integrations coming soon. Currently configured via super admin.</p>
+        <h2 class="font-semibold text-gray-900 mb-2"><?= htmlspecialchars(t('settingshub.integrations')) ?></h2>
+        <p class="text-sm text-gray-500"><?= htmlspecialchars(t('settingshub.integrations_sub')) ?></p>
     </section>
 </div>
 

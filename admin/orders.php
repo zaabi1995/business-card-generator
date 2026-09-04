@@ -1,6 +1,6 @@
 <?php
 /**
- * Orders — unified surface for Card Requests + Print Orders + Appointments.
+ * Orders: one surface for Card Requests, Print Orders and Appointments.
  *
  * Commit 1 (sidebar IA consolidation) ships this as a hub page that links
  * out to the existing controllers. Commit 4 (per the plan) merges the three
@@ -48,8 +48,8 @@ adminHeader('Orders', 'orders');
 
 <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <header class="mb-8">
-        <h1 class="text-2xl font-bold text-gray-900">Orders</h1>
-        <p class="text-sm text-gray-500 mt-1">Card requests, print orders, and appointments — one place.</p>
+        <h1 class="text-2xl font-bold text-gray-900"><?= htmlspecialchars(t('ordershub.title')) ?></h1>
+        <p class="text-sm text-gray-500 mt-1"><?= htmlspecialchars(t('ordershub.lead')) ?></p>
     </header>
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -63,8 +63,8 @@ adminHeader('Orders', 'orders');
                     <span class="px-2 py-0.5 text-xs font-semibold text-white bg-red-500 rounded-full"><?= $pendingRequests ?> pending</span>
                 <?php endif; ?>
             </div>
-            <h3 class="font-semibold text-gray-900 mb-1">Card Requests</h3>
-            <p class="text-sm text-gray-500">New cards, updates, reprints submitted by employees.</p>
+            <h3 class="font-semibold text-gray-900 mb-1"><?= htmlspecialchars(t('ordershub.card_requests')) ?></h3>
+            <p class="text-sm text-gray-500"><?= htmlspecialchars(t('ordershub.card_requests_sub')) ?></p>
         </a>
 
         <a href="<?= htmlspecialchars($basePath . 'print' . $ext, ENT_QUOTES) ?>"
@@ -77,8 +77,8 @@ adminHeader('Orders', 'orders');
                     <span class="px-2 py-0.5 text-xs font-semibold text-white bg-amber-500 rounded-full"><?= $pendingPrint ?> in flight</span>
                 <?php endif; ?>
             </div>
-            <h3 class="font-semibold text-gray-900 mb-1">Print Orders</h3>
-            <p class="text-sm text-gray-500">Physical card orders sent to a print shop.</p>
+            <h3 class="font-semibold text-gray-900 mb-1"><?= htmlspecialchars(t('ordershub.print_orders')) ?></h3>
+            <p class="text-sm text-gray-500"><?= htmlspecialchars(t('ordershub.print_orders_sub')) ?></p>
         </a>
 
         <a href="<?= htmlspecialchars($basePath . 'appointments' . $ext, ENT_QUOTES) ?>"
@@ -91,8 +91,8 @@ adminHeader('Orders', 'orders');
                     <span class="px-2 py-0.5 text-xs font-semibold text-white bg-purple-500 rounded-full"><?= $upcomingAppts ?> upcoming</span>
                 <?php endif; ?>
             </div>
-            <h3 class="font-semibold text-gray-900 mb-1">Appointments</h3>
-            <p class="text-sm text-gray-500">Meetings booked through employee profiles.</p>
+            <h3 class="font-semibold text-gray-900 mb-1"><?= htmlspecialchars(t('ordershub.appointments')) ?></h3>
+            <p class="text-sm text-gray-500"><?= htmlspecialchars(t('ordershub.appointments_sub')) ?></p>
         </a>
     </div>
 </div>
