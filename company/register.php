@@ -599,6 +599,14 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 <!-- Registration Form -->
                 <form method="POST" id="register-form" class="mt-10 space-y-6" <?php echo $info ? 'style="display:none;"' : ''; ?>>
                 <input type="hidden" name="recaptcha_token" id="recaptcha_token" value="">
+                <?php
+                // The join-or-create answer rides in a hidden field, not in the
+                // value of a named submit button. The reCAPTCHA handler below
+                // re-submits with form.submit(), which does not carry the
+                // clicked button's name and value, so a named button would send
+                // nothing and leave the person on the question forever.
+                ?>
+                <input type="hidden" name="domain_choice" id="domain_choice" value="">
                 <?php if ($claimTicket !== ''): ?>
                     <input type="hidden" name="claim_ticket" value="<?= htmlspecialchars($claimTicket, ENT_QUOTES) ?>">
                 <?php endif; ?>
@@ -742,11 +750,11 @@ require_once INCLUDES_DIR . '/ui-header.php';
                         </p>
                         <p class="mt-1 text-sm text-amber-900/80"><?= htmlspecialchars(t('register.domain_choice_body')) ?></p>
                         <div class="mt-4 flex flex-col gap-3">
-                            <button type="submit" name="domain_choice" value="join"
+                            <button type="submit" data-domain-choice="join"
                                     class="w-full rounded-lg bg-blue-600 px-4 py-3 text-sm font-semibold text-white hover:bg-blue-500 transition-colors">
                                 <?= htmlspecialchars(t('register.domain_choice_join')) ?>
                             </button>
-                            <button type="submit" name="domain_choice" value="create"
+                            <button type="submit" data-domain-choice="create"
                                     class="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm font-semibold text-gray-800 hover:bg-gray-50 transition-colors">
                                 <?= htmlspecialchars(t('register.domain_choice_create')) ?>
                             </button>
@@ -892,6 +900,20 @@ require_once INCLUDES_DIR . '/ui-header.php';
             }
         });
     }
+})();
+</script>
+<script>
+// Join-or-create: record the answer in the hidden field before the form goes.
+// Written as a click handler rather than a named submit button because the
+// reCAPTCHA path re-submits with form.submit(), which drops button values.
+(function(){
+    var form = document.getElementById('register-form');
+    var field = document.getElementById('domain_choice');
+    if (!form || !field) return;
+    form.addEventListener('click', function (e) {
+        var btn = e.target.closest ? e.target.closest('[data-domain-choice]') : null;
+        if (btn) field.value = btn.getAttribute('data-domain-choice');
+    });
 })();
 </script>
 <?php @include __DIR__ . '/../views/partials/trust_logo_strip.php'; ?>

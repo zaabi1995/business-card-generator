@@ -53,9 +53,16 @@ regCheck(
 );
 
 regCheck(
-    str_contains($reg, 'name="domain_choice" value="join"')
-        && str_contains($reg, 'name="domain_choice" value="create"'),
+    str_contains($reg, 'data-domain-choice="join"')
+        && str_contains($reg, 'data-domain-choice="create"'),
     'both outcomes are offered as explicit submits, neither is the default'
+);
+
+regCheck(
+    str_contains($reg, '<input type="hidden" name="domain_choice" id="domain_choice" value="">')
+        && !str_contains($reg, 'name="domain_choice" value='),
+    'the answer rides in a hidden field, not a named submit button',
+    'form.submit() in the reCAPTCHA path drops button name/value'
 );
 
 regCheck(
