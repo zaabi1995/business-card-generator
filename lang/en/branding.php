@@ -1,0 +1,50 @@
+<?php
+/**
+ * Branding page (admin/theme.php).
+ *
+ * This page had 40 hardcoded English strings and three t() calls, so an
+ * Arabic admin got a right-to-left layout wrapped around an English form,
+ * with English full stops landing on the wrong side of each hint line.
+ */
+return [
+    'page_title'           => 'Branding & E-Card Settings',
+    'identity'             => 'Company Identity',
+    'identity_hint'        => 'Used on the E-Card, portal, vCard, and emails.',
+    'company_name_en'      => 'Company Name (English)',
+    'company_name_ar'      => 'Company Name (Arabic)',
+    'tagline_en'           => 'Tagline (English)',
+    'tagline_ar'           => 'Tagline (Arabic)',
+    'ecard'                => 'E-Card Settings',
+    'ecard_hint'           => 'Controls the digital card each employee shares via QR.',
+    'bilingual'            => 'Bilingual card',
+    'theme_toggle'         => 'Visitor theme toggle (sun / moon)',
+    'theme_toggle_hint'    => 'Let visitors switch the E-Card between light and dark themes.',
+    'default_theme'        => 'Default theme',
+    'default_theme_hint'   => 'Auto matches the visitor\'s OS setting. Override with a fixed theme if needed.',
+    'colors'               => 'Brand Colors',
+    'primary_color'        => 'Primary Color',
+    'primary_hint'         => 'Used for buttons, links, and accents',
+    'secondary_color'      => 'Secondary Color',
+    'secondary_hint'       => 'Used for headers and backgrounds',
+    'logo_favicon'         => 'Logo & Favicon',
+    'company_logo'         => 'Company Logo',
+    'logo_hint'            => 'Recommended: PNG or SVG, max 500x200px',
+    'favicon'              => 'Favicon',
+    'favicon_hint'         => 'Recommended: ICO or PNG, 32x32px or 64x64px',
+    'portal'               => 'Enable Portal',
+    'portal_hint'          => 'Allow employees to submit card requests via the portal',
+    'live_preview'         => 'Show Live Preview',
+    'live_preview_hint'    => 'Display real-time card preview while filling the form',
+    'portal_link'          => 'Portal Link',
+    'portal_link_hint'     => 'Share this link with employees to let them submit card requests',
+    'header_text'          => 'Header Text',
+    'footer_text'          => 'Footer Text',
+    'custom_css_hint'      => 'Advanced: Add custom CSS to further customize the appearance',
+    'wallet_layout'        => 'Wallet layout',
+    'wallet_generic'       => 'Generic',
+    'wallet_store'         => 'Store card',
+    'wallet_event'         => 'Event ticket',
+    'preview'              => 'Preview',
+    'no_logo'              => 'No logo',
+    'cardify_logo'         => 'Cardify logo',
+];

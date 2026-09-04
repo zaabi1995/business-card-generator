@@ -284,7 +284,7 @@ $previewCardUrl = $__firstEmployee
     ? getTenantCardUrl($companySlug, 'card/' . urlencode($__firstEmployee['email']))
     : getTenantUrl($companySlug, '/portal');
 
-adminHeader('Branding & E-Card Settings', 'theme');
+adminHeader(t('branding.page_title'), 'theme');
 ?>
 
 <!-- Alert Message -->
@@ -303,29 +303,29 @@ adminHeader('Branding & E-Card Settings', 'theme');
         <div class="p-4 border-b border-gray-100">
             <h3 class="font-semibold text-gray-900 flex items-center gap-2">
                 <i class="fa-solid fa-building text-blue-600"></i>
-                Company Identity
+                <?= htmlspecialchars(t('branding.identity')) ?>
             </h3>
-            <p class="text-xs text-gray-500 mt-1">Used on the E-Card, portal, vCard, and emails.</p>
+            <p class="text-xs text-gray-500 mt-1"><?= htmlspecialchars(t('branding.identity_hint')) ?></p>
         </div>
         <div class="p-6 grid md:grid-cols-2 gap-6">
             <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-2">Company Name (English)</label>
+                <label class="block text-sm font-semibold text-gray-700 mb-2"><?= htmlspecialchars(t('branding.company_name_en')) ?></label>
                 <input type="text" name="company_name_en" value="<?php echo sanitize($company['name'] ?? ''); ?>"
                        class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900">
             </div>
             <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-2">Company Name (Arabic)</label>
+                <label class="block text-sm font-semibold text-gray-700 mb-2"><?= htmlspecialchars(t('branding.company_name_ar')) ?></label>
                 <input type="text" name="company_name_ar" value="<?php echo sanitize($company['name_ar'] ?? ''); ?>"
                        class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900" dir="rtl">
             </div>
             <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-2">Tagline (English)</label>
+                <label class="block text-sm font-semibold text-gray-700 mb-2"><?= htmlspecialchars(t('branding.tagline_en')) ?></label>
                 <input type="text" name="slogan_en" value="<?php echo sanitize($company['slogan_en'] ?? ''); ?>"
                        placeholder="e.g. Your trusted home financing partner"
                        class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900">
             </div>
             <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-2">Tagline (Arabic)</label>
+                <label class="block text-sm font-semibold text-gray-700 mb-2"><?= htmlspecialchars(t('branding.tagline_ar')) ?></label>
                 <input type="text" name="slogan_ar" value="<?php echo sanitize($company['slogan_ar'] ?? ''); ?>"
                        placeholder="مثال: شريكك الموثوق في تمويل المنازل"
                        class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900" dir="rtl">
@@ -339,9 +339,9 @@ adminHeader('Branding & E-Card Settings', 'theme');
             <div>
                 <h3 class="font-semibold text-gray-900 flex items-center gap-2">
                     <i class="fa-solid fa-id-card text-blue-600"></i>
-                    E-Card Settings
+                    <?= htmlspecialchars(t('branding.ecard')) ?>
                 </h3>
-                <p class="text-xs text-gray-500 mt-1">Controls the digital card each employee shares via QR.</p>
+                <p class="text-xs text-gray-500 mt-1"><?= htmlspecialchars(t('branding.ecard_hint')) ?></p>
             </div>
             <a href="<?php echo htmlspecialchars($previewCardUrl); ?>"
                target="_blank" rel="noopener"
@@ -355,7 +355,7 @@ adminHeader('Branding & E-Card Settings', 'theme');
                        <?php echo !isset($company['ecard_bilingual']) || $company['ecard_bilingual'] ? 'checked' : ''; ?>
                        class="mt-1 w-4 h-4 text-blue-600 rounded border-gray-300">
                 <span>
-                    <span class="block font-medium text-gray-900 text-sm">Bilingual card</span>
+                    <span class="block font-medium text-gray-900 text-sm"><?= htmlspecialchars(t('branding.bilingual')) ?></span>
                     <span class="block text-xs text-gray-500">Show the EN / عربي language switcher on the E-Card. Turn off to serve a single language.</span>
                 </span>
             </label>
@@ -365,13 +365,13 @@ adminHeader('Branding & E-Card Settings', 'theme');
                        <?php echo !isset($company['ecard_theme_toggle_enabled']) || $company['ecard_theme_toggle_enabled'] ? 'checked' : ''; ?>
                        class="mt-1 w-4 h-4 text-blue-600 rounded border-gray-300">
                 <span>
-                    <span class="block font-medium text-gray-900 text-sm">Visitor theme toggle (sun / moon)</span>
-                    <span class="block text-xs text-gray-500">Let visitors switch the E-Card between light and dark themes.</span>
+                    <span class="block font-medium text-gray-900 text-sm"><?= htmlspecialchars(t('branding.theme_toggle')) ?></span>
+                    <span class="block text-xs text-gray-500"><?= htmlspecialchars(t('branding.theme_toggle_hint')) ?></span>
                 </span>
             </label>
 
             <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-2">Default theme</label>
+                <label class="block text-sm font-semibold text-gray-700 mb-2"><?= htmlspecialchars(t('branding.default_theme')) ?></label>
                 <?php $__defTheme = $company['ecard_default_theme'] ?? 'auto'; ?>
                 <div class="flex gap-2">
                     <?php foreach (['auto' => 'Auto', 'light' => 'Light', 'dark' => 'Dark'] as $__v => $__l): ?>
@@ -381,7 +381,7 @@ adminHeader('Branding & E-Card Settings', 'theme');
                     </label>
                     <?php endforeach; ?>
                 </div>
-                <p class="text-xs text-gray-500 mt-2">Auto matches the visitor's OS setting. Override with a fixed theme if needed.</p>
+                <p class="text-xs text-gray-500 mt-2"><?= htmlspecialchars(t('branding.default_theme_hint')) ?></p>
             </div>
         </div>
     </div>
@@ -391,31 +391,31 @@ adminHeader('Branding & E-Card Settings', 'theme');
         <div class="p-4 border-b border-gray-100">
             <h3 class="font-semibold text-gray-900 flex items-center gap-2">
                 <i class="fa-solid fa-palette text-blue-600"></i>
-                Brand Colors
+                <?= htmlspecialchars(t('branding.colors')) ?>
             </h3>
         </div>
         <div class="p-6">
             <div class="grid md:grid-cols-2 gap-6">
                 <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">Primary Color</label>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2"><?= htmlspecialchars(t('branding.primary_color')) ?></label>
                     <div class="flex items-center gap-3">
                         <input type="color" name="primary_color" value="<?php echo sanitize($theme['primary_color'] ?? '#009bc1'); ?>" 
                                class="w-16 h-12 rounded-lg cursor-pointer border border-gray-200">
                         <input type="text" value="<?php echo sanitize($theme['primary_color'] ?? '#009bc1'); ?>" readonly
                                class="flex-1 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 font-mono text-sm">
                     </div>
-                    <p class="text-xs text-gray-500 mt-2">Used for buttons, links, and accents</p>
+                    <p class="text-xs text-gray-500 mt-2"><?= htmlspecialchars(t('branding.primary_hint')) ?></p>
                 </div>
                 
                 <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">Secondary Color</label>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2"><?= htmlspecialchars(t('branding.secondary_color')) ?></label>
                     <div class="flex items-center gap-3">
                         <input type="color" name="secondary_color" value="<?php echo sanitize($theme['secondary_color'] ?? '#0f3460'); ?>" 
                                class="w-16 h-12 rounded-lg cursor-pointer border border-gray-200">
                         <input type="text" value="<?php echo sanitize($theme['secondary_color'] ?? '#0f3460'); ?>" readonly
                                class="flex-1 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 font-mono text-sm">
                     </div>
-                    <p class="text-xs text-gray-500 mt-2">Used for headers and backgrounds</p>
+                    <p class="text-xs text-gray-500 mt-2"><?= htmlspecialchars(t('branding.secondary_hint')) ?></p>
                 </div>
             </div>
             
@@ -439,13 +439,13 @@ adminHeader('Branding & E-Card Settings', 'theme');
         <div class="p-4 border-b border-gray-100">
             <h3 class="font-semibold text-gray-900 flex items-center gap-2">
                 <i class="fa-solid fa-image text-blue-600"></i>
-                Logo & Favicon
+                <?= htmlspecialchars(t('branding.logo_favicon')) ?>
             </h3>
         </div>
         <div class="p-6">
             <div class="grid md:grid-cols-2 gap-6">
                 <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">Company Logo</label>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2"><?= htmlspecialchars(t('branding.company_logo')) ?></label>
                     <?php if (!empty($theme['logo_path'])): ?>
                     <div class="mb-3 p-4 bg-gray-50 rounded-xl border border-gray-200 inline-block">
                         <img src="<?php echo getBasePath() . 'uploads/' . ltrim($theme['logo_path'], '/'); ?>" alt="Logo" class="max-h-16">
@@ -453,11 +453,11 @@ adminHeader('Branding & E-Card Settings', 'theme');
                     <?php endif; ?>
                     <input type="file" name="logo" accept="image/*" 
                            class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-black file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-blue-50 file:text-blue-700 file:font-medium hover:file:bg-blue-100">
-                    <p class="text-xs text-gray-500 mt-2">Recommended: PNG or SVG, max 500x200px</p>
+                    <p class="text-xs text-gray-500 mt-2"><?= htmlspecialchars(t('branding.logo_hint')) ?></p>
                 </div>
                 
                 <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">Favicon</label>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2"><?= htmlspecialchars(t('branding.favicon')) ?></label>
                     <?php if (!empty($theme['favicon_path'])): ?>
                     <div class="mb-3 p-4 bg-gray-50 rounded-xl border border-gray-200 inline-block">
                         <img src="<?php echo getBasePath() . 'uploads/' . ltrim($theme['favicon_path'], '/'); ?>" alt="Favicon" class="w-8 h-8">
@@ -465,7 +465,7 @@ adminHeader('Branding & E-Card Settings', 'theme');
                     <?php endif; ?>
                     <input type="file" name="favicon" accept=".ico,.png,.jpg,.jpeg" 
                            class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-black file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-blue-50 file:text-blue-700 file:font-medium hover:file:bg-blue-100">
-                    <p class="text-xs text-gray-500 mt-2">Recommended: ICO or PNG, 32x32px or 64x64px</p>
+                    <p class="text-xs text-gray-500 mt-2"><?= htmlspecialchars(t('branding.favicon_hint')) ?></p>
                 </div>
             </div>
         </div>
@@ -481,14 +481,14 @@ adminHeader('Branding & E-Card Settings', 'theme');
         </div>
         <div class="p-6 space-y-4">
             <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-2">Header Text</label>
+                <label class="block text-sm font-semibold text-gray-700 mb-2"><?= htmlspecialchars(t('branding.header_text')) ?></label>
                 <input type="text" name="header_text" value="<?php echo sanitize($theme['header_text'] ?? ''); ?>" 
                        class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
                        placeholder="Custom header text (leave empty to use company name)">
             </div>
             
             <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-2">Footer Text</label>
+                <label class="block text-sm font-semibold text-gray-700 mb-2"><?= htmlspecialchars(t('branding.footer_text')) ?></label>
                 <input type="text" name="footer_text" value="<?php echo sanitize($theme['footer_text'] ?? ''); ?>" 
                        class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
                        placeholder="Custom footer text">
@@ -508,7 +508,7 @@ adminHeader('Branding & E-Card Settings', 'theme');
             <!-- Portal Link -->
             <?php if ($companySlug): ?>
             <div class="p-4 bg-blue-50 rounded-xl border border-blue-200">
-                <label class="block text-sm font-semibold text-blue-800 mb-2">Portal Link</label>
+                <label class="block text-sm font-semibold text-blue-800 mb-2"><?= htmlspecialchars(t('branding.portal_link')) ?></label>
                 <div class="flex items-center gap-2">
                     <input type="text" value="<?php echo getTenantUrl($companySlug, '/portal'); ?>" readonly
                            class="flex-1 px-4 py-2.5 bg-white border border-blue-200 rounded-lg text-gray-900 font-mono text-sm">
@@ -516,15 +516,15 @@ adminHeader('Branding & E-Card Settings', 'theme');
                         <i class="fa-solid fa-copy"></i>
                     </button>
                 </div>
-                <p class="text-xs text-blue-600 mt-2">Share this link with employees to let them submit card requests</p>
+                <p class="text-xs text-blue-600 mt-2"><?= htmlspecialchars(t('branding.portal_link_hint')) ?></p>
             </div>
             <?php endif; ?>
             
             <!-- Enable/Disable -->
             <div class="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
                 <div>
-                    <label class="text-sm font-semibold text-gray-700">Enable Portal</label>
-                    <p class="text-xs text-gray-500">Allow employees to submit card requests via the portal</p>
+                    <label class="text-sm font-semibold text-gray-700"><?= htmlspecialchars(t('branding.portal')) ?></label>
+                    <p class="text-xs text-gray-500"><?= htmlspecialchars(t('branding.portal_hint')) ?></p>
                 </div>
                 <label class="relative inline-flex items-center cursor-pointer">
                     <input type="checkbox" name="portal_enabled" class="sr-only peer" <?php echo ($company['portal_enabled'] ?? 1) ? 'checked' : ''; ?>>
@@ -535,8 +535,8 @@ adminHeader('Branding & E-Card Settings', 'theme');
             <!-- Show Preview -->
             <div class="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
                 <div>
-                    <label class="text-sm font-semibold text-gray-700">Show Live Preview</label>
-                    <p class="text-xs text-gray-500">Display real-time card preview while filling the form</p>
+                    <label class="text-sm font-semibold text-gray-700"><?= htmlspecialchars(t('branding.live_preview')) ?></label>
+                    <p class="text-xs text-gray-500"><?= htmlspecialchars(t('branding.live_preview_hint')) ?></p>
                 </div>
                 <label class="relative inline-flex items-center cursor-pointer">
                     <input type="checkbox" name="portal_show_preview" class="sr-only peer" <?php echo ($company['portal_show_preview'] ?? 1) ? 'checked' : ''; ?>>
@@ -571,7 +571,7 @@ adminHeader('Branding & E-Card Settings', 'theme');
             <textarea name="custom_css" rows="8" 
                       class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 font-mono text-sm focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
                       placeholder="/* Add your custom CSS here */"><?php echo sanitize($theme['custom_css'] ?? ''); ?></textarea>
-            <p class="text-xs text-gray-500 mt-2">Advanced: Add custom CSS to further customize the appearance</p>
+            <p class="text-xs text-gray-500 mt-2"><?= htmlspecialchars(t('branding.custom_css_hint')) ?></p>
         </div>
     </div>
 
@@ -612,7 +612,7 @@ adminHeader('Branding & E-Card Settings', 'theme');
                            class="w-full px-3 py-2.5 border border-gray-200 rounded-lg" placeholder="التنفيذي">
                 </div>
                 <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-1">Wallet layout</label>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1"><?= htmlspecialchars(t('branding.wallet_layout')) ?></label>
                     <select name="wallet_style" id="wallet_style" class="w-full px-3 py-2.5 border border-gray-200 rounded-lg">
                         <option value="eventTicket">Event ticket</option>
                         <option value="storeCard">Store card</option>
