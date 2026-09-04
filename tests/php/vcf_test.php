@@ -351,4 +351,28 @@ foreach (['en' => $vEn, 'ar' => $vAr, 'bi' => $vBi, 'zeros' => $zeros] as $label
     check("$label: no CHARSET parameter is emitted", strpos($card, 'CHARSET') !== false, false);
 }
 
+
+// "Family, Given" is written the other way round from the last-token rule.
+// "Al-Harthi, Ahmed" produced family "Ahmed" and given "Al-Harthi,", and N is
+// the property a phone sorts and files a contact by. Rosters imported from a
+// spreadsheet carry this form constantly. Seen on a live card 5 Sep 2026.
+require_once dirname(__DIR__, 2) . '/includes/VCardRfc.php';
+foreach ([
+    // input                      given    middle          family
+    ['Al-Harthi, Ahmed',         'Ahmed', '',             'Al-Harthi'],
+    ['Al-Harthi, Ahmed Salim',   'Ahmed', 'Salim',        'Al-Harthi'],
+    ['Smith,John',               'John',  '',             'Smith'],
+    // the rules that were already right stay right
+    ['Ahmed Al-Harthi',          'Ahmed', '',             'Al-Harthi'],
+    ['Ali Adnan Haider Darwish', 'Ali',   'Adnan Haider', 'Darwish'],
+    ['Cher',                     'Cher',  '',             ''],
+] as [$input, $given, $middle, $family]) {
+    $r = VCardRfc::splitName($input);
+    check(
+        "splitName handles \"$input\"",
+        [$r['given'], $r['middle'], $r['family']],
+        [$given, $middle, $family]
+    );
+}
+
 echo "ALL PASS\n";

@@ -159,6 +159,25 @@ class VCardRfc {
             return ['given' => '', 'middle' => '', 'family' => ''];
         }
 
+        // "Family, Given" is written the other way round, and the last-token
+        // rule below turns it into nonsense: "Al-Harthi, Ahmed" produced
+        // family "Ahmed" and given "Al-Harthi,". Rosters imported from a
+        // spreadsheet carry this form constantly, and N is what a phone sorts
+        // and files the contact by. One comma means the family name is on the
+        // left; anything after the first comma is given plus middle.
+        if (strpos($name, ',') !== false) {
+            [$familyPart, $rest] = array_pad(explode(',', $name, 2), 2, '');
+            $familyPart = trim($familyPart);
+            $restTokens = array_values(array_filter(explode(' ', trim($rest)), 'strlen'));
+            if ($familyPart !== '' && $restTokens) {
+                return [
+                    'given'  => array_shift($restTokens),
+                    'middle' => implode(' ', $restTokens),
+                    'family' => $familyPart,
+                ];
+            }
+        }
+
         $parts = explode(' ', $name);
 
         // A patronymic chain is a chain, not a given/middle/family name.
