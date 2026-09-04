@@ -1,4 +1,19 @@
 <?php
+// Security headers, for the whole site.
+//
+// SecurityHeaders::send() existed and was called from six standalone entry
+// points (my_card, verify_card, instant_card and a few admin and api files).
+// Every page that goes through this header, which is the marketing site, the
+// auth pages and the tenant admin, sent no Content-Security-Policy at all:
+// measured zero CSP headers on / and /login before this line. send() no-ops
+// once headers have flushed, so calling it here is safe on pages that already
+// called it themselves.
+if (class_exists('SecurityHeaders')) {
+    SecurityHeaders::send();
+} elseif (defined('INCLUDES_DIR') && is_file(INCLUDES_DIR . '/SecurityHeaders.php')) {
+    require_once INCLUDES_DIR . '/SecurityHeaders.php';
+    SecurityHeaders::send();
+}
 /**
  * Cardify - Shared UI Header
  * Include this at the top of all pages for consistent styling

@@ -110,55 +110,91 @@ class SecurityHeaders
 
     private static function buildCsp(string $nonce): string
     {
-        // Known third-party hosts used across the app. Report-only first
-        // so nothing blocks; tighten over time.
+        unset($nonce); // see the note below: a nonce would disable 'unsafe-inline'
+        // Built from what the estate actually loads, measured across 19 public
+        // pages on 5 Sep 2026 rather than guessed: self, design.bhd.om,
+        // fonts.bhd.om, cdn.jsdelivr.net, the Google Maps embed, Cloudflare
+        // insights, GA, reCAPTCHA and Paymob.
+        //
+        // script-src carries 'unsafe-inline' and NO nonce, and that is a
+        // deliberate, uncomfortable choice. Those same 19 pages hold 212 inline
+        // <script> blocks and 318 on* attribute handlers. A nonce silently
+        // disables 'unsafe-inline' for browsers that understand it, so shipping
+        // the nonce would blank the site. Removing 318 inline handlers is its
+        // own project, not a header change.
+        //
+        // What this policy still buys, with inline allowed: an injected
+        // <script src="https://evil/"> is refused, so is an injected <object>,
+        // <base> or cross-origin form post, and frame-ancestors closes
+        // clickjacking. That is worth having today; a nonce-based policy is
+        // worth having later.
         $hosts = [
             'script' => [
-                "'self'", "'nonce-$nonce'",
-                'https://cdn.tailwindcss.com',
-                'https://cdnjs.cloudflare.com',
+                "'self'", "'unsafe-inline'",
+                'https://design.bhd.om',
                 'https://cdn.jsdelivr.net',
-                'https://unpkg.com',
+                'https://cdnjs.cloudflare.com',
+                'https://static.cloudflareinsights.com',
                 'https://www.googletagmanager.com',
                 'https://www.google-analytics.com',
+                'https://www.google.com',
+                'https://www.gstatic.com',
+                'https://maps.googleapis.com',
+                'https://maps.gstatic.com',
                 'https://oman.paymob.com',
-                'https://chart.googleapis.com',
             ],
             'style' => [
                 "'self'", "'unsafe-inline'",
                 'https://fonts.bhd.om',
-                'https://design.bhd.om', // FA 7.2.0 Pro self-hosted
+                'https://design.bhd.om',
                 'https://cdnjs.cloudflare.com',
                 'https://cdn.jsdelivr.net',
-                'https://unpkg.com',
-                'https://cdn.tailwindcss.com',
+                'https://fonts.googleapis.com',
             ],
             'font' => [
                 "'self'", 'data:',
                 'https://fonts.bhd.om',
+                'https://design.bhd.om',
                 'https://cdnjs.cloudflare.com',
-                'https://cdn.jsdelivr.net', // FA Pro webfonts via rizmyabdulla mirror (legacy fallback)
-                'https://design.bhd.om',    // FA 7.2.0 Pro self-hosted (primary)
+                'https://cdn.jsdelivr.net',
+                'https://fonts.gstatic.com',
             ],
             'img' => [
                 "'self'", 'data:', 'blob:',
                 'https://cardify.om',
                 'https://*.cardify.om',
-                'https://chart.googleapis.com',
-                'https://www.google-analytics.com',
+                'https://design.bhd.om',
+                'https://fonts.bhd.om',
                 'https://cdn.jsdelivr.net',
+                'https://chart.googleapis.com',
+                'https://maps.googleapis.com',
+                'https://maps.gstatic.com',
+                'https://*.googleapis.com',
+                'https://*.gstatic.com',
+                'https://www.google-analytics.com',
+                'https://www.googletagmanager.com',
             ],
             'connect' => [
                 "'self'",
                 'https://cardify.om',
                 'https://*.cardify.om',
+                'https://design.bhd.om',
                 'https://www.google-analytics.com',
                 'https://region1.google-analytics.com',
+                'https://*.google-analytics.com',
+                'https://www.googletagmanager.com',
+                'https://www.google.com',
+                'https://maps.googleapis.com',
+                'https://cloudflareinsights.com',
+                'https://static.cloudflareinsights.com',
                 'https://oman.paymob.com',
             ],
             'frame' => [
                 "'self'",
                 'https://oman.paymob.com',
+                'https://www.google.com',
+                'https://www.google.com/maps/',
+                'https://maps.google.com',
             ],
             'media'    => ["'self'", 'data:', 'blob:'],
             'object'   => ["'none'"],
@@ -166,8 +202,9 @@ class SecurityHeaders
 
         $parts = [
             "default-src 'self'",
-            'base-uri \'self\'',
-            'form-action \'self\' https://oman.paymob.com',
+            "base-uri 'self'",
+            "form-action 'self' https://oman.paymob.com",
+            "frame-ancestors 'self'",
             'script-src '  . implode(' ', $hosts['script']),
             'style-src '   . implode(' ', $hosts['style']),
             'font-src '    . implode(' ', $hosts['font']),
