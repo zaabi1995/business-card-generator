@@ -398,7 +398,16 @@ require_once INCLUDES_DIR . '/ui-header.php';
     if (existingTemplate && existingTemplate.canvas_json) {
         try {
             const data = JSON.parse(existingTemplate.canvas_json);
-            if (data.width) { canvasWidth = data.width; canvasHeight = data.height; }
+            if (data.width) {
+                canvasWidth = data.width; canvasHeight = data.height;
+                // Keep the selector honest about what is on screen. It stayed on
+                // "Business Card (Standard)" while a Square template was loaded.
+                const sizeSel = document.getElementById('canvas-size');
+                if (sizeSel) {
+                    const want = canvasWidth + ',' + canvasHeight;
+                    if ([...sizeSel.options].some(o => o.value === want)) sizeSel.value = want;
+                }
+            }
             // Collect fonts referenced in saved canvas so we can preload them before draw
             const savedSpecs = [];
             (data.objects || []).forEach(o => {

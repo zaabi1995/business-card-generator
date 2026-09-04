@@ -69,6 +69,25 @@ if ($action === 'save') {
     $canvasWidth = (int)($_POST['canvas_width'] ?? 900);
     $canvasHeight = (int)($_POST['canvas_height'] ?? 514);
 
+    // The editor posts the canvas size and nothing ever stored it: these two
+    // variables were read and then dropped, shop_templates has no width or
+    // height column, and fabric's toJSON() does not include the canvas
+    // dimensions. The editor's load path already reads data.width and
+    // data.height off canvas_json, so only the writer was missing. Without it a
+    // template saved as Square (900x900) or Large (1050x600) reopened at the
+    // 900x514 default, moving every object that sat below the shorter canvas
+    // straight off the card. Verified: "Gauntlet Square Size Test" saved at
+    // 900x900 and reopened at 900x514.
+    if ($canvasJson !== '' && $canvasWidth > 0 && $canvasHeight > 0) {
+        $decoded = json_decode($canvasJson, true);
+        if (is_array($decoded)) {
+            $decoded['width'] = $canvasWidth;
+            $decoded['height'] = $canvasHeight;
+            $reencoded = json_encode($decoded, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            if ($reencoded !== false) $canvasJson = $reencoded;
+        }
+    }
+
     if (!$shopId || !$name) {
         echo json_encode(['success' => false, 'error' => 'Missing required fields']);
         exit;
