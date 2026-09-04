@@ -164,10 +164,22 @@
    pushed the tool pages 32 to 35px sideways: the .grid holding the vCard,
    WhatsApp and signature panels measured 288px while its single track measured
    336px. Setting min-width:0 on grid children is the standard remedy and takes
-   the overflow to zero on all three. Same for flex children, which have the
-   identical default. */
-.grid > *,
-.flex > * { min-width: 0; }
+   the overflow to zero on all three.
+
+   Grid only. The same rule on flex children looked equally correct and broke
+   /oman-business-index at 768px, pushing it 88px sideways off a
+   fa-arrow-right icon that had been relying on min-content sizing. Measured
+   both ways: with the flex half removed the directory is back to 0 and the
+   tool pages stay at 0. */
+.grid > * { min-width: 0; }
+
+/* A long unbreakable URL inside prose has no break opportunity, so a <code>
+   holding one pushed /tools/whatsapp-qr-generator 9px sideways at 320px.
+   Wrapping anywhere is the right behaviour for a URL people are meant to
+   read, not scroll past. */
+.prose code,
+.guide-content code,
+article code { overflow-wrap: anywhere; word-break: break-word; }
 
 /* Flexbox - with !important for consistent override */
 .flex { display: flex !important; }
