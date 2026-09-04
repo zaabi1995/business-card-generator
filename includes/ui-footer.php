@@ -25,6 +25,7 @@ $bn = defined('SITE_NAME') ? SITE_NAME : 'Cardify';
 // null when there is no Arabic URL; null means "render the English one", which
 // is the honest link, not a fallback.
 require_once __DIR__ . '/ArTwins.php';
+require_once __DIR__ . '/JsonLd.php';
 $_footIsAr = ArTwins::servingArabic();
 
 /** A footer link for a bare EN slug, in the reader's language when one exists. */
@@ -232,7 +233,7 @@ if ($currentPage !== 'index' && !($currentPage === 'blog' && isset($singlePost))
             '@context' => 'https://schema.org',
             '@type' => 'BreadcrumbList',
             'itemListElement' => $bcItems
-        ], JSON_UNESCAPED_SLASHES) . '</script>';
+        ], JsonLd::SAFE | JSON_UNESCAPED_SLASHES) . '</script>';
     }
 }
 ?>

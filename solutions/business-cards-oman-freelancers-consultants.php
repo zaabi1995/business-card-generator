@@ -4,6 +4,7 @@
  */
 require_once __DIR__ . '/../config.php';
 require_once INCLUDES_DIR . '/Auth.php';
+require_once INCLUDES_DIR . '/JsonLd.php';
 require_once INCLUDES_DIR . '/Seo.php';
 
 $pageTitle = 'Business Cards for Omani Freelancers & Consultants, Cardify';
@@ -30,8 +31,8 @@ $articleJsonLd = Seo::articleNode(
     $ogImage ?? null,
     'en-OM'
 );
-$extraHead = '<script type="application/ld+json">' . json_encode($breadcrumbJsonLd, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>'
-    . '<script type="application/ld+json">' . json_encode($articleJsonLd, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>';
+$extraHead = '<script type="application/ld+json">' . json_encode($breadcrumbJsonLd, JsonLd::SAFE | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>'
+    . '<script type="application/ld+json">' . json_encode($articleJsonLd, JsonLd::SAFE | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>';
 
 require_once INCLUDES_DIR . '/ui-header.php';
 ?>

@@ -8,6 +8,7 @@ require_once __DIR__ . '/includes/PlatformStats.php';
  * original so English-only legacy posts keep working.
  */
 require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/JsonLd.php';
 require_once INCLUDES_DIR . '/Auth.php';
 require_once INCLUDES_DIR . '/BlogSlugRedirects.php';
 require_once INCLUDES_DIR . '/ArTwins.php';
@@ -200,8 +201,8 @@ if ($singlePost) {
         . json_encode(['@context' => 'https://schema.org'] + Seo::organizationNode(),
                       JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)
         . '</script>' . "\n";
-    $extraHead .= '<script type="application/ld+json">' . json_encode($articleLd, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>' . "\n";
-    $extraHead .= '<script type="application/ld+json">' . json_encode($breadcrumbLd, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>' . "\n";
+    $extraHead .= '<script type="application/ld+json">' . json_encode($articleLd, JsonLd::SAFE | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>' . "\n";
+    $extraHead .= '<script type="application/ld+json">' . json_encode($breadcrumbLd, JsonLd::SAFE | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>' . "\n";
 } else {
     $blogLd = [
         '@context' => 'https://schema.org',
@@ -214,7 +215,7 @@ if ($singlePost) {
         // divergence r153 removed from the BlogPosting three lines up.
         'publisher' => Seo::publisherNode(),
     ];
-    $extraHead .= '<script type="application/ld+json">' . json_encode($blogLd, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>' . "\n";
+    $extraHead .= '<script type="application/ld+json">' . json_encode($blogLd, JsonLd::SAFE | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>' . "\n";
 }
 
 require_once INCLUDES_DIR . '/ui-header.php';

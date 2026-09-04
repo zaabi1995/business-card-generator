@@ -7,6 +7,7 @@
  */
 require_once __DIR__ . '/../config.php';
 require_once INCLUDES_DIR . '/Auth.php';
+require_once INCLUDES_DIR . '/JsonLd.php';
 // r150 / bhd-r6-99 clause 2: the join to the app family is written
 // once, in ToolEntity, so a tool page cannot omit it.
 require_once INCLUDES_DIR . '/ToolEntity.php';
@@ -73,10 +74,10 @@ $faqLd = [
     ], $faq),
 ];
 
-$extraHead = '<script type="application/ld+json">' . json_encode($softwareLd, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>' . "\n"
-           . '<script type="application/ld+json">' . json_encode($breadcrumbLd, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>' . "\n"
-           . '<script type="application/ld+json">' . json_encode($howToLd, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>' . "\n"
-           . '<script type="application/ld+json">' . json_encode($faqLd, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>' . "\n"
+$extraHead = '<script type="application/ld+json">' . json_encode($softwareLd, JsonLd::SAFE | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>' . "\n"
+           . '<script type="application/ld+json">' . json_encode($breadcrumbLd, JsonLd::SAFE | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>' . "\n"
+           . '<script type="application/ld+json">' . json_encode($howToLd, JsonLd::SAFE | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>' . "\n"
+           . '<script type="application/ld+json">' . json_encode($faqLd, JsonLd::SAFE | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>' . "\n"
            . '<script defer src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>';
 
 $showNavigation = true;

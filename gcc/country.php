@@ -16,6 +16,7 @@
  */
 require_once __DIR__ . '/../config.php';
 require_once INCLUDES_DIR . '/Auth.php';
+require_once INCLUDES_DIR . '/JsonLd.php';
 
 $countries = [
     'saudi-arabia' => [
@@ -314,7 +315,7 @@ $webPageLd = [
 
 $extraHead = ''
     . '<script type="application/ld+json">' . json_encode($webPageLd,    JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>' . "\n"
-    . '<script type="application/ld+json">' . json_encode($breadcrumbLd, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>' . "\n"
+    . '<script type="application/ld+json">' . json_encode($breadcrumbLd, JsonLd::SAFE | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>' . "\n"
     . '<script type="application/ld+json">' . json_encode($serviceLd,    JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>' . "\n"
     . '<script type="application/ld+json">' . json_encode($faqLd,        JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>' . "\n"
     . '<meta property="og:locale:alternate" content="' . $escq(str_replace('-', '_', $c['lang'])) . '">';

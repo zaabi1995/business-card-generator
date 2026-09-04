@@ -7,6 +7,7 @@ require_once __DIR__ . '/includes/LogoLibrary.php';
  */
 
 require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/JsonLd.php';
 
 $brandName = defined('SITE_NAME') ? SITE_NAME : 'Cardify';
 $pageTitle = 'How Cardify Works, Business Cards in Minutes';
@@ -248,7 +249,7 @@ if ($introIso):
     'dateModified' => $introIso,
     'isPartOf' => ['@id' => 'https://cardify.om/#website'],
     'publisher' => ['@id' => 'https://cardify.om/#organization'],
-], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE); ?></script>
+], JsonLd::SAFE | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE); ?></script>
 <?php endif; ?>
 </head>
 <body class="bg-white antialiased overflow-x-hidden">

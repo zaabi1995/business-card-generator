@@ -19,6 +19,7 @@
  *      sweeping or untestable claim about every competing product.
  */
 require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/JsonLd.php';
 require_once INCLUDES_DIR . '/Auth.php';
 require_once INCLUDES_DIR . '/AppEntity.php';
 
@@ -106,7 +107,7 @@ $ld = [
     ],
 ];
 $extraHead = '<script type="application/ld+json">'
-    . json_encode($ld, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)
+    . json_encode($ld, JsonLd::SAFE | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)
     . '</script>';
 
 require_once INCLUDES_DIR . '/ui-header.php';

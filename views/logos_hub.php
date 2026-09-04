@@ -75,6 +75,7 @@ $jsonLdBlocks[] = [
 // every identity key comes from includes/Datasets.php. This page is its home,
 // so it gets the full node.
 require_once INCLUDES_DIR . '/Datasets.php';
+require_once INCLUDES_DIR . '/JsonLd.php';
 $jsonLdBlocks[] = Datasets::node('logos', [
     'inLanguage'  => ['en', 'ar'],
 ]);
@@ -116,7 +117,7 @@ if (!empty($itemListItems)) {
 $extraHead = '';
 foreach ($jsonLdBlocks as $block) {
     $extraHead .= '<script type="application/ld+json">'
-               . json_encode($block, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)
+               . json_encode($block, JsonLd::SAFE | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)
                . '</script>';
 }
 // Hreflang alternates
@@ -422,7 +423,7 @@ function logos_esc($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8
                 <a href="/companies/<?= logos_esc($r['slug']) ?>"
                    class="cardify-logo-card group relative bg-white rounded-xl border border-gray-200 hover:border-gray-300 transition-all duration-200 overflow-hidden hover:-translate-y-0.5 hover:shadow-[0_8px_24px_-8px_rgba(15,23,42,0.18)]"
                    style="--brand-bg: <?= logos_esc($bg) ?>"
-                   data-logo='<?= htmlspecialchars(json_encode($_quickJson, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE), ENT_QUOTES, "UTF-8") ?>'>
+                   data-logo='<?= htmlspecialchars(json_encode($_quickJson, JsonLd::SAFE | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE), ENT_QUOTES, "UTF-8") ?>'>
                     <div class="aspect-square flex items-center justify-center p-3 sm:p-4 md:p-5 bg-gradient-to-br from-gray-50 to-white border-b border-gray-100 transition-colors duration-200 group-hover:bg-[var(--brand-bg)] group-hover:bg-none">
                         <?php if ($src): ?>
                             <img src="<?= logos_esc(logo_thumb($src, 256)) ?>" alt="<?= logos_esc($r['name_en']) ?>"

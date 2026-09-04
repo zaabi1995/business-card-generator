@@ -11,6 +11,7 @@
  */
 require_once __DIR__ . '/../config.php';
 require_once INCLUDES_DIR . '/Auth.php';
+require_once INCLUDES_DIR . '/JsonLd.php';
 
 $pageTitle       = 'Business Cards for Banks & Finance in Oman + GCC, Cardify';
 $pageDescription = 'Digital business cards for bankers, relationship managers, investment advisors, and finance teams across Oman and the GCC. Bilingual EN/AR, compliance-ready, works for every branch and every RM.';
@@ -75,7 +76,7 @@ $crumbLd = [
 ];
 
 $extraHead =
-      '<script type="application/ld+json">' . json_encode($serviceLd, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>'
+      '<script type="application/ld+json">' . json_encode($serviceLd, JsonLd::SAFE | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>'
     . '<script type="application/ld+json">' . json_encode($faqLd,     JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>'
     . '<script type="application/ld+json">' . json_encode($crumbLd,   JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>';
 

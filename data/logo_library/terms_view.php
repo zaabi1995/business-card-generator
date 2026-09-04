@@ -3,6 +3,7 @@
 $pageTitle       = $title;
 $pageDescription = t('logos.terms_meta_desc');
 require_once INCLUDES_DIR . '/ArTwins.php';
+require_once INCLUDES_DIR . '/JsonLd.php';
 // Canonical follows the SERVED locale: an Arabic page that
 // canonicalises to its English twin asks to be dropped.
 $canonicalUrl    = (!empty($isAr) && ArTwins::arPath('/logos/terms') !== null)
@@ -31,7 +32,7 @@ $extraHead =
         "about"      => ["@type" => "Thing", "name" => "Omani Logo Library terms and license"],
         "license"    => $canonicalUrl,
         "publisher"  => ["@type" => "Organization", "name" => "Cardify", "url" => "https://cardify.om"],
-    ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>'
+    ], JsonLd::SAFE | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>'
     . '<script type="application/ld+json">' . json_encode([
         "@context" => "https://schema.org",
         "@type"    => "BreadcrumbList",
@@ -40,7 +41,7 @@ $extraHead =
             ["@type" => "ListItem", "position" => 2, "name" => "Logo Library", "item" => ArTwins::SITE . $crumbLogosHref],
             ["@type" => "ListItem", "position" => 3, "name" => t('logos.terms_breadcrumb'), "item" => $canonicalUrl],
         ],
-    ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>'
+    ], JsonLd::SAFE | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>'
     . '<link rel="alternate" hreflang="en" href="https://cardify.om/logos/terms">'
     . '<link rel="alternate" hreflang="ar" href="https://cardify.om/ar/logos/terms">'
     . '<link rel="alternate" hreflang="x-default" href="https://cardify.om/logos/terms">';

@@ -4,6 +4,7 @@
  */
 require_once __DIR__ . '/../config.php';
 require_once INCLUDES_DIR . '/Auth.php';
+require_once INCLUDES_DIR . '/JsonLd.php';
 
 $pageTitle = 'NFC Business Cards Guide: How They Work and Setup in Oman';
 $pageDescription = 'Complete guide to NFC business cards in Oman, how they work, iPhone vs Android compatibility, setup steps, NFC vs QR vs traditional cards, and where to buy.';
@@ -135,9 +136,9 @@ $breadcrumbLd = [
     ],
 ];
 
-$extraHead = '<script type="application/ld+json">' . json_encode($howToLd, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>' . "\n"
-           . '<script type="application/ld+json">' . json_encode($faqLd, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>' . "\n"
-           . '<script type="application/ld+json">' . json_encode($breadcrumbLd, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>';
+$extraHead = '<script type="application/ld+json">' . json_encode($howToLd, JsonLd::SAFE | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>' . "\n"
+           . '<script type="application/ld+json">' . json_encode($faqLd, JsonLd::SAFE | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>' . "\n"
+           . '<script type="application/ld+json">' . json_encode($breadcrumbLd, JsonLd::SAFE | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>';
 
 $showNavigation = true;
 require_once INCLUDES_DIR . '/ui-header.php';

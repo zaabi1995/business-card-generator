@@ -11,6 +11,7 @@
  * Public, cacheable.
  */
 require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/JsonLd.php';
 require_once __DIR__ . '/includes/Datasets.php';
 require_once __DIR__ . '/includes/Seo.php';
 require_once INCLUDES_DIR . '/Auth.php';
@@ -243,7 +244,7 @@ $orgLd = ['@context' => 'https://schema.org'] + Seo::organizationNode();
 $extraHead =
       '<script type="application/ld+json">' . json_encode($faqLd,     JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>'
     . '<script type="application/ld+json">' . json_encode($crumbLd,   JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>'
-    . '<script type="application/ld+json">' . json_encode($datasetLd, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>'
+    . '<script type="application/ld+json">' . json_encode($datasetLd, JsonLd::SAFE | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>'
     . '<script type="application/ld+json">' . json_encode($orgLd,     JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>';
 
 function gccEsc($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }

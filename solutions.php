@@ -3,6 +3,7 @@
  * Cardify - Oman Solutions Hub
  */
 require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/JsonLd.php';
 require_once INCLUDES_DIR . '/Auth.php';
 
 $pageTitle = t('solutions.page_title');
@@ -20,7 +21,7 @@ $breadcrumbJsonLd = [
         ['@type' => 'ListItem', 'position' => 2, 'name' => 'Solutions', 'item' => $canonicalUrl],
     ],
 ];
-$extraHead = '<script type="application/ld+json">' . json_encode($breadcrumbJsonLd, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>';
+$extraHead = '<script type="application/ld+json">' . json_encode($breadcrumbJsonLd, JsonLd::SAFE | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>';
 
 require_once INCLUDES_DIR . '/ui-header.php';
 

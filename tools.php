@@ -7,6 +7,7 @@
  * landing with commercial intent and a soft CTA back to Cardify.
  */
 require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/JsonLd.php';
 require_once INCLUDES_DIR . '/Auth.php';
 
 $pageTitle = t('tools.page_title');
@@ -80,9 +81,9 @@ $itemListLd = [
         ];
     }, array_keys($tools), $tools),
 ];
-$extraHead = '<script type="application/ld+json">' . json_encode($siteLd, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>'
-           . '<script type="application/ld+json">' . json_encode($crumbLd, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>'
-           . '<script type="application/ld+json">' . json_encode($itemListLd, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>';
+$extraHead = '<script type="application/ld+json">' . json_encode($siteLd, JsonLd::SAFE | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>'
+           . '<script type="application/ld+json">' . json_encode($crumbLd, JsonLd::SAFE | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>'
+           . '<script type="application/ld+json">' . json_encode($itemListLd, JsonLd::SAFE | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>';
 
 require_once INCLUDES_DIR . '/ui-header.php';
 ?>

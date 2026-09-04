@@ -16,6 +16,7 @@
  * that prefer structured fact pages over marketing content.
  */
 require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/JsonLd.php';
 require_once __DIR__ . '/includes/Datasets.php';
 require_once __DIR__ . '/includes/Seo.php';
 require_once INCLUDES_DIR . '/Auth.php';
@@ -118,7 +119,7 @@ $breadcrumbLd = [
 $extraHead = ''
     . '<script type="application/ld+json">' . json_encode($orgLd,        JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>' . "\n"
     . '<script type="application/ld+json">' . json_encode($datasetsLd,   JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>' . "\n"
-    . '<script type="application/ld+json">' . json_encode($breadcrumbLd, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>';
+    . '<script type="application/ld+json">' . json_encode($breadcrumbLd, JsonLd::SAFE | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>';
 
 $asOfDate = date('F j, Y');
 $accessedDate = date('j M Y');

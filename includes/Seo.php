@@ -73,6 +73,7 @@ class Seo
     public static function hreflang(string $path): void
     {
         require_once __DIR__ . '/ArTwins.php';
+require_once __DIR__ . '/JsonLd.php';
         $current = (($_SERVER['REQUEST_SCHEME'] ?? 'https') . '://' . ($_SERVER['HTTP_HOST'] ?? 'cardify.om') . ($_SERVER['REQUEST_URI'] ?? $path));
 
         echo '<link rel="canonical" href="' . htmlspecialchars($current, ENT_QUOTES) . "\">\n";
@@ -498,7 +499,7 @@ class Seo
         }
         self::$ownerEmitted = true;
         return '<script type="application/ld+json">'
-            . json_encode(self::organizationNode(), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)
+            . json_encode(self::organizationNode(), JsonLd::SAFE | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)
             . '</script>' . "\n";
     }
 
@@ -582,7 +583,7 @@ class Seo
         $out = '';
         foreach ($nodes as $node) {
             $out .= '<script type="application/ld+json">'
-                . json_encode($node, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)
+                . json_encode($node, JsonLd::SAFE | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)
                 . '</script>';
         }
         return $out;
@@ -707,7 +708,7 @@ class Seo
     private static function emit(array $data): void
     {
         echo '<script type="application/ld+json">'
-            . json_encode($data, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT)
+            . json_encode($data, JsonLd::SAFE | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT)
             . "</script>\n";
     }
 }

@@ -15,6 +15,7 @@
  *   /ar/companies[...]                    → same with lang=ar
  */
 require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/JsonLd.php';
 require_once INCLUDES_DIR . '/Auth.php';
 require_once INCLUDES_DIR . '/LogoLibrary.php'; // shouldUseDarkVariantOnLight + helpers used by every view branch
 require_once INCLUDES_DIR . '/ArTwins.php';
@@ -345,9 +346,9 @@ if ($company) {
             ['@type' => 'ListItem', 'position' => 4, 'name' => $displayName, 'item' => $canonicalUrl],
         ],
     ];
-    $extraHead = '<script type="application/ld+json">' . json_encode($orgLd, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>'
-               . '<script type="application/ld+json">' . json_encode($crumbLd, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>'
-               . ($imageLd ? '<script type="application/ld+json">' . json_encode($imageLd, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>' : '')
+    $extraHead = '<script type="application/ld+json">' . json_encode($orgLd, JsonLd::SAFE | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>'
+               . '<script type="application/ld+json">' . json_encode($crumbLd, JsonLd::SAFE | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>'
+               . ($imageLd ? '<script type="application/ld+json">' . json_encode($imageLd, JsonLd::SAFE | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>' : '')
                . ArTwins::pairLinks('/companies/' . $company['slug']);
     $GLOBALS['pageSchemaType'] = 'ProfilePage';
     $GLOBALS['pageSchemaName'] = $displayName;
@@ -410,7 +411,7 @@ if ($company) {
         'name' => 'Cardify Oman Business Index',
         'url' => $baseUrl . '/companies',
     ];
-    $extraHead = '<script type="application/ld+json">' . json_encode($siteLd, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>'
+    $extraHead = '<script type="application/ld+json">' . json_encode($siteLd, JsonLd::SAFE | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>'
                . $seqHead
                // The hreflang pair carries the SAME page as the canonical,
                // otherwise page 2 advertises page 1 as its own translation.

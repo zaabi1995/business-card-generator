@@ -280,6 +280,7 @@ $bodyClass = 'bg-white';
 // truth is OMR (rates live in Currency.php fx table); formatNumber respects
 // per-currency decimals and separators.
 require_once INCLUDES_DIR . '/Currency.php';
+require_once INCLUDES_DIR . '/JsonLd.php';
 $homeCur     = Currency::getUserCurrency();
 $homeCurName = $homeCur;
 // Convert, then marketing-round (keeps OMR exact, rounds AED/USD/etc to
@@ -357,13 +358,13 @@ $siteLd = [
         'query-input' => 'required name=search_term_string',
     ],
 ];
-$homeJsonLd = '<script type="application/ld+json">' . json_encode($siteLd, JSON_UNESCAPED_SLASHES) . '</script>';
+$homeJsonLd = '<script type="application/ld+json">' . json_encode($siteLd, JsonLd::SAFE | JSON_UNESCAPED_SLASHES) . '</script>';
 // r81 / r6-99 + llm20-21: this literal WAS one of the two competing
 // definitions of the app. It is now the ONE record in includes/AppEntity.php,
 // read by this page, /app and /business-card-scanner, so a fourth spelling
 // cannot be typed into a fourth file.
 $scannerLd = ['@context' => 'https://schema.org'] + AppEntity::node();
-$scannerJsonLd = '<script type="application/ld+json">' . json_encode($scannerLd, JSON_UNESCAPED_SLASHES) . '</script>';
+$scannerJsonLd = '<script type="application/ld+json">' . json_encode($scannerLd, JsonLd::SAFE | JSON_UNESCAPED_SLASHES) . '</script>';
 // r116 / bhd-r6-99: these five meta tags used to hand-type the App Store id
 // twice, the app's name once and its page once, four lines under a comment
 // promising a fourth spelling could not be typed into a fourth file. They
@@ -409,7 +410,7 @@ if ($homeFaqPairs) {
         '@id' => 'https://cardify.om/' . ((function_exists('currentLocale') && currentLocale() === 'ar') ? 'ar/' : '') . '#faq',
         'inLanguage' => (function_exists('currentLocale') && currentLocale() === 'ar') ? 'ar' : 'en',
         'mainEntity' => $__entries,
-    ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>';
+    ], JsonLd::SAFE | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>';
 }
 
 // r6-80: the measured desktop shift was the mock-card column being re-centred

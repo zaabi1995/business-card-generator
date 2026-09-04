@@ -4,6 +4,7 @@
  */
 require_once __DIR__ . '/../config.php';
 require_once INCLUDES_DIR . '/Auth.php';
+require_once INCLUDES_DIR . '/JsonLd.php';
 
 $pageTitle = 'Business Cards for Construction & Engineering in Oman, Cardify';
 $pageDescription = 'Professional business cards for contractors, engineers, and construction companies in Oman. Manage team cards, share project details, and network on-site, free with Cardify.';
@@ -27,7 +28,7 @@ $extraHead = '<script type="application/ld+json">' . json_encode([
         'name' => 'Oman',
     ],
     'serviceType' => 'Digital Business Card Platform',
-], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>';
+], JsonLd::SAFE | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>';
 
 require_once INCLUDES_DIR . '/ui-header.php';
 ?>

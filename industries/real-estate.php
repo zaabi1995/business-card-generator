@@ -4,6 +4,7 @@
  */
 require_once __DIR__ . '/../config.php';
 require_once INCLUDES_DIR . '/Auth.php';
+require_once INCLUDES_DIR . '/JsonLd.php';
 
 $pageTitle = 'Business Cards for Real Estate Agents in Oman, Cardify';
 $pageDescription = 'Create professional business cards for real estate agents, property developers, and brokers in Oman. QR links to listings, digital sharing at viewings, and team management, free with Cardify.';
@@ -27,7 +28,7 @@ $extraHead = '<script type="application/ld+json">' . json_encode([
         'name' => 'Oman',
     ],
     'serviceType' => 'Digital Business Card Platform',
-], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>';
+], JsonLd::SAFE | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>';
 
 require_once INCLUDES_DIR . '/ui-header.php';
 ?>
