@@ -150,13 +150,15 @@ class SecurityHeaders
                 'https://maps.gstatic.com',
                 'https://oman.paymob.com',
             ],
+            // No fonts.googleapis.com or fonts.gstatic.com. The house rule is
+            // fonts.bhd.om, and the measurement found zero loads from Google's
+            // font hosts, so allowing them would only invite drift back.
             'style' => [
                 "'self'", "'unsafe-inline'",
                 'https://fonts.bhd.om',
                 'https://design.bhd.om',
                 'https://cdnjs.cloudflare.com',
                 'https://cdn.jsdelivr.net',
-                'https://fonts.googleapis.com',
             ],
             'font' => [
                 "'self'", 'data:',
@@ -164,7 +166,6 @@ class SecurityHeaders
                 'https://design.bhd.om',
                 'https://cdnjs.cloudflare.com',
                 'https://cdn.jsdelivr.net',
-                'https://fonts.gstatic.com',
             ],
             'img' => [
                 "'self'", 'data:', 'blob:',
