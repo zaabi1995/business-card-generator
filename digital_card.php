@@ -21,6 +21,7 @@ set_error_handler(function($severity, $message, $file, $line) {
 try {
     require_once __DIR__ . '/config.php';
     require_once INCLUDES_DIR . '/QRTracker.php';
+require_once INCLUDES_DIR . '/JsonLd.php';
     require_once INCLUDES_DIR . '/CardifyConvention.php';
     require_once INCLUDES_DIR . '/CardSections.php';
     require_once INCLUDES_DIR . '/Appointments.php';
@@ -2106,7 +2107,7 @@ $switchThirdUrl = ($thirdCode !== '' && $thirdLabel !== '')
         </div>
         <script>
         (function(){
-            var EID = <?php echo json_encode($employee['id']); ?>;
+            var EID = <?php echo JsonLd::value($employee['id']); ?>;
             var MAX_ADV = <?php echo (int)$apptSettings['max_advance_days']; ?>;
             var dateInput = document.getElementById('apptDate');
             var slotsEl   = document.getElementById('apptSlots');
@@ -2367,15 +2368,15 @@ $switchThirdUrl = ($thirdCode !== '' && $thirdLabel !== '')
             }
             $tenantSlug = $company['slug'] ?? '';
             if ($tenantSlug && $emailLocal) {
-                echo json_encode('https://' . $tenantSlug . '.cardify.om/' . $emailLocal);
+                echo JsonLd::value('https://' . $tenantSlug . '.cardify.om/' . $emailLocal);
             } else {
                 echo 'window.location.href';
             }
         ?>;
         function shareCard() {
             const shareData = {
-                title: <?php echo json_encode($name . ' - ' . $companyName); ?>,
-                text: <?php echo json_encode($name . ' - ' . $position . ' at ' . $companyName); ?>,
+                title: <?php echo JsonLd::value($name . ' - ' . $companyName); ?>,
+                text: <?php echo JsonLd::value($name . ' - ' . $position . ' at ' . $companyName); ?>,
                 url: __shareUrl
             };
 
@@ -2557,14 +2558,14 @@ $switchThirdUrl = ($thirdCode !== '' && $thirdLabel !== '')
     }
 ?>
 <script type="application/ld+json">
-<?= json_encode([
+<?= JsonLd::encode([
     '@context' => 'https://schema.org',
     '@graph'   => $__jsonLdGraph,
-], JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) ?>
+], true) ?>
 </script>
 <?php if (!empty($sectionMaster['faq_enabled']) && !empty($sectionFaqs)): ?>
 <script type="application/ld+json">
-<?= json_encode([
+<?= JsonLd::encode([
     '@context' => 'https://schema.org',
     '@type' => 'FAQPage',
     'mainEntity' => array_map(function ($f) {
@@ -2577,7 +2578,7 @@ $switchThirdUrl = ($thirdCode !== '' && $thirdLabel !== '')
             ],
         ];
     }, $sectionFaqs),
-], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) ?>
+], true) ?>
 </script>
 <?php endif; ?>
 </body>
