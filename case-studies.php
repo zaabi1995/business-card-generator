@@ -24,25 +24,55 @@ $CASES = [
     'bhd' => [
         'key_prefix'  => 'bhd',
         'slug'        => 'bhd-printing-and-designing',
-        'logo'        => '/storage/logos/verified/2492.svg',
+        'logo_id'     => 2492,
         'accent'      => 'from-blue-500 to-blue-600',
         'website'     => 'https://bhd.om',
     ],
     'cupsbyaa' => [
         'key_prefix'  => 'cup',
         'slug'        => 'cupsbyaa',
-        'logo'        => '/storage/logos/verified/2496.svg',
+        'logo_id'     => 2496,
         'accent'      => 'from-pink-400 to-pink-500',
         'website'     => 'https://cupsbyaa.com',
     ],
     'alali' => [
         'key_prefix'  => 'ali',
         'slug'        => 'alali-investments',
-        'logo'        => '/storage/logos/verified/2499.svg',
+        'logo_id'     => 2499,
         'accent'      => 'from-amber-400 to-amber-500',
         'website'     => null,
     ],
 ];
+
+// Logo paths come from om_companies, which is where they are actually
+// maintained. They used to be written here as /storage/logos/verified/<id>.svg,
+// reading the row's logo_status ("verified") as if it were the folder name. The
+// folder is /storage/logos/indexed/ and storage/logos/verified/ holds nothing at
+// all, so all three customer logos on this page were 404s. Anything with a
+// broken logo drops out rather than rendering an empty box.
+$logoIds = array_values(array_filter(array_column($CASES, 'logo_id')));
+$logoPaths = [];
+if ($logoIds && class_exists('DatabaseAdapter') && DatabaseAdapter::useDatabase()) {
+    try {
+        $placeholders = implode(',', array_fill(0, count($logoIds), '?'));
+        $rows = Database::getInstance()->fetchAll(
+            "SELECT id, logo_svg_path, logo_png_path, logo_url
+             FROM om_companies WHERE id IN ($placeholders)",
+            $logoIds
+        );
+        foreach ($rows as $row) {
+            $path = $row['logo_svg_path'] ?: ($row['logo_png_path'] ?: $row['logo_url']);
+            if ($path && is_file(BASE_DIR . $path)) {
+                $logoPaths[(int) $row['id']] = $path;
+            }
+        }
+    } catch (Throwable $logoError) {
+        error_log('[case-studies] logo lookup failed: ' . $logoError->getMessage());
+    }
+}
+foreach ($CASES as $caseKey => $caseRow) {
+    $CASES[$caseKey]['logo'] = $logoPaths[(int) ($caseRow['logo_id'] ?? 0)] ?? null;
+}
 
 // --- Detail view ---
 $activeCase = null;
@@ -86,7 +116,7 @@ if ($activeCase) {
         t('case_studies.' . $activeCase['key_prefix'] . '_name') . ', ' . t('case_studies.hero_heading'),
         t('case_studies.' . $activeCase['key_prefix'] . '_summary'),
         $canonicalUrl,
-        $baseUrl . $activeCase['logo'],
+        !empty($activeCase['logo']) ? $baseUrl . $activeCase['logo'] : null,
         null,
         null,
         'Cardify'
@@ -109,7 +139,11 @@ if ($activeCase) {
             <a href="<?= ($isAr ? '/ar' : '') ?>/case-studies/<?= htmlspecialchars($c['slug']) ?>"
                class="group block bg-white rounded-2xl overflow-hidden shadow-sm ring-1 ring-gray-200/70 hover:shadow-lg hover:ring-blue-200 transition-all">
                 <div class="aspect-[16/9] bg-gradient-to-br <?= $c['accent'] ?> flex items-center justify-center p-8">
+                    <?php if (!empty($c['logo'])): ?>
                     <img src="<?= htmlspecialchars($c['logo']) ?>" alt="<?= htmlspecialchars(t('case_studies.' . $p . '_name')) ?>" class="max-h-20 max-w-full drop-shadow" loading="lazy" width="200" height="80">
+                    <?php else: ?>
+                    <span class="text-lg font-bold text-white/90"><?= htmlspecialchars(t('case_studies.' . $p . '_name')) ?></span>
+                    <?php endif; ?>
                 </div>
                 <div class="p-6">
                     <h2 class="text-xl font-bold text-gray-900 mb-2 group-hover:text-blue-700 transition-colors">
@@ -138,7 +172,9 @@ if ($activeCase) {
             <header class="bg-gradient-to-br <?= $activeCase['accent'] ?> p-10 text-white">
                 <div class="flex items-center gap-6 flex-wrap">
                     <div class="bg-white rounded-2xl p-4 shadow-lg">
+                        <?php if (!empty($activeCase['logo'])): ?>
                         <img src="<?= htmlspecialchars($activeCase['logo']) ?>" alt="<?= htmlspecialchars(t('case_studies.' . $p . '_name')) ?>" class="h-16 w-auto" width="200" height="64">
+                        <?php endif; ?>
                     </div>
                     <div>
                         <h1 class="text-3xl sm:text-4xl font-extrabold mb-1"><?= htmlspecialchars(t('case_studies.' . $p . '_name')) ?></h1>
