@@ -244,6 +244,13 @@ adminHeader(t('autogen.page_title'), 'employees');
      branches of the if/else have it; was previously only inside the
      usePreDesigned branch which broke the Fabric template path. -->
 <script>
+// Two contact fields holding the same number should print once. Digits only,
+// so formatting differences do not read as two different numbers.
+function sameNumber(a, b) {
+    var da = String(a || '').replace(/\D/g, '');
+    var db = String(b || '').replace(/\D/g, '');
+    return da !== '' && da === db;
+}
 const AUTOGEN_I18N = <?php echo json_encode([
     'initializing'       => t('autogen.js_initializing'),
     'preparing_layout'   => t('autogen.js_preparing_layout'),
@@ -1314,8 +1321,14 @@ function autoGenerator() {
                 'company_ar': this.employee.company_ar || co.name_ar || coName,
                 'phone': this.employee.phone || '',
                 'phone_ar': this.employee.phone_ar || '',
-                'mobile': this.employee.mobile || '',
-                'mobile_ar': this.employee.mobile_ar || '',
+                // Most employee rows carry the same number in phone and mobile:
+                // the signup wizard writes one value into both, and so does the
+                // sample seed. A template that places both fields then printed
+                // the number twice, one line under the other, on the finished
+                // card. Compare on digits so "+968 9123 4567" and "+96891234567"
+                // count as the same number.
+                'mobile': sameNumber(this.employee.mobile, this.employee.phone) ? '' : (this.employee.mobile || ''),
+                'mobile_ar': sameNumber(this.employee.mobile_ar, this.employee.phone_ar) ? '' : (this.employee.mobile_ar || ''),
                 'email': this.employee.email || '',
                 'website': this.employee.website || co.default_website || '',
                 'website_ar': this.employee.website_ar || co.default_website || '',
