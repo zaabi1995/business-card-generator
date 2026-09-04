@@ -61,7 +61,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     // Check if email exists
-    if (empty($errors) && Auth::emailExists($email)) {
+    // Auth::emailExists() always returns an array, ['exists' => false, ...]
+    // included, and a non-empty array is truthy. Testing the return value
+    // directly meant this branch fired for every address ever submitted, so no
+    // print shop could register: the form answered "This email is already
+    // registered" to an email that existed in no table. The two callers in
+    // company/register*.php read ['exists']; this one did not.
+    if (empty($errors) && (Auth::emailExists($email)['exists'] ?? false)) {
         $errors[] = t('printshopregister.err_email_exists');
     }
     
