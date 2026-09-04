@@ -177,8 +177,10 @@ class SecurityHeaders
                 'https://chart.googleapis.com',
                 'https://maps.googleapis.com',
                 'https://maps.gstatic.com',
-                'https://*.googleapis.com',
-                'https://*.gstatic.com',
+                // Named hosts, not https://*.googleapis.com and
+                // https://*.gstatic.com. Those wildcards were broad enough to
+                // re-admit fonts.gstatic.com through the back door, which is the
+                // host the style-src note above says the house does not use.
                 'https://www.google-analytics.com',
                 'https://www.googletagmanager.com',
             ],
