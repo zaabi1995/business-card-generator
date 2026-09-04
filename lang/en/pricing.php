@@ -76,5 +76,5 @@ return [
     'home_headline' => 'Free platform, pay only for prints',
     'home_subhead'  => 'No subscription is required for the web platform. You only pay when you order physical prints.',
     'home_footnote' => 'No web-platform subscription, setup fee, or minimum order. Optional Cardify Pro mobile features use separate App Store billing. Print prices are shown before you confirm.',
-    'home_plans_from' => 'Prints from :amount :currency',
+    'home_plans_from' => 'Prints from :currency :amount',
 ];
