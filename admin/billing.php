@@ -196,7 +196,18 @@ if (!$currentPlan) {
 $cardCredits = 0;
 $cardsUsedThisMonth = 0;
 $maxCardsPerMonth = -1;
-$pricePerCard = 0.500; // default
+// Card generation is free and unlimited for every team, and has been since
+// the April 2026 pricing reset. This default said 0.500 and there is no plans
+// table for $currentPlan to override it from, so every tenant was shown a
+// purchase block reading "Buy card credits, each credit lets you generate one
+// business card. Price: 0.500 OMR per card." directly under "Free for every
+// team, unlimited cards" and a monthly limit of infinity. Estate-wide the
+// credit ledger has never recorded a single charge and no company holds a
+// credit: 0 rows, 0 balances across 94 companies. Selling something that is
+// free, next to the sentence saying it is free, is the version of this page
+// nobody should see. A real plan carrying a price still renders the purchase
+// block; the default now matches what the product does.
+$pricePerCard = 0.000;
 if ($db && $db->isConnected() && $companyId) {
     try {
         $cardCredits = (int)($company['card_credits'] ?? 0);
@@ -206,7 +217,7 @@ if ($db && $db->isConnected() && $companyId) {
         )['cnt'] ?? 0);
         if ($currentPlan) {
             $maxCardsPerMonth = (int)($currentPlan['max_cards_per_month'] ?? -1);
-            $pricePerCard = (float)($currentPlan['price_per_card'] ?? 0.500);
+            $pricePerCard = (float)($currentPlan['price_per_card'] ?? 0.000);
         }
     } catch (Throwable $e) {
         error_log("Billing card credits fetch: " . $e->getMessage());
