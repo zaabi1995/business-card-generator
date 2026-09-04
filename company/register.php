@@ -923,16 +923,36 @@ require_once INCLUDES_DIR . '/ui-header.php';
 (function(){
     var form = document.getElementById('register-form');
     if (!form) return;
+    // This handler owns the only path to submitting the form, so anything that
+    // stops it stops signup outright. It used to have no catch and no timeout:
+    // if grecaptcha.execute() rejected or never settled, the button did nothing
+    // at all, with no message and no spinner. Observed live on the second
+    // submit of a session. Both failure modes now fall through and let the
+    // server answer, which fails closed with a visible message rather than
+    // silently.
+    var submitted = false;
+    function sendForm() {
+        if (submitted) return;
+        submitted = true;
+        form.dataset.captchaDone = '1';
+        form.submit();
+    }
     form.addEventListener('submit', function(e){
         if (form.dataset.captchaDone === '1') return;
         e.preventDefault();
-        grecaptcha.ready(function(){
-            grecaptcha.execute(<?= json_encode($siteKey) ?>, {action: 'signup'}).then(function(token){
-                document.getElementById('recaptcha_token').value = token;
-                form.dataset.captchaDone = '1';
-                form.submit();
+        var btns = form.querySelectorAll('button[type=submit]');
+        for (var i = 0; i < btns.length; i++) { btns[i].disabled = true; btns[i].style.opacity = '0.6'; }
+        setTimeout(sendForm, 6000);
+        try {
+            grecaptcha.ready(function(){
+                grecaptcha.execute(<?= json_encode($siteKey) ?>, {action: 'signup'}).then(function(token){
+                    document.getElementById('recaptcha_token').value = token;
+                    sendForm();
+                }).catch(function(){ sendForm(); });
             });
-        });
+        } catch (err) {
+            sendForm();
+        }
     });
 })();
 </script>
