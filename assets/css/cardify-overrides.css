@@ -159,6 +159,16 @@
 .gap-y-6 { row-gap: 1.5rem !important; }
 .gap-y-8 { row-gap: 2rem !important; }
 
+/* Grid children default to min-width:auto, which sizes a track to the item's
+   min-content and lets it grow past its own container. On a 320px phone that
+   pushed the tool pages 32 to 35px sideways: the .grid holding the vCard,
+   WhatsApp and signature panels measured 288px while its single track measured
+   336px. Setting min-width:0 on grid children is the standard remedy and takes
+   the overflow to zero on all three. Same for flex children, which have the
+   identical default. */
+.grid > *,
+.flex > * { min-width: 0; }
+
 /* Flexbox - with !important for consistent override */
 .flex { display: flex !important; }
 .inline-flex { display: inline-flex !important; }

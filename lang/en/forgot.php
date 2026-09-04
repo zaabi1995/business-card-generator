@@ -1,6 +1,7 @@
 <?php
 return [
     'page_title'        => 'Forgot Password',
+    'page_desc'    => 'Reset the password for your Cardify company account. We email you a link that expires in one hour.',
 
     // Flash / errors
     'invalid_csrf'      => 'Invalid request. Please try again.',

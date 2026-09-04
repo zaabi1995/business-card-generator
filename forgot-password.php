@@ -8,6 +8,10 @@ require_once INCLUDES_DIR . '/Mailer.php';
 
 $brandName = defined('SITE_NAME') ? SITE_NAME : 'Cardify';
 $pageTitle = t('forgot.page_title');
+// This page had no h1 at all and inherited the site-wide "Business Cards
+// Made Simple" description, so search results and screen readers both
+// described it as something else.
+$pageDescription = t('forgot.page_desc');
 $htmlClass = 'h-full bg-white';
 $bodyClass = 'h-full';
 
@@ -343,9 +347,9 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 </div>
                 <?php else: ?>
                 <!-- Form State -->
-                <h2 class="mb-3 text-2xl font-bold text-gray-900">
+                <h1 class="mb-3 text-2xl font-bold text-gray-900">
                     <?php echo htmlspecialchars(t('forgot.form_h1')); ?>
-                </h2>
+                </h1>
                 <p class="text-gray-500 mb-6">
                     <?php echo htmlspecialchars(t('forgot.form_sub')); ?>
                 </p>

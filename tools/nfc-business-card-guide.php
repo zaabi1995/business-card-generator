@@ -170,6 +170,11 @@ require_once INCLUDES_DIR . '/ui-header.php';
             .guide-content li { margin-bottom: 0.5rem; }
             .guide-content strong { color: #111827; }
             .guide-content table { width: 100%; margin: 1.5rem 0; border-collapse: collapse; }
+            /* The comparison table is wider than a 320px phone. Without a
+               scroll container it took the whole page sideways with it:
+               168px of horizontal overflow at 320, 98px at 390. */
+            .guide-tablewrap { overflow-x: auto; -webkit-overflow-scrolling: touch; max-width: 100%; }
+            .guide-tablewrap > table { min-width: 30rem; }
             .guide-content th { background: #f9fafb; text-align: left; padding: 0.75rem; border: 1px solid #e5e7eb; font-weight: 600; color: #111827; }
             .guide-content td { padding: 0.75rem; border: 1px solid #e5e7eb; vertical-align: top; }
             .guide-content blockquote { border-left: 4px solid #3b82f6; background: #eff6ff; padding: 1rem 1.25rem; margin: 1.5rem 0; border-radius: 0.5rem; }
@@ -215,7 +220,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
             </ol>
 
             <h2>NFC vs QR vs traditional business cards</h2>
-            <table>
+            <div class="guide-tablewrap"><table>
                 <thead>
                     <tr>
                         <th>Feature</th>
@@ -268,7 +273,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                         <td>PVC/metal, 10+ year chip lifespan</td>
                     </tr>
                 </tbody>
-            </table>
+            </table></div>
 
             <p>The practical answer for most Oman-based businesses in 2026: <strong>print a beautiful paper or PVC card with both a QR and an NFC chip, all pointing to the same hosted profile.</strong> You pay a few hundred baisa more per card, and you cover every scenario, the CEO who loves the tap, the auditor with an old phone who needs the QR, and the traditionalist who still wants to write the number on their rolodex.</p>
 
