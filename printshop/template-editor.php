@@ -110,10 +110,16 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 <option value="1050,600"><?= htmlspecialchars(t('printshoptpl.size_large')) ?></option>
                 <option value="900,900"><?= htmlspecialchars(t('printshoptpl.size_square')) ?></option>
             </select>
-        <span class="ms-3 text-[11px] text-fuchsia-700 hidden sm:inline">
-            <i class="fa-solid fa-vector-square me-1"></i><?= htmlspecialchars(t('printshoptpl.safe_area_note')) ?>
-        </span>
         </div>
+    </div>
+    <?php
+    // The safe-area note lives on its own row. Sitting it inside the toolbar
+    // pushed that row past its width at 1440 and wrapped "Background Image",
+    // both upload buttons and the PDF guide link onto two lines each.
+    ?>
+    <div class="px-4 py-1.5 bg-fuchsia-50 border-b border-fuchsia-100 text-[11px] text-fuchsia-800 flex items-center gap-2">
+        <i class="fa-solid fa-vector-square"></i>
+        <span><?= htmlspecialchars(t('printshoptpl.safe_area_note')) ?></span>
     </div>
     <div class="flex-1 flex items-center justify-center overflow-auto p-4">
         <div id="canvas-wrap">
