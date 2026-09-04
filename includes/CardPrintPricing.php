@@ -53,6 +53,54 @@ class CardPrintPricing
         return round($quantity * self::pricePerCard($quantity), 3);
     }
 
+
+    /**
+     * The per-card price a given shop charges at a given quantity.
+     *
+     * A shop stores its rates in one of three shapes, and the shop chooser read
+     * only the simplest: a scalar `per_card`. BHD prices in `quantity_tiers`
+     * instead, so the chooser fell through to a generic fallback and advertised
+     * 0.100 beside a review panel charging BHD's real 0.045. Resolve the shop's
+     * own ladder first, and use the shared tiers only when the shop has
+     * published nothing at all.
+     *
+     * @param array  $pricing   decoded print_shops.pricing
+     * @param int    $quantity  cards per design
+     * @param string $paperType key into paper_type_pricing, when the shop
+     *                          prices per paper
+     */
+    public static function shopPricePerCard(array $pricing, int $quantity, string $paperType = 'matte'): float
+    {
+        $tiers = null;
+
+        // Per-paper rates win when the shop publishes them for this paper.
+        if (!empty($pricing['paper_type_pricing'][$paperType]['quantity_tiers'])
+            && is_array($pricing['paper_type_pricing'][$paperType]['quantity_tiers'])) {
+            $tiers = $pricing['paper_type_pricing'][$paperType]['quantity_tiers'];
+        } elseif (!empty($pricing['quantity_tiers']) && is_array($pricing['quantity_tiers'])) {
+            $tiers = $pricing['quantity_tiers'];
+        }
+
+        if ($tiers) {
+            ksort($tiers, SORT_NUMERIC);
+            $applied = null;
+            foreach ($tiers as $minQty => $row) {
+                $perCard = is_array($row)
+                    ? (isset($row['per_card'])
+                        ? (float) $row['per_card']
+                        : (((int) $minQty) > 0 ? ((float) ($row['price'] ?? 0)) / (int) $minQty : 0.0))
+                    : (float) $row;
+                if ($applied === null) { $applied = $perCard; continue; }
+                if ($quantity >= (int) $minQty) $applied = $perCard; else break;
+            }
+            if ($applied !== null) return round($applied, 4);
+        }
+
+        if (isset($pricing['per_card'])) return round((float) $pricing['per_card'], 4);
+
+        return self::pricePerCard($quantity);
+    }
+
     /**
      * Return tiers as a JSON-friendly numerically-indexed array so
      * JS can iterate them without Object.keys gymnastics.

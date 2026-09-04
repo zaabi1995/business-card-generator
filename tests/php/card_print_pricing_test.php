@@ -83,8 +83,9 @@ priceCheck($monotonic, 'a bigger order never costs more per card');
 
 // 5. the order page resolves an unpriced shop through this class, twice
 priceCheck(
-    str_contains($order, 'CardPrintPricing::pricePerCard($defaultOrderQty)'),
-    'the shop card falls back to the shared ladder, not to 0.10'
+    str_contains($order, 'CardPrintPricing::shopPricePerCard(')
+        && str_contains($order, 'CardPaperTypes::DEFAULT_TYPE'),
+    'the shop card prices through the shared resolver, not a literal 0.10'
 );
 priceCheck(
     str_contains($order, 'perCardFromTiers(this.quantity)')
@@ -100,6 +101,38 @@ priceCheck(
     str_contains($order, '$defaultOrderQty = (int) ($currentCompany[\'default_order_qty\'] ?? 100);')
         && str_contains($order, 'quantity: <?php echo (int) $defaultOrderQty; ?>,'),
     'the page has one default quantity, shared by both panels'
+);
+
+
+// 6. the shop chooser quotes the shop's own ladder, not a generic fallback
+$bhdShape = ['quantity_tiers' => [
+    '100'  => ['price' => 5,  'per_card' => 0.05],
+    '200'  => ['price' => 9,  'per_card' => 0.045],
+    '500'  => ['price' => 15, 'per_card' => 0.03],
+    '1000' => ['price' => 20, 'per_card' => 0.02],
+]];
+$flatShape = ['per_card' => 0.1];
+$perPaper  = ['paper_type_pricing' => ['silk' => ['quantity_tiers' => [
+    '100' => ['price' => 6, 'per_card' => 0.06],
+    '500' => ['price' => 18, 'per_card' => 0.036],
+]]]];
+
+$shopWrong = [];
+foreach ([[$bhdShape, 200, 'matte', 0.045], [$bhdShape, 1000, 'matte', 0.02],
+          [$bhdShape, 50, 'matte', 0.05], [$flatShape, 999, 'matte', 0.1],
+          [$perPaper, 500, 'silk', 0.036], [[], 250, 'matte', 0.09]] as [$shape, $qty, $paper, $want]) {
+    $got = CardPrintPricing::shopPricePerCard($shape, $qty, $paper);
+    if (abs($got - $want) > 0.0001) $shopWrong[] = "{$qty}/{$paper}: got {$got}, want {$want}";
+}
+priceCheck($shopWrong === [], 'shopPricePerCard reads every shape a shop stores its rates in', implode(' | ', $shopWrong));
+
+priceCheck(
+    str_contains($order, 'CardPrintPricing::shopPricePerCard('),
+    'the shop chooser resolves the shop\'s own price, not a generic fallback'
+);
+priceCheck(
+    !str_contains($order, "\$pricing['per_card']\n"),
+    'the chooser no longer reads only the scalar per_card shape'
 );
 
 echo $failures === 0 ? "\nALL PASS\n" : "\n{$failures} FAILED\n";

@@ -346,16 +346,17 @@ $basePath = getAdminBasePath();
                 <div class="grid sm:grid-cols-2 lg:grid-cols-<?php echo count($printShops) > 2 ? '3' : '2'; ?> gap-4">
                     <?php foreach ($printShops as $idx => $shop): 
                         $pricing = json_decode($shop['pricing'] ?? '{}', true);
-                        // A shop that has not priced its tiers used to show 0.10
-                        // here while the review panel below fell back to 0.06 in
-                        // JavaScript, so the same 100-card order read
-                        // "0.100/card" on the shop card and "100 cards x 0.060"
-                        // in the total, on one screen. Two hardcoded guesses at
-                        // the same missing number. Both read the shared tier
-                        // table now, which exists to be the single source.
-                        $perCard = isset($pricing['per_card'])
-                            ? (float) $pricing['per_card']
-                            : CardPrintPricing::pricePerCard($defaultOrderQty);
+                        // This card used to read only a scalar `per_card`, a shape
+                        // BHD does not use: it prices in quantity_tiers, so the
+                        // card advertised a fallback 0.100 beside a review panel
+                        // charging BHD's real 0.045. One resolver now answers for
+                        // every shape a shop stores, and falls back to the shared
+                        // ladder only when a shop has published no rates at all.
+                        $perCard = CardPrintPricing::shopPricePerCard(
+                            is_array($pricing) ? $pricing : [],
+                            $defaultOrderQty,
+                            CardPaperTypes::DEFAULT_TYPE
+                        );
                         $currency = $shop['currency'] ?? 'OMR';
                         $logoUrl = $shop['logo_url'] ?? '';
                     ?>
