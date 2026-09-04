@@ -2268,19 +2268,19 @@ adminHeader(t('employees.page_title'), 'employees');
                 <!-- Actions Footer -->
                 <div class="flex items-center justify-between mt-6 pt-6 border-t border-gray-100">
                     <div class="flex items-center gap-2">
-                        <a :href="'analytics.php?employee=' + detailData.employee?.id" 
+                        <a :href="detailData.employee?.id ? 'analytics.php?employee=' + detailData.employee.id : '#'" 
                            class="px-4 py-2 bg-purple-50 text-purple-700 rounded-lg text-sm font-medium hover:bg-purple-100 transition-colors flex items-center gap-2"
                            x-show="detailData.employee?.total_scans > 0">
                             <i class="fa-solid fa-chart-line"></i> View Analytics
                         </a>
                     </div>
                     <div class="flex items-center gap-2">
-                        <a :href="'auto_generate.php?employee_id=' + detailData.employee?.id + '&return=employees&regenerate=1'" 
+                        <a :href="detailData.employee?.id ? 'auto_generate.php?employee_id=' + detailData.employee.id + '&return=employees&regenerate=1' : '#'" 
                            class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors flex items-center gap-2"
                            x-show="detailData.latestCardUrl">
                             <i class="fa-solid fa-rotate"></i> Regenerate
                         </a>
-                        <a :href="'order_print.php?employee=' + detailData.employee?.id" 
+                        <a :href="detailData.employee?.id ? 'order_print.php?employee=' + detailData.employee.id : '#'" 
                            class="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors flex items-center gap-2"
                            x-show="detailData.latestCardUrl">
                             <i class="fa-solid fa-print"></i> Order Print
