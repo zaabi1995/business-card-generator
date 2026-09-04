@@ -198,8 +198,7 @@ if ($singlePost) {
     // r153: the owner body for the @id the BlogPosting now references bare, so
     // author and publisher resolve in this document rather than across pages.
     $extraHead .= '<script type="application/ld+json">'
-        . json_encode(['@context' => 'https://schema.org'] + Seo::organizationNode(),
-                      JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)
+        . json_encode(['@context' => 'https://schema.org'] + Seo::organizationNode(), JsonLd::SAFE | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)
         . '</script>' . "\n";
     $extraHead .= '<script type="application/ld+json">' . json_encode($articleLd, JsonLd::SAFE | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>' . "\n";
     $extraHead .= '<script type="application/ld+json">' . json_encode($breadcrumbLd, JsonLd::SAFE | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>' . "\n";

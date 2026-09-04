@@ -3,6 +3,7 @@
  * Cardify, Digital Business Cards for Oil & Gas in Oman / GCC
  */
 require_once __DIR__ . '/../config.php';
+require_once __DIR__ . '/../includes/JsonLd.php';
 require_once INCLUDES_DIR . '/Auth.php';
 
 $pageTitle       = 'Business Cards for Oil & Gas Teams in Oman + GCC, Cardify';
@@ -36,9 +37,9 @@ $crumbLd = ['@context' => 'https://schema.org', '@type' => 'BreadcrumbList', 'it
     ['@type' => 'ListItem', 'position' => 3, 'name' => 'Oil & Gas',  'item' => $canonicalUrl],
 ]];
 $extraHead =
-      '<script type="application/ld+json">' . json_encode($serviceLd, JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE) . '</script>'
-    . '<script type="application/ld+json">' . json_encode($faqLd,     JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE) . '</script>'
-    . '<script type="application/ld+json">' . json_encode($crumbLd,   JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE) . '</script>';
+      '<script type="application/ld+json">' . json_encode($serviceLd, JsonLd::SAFE | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>'
+    . '<script type="application/ld+json">' . json_encode($faqLd, JsonLd::SAFE | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>'
+    . '<script type="application/ld+json">' . json_encode($crumbLd, JsonLd::SAFE | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>';
 
 function ogEsc($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
 

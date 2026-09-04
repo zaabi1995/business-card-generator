@@ -314,10 +314,10 @@ $webPageLd = [
 ];
 
 $extraHead = ''
-    . '<script type="application/ld+json">' . json_encode($webPageLd,    JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>' . "\n"
+    . '<script type="application/ld+json">' . json_encode($webPageLd, JsonLd::SAFE | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>' . "\n"
     . '<script type="application/ld+json">' . json_encode($breadcrumbLd, JsonLd::SAFE | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>' . "\n"
-    . '<script type="application/ld+json">' . json_encode($serviceLd,    JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>' . "\n"
-    . '<script type="application/ld+json">' . json_encode($faqLd,        JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>' . "\n"
+    . '<script type="application/ld+json">' . json_encode($serviceLd, JsonLd::SAFE | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>' . "\n"
+    . '<script type="application/ld+json">' . json_encode($faqLd, JsonLd::SAFE | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>' . "\n"
     . '<meta property="og:locale:alternate" content="' . $escq(str_replace('-', '_', $c['lang'])) . '">';
 
 require_once INCLUDES_DIR . '/ui-header.php';

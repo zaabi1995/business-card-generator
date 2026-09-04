@@ -16,6 +16,8 @@
  * are safe to call multiple times on the same page (Google accepts a
  * stack of JSON-LD scripts; each describes one thing).
  */
+require_once __DIR__ . '/JsonLd.php';
+
 class Seo
 {
     public const SITE = 'https://cardify.om';
@@ -73,7 +75,6 @@ class Seo
     public static function hreflang(string $path): void
     {
         require_once __DIR__ . '/ArTwins.php';
-require_once __DIR__ . '/JsonLd.php';
         $current = (($_SERVER['REQUEST_SCHEME'] ?? 'https') . '://' . ($_SERVER['HTTP_HOST'] ?? 'cardify.om') . ($_SERVER['REQUEST_URI'] ?? $path));
 
         echo '<link rel="canonical" href="' . htmlspecialchars($current, ENT_QUOTES) . "\">\n";

@@ -117,8 +117,8 @@ $breadcrumbLd = [
 ];
 
 $extraHead = ''
-    . '<script type="application/ld+json">' . json_encode($orgLd,        JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>' . "\n"
-    . '<script type="application/ld+json">' . json_encode($datasetsLd,   JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>' . "\n"
+    . '<script type="application/ld+json">' . json_encode($orgLd, JsonLd::SAFE | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>' . "\n"
+    . '<script type="application/ld+json">' . json_encode($datasetsLd, JsonLd::SAFE | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>' . "\n"
     . '<script type="application/ld+json">' . json_encode($breadcrumbLd, JsonLd::SAFE | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>';
 
 $asOfDate = date('F j, Y');
