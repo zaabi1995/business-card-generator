@@ -30,8 +30,15 @@ Paymob Oman for payments, BHD-ERP for accounting.
   (user `www`) can't read them → site 403s. This has broken prod at
   least 5 times. See memory `feedback_cardify_deploy_perms.md`.
 - The deploy script includes pre-flight `php -l` and post-flight
-  5-URL smoke. A failing deploy auto-rolls back without reloading FPM
+  smoke. A failing deploy auto-rolls back without reloading FPM
   so the previous good code stays hot in OPcache.
+- **The smoke list is 21 URLs, one per page family.** It was 5 until
+  5 Sep 2026, when a bad require path 500'd `/blog`, `/press`,
+  `/solutions`, `/companies`, `/oman-business-index` and
+  `/gcc-business-index` and the deploy passed clean because none of
+  the five was among them. `php -l` does not catch a require that
+  resolves to nothing. If you add a page family, add it to
+  `smoke_urls` in `/usr/local/bin/deploy-cardify.sh`.
 - If you must bypass the deploy script, ALWAYS follow with the full
   perms sweep (preserving +x on `.sh` so backup/disk-alert/slow-query
   crons keep firing):
