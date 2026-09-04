@@ -47,4 +47,9 @@ return [
     'preview'              => 'Preview',
     'no_logo'              => 'No logo',
     'cardify_logo'         => 'Cardify logo',
+    'preview_ecard'        => 'Preview live E-Card',
+    'bilingual_hint'       => 'Show the EN / عربي language switcher on the E-Card. Turn off to serve a single language.',
+    'theme_auto'           => 'Auto',
+    'theme_light'          => 'Light',
+    'theme_dark'           => 'Dark',
 ];

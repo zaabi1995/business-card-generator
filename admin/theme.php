@@ -346,7 +346,7 @@ adminHeader(t('branding.page_title'), 'theme');
             <a href="<?php echo htmlspecialchars($previewCardUrl); ?>"
                target="_blank" rel="noopener"
                class="text-xs inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-lg text-gray-700">
-                <i class="fa-solid fa-up-right-from-square"></i> Preview live E-Card
+                <i class="fa-solid fa-up-right-from-square"></i> <?= htmlspecialchars(t('branding.preview_ecard')) ?>
             </a>
         </div>
         <div class="p-6 space-y-4">
@@ -356,7 +356,7 @@ adminHeader(t('branding.page_title'), 'theme');
                        class="mt-1 w-4 h-4 text-blue-600 rounded border-gray-300">
                 <span>
                     <span class="block font-medium text-gray-900 text-sm"><?= htmlspecialchars(t('branding.bilingual')) ?></span>
-                    <span class="block text-xs text-gray-500">Show the EN / عربي language switcher on the E-Card. Turn off to serve a single language.</span>
+                    <span class="block text-xs text-gray-500"><?= htmlspecialchars(t('branding.bilingual_hint')) ?></span>
                 </span>
             </label>
 
@@ -374,7 +374,7 @@ adminHeader(t('branding.page_title'), 'theme');
                 <label class="block text-sm font-semibold text-gray-700 mb-2"><?= htmlspecialchars(t('branding.default_theme')) ?></label>
                 <?php $__defTheme = $company['ecard_default_theme'] ?? 'auto'; ?>
                 <div class="flex gap-2">
-                    <?php foreach (['auto' => 'Auto', 'light' => 'Light', 'dark' => 'Dark'] as $__v => $__l): ?>
+                    <?php foreach (['auto' => t('branding.theme_auto'), 'light' => t('branding.theme_light'), 'dark' => t('branding.theme_dark')] as $__v => $__l): ?>
                     <label class="flex-1 cursor-pointer">
                         <input type="radio" name="ecard_default_theme" value="<?= $__v ?>" class="peer sr-only" <?= $__defTheme === $__v ? 'checked' : '' ?>>
                         <span class="block text-center text-sm px-3 py-2 rounded-lg border border-gray-200 peer-checked:border-blue-600 peer-checked:bg-blue-50 peer-checked:text-blue-700"><?= $__l ?></span>
