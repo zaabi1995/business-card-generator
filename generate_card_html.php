@@ -129,7 +129,7 @@ $brandName = defined('SITE_NAME') ? SITE_NAME : 'Cardify';
     <script src="https://ajax.googleapis.com/ajax/libs/webfont/1.6.26/webfont.js"></script>
     
     <!-- QR Code Generator -->
-    <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
+    <script src="<?= htmlspecialchars(getBasePath()) ?>assets/js/qrcode-generator-1.4.4.min.js"></script>
     
     <!-- jsPDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>

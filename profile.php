@@ -202,7 +202,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
 </main>
 
 <!-- QR Code Script -->
-<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
+<script src="<?= htmlspecialchars(getBasePath()) ?>assets/js/qrcode-generator-1.4.4.min.js"></script>
 <script>
     // Generate QR Code
     const vcfUrl = <?php echo json_encode($vcfUrl); ?>;

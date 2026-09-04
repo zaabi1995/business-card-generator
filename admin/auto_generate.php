@@ -552,15 +552,19 @@ function layoutGenerator() {
 
                 // Generate the QR code and inject it into the back card.
                 //
-                // This block used to be skipped whenever the qrcode global was
-                // absent. That read as a graceful degrade and behaved as a
-                // silent defect: the library was loaded from a CDN path ending
-                // /dist/qrcode.min.js, which does not exist in the package, so
-                // the script tag fetched a 73 byte 404 page, the global was
-                // never defined, and every card generated here was saved with
-                // an empty square where the QR belongs. The library is vendored
-                // now, and if it is somehow still missing, generation stops and
-                // says so rather than producing a card nobody can scan.
+                // The script tag on this page pointed at a CDN path ending
+                // /dist/qrcode.min.js, which does not exist in the package: it
+                // answered 404 with a 73 byte error page. Cards still carried
+                // their QR because admin-layout.php happens to load a working
+                // copy on every admin page, so the global was defined by
+                // something else entirely. One dead script tag propped up by an
+                // unrelated include is not a thing to leave in the path that
+                // makes the product's core artifact.
+                //
+                // The library is vendored now. This block used to be skipped
+                // whenever the global was absent, which would have saved a card
+                // with an empty square where the QR belongs and told nobody;
+                // now it stops and says so.
                 if (this.vcfUrl && typeof qrcode === 'undefined') {
                     throw new Error(AUTOGEN_I18N.qr_library_missing);
                 }

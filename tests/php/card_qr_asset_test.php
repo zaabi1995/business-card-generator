@@ -1,13 +1,13 @@
 <?php
 /**
  * The QR code is the whole point of a Cardify card: it is how a printed card
- * reaches the digital one. It used to be loaded from
+ * reaches the digital one. The generators loaded it from
  * cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/dist/qrcode.min.js, a path that
- * does not exist in that package. The CDN answered 404 with a 73 byte error
- * page, the generator guarded the library with "typeof qrcode !== 'undefined'"
- * and skipped the QR step, and every card produced by the onboarding wizard and
- * the bulk generator was saved with an empty square where the code belongs.
- * Verified on a live card generated 4 Sep 2026.
+ * does not exist in that package, so the CDN answered 404 with a 73 byte error
+ * page. Cards still carried their QR, because admin-layout.php happens to load
+ * a working copy on every admin page and defined the global for them. The card
+ * path was therefore resting on an unrelated include, behind a guard that would
+ * have silently saved a card with an empty square if that include ever moved.
  *
  * This test keeps the library local and the failure loud.
  */
@@ -36,12 +36,16 @@ $generators = [
     'admin/auto_generate.php',
     'admin/batch-auto-generate.php',
     'admin/nfc/batch.php',
+    'includes/admin-layout.php',
+    'generate_card_html.php',
+    'portal.php',
+    'profile.php',
 ];
 foreach ($generators as $rel) {
     $src = file_get_contents($root . '/' . $rel);
     qrCheck(
-        !preg_match('#src="https?://[^"]*qrcode[^"]*"#i', $src),
-        "{$rel} does not fetch the QR library from a third party"
+        !preg_match('#src="https?://[^"]*(qrcode|html2canvas)[^"]*"#i', $src),
+        "{$rel} fetches neither the QR library nor the rasteriser from a third party"
     );
     qrCheck(
         str_contains($src, 'assets/js/qrcode-generator-1.4.4.min.js'),

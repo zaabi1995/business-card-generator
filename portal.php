@@ -1954,7 +1954,7 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
     <!-- Fabric.js 7.x for card preview generation -->
     <script src="https://cdn.jsdelivr.net/npm/fabric@7.1.0/dist/index.min.js"></script>
     <!-- QR Code Generator -->
-    <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
+    <script src="<?= htmlspecialchars(getBasePath()) ?>assets/js/qrcode-generator-1.4.4.min.js"></script>
     <!-- CardEditor (uses Fabric.js) -->
     <script src="<?php echo getBasePath(); ?>assets/js/card-editor.js?v=<?= @filemtime(__DIR__ . '/assets/js/card-editor.js') ?: '1' ?>"></script>
     

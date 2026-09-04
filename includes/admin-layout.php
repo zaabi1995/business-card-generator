@@ -397,7 +397,7 @@ function adminHeader($pageTitle = 'Dashboard', $currentPage = 'dashboard', $show
     <script src="https://cdn.jsdelivr.net/npm/fabric@7.1.0/dist/index.min.js"></script>
     
     <!-- QR Code Generator -->
-    <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
+    <script src="<?= htmlspecialchars(getBasePath()) ?>assets/js/qrcode-generator-1.4.4.min.js"></script>
     
     <!-- jsPDF for PDF Export -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -406,7 +406,7 @@ function adminHeader($pageTitle = 'Dashboard', $currentPage = 'dashboard', $show
     <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
     
     <!-- html2canvas (fallback) -->
-    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <script src="<?= htmlspecialchars(getBasePath()) ?>assets/js/html2canvas-1.4.1.min.js"></script>
     
     <!-- Alpine.js with Collapse plugin (self-hosted, pinned; collapse before core) -->
     <script defer src="/assets/js/alpine-collapse-3.15.12.min.js"></script>
