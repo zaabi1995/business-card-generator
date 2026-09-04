@@ -29,8 +29,15 @@ class CardPrintPricing
      */
     public static function pricePerCard(int $quantity): float
     {
-        $applied = reset(self::TIERS);
-        foreach (self::TIERS as $minQty => $price) {
+        // reset() takes its argument by reference and a class constant cannot be
+        // passed that way, so this threw "reset(): Argument #1 ($array) could
+        // not be passed by reference" on every call under PHP 8. Confirmed on
+        // production PHP 8.3.25: pricePerCard() and lineTotal() both fatalled,
+        // and only tiersForJs() worked, which is why the one caller (the
+        // onboarding wizard, which uses tiersForJs and MIN_QTY) never noticed.
+        $tiers = self::TIERS;
+        $applied = reset($tiers);
+        foreach ($tiers as $minQty => $price) {
             if ($quantity >= $minQty) $applied = $price;
             else break;
         }

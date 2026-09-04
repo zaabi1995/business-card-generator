@@ -181,6 +181,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($printShops)) {
     }
 }
 
+require_once INCLUDES_DIR . '/CardPrintPricing.php';
+
 // Get company's preferred currency (or default to OMR for Oman)
 $companyCurrency = $currentCompany['currency'] ?? 'OMR';
 $companyCountry = $currentCompany['country'] ?? 'OM';
@@ -188,6 +190,11 @@ $companyCountry = $currentCompany['country'] ?? 'OM';
 // Get shop currency and pricing - use shop's currency (which should match region)
 $shopCurrency = $selectedShop['currency'] ?? $companyCurrency;
 $shopPricing = $selectedShop ? json_decode($selectedShop['pricing'] ?? '{}', true) : [];
+// One default quantity for the whole page. The shop card and the Alpine review
+// panel each used to pick their own, which is half of why they quoted different
+// numbers for the same order.
+$defaultOrderQty = (int) ($currentCompany['default_order_qty'] ?? 100);
+if ($defaultOrderQty < CardPrintPricing::MIN_QTY) $defaultOrderQty = CardPrintPricing::MIN_QTY;
 $setupFee = $shopPricing['setup_fee'] ?? 0;
 $shippingFee = $shopPricing['shipping_base'] ?? 2;
 
@@ -338,7 +345,16 @@ $basePath = getAdminBasePath();
                 <div class="grid sm:grid-cols-2 lg:grid-cols-<?php echo count($printShops) > 2 ? '3' : '2'; ?> gap-4">
                     <?php foreach ($printShops as $idx => $shop): 
                         $pricing = json_decode($shop['pricing'] ?? '{}', true);
-                        $perCard = $pricing['per_card'] ?? 0.10;
+                        // A shop that has not priced its tiers used to show 0.10
+                        // here while the review panel below fell back to 0.06 in
+                        // JavaScript, so the same 100-card order read
+                        // "0.100/card" on the shop card and "100 cards x 0.060"
+                        // in the total, on one screen. Two hardcoded guesses at
+                        // the same missing number. Both read the shared tier
+                        // table now, which exists to be the single source.
+                        $perCard = isset($pricing['per_card'])
+                            ? (float) $pricing['per_card']
+                            : CardPrintPricing::pricePerCard($defaultOrderQty);
                         $currency = $shop['currency'] ?? 'OMR';
                         $logoUrl = $shop['logo_url'] ?? '';
                     ?>
@@ -609,6 +625,20 @@ $basePath = getAdminBasePath();
 </div>
 
 <script>
+<?php
+// The tier table, once, from the class that owns it. Both the PHP shop card
+// above and the JavaScript review panel below resolve an unpriced shop through
+// this same ladder now, instead of each falling back to its own literal.
+?>
+const CARD_PRINT_TIERS = <?= json_encode(CardPrintPricing::tiersForJs()) ?>;
+function perCardFromTiers(qty) {
+    var applied = CARD_PRINT_TIERS.length ? CARD_PRINT_TIERS[0].price : 0;
+    for (var i = 0; i < CARD_PRINT_TIERS.length; i++) {
+        if (qty >= CARD_PRINT_TIERS[i].min) applied = CARD_PRINT_TIERS[i].price;
+        else break;
+    }
+    return applied;
+}
 function orderForm() {
     const employees = <?php echo json_encode($employeesJson); ?>;
     const defaultShop = <?php echo $selectedShop ? json_encode($selectedShop) : 'null'; ?>;
@@ -639,7 +669,7 @@ function orderForm() {
         cardBackUrl: defaultCardBack,
 
         // Order
-        quantity: 100,
+        quantity: <?php echo (int) $defaultOrderQty; ?>,
         paperType: 'matte',
         finish: 'standard',
 
@@ -695,9 +725,12 @@ function orderForm() {
                     : parseFloat(val) * parseInt(qty);
             }
             const firstVal = Object.values(tiers)[0];
+            // Fall back to the shared tier table, not to a number typed here.
+            // This read 0.06 while the shop card in PHP read 0.10.
+            const fallbackPerCard = perCardFromTiers(this.quantity);
             this.basePrice = typeof firstVal === 'object'
-                ? parseFloat(firstVal.per_card || 0.06)
-                : parseFloat(firstVal) || 0.06;
+                ? parseFloat(firstVal.per_card || fallbackPerCard)
+                : parseFloat(firstVal) || fallbackPerCard;
         },
         
         onEmployeeChange() {
