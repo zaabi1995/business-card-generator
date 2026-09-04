@@ -9,8 +9,11 @@ return [
     'sign_in_to_account'   => 'Sign in to your account',
 
     'info_go_signin'       => 'Go to sign in',
-    'existing_company'     => ':name already exists with this domain.',
-    'existing_company_join'=> 'You can request to join as an employee.',
+    // No :name in these. The visitor has not proved they control the mailbox,
+    // so naming the organisation would confirm to a stranger that it is on
+    // Cardify and what it is called.
+    'existing_company'     => 'An organisation is already using this email domain on Cardify.',
+    'existing_company_join'=> 'You can ask its administrator to add you, or set up a separate company.',
 
     'your_email'           => 'Your email address',
     'placeholder_email'    => 'you@company.com',
@@ -74,5 +77,10 @@ return [
     'err_email_exists'     => 'This email is already registered. Please sign in instead.',
     'err_join_failed'      => 'Failed to submit join request. Please contact the company administrator.',
     'err_create_failed'    => 'Failed to create company',
-    'info_join_submitted'  => 'Your request to join :name has been submitted. You will be notified once approved.',
+    'info_join_submitted'  => 'Your request has been sent to the administrator of that organisation. You will hear back once it is approved.',
+
+    'domain_choice_title'  => 'Which did you mean?',
+    'domain_choice_body'   => 'An organisation already uses this email domain on Cardify. Joining it puts your card under their account and needs their approval. Creating a separate company gives you your own account, roster and billing.',
+    'domain_choice_join'   => 'Ask to join that organisation',
+    'domain_choice_create' => 'Create a separate company instead',
 ];

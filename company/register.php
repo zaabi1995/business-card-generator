@@ -20,6 +20,11 @@ if (Auth::isLoggedIn()) {
 
 $error = null;
 $info = null;
+// Set when the submitted email domain is already claimed by another
+// tenant. The submission is NOT written in that case: the user is asked
+// which of the two things they meant, because the two outcomes are not
+// interchangeable and only they know which one they want.
+$needsDomainChoice = false;
 $claimTicket = trim((string) ($_POST['claim_ticket'] ?? $_GET['claim_ticket'] ?? ''));
 if ($claimTicket !== '') {
     header('Cache-Control: private, no-store');
@@ -232,7 +237,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $domain = extractEmailDomain($email);
                 $existingCompany = findCompanyByDomain($domain);
                 
-                if ($existingCompany) {
+                // A match here means some existing tenant already claims this
+                // email domain, either on companies.domain or just because its
+                // admin signed up with an address at that domain (43 domains
+                // claim signups that way today). This used to silently convert
+                // a "create my company" submission into a pending join request
+                // inside that other tenant: the company name and URL the user
+                // typed were dropped on the floor, their password hash was
+                // written into a company they had never heard of, and the reply
+                // named that company to an anonymous submitter. Neither the
+                // discard nor the disclosure is ours to make, so ask.
+                $domainChoice = $_POST['domain_choice'] ?? '';
+                if ($existingCompany && $domainChoice !== 'join' && $domainChoice !== 'create') {
+                    $needsDomainChoice = true;
+                } elseif ($existingCompany && $domainChoice === 'create') {
+                    // They want their own company. Honour the name and slug they
+                    // typed and fall through to the create branch below.
+                    $existingCompany = null;
+                }
+
+                if ($existingCompany && !$needsDomainChoice) {
                     // Company exists - add user as employee instead
                     $employeeData = [
                         'id' => generateUUID(),
@@ -258,7 +282,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     !empty($empResult['id']) ? (string) $empResult['id'] : null
                                 );
                             }
-                            $info = t('register.info_join_submitted', ['name' => htmlspecialchars($existingCompany['name'])]);
+                            // No company name here. The submitter has not
+                            // proved control of the mailbox, so naming the
+                            // organisation would confirm its existence to
+                            // anyone who can guess an email domain.
+                            $info = t('register.info_join_submitted');
                             // Don't redirect - show message
                         } else {
                             if ($claimDb instanceof Database) {
@@ -277,7 +305,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             
             // Create new company if no existing company found
-            if (!$existingCompany && !$error) {
+            if (!$existingCompany && !$error && !$needsDomainChoice) {
                 // Store domain for the company
                 $domain = extractEmailDomain($email);
                 
@@ -484,7 +512,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Refund the rate-limit slot: a successful signup always exit()s above, so
     // reaching here means validation failed. Don't make a user fixing a typo
     // burn through their hourly quota.
-    if (!empty($error)) {
+    if (!empty($error) || $needsDomainChoice) {
         RateLimiter::refund('company_signup_ip', $signupIp, 3600);
     }
     } // end rate-limit else
@@ -551,13 +579,18 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 </div>
                 <?php endif; ?>
 
-                <!-- Existing Company Notice -->
-                <?php if ($existingCompany && !$info): ?>
+                <?php
+                // Existing-domain notice. It used to print the other tenant's
+                // company name, which tells anyone who can type an email domain
+                // whether that organisation is on Cardify and what it is called.
+                // The visitor has proved nothing at this point, so the notice
+                // says that the domain is taken and stops there.
+                ?>
+                <?php if ($existingCompany && !$info && !$needsDomainChoice): ?>
                 <div class="mt-6 flex items-start gap-3 rounded-lg bg-blue-50 px-4 py-3 text-sm text-blue-800">
                     <i class="fa-solid fa-building flex-shrink-0 mt-0.5"></i>
                     <div>
-                        <strong><?php echo htmlspecialchars($existingCompany['name']); ?></strong>
-                        <?= htmlspecialchars(str_replace(':name', '', t('register.existing_company', ['name' => '']))) ?>
+                        <p><?= htmlspecialchars(t('register.existing_company')) ?></p>
                         <p class="mt-1"><?= htmlspecialchars(t('register.existing_company_join')) ?></p>
                     </div>
                 </div>
@@ -694,12 +727,39 @@ require_once INCLUDES_DIR . '/ui-header.php';
                         <span><?= htmlspecialchars(t('register.pdpl_notice')) ?></span>
                     </p>
 
+                    <?php if ($needsDomainChoice): ?>
+                    <?php
+                    // The domain is already claimed. Both outcomes are legitimate
+                    // and only the person filling the form knows which they mean,
+                    // so both are offered and neither is taken by default. Every
+                    // field above kept its submitted value, so whichever they
+                    // pick carries their own details forward.
+                    ?>
+                    <div class="rounded-xl border border-amber-200 bg-amber-50 p-4">
+                        <p class="text-sm font-semibold text-amber-900">
+                            <i class="fa-solid fa-circle-question me-1"></i>
+                            <?= htmlspecialchars(t('register.domain_choice_title')) ?>
+                        </p>
+                        <p class="mt-1 text-sm text-amber-900/80"><?= htmlspecialchars(t('register.domain_choice_body')) ?></p>
+                        <div class="mt-4 flex flex-col gap-3">
+                            <button type="submit" name="domain_choice" value="join"
+                                    class="w-full rounded-lg bg-blue-600 px-4 py-3 text-sm font-semibold text-white hover:bg-blue-500 transition-colors">
+                                <?= htmlspecialchars(t('register.domain_choice_join')) ?>
+                            </button>
+                            <button type="submit" name="domain_choice" value="create"
+                                    class="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm font-semibold text-gray-800 hover:bg-gray-50 transition-colors">
+                                <?= htmlspecialchars(t('register.domain_choice_create')) ?>
+                            </button>
+                        </div>
+                    </div>
+                    <?php else: ?>
                     <div>
                         <button type="submit" class="flex w-full justify-center rounded-lg bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 transition-colors">
                             <?= htmlspecialchars(t('register.submit')) ?>
                             <i class="fa-solid fa-arrow-right ml-2"></i>
                         </button>
                     </div>
+                    <?php endif; ?>
                 </form>
 
                 <!-- Divider -->
@@ -744,14 +804,15 @@ require_once INCLUDES_DIR . '/ui-header.php';
             </div>
         </div>
 
-        <!-- Right side. Was a stock photo behind an attributed customer quote
-             ("Sarah Johnson, Head of Marketing, TechCorp") that no customer ever
-             gave, over a stock portrait. A fabricated endorsement on the signup
-             page is the one thing that cannot stay. What replaces it is true and
-             checkable, and it sits at the TOP of the panel because that is where
-             the form is: the old gradient ran from-blue-900/90 downward, so at
-             the scroll position where people actually read, the panel was a flat
-             opaque slab. -->
+        <?php
+        // Right side. This panel used to carry an attributed customer quote over
+        // a stock portrait; the customer did not exist, so it is gone. What
+        // replaces it is checkable, and it sits at the TOP because that is where
+        // the form is: the old gradient ran dark-to-light downward, so at the
+        // scroll position where people actually read, the panel was a flat slab.
+        // Kept as a PHP comment, not an HTML one: an HTML comment ships the
+        // removed name back to every visitor in the page source.
+        ?>
         <div class="relative hidden w-0 flex-1 lg:block">
             <img class="absolute inset-0 h-full w-full object-cover"
                  src="<?php echo assetUrl('images/salient/background-auth.jpg'); ?>"
