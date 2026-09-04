@@ -1044,9 +1044,14 @@ adminHeader(t('employees.page_title'), 'employees');
     // has a banner for them; this page had nothing. Mark them here.
     $__demoIds = [];
     try {
+        // DemoData reads the seeded id list off the onboarding state, so
+        // Onboarding has to be loaded too. Missing it made the whole lookup
+        // throw into the catch below and every seeded row rendered unmarked.
+        require_once INCLUDES_DIR . '/Onboarding.php';
         require_once INCLUDES_DIR . '/DemoData.php';
         $__demoIds = array_flip(DemoData::seededIds((string) $companyId));
     } catch (Throwable $__e) {
+        error_log('[admin/employees] demo-seed lookup failed: ' . $__e->getMessage());
         $__demoIds = [];
     }
     $__demoCount = 0;
