@@ -79,6 +79,7 @@ return [
     'err_create_failed'    => 'Failed to create company',
     'info_join_submitted'  => 'Your request has been sent to the administrator of that organisation. You will hear back once it is approved.',
 
+    'password_reenter'     => 'Re-enter your password, then choose one of the options below.',
     'domain_choice_title'  => 'Which did you mean?',
     'domain_choice_body'   => 'An organisation already uses this email domain on Cardify. Joining it puts your card under their account and needs their approval. Creating a separate company gives you your own account, roster and billing.',
     'domain_choice_join'   => 'Ask to join that organisation',

@@ -698,9 +698,23 @@ require_once INCLUDES_DIR . '/ui-header.php';
                             <input type="password" name="password" id="password"
                                    class="form-input" autocomplete="new-password" aria-required="true"
                                    aria-describedby="password-hint"
+                                   <?php echo $needsDomainChoice ? 'autofocus' : ''; ?>
                                    placeholder="<?= htmlspecialchars(t('register.placeholder_password')) ?>" required minlength="8">
                         </div>
-                        <p id="password-hint" class="mt-1.5 text-xs text-gray-500"><?= htmlspecialchars(t('register.password_hint')) ?></p>
+                        <?php
+                        // A password field is never repopulated, so the second
+                        // pass through this form starts with it empty and
+                        // required. Without this line the browser blocks the
+                        // submit on a field the person cannot see from the
+                        // buttons at the bottom, and the click looks dead.
+                        ?>
+                        <p id="password-hint" class="mt-1.5 text-xs <?php echo $needsDomainChoice ? 'font-medium text-amber-700' : 'text-gray-500'; ?>">
+                            <?php if ($needsDomainChoice): ?>
+                                <i class="fa-solid fa-arrow-turn-up fa-rotate-90 me-1"></i><?= htmlspecialchars(t('register.password_reenter')) ?>
+                            <?php else: ?>
+                                <?= htmlspecialchars(t('register.password_hint')) ?>
+                            <?php endif; ?>
+                        </p>
                     </div>
 
                     <div>
@@ -720,6 +734,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     <div class="flex items-start gap-3">
                         <div class="flex h-6 shrink-0 items-center">
                             <input id="terms" name="terms" type="checkbox" required
+                                   <?php echo !empty($_POST['terms']) ? 'checked' : ''; ?>
                                    class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-600">
                         </div>
                         <label for="terms" class="text-sm text-gray-600">
