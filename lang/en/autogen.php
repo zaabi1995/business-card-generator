@@ -42,6 +42,8 @@ return [
     'js_uploading'         => 'Uploading to server...',
     'js_done'              => 'Done!',
     'js_generic_error'     => 'An error occurred',
+    'js_qr_library_missing' => 'The QR code library did not load, so this card would print without a scannable code. Reload the page and try again.',
+    'js_qr_slot_missing'    => 'This design has no place to put the QR code. Pick another design, or contact support.',
     'js_preparing_layout'  => 'Preparing card layout...',
     'js_generating_qr'     => 'Generating QR code...',
     'js_rendering_front'   => 'Rendering front card...',

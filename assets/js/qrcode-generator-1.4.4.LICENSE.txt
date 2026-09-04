@@ -1,0 +1,13 @@
+qrcode-generator 1.4.4
+https://github.com/kazuhikoarase/qrcode-generator
+
+Copyright (c) 2009 Kazuhiko Arase
+Licensed under the MIT license.
+http://www.opensource.org/licenses/mit-license.php
+
+Vendored rather than loaded from a CDN. The CDN URL this replaced pointed at
+/dist/qrcode.min.js, a path that does not exist in the package, so it answered
+404 with a 73 byte error page. The card generator guarded the library with
+"typeof qrcode !== 'undefined'" and skipped the QR step when it was missing,
+which meant every card generated through the onboarding wizard and the bulk
+generator was saved without a QR code and nobody was told.

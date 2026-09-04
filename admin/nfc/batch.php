@@ -212,7 +212,7 @@ adminHeader('NFC Tags', 'nfc-tags');
     <?php endforeach; ?>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
+    <script src="<?= htmlspecialchars(getBasePath()) ?>assets/js/qrcode-generator-1.4.4.min.js"></script>
     <script>
     document.querySelectorAll('.qr-target').forEach(function (el) {
         var url = el.getAttribute('data-url');

@@ -258,6 +258,8 @@ const AUTOGEN_I18N = <?php echo json_encode([
     'generating_back'    => t('autogen.js_generating_back'),
     'saving_cards'       => t('autogen.js_saving_cards'),
     'generic_error'      => t('autogen.js_generic_error'),
+    'qr_library_missing' => t('autogen.js_qr_library_missing'),
+    'qr_slot_missing'    => t('autogen.js_qr_slot_missing'),
 ], JSON_UNESCAPED_UNICODE); ?>;
 // Localparts that collide with a real tenant path/dir (served before the
 // bare-slug card route). Keep in sync with the onboarding.php copy.
@@ -457,10 +459,10 @@ if ($__registryCss) {
 ?>
 
 <!-- html2canvas -->
-<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script src="<?= htmlspecialchars(getBasePath()) ?>assets/js/html2canvas-1.4.1.min.js"></script>
 
 <!-- QR Code Generator -->
-<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/dist/qrcode.min.js"></script>
+<script src="<?= htmlspecialchars(getBasePath()) ?>assets/js/qrcode-generator-1.4.4.min.js"></script>
 
 <script>
 // AUTOGEN_I18N defined earlier (above the usePreDesigned if/else split).
@@ -548,8 +550,21 @@ function layoutGenerator() {
                 // Wait for html2canvas to be available
                 await this.waitFor('html2canvas');
 
-                // Generate QR code and inject into back card
-                if (this.vcfUrl && typeof qrcode !== 'undefined') {
+                // Generate the QR code and inject it into the back card.
+                //
+                // This block used to be skipped whenever the qrcode global was
+                // absent. That read as a graceful degrade and behaved as a
+                // silent defect: the library was loaded from a CDN path ending
+                // /dist/qrcode.min.js, which does not exist in the package, so
+                // the script tag fetched a 73 byte 404 page, the global was
+                // never defined, and every card generated here was saved with
+                // an empty square where the QR belongs. The library is vendored
+                // now, and if it is somehow still missing, generation stops and
+                // says so rather than producing a card nobody can scan.
+                if (this.vcfUrl && typeof qrcode === 'undefined') {
+                    throw new Error(AUTOGEN_I18N.qr_library_missing);
+                }
+                if (this.vcfUrl) {
                     this.statusMessage = AUTOGEN_I18N.generating_qr;
                     var qr = qrcode(0, 'M');
                     qr.addData(this.vcfUrl);
@@ -573,6 +588,12 @@ function layoutGenerator() {
                                 injected = true;
                             }
                         });
+                        if (!injected) {
+                            // The slot is found by shape, not by id: an empty
+                            // div carrying an inline margin-top. Any layout
+                            // change silently loses the QR, so say so instead.
+                            throw new Error(AUTOGEN_I18N.qr_slot_missing);
+                        }
                     }
                 }
 

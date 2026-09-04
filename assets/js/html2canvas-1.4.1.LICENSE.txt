@@ -1,0 +1,8 @@
+html2canvas 1.4.1
+https://html2canvas.hertzen.com
+
+Copyright (c) 2022 Niklas von Hertzen
+Released under the MIT License.
+
+Vendored alongside the QR library: the card rasteriser should not depend on a
+third party being reachable at the moment somebody generates a card.
