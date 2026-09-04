@@ -8,7 +8,7 @@ require_once __DIR__ . '/includes/PlatformStats.php';
  * original so English-only legacy posts keep working.
  */
 require_once __DIR__ . '/config.php';
-require_once __DIR__ . '/JsonLd.php';
+require_once __DIR__ . '/includes/JsonLd.php';
 require_once INCLUDES_DIR . '/Auth.php';
 require_once INCLUDES_DIR . '/BlogSlugRedirects.php';
 require_once INCLUDES_DIR . '/ArTwins.php';

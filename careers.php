@@ -3,7 +3,7 @@
  * Cardify - Careers
  */
 require_once __DIR__ . '/config.php';
-require_once __DIR__ . '/JsonLd.php';
+require_once __DIR__ . '/includes/JsonLd.php';
 require_once INCLUDES_DIR . '/Auth.php';
 // llm75-1: career_listings is a bilingual record since migration 151. An
 // untranslated listing is refused on /ar/ rather than printed in English under

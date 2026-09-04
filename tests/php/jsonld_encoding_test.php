@@ -126,5 +126,35 @@ jlCheck(
     implode(', ', array_slice($unsafe, 0, 6))
 );
 
+
+// 5. every require path actually resolves to a file.
+//    Eleven top-level pages shipped "require_once __DIR__ . '/JsonLd.php'",
+//    which points at the webroot where the class does not live, so /blog,
+//    /press, /solutions, /companies, /oman-business-index and
+//    /gcc-business-index all answered 500. php -l passed, the deploy smoke
+//    passed because none of its five URLs were among them, and the pages were
+//    only found by requesting them.
+$unresolved = [];
+$it3 = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($root, FilesystemIterator::SKIP_DOTS));
+foreach ($it3 as $file) {
+    if ($file->getExtension() !== 'php') continue;
+    $rel = str_replace($root . '/', '', $file->getPathname());
+    foreach (['tests/', 'vendor/', 'node_modules/', '.git/', '.worktrees/'] as $skip) {
+        if (str_starts_with($rel, $skip)) continue 2;
+    }
+    $src = @file_get_contents($file->getPathname());
+    if ($src === false) continue;
+    if (!preg_match_all("#require_once __DIR__ \. '([^']*JsonLd\.php)';#", $src, $ms)) continue;
+    foreach ($ms[1] as $suffix) {
+        $target = dirname($file->getPathname()) . '/' . ltrim($suffix, '/');
+        if (!is_file($target)) $unresolved[] = $rel . ' -> ' . $suffix;
+    }
+}
+jlCheck(
+    $unresolved === [],
+    'every JsonLd require path resolves to a real file',
+    implode(', ', array_slice($unresolved, 0, 5))
+);
+
 echo $failures === 0 ? "\nALL PASS\n" : "\n{$failures} FAILED\n";
 exit($failures === 0 ? 0 : 1);

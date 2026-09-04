@@ -7,7 +7,7 @@ require_once __DIR__ . '/includes/LogoLibrary.php';
  */
 
 require_once __DIR__ . '/config.php';
-require_once __DIR__ . '/JsonLd.php';
+require_once __DIR__ . '/includes/JsonLd.php';
 
 $brandName = defined('SITE_NAME') ? SITE_NAME : 'Cardify';
 $pageTitle = 'How Cardify Works, Business Cards in Minutes';

@@ -11,7 +11,7 @@
  * Public, cacheable.
  */
 require_once __DIR__ . '/config.php';
-require_once __DIR__ . '/JsonLd.php';
+require_once __DIR__ . '/includes/JsonLd.php';
 require_once __DIR__ . '/includes/Datasets.php';
 require_once __DIR__ . '/includes/Seo.php';
 require_once INCLUDES_DIR . '/Auth.php';

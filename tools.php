@@ -7,7 +7,7 @@
  * landing with commercial intent and a soft CTA back to Cardify.
  */
 require_once __DIR__ . '/config.php';
-require_once __DIR__ . '/JsonLd.php';
+require_once __DIR__ . '/includes/JsonLd.php';
 require_once INCLUDES_DIR . '/Auth.php';
 
 $pageTitle = t('tools.page_title');

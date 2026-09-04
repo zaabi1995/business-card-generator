@@ -15,7 +15,7 @@
  *   /ar/companies[...]                    → same with lang=ar
  */
 require_once __DIR__ . '/config.php';
-require_once __DIR__ . '/JsonLd.php';
+require_once __DIR__ . '/includes/JsonLd.php';
 require_once INCLUDES_DIR . '/Auth.php';
 require_once INCLUDES_DIR . '/LogoLibrary.php'; // shouldUseDarkVariantOnLight + helpers used by every view branch
 require_once INCLUDES_DIR . '/ArTwins.php';
