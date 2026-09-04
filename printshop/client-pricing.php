@@ -11,6 +11,7 @@
  */
 require_once __DIR__ . '/../config.php';
 require_once INCLUDES_DIR . '/Auth.php';
+require_once INCLUDES_DIR . '/CardPaperTypes.php';
 require_once INCLUDES_DIR . '/PrintShop.php';
 
 Auth::requireLogin();
@@ -42,11 +43,9 @@ $decimals    = in_array($currency, ['OMR', 'BHD', 'KWD'], true) ? 3 : 2;
 
 // Paper types Cardify exposes in the order flow. Keep these keys in
 // lockstep with admin/order_print.php paperType select values.
-$paperTypes = [
-    'uncoated' => 'Uncoated (no lamination)',
-    'matte'    => 'Matte lamination',
-    'silk'     => 'Silk / glossy lamination',
-];
+// The same list the two order screens render, so a shop cannot be asked to
+// price something nobody can order, or be missing a rate for something they can.
+$paperTypes = CardPaperTypes::orderableOptions();
 
 $overrides  = PrintShop::listClientPricing($shopId);
 $candidates = PrintShop::getClientCompanies($shopId);

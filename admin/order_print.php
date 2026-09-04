@@ -182,6 +182,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($printShops)) {
 }
 
 require_once INCLUDES_DIR . '/CardPrintPricing.php';
+require_once INCLUDES_DIR . '/CardPaperTypes.php';
 
 // Get company's preferred currency (or default to OMR for Oman)
 $companyCurrency = $currentCompany['currency'] ?? 'OMR';
@@ -451,17 +452,23 @@ $basePath = getAdminBasePath();
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Paper</label>
                                 <select name="paper_type" x-model="paperType" @change="updatePrice()"
                                         class="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:bg-white focus:border-blue-500 transition-all">
-                                    <option value="matte">Matte</option>
-                                    <option value="glossy">Glossy</option>
-                                    <option value="silk">Silk</option>
+                                    <?php
+                                    // One shared list. This screen used to offer
+                                    // glossy, which no shop can price, and to
+                                    // withhold uncoated, which every shop can.
+                                    ?>
+                                    <?php foreach (CardPaperTypes::orderableOptions() as $ptKey => $ptLabel): ?>
+                                    <option value="<?= htmlspecialchars($ptKey) ?>"><?= htmlspecialchars($ptLabel) ?></option>
+                                    <?php endforeach; ?>
                                 </select>
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Finish</label>
                                 <select name="finish" x-model="finish" @change="updatePrice()"
                                         class="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:bg-white focus:border-blue-500 transition-all">
-                                    <option value="standard">Standard</option>
-                                    <option value="rounded_corners">Rounded Corners</option>
+                                    <?php foreach (CardPaperTypes::finishOptions() as $fKey => $fLabel): ?>
+                                    <option value="<?= htmlspecialchars($fKey) ?>"><?= htmlspecialchars($fLabel) ?></option>
+                                    <?php endforeach; ?>
                                 </select>
                             </div>
                         </div>
@@ -670,7 +677,7 @@ function orderForm() {
 
         // Order
         quantity: <?php echo (int) $defaultOrderQty; ?>,
-        paperType: 'matte',
+        paperType: '<?= CardPaperTypes::DEFAULT_TYPE ?>',
         finish: 'standard',
 
         // Calculated

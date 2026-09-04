@@ -9,6 +9,7 @@
  */
 require_once __DIR__ . '/../config.php';
 require_once INCLUDES_DIR . '/PrintShopAuth.php';
+require_once INCLUDES_DIR . '/CardPaperTypes.php';
 require_once INCLUDES_DIR . '/PrintShop.php';
 require_once INCLUDES_DIR . '/PrintShopIntegration.php';
 require_once INCLUDES_DIR . '/Currency.php';
@@ -178,16 +179,17 @@ printshopHeader('Order , ' . $company['name'], 'clients');
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1.5"><?= htmlspecialchars(t('printshopinternal.field_paper')) ?></label>
                         <select aria-label="Paper Type" name="paper_type" x-model="paperType" @change="updatePrice()" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
-                            <option value="uncoated"><?= htmlspecialchars(t('printshopinternal.paper_uncoated')) ?></option>
-                            <option value="matte"><?= htmlspecialchars(t('printshopinternal.paper_matte')) ?></option>
-                            <option value="silk"><?= htmlspecialchars(t('printshopinternal.paper_silk')) ?></option>
+                            <?php foreach (CardPaperTypes::orderableOptions() as $ptKey => $ptLabel): ?>
+                            <option value="<?= htmlspecialchars($ptKey) ?>"><?= htmlspecialchars($ptLabel) ?></option>
+                            <?php endforeach; ?>
                         </select>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1.5"><?= htmlspecialchars(t('printshopinternal.field_finish')) ?></label>
                         <select aria-label="Finish" name="finish" x-model="finish" @change="updatePrice()" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
-                            <option value="standard"><?= htmlspecialchars(t('printshopinternal.finish_standard')) ?></option>
-                            <option value="rounded_corners"><?= htmlspecialchars(t('printshopinternal.finish_rounded')) ?></option>
+                            <?php foreach (CardPaperTypes::finishOptions() as $fKey => $fLabel): ?>
+                            <option value="<?= htmlspecialchars($fKey) ?>"><?= htmlspecialchars($fLabel) ?></option>
+                            <?php endforeach; ?>
                         </select>
                     </div>
                     <div>
@@ -269,7 +271,7 @@ function orderForm() {
 
     return {
         quantity: 100,
-        paperType: 'matte',
+        paperType: '<?= CardPaperTypes::DEFAULT_TYPE ?>',
         finish: 'standard',
         currency,
         setupFee: parseFloat(shopPricing.setup_fee || 0),
