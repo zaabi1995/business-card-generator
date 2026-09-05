@@ -61,8 +61,8 @@ class CardImageRenderer
             $exitCode = 0;
             exec($command, $output, $exitCode);
             $result = self::decodeProcessResult($output, $exitCode);
-            $frontStaged = self::validatedStagedImage($result['front'] ?? '', $stagingDir, 'front');
-            $backStaged = self::validatedStagedImage($result['back'] ?? '', $stagingDir, 'back');
+            $frontStaged = self::validatedStagedImage($result['front'] ?? '', $stagingDir, 'front', $context['front_template'] ?? null);
+            $backStaged = self::validatedStagedImage($result['back'] ?? '', $stagingDir, 'back', $context['back_template'] ?? null);
 
             $companyId = (string)$context['company']['id'];
             $finalDir = UPLOADS_DIR . '/companies/' . $companyId . '/cards';
@@ -303,7 +303,40 @@ class CardImageRenderer
         return $decoded;
     }
 
-    private static function validatedStagedImage(string $path, string $stagingDir, string $side): string
+    /**
+     * The pixel canvas a template renders at.
+     *
+     * Port of getTemplatePixelDims() in generate_card_html.php and of
+     * _canvas_dims() in scripts/render-card-images.py, so all three agree. A
+     * template with no stored physical size falls back to the legacy 1050x600.
+     */
+    public static function templatePixelDims(?array $template): array
+    {
+        $settings = $template['settings'] ?? ($template['settings_json'] ?? null);
+        if (is_string($settings)) {
+            $decoded = json_decode($settings, true);
+            $settings = is_array($decoded) ? $decoded : null;
+        }
+        if (!is_array($settings)) return [1050, 600];
+
+        $cw  = (float) ($settings['customWidth'] ?? 0);
+        $ch  = (float) ($settings['customHeight'] ?? 0);
+        $dpi = (float) ($settings['dpi'] ?? 300);
+        if ($dpi <= 0) $dpi = 300.0;
+        if ($cw <= 0 || $ch <= 0) return [1050, 600];
+
+        $unit = strtolower((string) ($settings['customUnit'] ?? 'mm'));
+        $toIn = $unit === 'pt' ? 1 / 72 : ($unit === 'in' ? 1 : 1 / 25.4);
+        $w = (int) round($cw * $toIn * $dpi);
+        $h = (int) round($ch * $toIn * $dpi);
+        return ($w > 0 && $h > 0) ? [$w, $h] : [1050, 600];
+    }
+
+    /**
+     * @param array|null $template the template this side was rendered from, so
+     *                             the check uses its real canvas
+     */
+    private static function validatedStagedImage(string $path, string $stagingDir, string $side, ?array $template = null): string
     {
         $realStaging = realpath($stagingDir);
         $realPath = $path !== '' ? realpath($path) : false;
@@ -313,8 +346,22 @@ class CardImageRenderer
             || filesize($realPath) < 32) {
             throw new RuntimeException($side . '_render_missing');
         }
+        // The size the TEMPLATE renders at, not a constant.
+        //
+        // This asserted 1050x600 exactly. Every template imported at another
+        // size, portrait cards included, produced a correctly sized image that
+        // was then rejected as invalid, so "Regenerate cards" failed for those
+        // tenants and any repair pass failed with them. Found on 5 Sep 2026
+        // while re-baking the cards that had leaked another person's details:
+        // all 11 came back front_render_invalid, and the renderer had done
+        // nothing wrong.
+        [$expectW, $expectH] = self::templatePixelDims($template);
         $dimensions = @getimagesize($realPath);
-        if (!is_array($dimensions) || (int)$dimensions[0] !== 1050 || (int)$dimensions[1] !== 600) {
+        if (!is_array($dimensions)
+            || (int) $dimensions[0] !== $expectW
+            || (int) $dimensions[1] !== $expectH) {
+            $got = is_array($dimensions) ? ($dimensions[0] . 'x' . $dimensions[1]) : 'unreadable';
+            error_log("CardImageRenderer {$side} expected {$expectW}x{$expectH}, got {$got}");
             throw new RuntimeException($side . '_render_invalid');
         }
         return $realPath;
