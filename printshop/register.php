@@ -303,7 +303,11 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2"><?= htmlspecialchars(t('printshopregister.country')) ?></label>
                         <select aria-label="<?= htmlspecialchars(t('printshopregister.country')) ?>" name="country" id="register-country" required
-                                data-cardify-change-fn="CardifyGeo.updateCurrencyFromCountry" data-args="<?= htmlspecialchars(json_encode(['__SELF__', 'register-currency']), ENT_QUOTES) ?>"
+                                <?php /* CardifyGeo.updateCurrencyFromCountry does not exist and never did:
+       the method is updateCurrency(countrySelect, currencySelectId) and it
+       takes the select element, not its value. The currency field has not
+       auto-filled on this form since the handler was written. */ ?>
+                                data-cardify-change-fn="CardifyGeo.updateCurrency" data-args="<?= htmlspecialchars(json_encode(['__SELF_EL__', 'register-currency']), ENT_QUOTES) ?>"
                                 class="w-full px-4 py-3 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-xl focus:outline-none focus:ring-2">
                             <?php echo Currency::getCountryOptions($_POST['country'] ?? 'OM'); ?>
                         </select>

@@ -97,6 +97,28 @@ actCheck(
     'company/register.php loads SecurityHeaders before it builds its head block'
 );
 
+
+// A dotted name has to name a method that exists, not just an object that
+// does. The handler on /print-shops/register called
+// CardifyGeo.updateCurrencyFromCountry, which is in no file in the tree: the
+// method is updateCurrency, and it takes the select element rather than its
+// value. The currency field on that form had never auto-filled.
+$dotted = [];
+foreach ($names as $name => $where) {
+    if (!str_contains($name, '.')) continue;
+    [$obj, $method] = explode('.', $name, 2);
+    if (!preg_match('/\b' . preg_quote($method, '/') . '\s*:\s*function/', $blob)
+        && !preg_match('/\b' . preg_quote($method, '/') . '\s*\(/', $blob)) {
+        $dotted[] = $name . ' (' . $where . ')';
+    }
+}
+actCheck($dotted === [], 'every dotted data-fn names a method that exists',
+    implode(', ', $dotted));
+
+$actionsSrc = file_get_contents($root . '/assets/js/cardify-actions.js');
+actCheck(str_contains($actionsSrc, "'__SELF_EL__'"),
+    'a mixed argument list can carry the element itself, not only its value');
+
 $emDash = "\xE2\x80\x94";
 actCheck(!str_contains($actions, $emDash), 'assets/js/cardify-actions.js contains no em dash');
 

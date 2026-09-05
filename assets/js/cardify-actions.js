@@ -275,9 +275,14 @@
     try {
       var parsed = JSON.parse(raw);
       var list = Array.isArray(parsed) ? parsed : [parsed];
-      /* "__SELF__" stands where the old inline call wrote this.value, so a
-       * mixed argument list still works: fn(this.value, 'other'). */
-      return list.map(function (v) { return v === '__SELF__' ? el.value : v; });
+      /* "__SELF__" stands where the old inline call wrote this.value and
+       * "__SELF_EL__" where it wrote `this`, so a mixed argument list still
+       * works: fn(this, 'other'). */
+      return list.map(function (v) {
+        if (v === '__SELF__') return el.value;
+        if (v === '__SELF_EL__') return el;
+        return v;
+      });
     } catch (err) { return []; }
   }
 
