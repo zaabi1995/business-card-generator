@@ -41,5 +41,14 @@ export default defineConfig({
       name: 'Chrome Android',
       use: { ...devices['Pixel 7'] },
     },
+    {
+      // Firefox. The gauntlet ran Chromium, WebKit and Chrome Android and
+      // reported "no Firefox" as an open item for two rounds. Gecko is a third
+      // engine with its own flexbox, grid and form rendering, and it is the
+      // only one of the three that is not Blink or WebKit.
+      // Opt-in: `npx playwright test --project=firefox`.
+      name: 'firefox',
+      use: { ...devices['Desktop Firefox'] },
+    },
   ],
 });
