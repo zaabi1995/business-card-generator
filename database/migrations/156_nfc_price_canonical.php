@@ -17,7 +17,9 @@
  * Nothing else in the pricing JSON is touched.
  */
 require_once __DIR__ . '/../../config.php';
-require_once __DIR__ . '/../../includes/CardCatalogPricing.php';
+// INCLUDES_DIR, not a relative hop: config.php defines it and the runner may
+// be invoked from anywhere.
+require_once INCLUDES_DIR . '/CardCatalogPricing.php';
 
 try {
     $pdo = Database::getInstance()->getConnection();
