@@ -763,7 +763,11 @@ class Currency {
         return <<<JS
 <script{$nonce}>
 // Cardify Country/Currency Helper
-const CardifyGeo = {
+// window, not a bare const. A top-level `const` in a classic script creates
+// a script-scope binding and NOT a window property, so anything looking the
+// name up on window finds nothing. The delegated handler on
+// /print-shops/register does exactly that, and the currency never filled in.
+window.CardifyGeo = {
     countryCurrency: {$countryCurrencyMap},
     phoneCodes: {$phoneCodes},
     
@@ -1302,7 +1306,7 @@ function selectPhoneCountry(inputId, countryCode, phoneCode, flagClass) {
 }
 
 // Phone Input Component Handler
-const CardifyPhoneInput = {
+window.CardifyPhoneInput = {
     init: function() {
         // Handle dropdown toggles (if Flowbite isn't loaded)
         document.querySelectorAll('[data-dropdown-toggle]').forEach(button => {

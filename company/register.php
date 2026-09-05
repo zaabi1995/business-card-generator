@@ -81,7 +81,11 @@ $pageTitle = t('register.page_title');
 $htmlClass = 'h-full bg-white';
 $bodyClass = 'h-full';
 // A heredoc does not run PHP tags, so the nonce is interpolated as a value.
-$cardifyNonce = function_exists('cspNonceAttr') ? cspNonceAttr() : '';
+// SecurityHeaders is required here rather than relied on: this block is built
+// BEFORE ui-header.php runs, so cspNonceAttr() would not exist yet and the
+// script would ship with no nonce and be refused by the policy.
+require_once INCLUDES_DIR . '/SecurityHeaders.php';
+$cardifyNonce = cspNonceAttr();
 $extraHead = <<<HTML
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intl-tel-input@23.8.2/build/css/intlTelInput.css">
     <style>
