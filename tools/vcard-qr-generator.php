@@ -243,7 +243,8 @@ require_once INCLUDES_DIR . '/ui-header.php';
         if (website) lines.push('URL:' + escapeVCardValue(website));
         if (address) lines.push('ADR;TYPE=WORK:;;' + escapeVCardValue(address) + ';;;;');
         lines.push('END:VCARD');
-        return lines.join('\r\n');
+        // RFC 6350 3.2: the last content line takes a CRLF too.
+        return lines.join('\r\n') + '\r\n';
     }
 
     function render() {

@@ -202,7 +202,12 @@ class VCF {
         // becomes "\,"), so folding first would leave over-length lines behind.
         // RFC 2426 section 2.6. Arabic runs 2 octets per letter, so an Omani
         // address crosses 75 octets in about 37 characters.
-        return implode("\r\n", VCardRfc::foldAll($lines, "\r\n"));
+        // RFC 6350 3.2: every content line ends with CRLF, the last one
+        // included. Without the terminator some parsers drop END:VCARD and
+        // treat the card as truncated. ScanVcf.php already appended it; this
+        // emitter, the one behind "Save contact" on every digital card, did
+        // not.
+        return implode("\r\n", VCardRfc::foldAll($lines, "\r\n")) . "\r\n";
     }
 
     /**

@@ -129,7 +129,7 @@ $vEn = VCF::generate($en, ['name' => 'Example LLC', 'website' => 'example.om']);
 
 check('en: begins with BEGIN:VCARD', strpos($vEn, "BEGIN:VCARD\r\n"), 0);
 check('en: has VERSION 3.0', strpos($vEn, "VERSION:3.0\r\n") !== false, true);
-check('en: ends with END:VCARD', substr($vEn, -9), 'END:VCARD');
+check('en: ends with END:VCARD and its CRLF', substr($vEn, -11), "END:VCARD\r\n");
 check('en: FN is the printed name', strpos($vEn, 'FN:Sara AlHabsi') !== false, true);
 check('en: N splits on two tokens', strpos($vEn, 'N:AlHabsi;Sara;;;') !== false, true);
 check('en: ORG present', strpos($vEn, 'ORG:Example LLC') !== false, true);
@@ -273,8 +273,10 @@ $crlf = VCF::generate(
 );
 check('a CR/LF inside a value cannot break the line structure',
     strpos($crlf, 'FN:Line\\nBreak') !== false, true);
+// One CR per content line, the terminating one on END:VCARD included.
+// physicalLines() rtrims the terminator, so the count matches the line count.
 check('no stray CR survives outside the CRLF line breaks',
-    substr_count($crlf, "\r"), count(physicalLines($crlf)) - 1);
+    substr_count($crlf, "\r"), count(physicalLines($crlf)));
 
 // ---------------------------------------------------------------------------
 // Explicit first_name/last_name columns stay authoritative
@@ -374,5 +376,30 @@ foreach ([
         [$given, $middle, $family]
     );
 }
+
+
+// RFC 6350 3.2: every content line ends with CRLF, END:VCARD included. The
+// live card at abdalah-ah-tm.cardify.om served 13 CRLF lines and then
+// "END:VCARD" with nothing after it, so a strict parser sees a truncated card.
+// includes/ScanVcf.php already terminated its output; includes/VCF.php, the
+// emitter behind "Save contact" on every digital card, did not.
+$vcfSrc = file_get_contents(dirname(__DIR__, 2) . '/includes/VCF.php');
+check(
+    'VCF.php terminates the last line with CRLF',
+    (bool) preg_match('/foldAll\(\$lines, "\\\\r\\\\n"\)\) \. "\\\\r\\\\n"/', $vcfSrc),
+    true
+);
+$scanSrc = file_get_contents(dirname(__DIR__, 2) . '/includes/ScanVcf.php');
+check(
+    'ScanVcf.php still terminates its last line',
+    str_contains($scanSrc, 'VCardRfc::foldAll($lines, $eol)) . $eol'),
+    true
+);
+$genSrc = file_get_contents(dirname(__DIR__, 2) . '/tools/vcard-qr-generator.php');
+check(
+    'the QR generator terminates its vCard too',
+    str_contains($genSrc, "lines.join('\\r\\n') + '\\r\\n'"),
+    true
+);
 
 echo "ALL PASS\n";
