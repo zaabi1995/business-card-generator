@@ -478,7 +478,8 @@ class Currency {
      */
     public static function getCountryName($code) {
         $country = self::getCountry($code);
-        return $country['name'] ?? $code;
+        if (!is_array($country)) return $code;
+        return self::countryName((string) $code, $country);
     }
     
     /**
@@ -524,20 +525,56 @@ class Currency {
      * @param bool $grouped Whether to group by region
      * @param bool $showFlags Whether to show flags (not used in select, use data attributes for JS)
      */
+    /**
+     * Display name for a country, in the reader's language.
+     *
+     * Currency::getCountries() stays the DATA: code, currency, region. The
+     * name a person reads comes from lang/{en,ar}/countries.php. The print-shop
+     * registration form used to render <html lang="ar" dir="rtl"> around a
+     * 484-character English country list, and that list alone held the page's
+     * Arabic letter share down to 0.291, below the 0.55 floor an Arabic twin
+     * has to clear.
+     */
+    public static function countryName(string $code, array $country): string
+    {
+        if (!function_exists('t')) return (string) ($country['name'] ?? $code);
+        $translated = t('countries.' . strtoupper($code));
+        return $translated === 'countries.' . strtoupper($code)
+            ? (string) ($country['name'] ?? $code)
+            : $translated;
+    }
+
+    private static function countryLabel(string $key, string $fallback): string
+    {
+        if (!function_exists('t')) return $fallback;
+        $out = t('countries.' . $key);
+        return $out === 'countries.' . $key ? $fallback : $out;
+    }
+
+    /**
+     * A label that is concatenated INTO a sprintf format string, not passed as
+     * an argument to one. A stray % in a translation would otherwise be read as
+     * a conversion specification and shift every argument after it.
+     */
+    private static function countryLabelInFormat(string $key, string $fallback): string
+    {
+        return str_replace('%', '%%', htmlspecialchars(self::countryLabel($key, $fallback)));
+    }
+
     public static function getCountryOptions($selectedCode = '', $grouped = true, $showFlags = true) {
         $countries = self::getCountries();
         $phoneCodes = self::getPhoneCodes();
-        $html = '<option value="">Select Country</option>';
-        
+        $html = '<option value="">' . htmlspecialchars(self::countryLabel('placeholder', 'Select Country')) . '</option>';
+
         if ($grouped) {
             $regions = [
-                'gcc' => 'GCC Countries',
-                'middle_east' => 'Middle East',
-                'europe' => 'Europe',
-                'asia' => 'Asia',
-                'americas' => 'Americas',
-                'oceania' => 'Oceania',
-                'africa' => 'Africa'
+                'gcc' => self::countryLabel('region_gcc', 'GCC Countries'),
+                'middle_east' => self::countryLabel('region_middle_east', 'Middle East'),
+                'europe' => self::countryLabel('region_europe', 'Europe'),
+                'asia' => self::countryLabel('region_asia', 'Asia'),
+                'americas' => self::countryLabel('region_americas', 'Americas'),
+                'oceania' => self::countryLabel('region_oceania', 'Oceania'),
+                'africa' => self::countryLabel('region_africa', 'Africa'),
             ];
             
             foreach ($regions as $regionKey => $regionName) {
@@ -554,15 +591,24 @@ class Currency {
                             $phoneCode,
                             strtolower($code),
                             $selected,
-                            htmlspecialchars($country['name'])
+                            htmlspecialchars(self::countryName($code, $country))
                         );
                     }
                     $html .= '</optgroup>';
                 }
             }
         } else {
-            // Flat list sorted by name
-            uasort($countries, fn($a, $b) => strcmp($a['name'], $b['name']));
+            // Flat list sorted by the name the reader sees, not the English one:
+            // an Arabic list sorted by English names is in no order at all.
+            $named = [];
+            foreach ($countries as $code => $country) {
+                $country['display'] = self::countryName($code, $country);
+                $named[$code] = $country;
+            }
+            $countries = $named;
+            uasort($countries, static function ($a, $b) {
+                return strcoll($a['display'], $b['display']) ?: strcmp($a['display'], $b['display']);
+            });
             foreach ($countries as $code => $country) {
                 $selected = (strtoupper($selectedCode) === $code) ? 'selected' : '';
                 $phoneCode = $phoneCodes[$code] ?? '';
@@ -573,7 +619,7 @@ class Currency {
                     $phoneCode,
                     strtolower($code),
                     $selected,
-                    htmlspecialchars($country['name'])
+                    htmlspecialchars($country['display'])
                 );
             }
         }
@@ -851,7 +897,12 @@ JS;
         
         foreach ($countries as $code => $country) {
             $result[$code] = [
-                'name' => $country['name'],
+                // The reader's language, so the four phone pickers that consume
+                // this, their alphabetical sorts and their search box all speak
+                // it. English names inside an RTL Arabic page were the whole
+                // reason /ar/print-shops/register could not be an Arabic twin.
+                'name' => self::countryName((string) $code, $country),
+                'name_en' => $country['name'],
                 'phone_code' => $phoneCodes[$code] ?? '+1',
                 'currency' => $country['currency'],
                 'region' => $country['region'],
@@ -975,14 +1026,14 @@ JS;
         $html .= sprintf('
             <div id="%s-dropdown" class="z-10 hidden bg-white divide-y divide-gray-100 rounded-lg shadow w-64 dark:bg-gray-700">
                 <div class="p-3">
-                    <label for="%s-search" class="sr-only">Search</label>
+                    <label for="%s-search" class="sr-only">' . self::countryLabelInFormat('search_label', 'Search') . '</label>
                     <div class="relative">
                         <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
                             <svg class="w-4 h-4 text-gray-500 dark:text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20">
                                 <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z"/>
                             </svg>
                         </div>
-                        <input type="text" id="%s-search" class="block w-full p-2 ps-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="Search country...">
+                        <input type="text" id="%s-search" class="block w-full p-2 ps-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="' . self::countryLabelInFormat('search_ph', 'Search country...') . '">
                     </div>
                 </div>
                 <ul class="h-48 py-2 overflow-y-auto text-sm text-gray-700 dark:text-gray-200" data-phone-list="%s">',

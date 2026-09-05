@@ -13,6 +13,7 @@ return [
     'title_settings'          => 'Settings, :shop',
     'title_profile'           => 'Profile, :shop',
     'title_register'          => 'Register your print shop',
+    'desc_register'           => 'Join the Cardify print network. Omani print shops receive card orders from companies already using Cardify, with artwork print-ready and the price you set.',
     'title_login'             => 'Print shop sign in',
 
     // Page h1s

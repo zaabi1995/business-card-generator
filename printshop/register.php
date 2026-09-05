@@ -133,7 +133,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
+require_once INCLUDES_DIR . '/ArTwins.php';
 $pageTitle = t('printshoppages.title_register');
+// One page, four URLs: /partners and /print-shops/register in both languages,
+// and none of them emitted a canonical. ui-header swaps in the /ar twin when
+// the request is Arabic, so naming the English canonical here is enough.
+$canonicalUrl = ArTwins::SITE . '/print-shops/register';
+$pageDescription = $pageDescription ?? t('printshoppages.desc_register');
 $bodyClass = 'bg-gray-50';
 $minimalFooter = true; // compact footer for auth page
 require_once INCLUDES_DIR . '/ui-header.php';
@@ -296,7 +302,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 <div class="grid md:grid-cols-2 gap-4">
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2"><?= htmlspecialchars(t('printshopregister.country')) ?></label>
-                        <select aria-label="Country" name="country" id="register-country" required
+                        <select aria-label="<?= htmlspecialchars(t('printshopregister.country')) ?>" name="country" id="register-country" required
                                 onchange="CardifyGeo.updateCurrencyFromCountry(this.value, 'register-currency')"
                                 class="w-full px-4 py-3 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-xl focus:outline-none focus:ring-2">
                             <?php echo Currency::getCountryOptions($_POST['country'] ?? 'OM'); ?>

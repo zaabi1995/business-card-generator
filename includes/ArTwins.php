@@ -71,6 +71,7 @@ class ArTwins
         '/press-kit',
         '/pricing',
         '/print-shops',
+        '/print-shops/register',
         '/privacy',
         '/solutions',
         '/status',
