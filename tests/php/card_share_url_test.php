@@ -85,6 +85,9 @@ foreach ($rii as $file) {
 }
 urlCheck($handBuilt === [], 'no file hand-builds a bare employee path', implode(', ', $handBuilt));
 
+urlCheck(str_contains($pdf, 'CARD_PDF_LAYOUT_VERSION'),
+    'the PDF cache key carries a layout version, so a content change invalidates it');
+
 $emDash = "\xE2\x80\x94";
 urlCheck(!str_contains($pdf, $emDash), 'card-pdf.php contains no em dash');
 

@@ -18,6 +18,9 @@ set_error_handler(function ($severity, $message, $file, $line) {
     throw new ErrorException($message, 0, $severity, $file, $line);
 });
 
+/** Bump when the PDF's layout or content changes, so caches drop at once. */
+define('CARD_PDF_LAYOUT_VERSION', '2026-09-05-share-url');
+
 try {
     require_once __DIR__ . '/config.php';
     require_once INCLUDES_DIR . '/CardRenderer.php';
@@ -166,10 +169,15 @@ try {
     // Cache key includes CardRenderer signature so a template/theme/employee
     // change invalidates the cached PDF too. Mode is keyed separately so
     // flipping back to a real card busts the cache.
+    // The layout version is part of the key. Without it a change to what this
+    // file DRAWS was invisible for up to an hour: the share URL fix landed and
+    // production kept serving the cached PDF with the dead link on it. Bump the
+    // constant whenever the PDF's content changes.
     $cacheKey = sha1(
         $employee['id']
         . '|sig=' . $ctx['signature']
         . '|mode=' . ($hasCanonical ? 'canonical' : 'fallback')
+        . '|layout=' . CARD_PDF_LAYOUT_VERSION
     );
     $cachePath = $cacheDir . '/' . $cacheKey . '.pdf';
     $cacheTtl  = 3600;
