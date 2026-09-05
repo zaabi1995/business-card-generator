@@ -6,12 +6,13 @@
  * Accepts two pricing modes (form field `pricing_mode`):
  *  - "single"    : one tier table -> stored as `quantity_tiers`
  *  - "per_paper" : per paper-type tier tables -> stored as
- *                  `paper_type_pricing[uncoated|matte|silk].quantity_tiers`
+ *                  `paper_type_pricing[<CardPaperTypes::ORDERABLE>].quantity_tiers`
  * Also persists optional `min_quantity` floor.
  */
 require_once __DIR__ . '/../config.php';
 require_once INCLUDES_DIR . '/Auth.php';
 require_once INCLUDES_DIR . '/PrintShop.php';
+require_once INCLUDES_DIR . '/CardPaperTypes.php';
 
 Auth::requireLogin();
 $user = Auth::getCurrentUser();
@@ -95,7 +96,10 @@ if ($action === 'save') {
     }
 
     if ($pricingMode === 'per_paper') {
-        $paperTypes  = ['uncoated', 'matte', 'silk'];
+        // The orderable list lives in CardPaperTypes, not here. Three screens
+        // used to keep their own copy and they disagreed, which is how a
+        // company could order a paper no shop could price.
+        $paperTypes  = array_keys(CardPaperTypes::ORDERABLE);
         $rawQty      = $_POST['paper_qty']   ?? [];
         $rawPrice    = $_POST['paper_price'] ?? [];
         $perPaper    = [];

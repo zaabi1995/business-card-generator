@@ -17,7 +17,7 @@ return [
     't2_quote'  => 'Each card issues a real wallet pass alongside a QR vCard and NFC tap, so a contact saves to a phone without installing anything.',
 
     't3_title'  => 'Printed and delivered across Oman',
-    't3_quote'  => 'Cardify is built by BHD Group (Bin Haider Darwish L.L.C.) in Muscat, so the digital card and the printed card come from the same place. Printing starts at OMR 5.000 per 100 cards.',
+    't3_quote'  => 'Cardify is built by BHD Group (Bin Haider Darwish L.L.C.) in Muscat, so the digital card and the printed card come from the same place. Printing starts at OMR :standard_price per 100 cards.',
 
     't4_title'  => 'Built for a whole roster, not one person',
     't4_quote'  => 'Approve one template, upload your team, and every employee gets their own card. Staff can request and update their own details through the employee portal.',

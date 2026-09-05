@@ -2,9 +2,11 @@
 /**
  * Cardify, Pricing page.
  *
- * Free platform plus pay-per-print product catalogue (Standard 6 OMR,
- * Premium 8 OMR, Luxury 15 OMR, NFC 10 OMR). No SaaS tiers, no seat
- * caps, no trials. Unlimited everything on the platform side.
+ * Free platform plus a pay-per-print product catalogue. Every published
+ * amount comes from CardCatalogPricing, which is the only place a price is
+ * written; this docblock used to carry its own numbers and three of the four
+ * had drifted (it said Standard 6 and Premium 8 while the page rendered 5
+ * and 6). No SaaS tiers, no seat caps, no trials.
  *
  * Fully bilingual via lang/{en,ar}/pricing.php. Uses Seo::product for
  * JSON-LD offers on every print product and Seo::faqPage for the FAQ
@@ -14,6 +16,7 @@ require_once __DIR__ . '/config.php';
 require_once INCLUDES_DIR . '/Auth.php';
 require_once INCLUDES_DIR . '/Seo.php';
 require_once INCLUDES_DIR . '/ArTwins.php';
+require_once INCLUDES_DIR . '/CardCatalogPricing.php';
 
 $baseUrl = 'https://cardify.om';
 $lang    = ($_GET['lang'] ?? '') === 'ar' ? 'ar' : 'en';
@@ -42,10 +45,10 @@ Seo::breadcrumbs([
 // Products published no image at all, because the page renders each tier as a
 // FontAwesome icon and no photograph of the stock existed. One photo per tier
 // now lives in assets/images/products.
-Seo::product('standard', 'pricing.product_standard_name', 'pricing.product_standard_spec', '5',  'card-standard.jpg');
-Seo::product('premium',  'pricing.product_premium_name',  'pricing.product_premium_spec',  '6',  'card-premium.jpg');
-Seo::product('luxury',   'pricing.product_luxury_name',   'pricing.product_luxury_spec',   '15', 'card-luxury.jpg');
-Seo::product('nfc',      'pricing.product_nfc_name',      'pricing.product_nfc_spec',      '10', 'card-nfc.jpg');
+Seo::product('standard', 'pricing.product_standard_name', 'pricing.product_standard_spec', CardCatalogPricing::decimal('standard'),  'card-standard.jpg');
+Seo::product('premium',  'pricing.product_premium_name',  'pricing.product_premium_spec',  CardCatalogPricing::decimal('premium'),  'card-premium.jpg');
+Seo::product('luxury',   'pricing.product_luxury_name',   'pricing.product_luxury_spec',   CardCatalogPricing::decimal('luxury'), 'card-luxury.jpg');
+Seo::product('nfc',      'pricing.product_nfc_name',      'pricing.product_nfc_spec',      CardCatalogPricing::decimal('nfc'), 'card-nfc.jpg');
 Seo::faqPage([
     [t('pricing.faq_q1'), t('pricing.faq_a1')],
     [t('pricing.faq_q2'), t('pricing.faq_a2')],

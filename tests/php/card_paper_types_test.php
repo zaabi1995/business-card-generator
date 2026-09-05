@@ -10,17 +10,23 @@
  * rates, offered uncoated, matte and silk. A company could order glossy, which
  * no shop could price, and could not order uncoated, which every shop could.
  *
- * The NFC price: /pricing, /nfc-business-card, the FAQ and llms.txt all publish
- * OMR 10.000, pinned by nfc_bilingual_seo_contract_test.php. BHD's print shop
- * pricing JSON carries an nfc tier of 25 per card. Nothing charges 25 today
- * because no order path can select nfc as a paper type, so the two numbers
- * never meet a customer. This test keeps that true: the moment nfc becomes
- * orderable, it has to agree with the published price.
+ * The NFC price: two numbers were in the estate. Every published surface said
+ * OMR 10.000 while BHD's stored shop JSON carried an nfc tier of 25 per card.
+ * Ali settled it at 10.000 on 5 Sep 2026, includes/CardCatalogPricing.php now
+ * holds the only copy of that number, CardPrintPricing reads it instead of the
+ * shop JSON, and migration 156 rewrote the stored 25. This test keeps `nfc` out
+ * of the orderable list until someone decides to sell it, and checks that the
+ * price it would be sold at comes from the catalogue.
  */
 require_once dirname(__DIR__, 2) . '/includes/CardPaperTypes.php';
 
 $root = dirname(__DIR__, 2);
 $failures = 0;
+function I18nRenderedNfcPrice(string $root): string
+{
+    require_once $root . '/includes/I18n.php';
+    return I18n::t('pricing.product_nfc_price', [], 'en');
+}
 function paperCheck(bool $c, string $label, string $detail = ''): void
 {
     global $failures;
@@ -71,15 +77,27 @@ paperCheck(
 // and BHD's shop tier disagree.
 paperCheck(
     !CardPaperTypes::isOrderable('nfc'),
-    'nfc is not orderable, so the published 10.000 and the stored 25 never meet a customer',
-    'if this is now sold, the two prices have to be reconciled first'
+    'nfc stays out of the orderable list until someone decides to sell it'
 );
 
-$enPricing = require $root . '/lang/en/pricing.php';
+require_once $root . '/includes/CardCatalogPricing.php';
+require_once $root . '/includes/CardPrintPricing.php';
 paperCheck(
-    $enPricing['product_nfc_price'] === 'OMR 10.000',
-    'the published NFC price is still the one the marketing pages carry',
-    $enPricing['product_nfc_price'] ?? '(missing)'
+    CardCatalogPricing::isCardifyPriced('nfc'),
+    'nfc is priced by Cardify, so no shop can publish a different number for it'
+);
+// The stale 25, kept here as the exact shape that was stored, so the guard
+// survives even if the row is later re-imported from a backup.
+$stored25 = ['paper_type_pricing' => ['nfc' => ['quantity_tiers' => ['1' => ['per_card' => 25]]]]];
+paperCheck(
+    abs(CardPrintPricing::shopPricePerCard($stored25, 1, 'nfc') - CardCatalogPricing::amount('nfc')) < 0.0001,
+    'if nfc ever becomes orderable it charges the catalogue price, not a stored one',
+    (string) CardPrintPricing::shopPricePerCard($stored25, 1, 'nfc')
+);
+paperCheck(
+    I18nRenderedNfcPrice($root) === 'OMR 10.000',
+    'the published NFC price is the one the marketing pages render',
+    I18nRenderedNfcPrice($root)
 );
 
 $emDash = "\xE2\x80\x94";

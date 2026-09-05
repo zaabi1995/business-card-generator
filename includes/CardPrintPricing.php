@@ -1,4 +1,6 @@
 <?php
+require_once __DIR__ . '/CardCatalogPricing.php';
+
 /**
  * Static quantity-breakpoint pricing for printed business cards.
  * Used by the onboarding wizard (step 7) and the normal print-order
@@ -71,6 +73,16 @@ class CardPrintPricing
      */
     public static function shopPricePerCard(array $pricing, int $quantity, string $paperType = 'matte'): float
     {
+        // NFC is priced by Cardify, not by the shop. BHD's stored JSON carried
+        // an nfc tier of 25 per card while every published surface said 10.000,
+        // and nothing charged 25 only because no order path could select the
+        // type. Reading the catalogue here means a stale stored rate cannot
+        // become a charge if `nfc` is ever made orderable. Migration 156
+        // rewrites the stored numbers as well, so the two agree in both places.
+        if (CardCatalogPricing::isCardifyPriced($paperType)) {
+            return round(CardCatalogPricing::amount($paperType), 4);
+        }
+
         $tiers = null;
 
         // Per-paper rates win when the shop publishes them for this paper.

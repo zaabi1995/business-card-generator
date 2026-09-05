@@ -1,7 +1,7 @@
 <?php
 return [
     'page_title' => 'الأسعار، كارديفاي، منصة مجانية والطباعة بحسب الطلب',
-    'page_desc'  => 'كارديفاي مجاني للأبد. موظفون وقوالب وبطاقات رقمية بلا حدود. لا تدفع إلا عند طلب الطباعة، ابتداءً من 5.000 ريال عُماني لكل 100 بطاقة.',
+    'page_desc'  => 'كارديفاي مجاني للأبد. موظفون وقوالب وبطاقات رقمية بلا حدود. لا تدفع إلا عند طلب الطباعة، ابتداءً من :standard_price ريال عُماني لكل 100 بطاقة.',
 
     'hero_eyebrow' => 'أسعار واضحة',
     'hero_heading' => 'المنصة مجانية، تدفع فقط عند الطباعة.',
@@ -29,22 +29,22 @@ return [
 
     'product_standard_name'  => 'بطاقات قياسية',
     'product_standard_spec'  => 'ورق مطفي 300 غرام، ألوان كاملة على الوجهين',
-    'product_standard_price' => '5.000 ريال',
+    'product_standard_price' => ':standard_price ريال',
     'product_standard_unit'  => 'لكل 100 بطاقة',
 
     'product_premium_name'   => 'بطاقات بريميوم',
     'product_premium_spec'   => 'ورق ناعم 350 غرام، ألوان كاملة على الوجهين',
-    'product_premium_price'  => '6.000 ريال',
+    'product_premium_price'  => ':premium_price ريال',
     'product_premium_unit'   => 'لكل 100 بطاقة',
 
     'product_luxury_name'    => 'بطاقات فاخرة',
     'product_luxury_spec'    => '450 غرام مع تلميع جزئي أو بصمة ذهبية',
-    'product_luxury_price'   => '15.000 ريال',
+    'product_luxury_price'   => ':luxury_price ريال',
     'product_luxury_unit'    => 'لكل 100 بطاقة',
 
     'product_nfc_name'       => 'بطاقات NFC باللمس',
     'product_nfc_spec'       => 'شريحة NFC قابلة لإعادة البرمجة للهواتف المتوافقة، مع رمز QR كخيار بديل',
-    'product_nfc_price'      => '10.000 ريال',
+    'product_nfc_price'      => ':nfc_price ريال',
     'product_nfc_unit'       => 'للبطاقة الواحدة',
 
     'product_cta'   => 'اطلب الطباعة',

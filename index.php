@@ -281,6 +281,7 @@ $bodyClass = 'bg-white';
 // per-currency decimals and separators.
 require_once INCLUDES_DIR . '/Currency.php';
 require_once INCLUDES_DIR . '/JsonLd.php';
+require_once INCLUDES_DIR . '/CardCatalogPricing.php';
 $homeCur     = Currency::getUserCurrency();
 $homeCurName = $homeCur;
 // Convert, then marketing-round (keeps OMR exact, rounds AED/USD/etc to
@@ -303,7 +304,7 @@ $fmt = function ($omr) use ($homeCur) {
 // value in that Apr 2026 removal and had been rendering "Prints from  OMR" with
 // an empty amount ever since, logging an undefined-variable warning on every
 // homepage hit. Keep in step with /pricing and the Product JSON-LD below.
-$priceStarterFrom = $fmt(5);
+$priceStarterFrom = $fmt(CardCatalogPricing::amount('standard'));
 
 // Latest blog posts for homepage SEO (internal links + freshness signal).
 //
@@ -1479,60 +1480,60 @@ echo Seo::organizationScriptOnce();
     {
       "@type": "Offer",
       "name": "Standard Printed Cards",
-      "price": "5.000",
+      "price": "<?= CardCatalogPricing::decimal('standard') ?>",
       "priceCurrency": "OMR",
       "priceSpecification": {
         "@type": "UnitPriceSpecification",
-        "price": "5.000",
+        "price": "<?= CardCatalogPricing::decimal('standard') ?>",
         "priceCurrency": "OMR",
         "referenceQuantity": { "@type": "QuantitativeValue", "value": "100", "unitText": "cards" }
       },
-      "description": "300gsm matt, full colour both sides. From OMR 5.000 per 100 cards, printed by verified Omani shops.",
+      "description": "300gsm matt, full colour both sides. From OMR <?= CardCatalogPricing::decimal('standard') ?> per 100 cards, printed by verified Omani shops.",
       "availability": "https://schema.org/InStock",
       "url": "https://cardify.om/pricing"
     },
     {
       "@type": "Offer",
       "name": "Premium Printed Cards",
-      "price": "6.000",
+      "price": "<?= CardCatalogPricing::decimal('premium') ?>",
       "priceCurrency": "OMR",
       "priceSpecification": {
         "@type": "UnitPriceSpecification",
-        "price": "6.000",
+        "price": "<?= CardCatalogPricing::decimal('premium') ?>",
         "priceCurrency": "OMR",
         "referenceQuantity": { "@type": "QuantitativeValue", "value": "100", "unitText": "cards" }
       },
-      "description": "350gsm soft-touch, full colour both sides. From OMR 6.000 per 100 cards.",
+      "description": "350gsm soft-touch, full colour both sides. From OMR <?= CardCatalogPricing::decimal('premium') ?> per 100 cards.",
       "availability": "https://schema.org/InStock",
       "url": "https://cardify.om/pricing"
     },
     {
       "@type": "Offer",
       "name": "Luxury Printed Cards",
-      "price": "15.000",
+      "price": "<?= CardCatalogPricing::decimal('luxury') ?>",
       "priceCurrency": "OMR",
       "priceSpecification": {
         "@type": "UnitPriceSpecification",
-        "price": "15.000",
+        "price": "<?= CardCatalogPricing::decimal('luxury') ?>",
         "priceCurrency": "OMR",
         "referenceQuantity": { "@type": "QuantitativeValue", "value": "100", "unitText": "cards" }
       },
-      "description": "450gsm with spot UV or foil accents. From OMR 15.000 per 100 cards.",
+      "description": "450gsm with spot UV or foil accents. From OMR <?= CardCatalogPricing::decimal('luxury') ?> per 100 cards.",
       "availability": "https://schema.org/InStock",
       "url": "https://cardify.om/pricing"
     },
     {
       "@type": "Offer",
       "name": "NFC Tap Cards",
-      "price": "10.000",
+      "price": "<?= CardCatalogPricing::decimal('nfc') ?>",
       "priceCurrency": "OMR",
       "priceSpecification": {
         "@type": "UnitPriceSpecification",
-        "price": "10.000",
+        "price": "<?= CardCatalogPricing::decimal('nfc') ?>",
         "priceCurrency": "OMR",
         "referenceQuantity": { "@type": "QuantitativeValue", "value": "1", "unitText": "card" }
       },
-      "description": "Re-programmable NFC chip plus QR. Tap-to-share on any phone. OMR 10.000 per card.",
+      "description": "Re-programmable NFC chip plus QR. Tap-to-share on any phone. OMR <?= CardCatalogPricing::decimal('nfc') ?> per card.",
       "availability": "https://schema.org/InStock",
       "url": "https://cardify.om/pricing"
     }

@@ -1,7 +1,7 @@
 <?php
 return [
     'page_title' => 'Pricing, Cardify, Free platform plus pay-per-print',
-    'page_desc'  => 'Cardify is free forever. Unlimited employees, templates and digital cards. You only pay when you order printed cards, from OMR 5.000 per 100 cards.',
+    'page_desc'  => 'Cardify is free forever. Unlimited employees, templates and digital cards. You only pay when you order printed cards, from OMR :standard_price per 100 cards.',
 
     'hero_eyebrow' => 'Simple pricing',
     'hero_heading' => 'Free platform, pay only for prints.',
@@ -29,22 +29,22 @@ return [
 
     'product_standard_name'  => 'Standard Cards',
     'product_standard_spec'  => '300gsm matt, full colour both sides',
-    'product_standard_price' => 'OMR 5.000',
+    'product_standard_price' => 'OMR :standard_price',
     'product_standard_unit'  => 'per 100 cards',
 
     'product_premium_name'   => 'Premium Cards',
     'product_premium_spec'   => '350gsm soft-touch, full colour both sides',
-    'product_premium_price'  => 'OMR 6.000',
+    'product_premium_price'  => 'OMR :premium_price',
     'product_premium_unit'   => 'per 100 cards',
 
     'product_luxury_name'    => 'Luxury Cards',
     'product_luxury_spec'    => '450gsm with spot UV or foil accents',
-    'product_luxury_price'   => 'OMR 15.000',
+    'product_luxury_price'   => 'OMR :luxury_price',
     'product_luxury_unit'    => 'per 100 cards',
 
     'product_nfc_name'       => 'NFC Tap Cards',
     'product_nfc_spec'       => 'Re-programmable NFC chip for compatible NFC-enabled phones, with QR fallback',
-    'product_nfc_price'      => 'OMR 10.000',
+    'product_nfc_price'      => 'OMR :nfc_price',
     'product_nfc_unit'       => 'per card',
 
     'product_cta'   => 'Order prints',

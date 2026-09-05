@@ -15,11 +15,13 @@
  * put them in front of customers, which is not a decision this file gets to
  * make. PRICEABLE carries them so a shop's existing rates are not orphaned.
  *
- * `nfc` is the same shape and matters more, because the published NFC price is
- * OMR 10.000 on /pricing, /nfc-business-card, the FAQ and llms.txt, while BHD's
- * shop JSON carries an nfc tier of 25 per card. No order path can select it, so
- * nothing charges 25 today. tests/php/card_paper_types_test.php fails if any
- * path starts offering it while the two numbers still disagree.
+ * `nfc` is the same shape and mattered more, because two prices existed for it:
+ * OMR 10.000 on every published surface and a stored shop tier of 25 per card.
+ * Ali settled it at 10.000 on 5 Sep 2026. includes/CardCatalogPricing.php holds
+ * that number now, CardPrintPricing reads the catalogue for it instead of the
+ * shop JSON, and migration 156 rewrote the stored 25. nfc stays out of
+ * ORDERABLE until someone decides to sell it, which is a commercial call and
+ * not one this file gets to make.
  */
 class CardPaperTypes
 {

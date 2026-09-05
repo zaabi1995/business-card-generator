@@ -15,6 +15,8 @@
  * Public canonical URLs own their locale. Other routes use query, cookie,
  * session, then the English default.
  */
+require_once __DIR__ . '/CardCatalogPricing.php';
+
 class I18n
 {
     private static string $locale = 'en';
@@ -372,6 +374,13 @@ class I18n
         }
         if ($value === null) {
             $value = $key; // surface missing keys rather than silently returning blank
+        }
+
+        // Published prices are injected here, not typed into the copy, so no
+        // call site can forget them and no lang file can drift from the
+        // canonical amount. The caller's own params win on a key clash.
+        if (is_string($value) && strpos($value, '_price') !== false) {
+            $params += CardCatalogPricing::copyParams();
         }
 
         if (!empty($params) && is_string($value)) {

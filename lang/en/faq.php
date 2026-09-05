@@ -21,7 +21,7 @@ return [
     'gs2_q' => 'How do I sign up?',
     'gs2_a' => 'Visit the get-started page, enter your company details, and create your account in under two minutes. No credit card needed, you can design your first card free.',
     'gs3_q' => 'Is Cardify free to use?',
-    'gs3_a' => 'Yes, the platform is free forever. Unlimited employees, unlimited templates, digital cards, QR sharing, analytics, all at no cost. You only pay when you order printed cards (from OMR 5.000 per 100 cards) or NFC tap cards (OMR 10.000 per card).',
+    'gs3_a' => 'Yes, the platform is free forever. Unlimited employees, unlimited templates, digital cards, QR sharing, analytics, all at no cost. You only pay when you order printed cards (from OMR :standard_price per 100 cards) or NFC tap cards (OMR :nfc_price per card).',
     'gs4_q' => 'Who is Cardify for?',
     'gs4_a' => 'Freelancers, SMEs and large employers across Oman. Whether you need one card or a department of 500, Cardify scales with you.',
 
@@ -31,7 +31,7 @@ return [
     'dc2_q' => 'Can I share my card on WhatsApp?',
     'dc2_a' => 'Yes. Every card has a share button that drops the link into WhatsApp, email, SMS or anywhere else. Many users paste it into their email signature too.',
     'dc3_q' => 'Does Cardify support NFC cards?',
-    'dc3_a' => 'Yes. Any NFC tag or card can be programmed with your Cardify URL so a phone tap opens your card instantly, no app needed. Cardify also sells NFC-enabled printed cards starting at OMR 10.000.',
+    'dc3_a' => 'Yes. Any NFC tag or card can be programmed with your Cardify URL so a phone tap opens your card instantly, no app needed. Cardify also sells NFC-enabled printed cards starting at OMR :nfc_price.',
     'dc4_q' => 'Can I update a card after sharing it?',
     'dc4_a' => 'Yes, and that is the big advantage over paper cards. Change your title, phone or photo anytime; everyone who already has your link sees the latest version immediately.',
 
@@ -43,7 +43,7 @@ return [
     'pr3_q' => 'How long does printing take?',
     'pr3_a' => 'Standard turnaround inside Muscat is 2-3 working days. Rush orders deliver next day for an extra fee. Status updates flow as the order moves from production to delivery.',
     'pr4_q' => 'How much does printing cost?',
-    'pr4_a' => 'From OMR 5.000 per 100 cards on 300gsm matt stock. Premium 350gsm soft-touch from OMR 6.000, luxury 450gsm with spot UV from OMR 15.000, NFC-enabled cards from OMR 10.000 each. Volume discounts at 100, 500 and 1,000 cards.',
+    'pr4_a' => 'From OMR :standard_price per 100 cards on 300gsm matt stock. Premium 350gsm soft-touch from OMR :premium_price, luxury 450gsm with spot UV from OMR :luxury_price, NFC-enabled cards from OMR :nfc_price each. Volume discounts at 100, 500 and 1,000 cards.',
 
     // For teams, 3
     'tm1_q' => 'Can I manage cards for many employees?',
