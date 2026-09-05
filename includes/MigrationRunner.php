@@ -247,12 +247,29 @@ class MigrationRunner {
         // Snapshot user functions BEFORE include so we can detect whether this
         // migration file defined a `migration_NNN_*` function (old pattern) or
         // simply ran its SQL at include time (new top-level pattern).
-        $before = get_defined_functions()['user'];
+        $functionsBefore = get_defined_functions()['user'];
 
-        // Load migration file. For top-level scripts any thrown exception will
-        // propagate up and be caught below → recorded as failure.
+        // Load migration file INSIDE A CLOSURE, so its local variables cannot
+        // reach this method's.
+        //
+        // Migration 156 named a local $before while comparing a stored value to
+        // the canonical one. A plain require_once shares scope with its caller,
+        // so that string landed on the runner's own $before and the next line,
+        // array_diff($after, $before), threw a TypeError. The migration itself
+        // had already run and committed; only the ledger insert was skipped, so
+        // the change was applied and recorded nowhere. The deploy printed no
+        // reason at all, because production config sets display_errors to 0.
+        //
+        // Any of $after, $prefix, $executed, $migrations, $functionName, $pdo or
+        // $result would have done the same thing. A migration's locals are its
+        // own business; the runner should not be reading them.
+        //
+        // For top-level scripts any thrown exception propagates and is caught
+        // below and recorded as a failure.
         try {
-            require_once $migration['path'];
+            (static function (string $cardifyMigrationPath): void {
+                require_once $cardifyMigrationPath;
+            })($migration['path']);
         } catch (Throwable $e) {
             return [
                 'success' => false,
@@ -261,10 +278,10 @@ class MigrationRunner {
             ];
         }
 
-        $after = get_defined_functions()['user'];
+        $functionsAfter = get_defined_functions()['user'];
 
         $functionName = null;
-        foreach (array_diff($after, $before) as $func) {
+        foreach (array_diff($functionsAfter, $functionsBefore) as $func) {
             if (strpos($func, $prefix) === 0) {
                 $functionName = $func;
                 break;
@@ -273,7 +290,7 @@ class MigrationRunner {
         // Fallback: function may have been defined by an earlier include in
         // the same request (shouldn't happen in normal flow).
         if (!$functionName) {
-            foreach ($after as $func) {
+            foreach ($functionsAfter as $func) {
                 if (strpos($func, $prefix) === 0) {
                     $functionName = $func;
                     break;
@@ -350,8 +367,14 @@ class MigrationRunner {
         
         // Load migration file (top-level scripts are idempotent; functions just
         // get (re)defined). If the include itself throws, report it.
+        //
+        // Isolated for the same reason runMigration() is: a migration's locals
+        // would otherwise land on $migration, $prefix, $functionName and $pdo
+        // right here.
         try {
-            require_once $migration['path'];
+            (static function (string $cardifyMigrationPath): void {
+                require_once $cardifyMigrationPath;
+            })($migration['path']);
         } catch (Throwable $e) {
             return [
                 'success' => false,

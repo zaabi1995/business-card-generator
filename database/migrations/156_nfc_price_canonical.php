@@ -33,10 +33,10 @@ try {
         if (!is_array($pricing)) continue;
         if (!isset($pricing['paper_type_pricing']['nfc'])) continue;
 
-        $before = json_encode($pricing['paper_type_pricing']['nfc']);
+        $storedNfc = json_encode($pricing['paper_type_pricing']['nfc']);
         $pricing['paper_type_pricing']['nfc'] = CardCatalogPricing::shopTier('nfc');
-        $after  = json_encode($pricing['paper_type_pricing']['nfc']);
-        if ($before === $after) {
+        $canonicalNfc = json_encode($pricing['paper_type_pricing']['nfc']);
+        if ($storedNfc === $canonicalNfc) {
             echo "[156] Shop {$row['id']} ({$row['name']}) already canonical\n";
             continue;
         }
@@ -47,7 +47,7 @@ try {
             ':id' => $row['id'],
         ]);
         $changed++;
-        echo "[156] Shop {$row['id']} ({$row['name']}) NFC {$before} -> {$after}\n";
+        echo "[156] Shop {$row['id']} ({$row['name']}) NFC {$storedNfc} -> {$canonicalNfc}\n";
     }
 
     echo "[156] Canonical NFC price " . number_format($canonical, 3) . " OMR, {$changed} shop(s) rewritten\n";

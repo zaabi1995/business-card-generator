@@ -16,6 +16,22 @@ $fail = static function (string $message): void {
     exit(1);
 };
 
+// A fatal inside a migration used to leave no trace here. Production config
+// sets display_errors to 0 and routes error_log to a file, so when migration
+// 156 hit a TypeError in the runner the deploy printed its two echo lines,
+// exited 255, rolled the code back and said only "database migration failed".
+// The reason has to reach the deploy log, which is the only thing anyone
+// reads after a failed deploy.
+register_shutdown_function(static function (): void {
+    $e = error_get_last();
+    if ($e === null) return;
+    if (!in_array($e['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR, E_USER_ERROR], true)) return;
+    fwrite(STDERR, sprintf(
+        "MIGRATION FATAL: %s in %s on line %d\n",
+        $e['message'], $e['file'], $e['line']
+    ));
+});
+
 $lock = fopen(sys_get_temp_dir() . '/cardify-pending-migrations.lock', 'c');
 if ($lock === false || !flock($lock, LOCK_EX | LOCK_NB)) {
     $fail('another migration process is already running');
