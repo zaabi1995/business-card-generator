@@ -110,6 +110,49 @@ def chip(x, y, w, h, fill='#ffffff', r=16):
     return f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="{r}" fill="{fill}"/>'
 
 
+def logo_plate(L, cx, cy, cw, ch, ix, iy, iw, ih, par='xMidYMid meet', alt=''):
+    """A plate exists to hold a logo. With no logo it printed as a blank white
+    box on the finished card: five presets drew chip() unconditionally while
+    IMG() returned nothing, so the plate shipped empty. Found on the card back
+    during the 5 Sep 2026 gauntlet; the four front presets had the same shape.
+
+    With no logo the plate is dropped and `alt` takes the space, so the card
+    still carries a brand mark instead of a white hole."""
+    if not L:
+        return alt or ''
+    return chip(cx, cy, cw, ch) + IMG(L, ix, iy, iw, ih, par)
+
+
+def _initials(text, n=2):
+    return ''.join(w[0] for w in str(text or '').split()[:n] if w[:1].strip()).upper()
+
+
+def monogram(text, cx, cy, d=190, fill='#ffffff'):
+    """Initials in a soft ring. Reads as a deliberate mark on a brand panel;
+    an empty plate reads as a bug. Every plate sits on a colour that
+    safe_accent() has already forced to contrast with white."""
+    ini = _initials(text)
+    if not ini:
+        return ''
+    size = d * 0.46
+    return (f'<circle cx="{cx}" cy="{cy}" r="{d / 2}" fill="{fill}" fill-opacity="0.12" '
+            f'stroke="{fill}" stroke-opacity="0.45" stroke-width="3"/>'
+            + T(cx, cy + 0.34 * size, size, fill, ini, bold=True, anchor='middle'))
+
+
+def wordmark(text, x, y, w, h, anchor='start', fill='#ffffff'):
+    """The company name set in the space a wide plate used to occupy. Sized to
+    fit the box: bold sans runs about 0.58 em per glyph."""
+    txt = str(text or '').strip()
+    if not txt:
+        return ''
+    size = min(h * 0.46, w / max(1, 0.58 * len(txt)))
+    if size < 13:
+        return monogram(txt, x + w / 2, y + h / 2, min(w, h) * 0.86, fill)
+    tx = x if anchor == 'start' else x + w / 2
+    return T(tx, y + h / 2 + 0.34 * size, size, fill, txt, bold=True, anchor=anchor)
+
+
 # ---- preset FRONT builders. Each returns inner SVG over a white base. ----
 def p_corp_left(b, L, p, s, bil):
     o = [f'<rect width="{W}" height="{H}" fill="#ffffff"/>',
@@ -146,7 +189,8 @@ def p_centered_min(b, L, p, s, bil):
 def p_bold_band(b, L, p, s, bil):
     o = [f'<rect width="{W}" height="{H}" fill="#ffffff"/>',
          f'<rect x="0" y="0" width="{W}" height="210" fill="{p}"/>',
-         chip(70, 46, 330, 118), IMG(L, 90, 62, 290, 86, 'xMinYMid meet'),
+         logo_plate(L, 70, 46, 330, 118, 90, 62, 290, 86, 'xMinYMid meet',
+                    alt=wordmark(b.get('org_en'), 70, 46, 330, 118)),
          f'<rect x="0" y="210" width="{W}" height="6" fill="{s}"/>']
     y = 292
     o.append(T(70, y, 44, p, b['name_en'], bold=True)); y += 40
@@ -162,7 +206,8 @@ def p_split_v(b, L, p, s, bil):
     pw = 400
     o = [f'<rect width="{W}" height="{H}" fill="#ffffff"/>',
          f'<rect x="0" y="0" width="{pw}" height="{H}" fill="{p}"/>',
-         chip(60, 210, 280, 180), IMG(L, 82, 238, 236, 124)]
+         logo_plate(L, 60, 210, 280, 180, 82, 238, 236, 124,
+                    alt=monogram(b.get('org_en'), 200, 300, 150))]
     x = pw + 60; y = 250
     o.append(T(x, y, 44, p, b['name_en'], bold=True)); y += 40
     if bil:
@@ -208,7 +253,8 @@ def p_biling_corp(b, L, p, s, bil):
 def p_biling_band(b, L, p, s, bil):
     o = [f'<rect width="{W}" height="{H}" fill="#ffffff"/>',
          f'<rect x="0" y="0" width="{W}" height="196" fill="{p}"/>',
-         chip(70, 44, 300, 108), IMG(L, 88, 58, 264, 80, 'xMinYMid meet'),
+         logo_plate(L, 70, 44, 300, 108, 88, 58, 264, 80, 'xMinYMid meet',
+                    alt=wordmark(b.get('org_en'), 70, 44, 300, 108)),
          f'<rect x="0" y="196" width="{W}" height="6" fill="{s}"/>']
     o += [T(70, 270, 40, p, b['name_en'], bold=True),
           T(W - 70, 270, 32, p, b['name_ar'], bold=True, anchor='end', rtl=True),
@@ -235,7 +281,8 @@ def p_biling_split(b, L, p, s, bil):
     pw = 410
     o = [f'<rect width="{W}" height="{H}" fill="#ffffff"/>',
          f'<rect x="0" y="0" width="{pw}" height="{H}" fill="{p}"/>',
-         chip(55, 150, 300, 170), IMG(L, 75, 176, 260, 118),
+         logo_plate(L, 55, 150, 300, 170, 75, 176, 260, 118,
+                    alt=monogram(b.get('org_en'), 205, 235, 140)),
          T(pw / 2, 400, 26, '#ffffff', b['org_ar'], anchor='middle', rtl=True)]
     x = pw + 50; y = 250
     o.append(T(x, y, 42, p, b['name_en'], bold=True)); y += 38
@@ -248,8 +295,12 @@ def p_biling_split(b, L, p, s, bil):
 
 # ---- coordinating BACK (brand panel + logo + org). One per family. ----
 def back_panel(b, L, p, s, bil):
+    # The plate is the focal element of the back, so it does not simply vanish:
+    # with no logo the company monogram takes its place on the brand panel.
+    mark = logo_plate(L, 280, 165, 490, 230, 320, 200, 410, 160, 'xMidYMid meet',
+                      alt=monogram(b.get('org_en') or b.get('name_en'), W / 2, 280))
     o = [f'<rect width="{W}" height="{H}" fill="{p}"/>',
-         chip(280, 165, 490, 230), IMG(L, 320, 200, 410, 160, 'xMidYMid meet'),
+         mark,
          f'<rect x="0" y="558" width="{W}" height="6" fill="{s}"/>']
     if bil:
         o.append(T(W / 2, 452, 26, '#ffffff', b['org_ar'], anchor='middle', rtl=True))
