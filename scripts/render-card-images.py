@@ -204,6 +204,15 @@ def _field_items(template: dict) -> list[tuple[str, dict]]:
     return result
 
 
+# Fields whose value is the same for every person in the tenant. Kept in step
+# with scripts/render-card-pdf.py, which draws the same distinction.
+_TENANT_CONSTANT_BASES = ("website", "company", "address", "fax", "social")
+
+
+def _is_tenant_constant(field_key: str) -> bool:
+    return (field_key or "").lower().startswith(_TENANT_CONSTANT_BASES)
+
+
 def _employee_value(key: str, payload: dict, field: dict) -> str:
     if field.get("is_static"):
         return str(field.get("detected_text") or field.get("text") or "")
@@ -241,8 +250,26 @@ def _employee_value(key: str, payload: dict, field: dict) -> str:
     }
     if value in (None, "") and resolved in company_fallbacks:
         value = company.get(company_fallbacks[resolved])
+    # detected_text is the sample lifted out of the source PDF at import: the
+    # words that were on the card the design came from. Falling back to it for a
+    # PER-PERSON field prints the person whose card was imported.
+    #
+    # It was live: Ahmed Al-Siyabi's card on aedoman.cardify.om carried
+    # "علي محمد المجيني" as its Arabic name, because that employee has no
+    # name_ar and the template's detected_text still held the original owner's.
+    # scripts/render-card-pdf.py was fixed for exactly this in the vector path
+    # ("Al Maha's single-line job titles were inheriting the three-line
+    # designation of the employee the design came from") and the PNG path,
+    # which is the one the digital card, the wallet strip, the og:image and the
+    # print preview all read, was left as it was.
+    #
+    # Website, company, address, fax and social are the same for everyone in
+    # the tenant, so the design's own text is the right default there.
     if value in (None, ""):
-        value = field.get("detected_text")
+        if _is_tenant_constant(resolved) or _is_tenant_constant(key):
+            value = field.get("detected_text")
+        else:
+            value = ""
     return "" if value is None else str(value)
 
 
