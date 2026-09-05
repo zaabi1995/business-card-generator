@@ -1045,7 +1045,7 @@ installerHeader(
                         <div class="space-y-4">
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Payment Gateway</label>
-                                <select name="billing_gateway" id="gatewaySelect" class="input-field w-full px-4 py-3 rounded-xl text-gray-900" onchange="toggleGatewayFields()">
+                                <select name="billing_gateway" id="gatewaySelect" class="input-field w-full px-4 py-3 rounded-xl text-gray-900" data-cardify-change-fn="toggleGatewayFields">
                                     <option value="none">Skip (Configure Later)</option>
                                     <option value="amwal">Amwal Pay</option>
                                     <option value="stripe">Stripe</option>
@@ -1105,7 +1105,7 @@ installerHeader(
                         
                         <div class="mt-6 flex space-x-3">
                             <a href="?step=site_config" class="btn-secondary px-6 py-3 rounded-xl text-gray-700 flex-1 text-center">← Back</a>
-                            <button type="button" onclick="document.getElementById('skipForm').submit()" class="btn-secondary px-6 py-3 rounded-xl text-gray-700">Skip</button>
+                            <button type="button" data-cardify-action="submit-form" data-form="skipForm" class="btn-secondary px-6 py-3 rounded-xl text-gray-700">Skip</button>
                             <button type="submit" class="btn-primary px-6 py-3 rounded-xl text-white flex-1">Continue →</button>
                         </div>
                     </form>
@@ -1114,7 +1114,7 @@ installerHeader(
                         <input type="hidden" name="action" value="skip_billing">
                     </form>
                     
-                    <script>
+                    <script<?= cspNonceAttr() ?>>
                         function toggleGatewayFields() {
                             const gateway = document.getElementById('gatewaySelect').value;
                             document.getElementById('amwalFields').style.display = gateway === 'amwal' ? 'block' : 'none';

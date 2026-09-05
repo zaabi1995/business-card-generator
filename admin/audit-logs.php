@@ -346,7 +346,7 @@ adminHeader(t('adminchrome.audit_logs'), 'audit-logs');
                     </td>
                     <td class="px-4 py-3">
                         <?php if ($log['before_data'] || $log['after_data']): ?>
-                        <button onclick="showLogDetails(<?php echo htmlspecialchars(json_encode($log), ENT_QUOTES); ?>)"
+                        <button data-cardify-action="call" data-fn="showLogDetails" data-args="<?= htmlspecialchars(json_encode([$log]), ENT_QUOTES) ?>"
                                 class="text-blue-600 hover:text-blue-800 text-sm">
                             <?= htmlspecialchars(t('auditlogs.view_changes')) ?>
                         </button>
@@ -386,11 +386,11 @@ adminHeader(t('adminchrome.audit_logs'), 'audit-logs');
 
 <!-- Details Modal -->
 <div id="logModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4">
-    <div class="absolute inset-0 bg-gray-900/50 backdrop-blur-sm" onclick="closeLogModal()"></div>
+    <div class="absolute inset-0 bg-gray-900/50 backdrop-blur-sm" data-cardify-action="call" data-fn="closeLogModal"></div>
     <div class="relative bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         <div class="p-6 border-b border-gray-100 flex items-center justify-between">
             <h3 class="text-xl font-bold text-gray-900"><?= htmlspecialchars(t('auditlogs.modal_title')) ?></h3>
-            <button onclick="closeLogModal()" class="text-gray-400 hover:text-gray-600">
+            <button data-cardify-action="call" data-fn="closeLogModal" class="text-gray-400 hover:text-gray-600">
                 <i class="fa-solid fa-times"></i>
             </button>
         </div>
@@ -413,7 +413,7 @@ adminHeader(t('adminchrome.audit_logs'), 'audit-logs');
     </div>
 </div>
 
-<script>
+<script<?= cspNonceAttr() ?>>
 function showLogDetails(log) {
     const modal = document.getElementById('logModal');
     const beforeData = document.getElementById('beforeData');

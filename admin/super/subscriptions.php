@@ -253,7 +253,7 @@ adminHeader('Subscriptions', 'super');
         <form method="get" class="flex flex-wrap items-center gap-4">
             <div class="flex items-center gap-2">
                 <label class="text-sm text-gray-600">Filter:</label>
-                <select name="filter" onchange="this.form.submit()" class="px-3 py-2 border border-gray-200 rounded-lg text-sm">
+                <select name="filter" data-cardify-submit-on-change class="px-3 py-2 border border-gray-200 rounded-lg text-sm">
                     <option value="all" <?php echo $filter === 'all' ? 'selected' : ''; ?>>All Companies</option>
                     <option value="free" <?php echo $filter === 'free' ? 'selected' : ''; ?>>Free Plan</option>
                     <option value="paid" <?php echo $filter === 'paid' ? 'selected' : ''; ?>>Paid Plans</option>
@@ -299,7 +299,7 @@ adminHeader('Subscriptions', 'super');
                 <?php endforeach; ?>
             </select>
             
-            <button type="submit" onclick="return confirm('Apply this action to all selected companies?')" 
+            <button type="submit" data-cardify-confirm="Apply this action to all selected companies?" 
                     class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium">
                 Apply
             </button>
@@ -499,7 +499,7 @@ adminHeader('Subscriptions', 'super');
     </div>
 </div>
 
-<script>
+<script<?= cspNonceAttr() ?>>
 function subscriptionManager() {
     return {
         selectedCompanies: [],

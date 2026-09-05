@@ -323,7 +323,7 @@ adminHeader('Email Logs', 'email_logs');
     <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         <div class="p-6 border-b flex items-center justify-between">
             <h3 class="text-lg font-semibold">Email Details</h3>
-            <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600">
+            <button data-cardify-action="call" data-fn="closeModal" class="text-gray-400 hover:text-gray-600">
                 <i class="fa-solid fa-times"></i>
             </button>
         </div>
@@ -376,12 +376,12 @@ adminHeader('Email Logs', 'email_logs');
             </div>
         </div>
         <div class="p-6 border-t bg-gray-50">
-            <button onclick="closeModal()" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">Close</button>
+            <button data-cardify-action="call" data-fn="closeModal" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">Close</button>
         </div>
     </div>
 </div>
 
-<script>
+<script<?= cspNonceAttr() ?>>
 function showDetails(log) {
     document.getElementById('detailRecipient').textContent = log.recipient_email + (log.recipient_name ? ' (' + log.recipient_name + ')' : '');
     

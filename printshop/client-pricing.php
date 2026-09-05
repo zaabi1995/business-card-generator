@@ -210,7 +210,7 @@ printshopHeader(t('printshopclientpricing.page_title', ['shop' => $printShop['na
                         <?= htmlspecialchars(t('printshopclientpricing.edit_btn')) ?>
                     </button>
                     <form method="POST" action="save-client-pricing.php" class="inline"
-                          onsubmit="return confirm('<?= htmlspecialchars(t('printshopclientpricing.reset_confirm'), ENT_QUOTES) ?>');">
+                          data-cardify-confirm="<?= htmlspecialchars((string)(htmlspecialchars(t('printshopclientpricing.reset_confirm'), ENT_QUOTES)), ENT_QUOTES) ?>">
                         <?= csrfField() ?>
                         <input type="hidden" name="action" value="reset">
                         <input type="hidden" name="company_id" value="<?= sanitize($row['company_id']) ?>">
@@ -460,7 +460,7 @@ printshopHeader(t('printshopclientpricing.page_title', ['shop' => $printShop['na
 </div>
 </div>
 
-<script>
+<script<?= cspNonceAttr() ?>>
 function clientPricing() {
     const PAPER_KEYS = ['uncoated', 'matte', 'silk'];
     return {

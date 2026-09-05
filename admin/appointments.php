@@ -140,7 +140,7 @@ adminHeader(t('adminchrome.appointments'), 'appointments');
     </div>
     <form method="get" class="flex items-center gap-2">
         <input type="hidden" name="filter" value="<?= sanitize($filter); ?>">
-        <select name="employee_id" onchange="this.form.submit()" class="px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm">
+        <select name="employee_id" data-cardify-submit-on-change class="px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm">
             <option value=""><?= htmlspecialchars(t('appointments.all_employees')) ?></option>
             <?php foreach ($employees as $emp): ?>
             <option value="<?= sanitize($emp['id']); ?>" <?= $employeeFilter === $emp['id'] ? 'selected' : ''; ?>><?= sanitize($emp['name']); ?></option>
@@ -237,7 +237,7 @@ adminHeader(t('adminchrome.appointments'), 'appointments');
                             <button class="text-xs px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700"><i class="fa-solid fa-check"></i> <?= htmlspecialchars(t('appointments.btn_confirm')) ?></button>
                         </form>
                         <?php endif; ?>
-                        <form method="post" class="inline" onsubmit="return confirm(<?= json_encode(t('appointments.confirm_cancel'), JSON_UNESCAPED_UNICODE) ?>);">
+                        <form method="post" class="inline" data-cardify-confirm="<?= htmlspecialchars(t('appointments.confirm_cancel'), ENT_QUOTES) ?>">
                             <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?? ''; ?>">
                             <input type="hidden" name="action" value="update_status">
                             <input type="hidden" name="appointment_id" value="<?= sanitize($a['id']); ?>">

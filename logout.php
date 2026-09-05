@@ -67,5 +67,5 @@ $action = htmlspecialchars(getBasePath() . 'logout.php', ENT_QUOTES, 'UTF-8');
   <noscript><button type="submit">Click to sign out</button></noscript>
 </form>
 <p>Signing out&hellip;</p>
-<script>document.getElementById('lo').submit();</script>
+<script<?= cspNonceAttr() ?>>document.getElementById('lo').submit();</script>
 </body></html>

@@ -179,7 +179,7 @@ adminHeader('Database Updates', 'updates');
             <h3 class="text-lg font-semibold text-gray-900">Run All Pending Migrations</h3>
             <p class="text-sm text-gray-500 mt-1">Execute all <?php echo count($pendingMigrations); ?> pending database updates in order</p>
         </div>
-        <form method="post" onsubmit="return confirm('Run all pending migrations? This will update your database.');">
+        <form method="post" data-cardify-confirm="Run all pending migrations? This will update your database.">
             <?php echo csrfField(); ?>
             <input type="hidden" name="action" value="run_all">
             <button type="submit" class="px-6 py-2.5 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors flex items-center gap-2">
@@ -218,7 +218,7 @@ adminHeader('Database Updates', 'updates');
                     <i class="fa-solid fa-check"></i>
                     Executed
                 </span>
-                <form method="post" class="inline" onsubmit="return confirm('Re-check migration #<?php echo $migration['number']; ?>? This will re-run the migration to verify all changes are in place.');">
+                <form method="post" class="inline" data-cardify-confirm="Re-check migration #<?= htmlspecialchars((string)($migration['number']), ENT_QUOTES) ?>? This will re-run the migration to verify all changes are in place.">
                     <?php echo csrfField(); ?>
                     <input type="hidden" name="action" value="recheck_migration">
                     <input type="hidden" name="migration_number" value="<?php echo $migration['number']; ?>">
@@ -227,7 +227,7 @@ adminHeader('Database Updates', 'updates');
                         Re-check
                     </button>
                 </form>
-                <form method="post" class="inline" onsubmit="return confirm('FORCE RE-RUN migration #<?php echo $migration['number']; ?>?\n\nThis will:\n1. Remove this migration from the executed list\n2. Drop any tables created by this migration\n3. Run the migration fresh\n\nUse this if the migration was partially completed or corrupted.');">
+                <form method="post" class="inline" data-cardify-confirm="FORCE RE-RUN migration #<?= htmlspecialchars((string)($migration['number']), ENT_QUOTES) ?>?\n\nThis will:\n1. Remove this migration from the executed list\n2. Drop any tables created by this migration\n3. Run the migration fresh\n\nUse this if the migration was partially completed or corrupted.">
                     <?php echo csrfField(); ?>
                     <input type="hidden" name="action" value="force_rerun">
                     <input type="hidden" name="migration_number" value="<?php echo $migration['number']; ?>">
@@ -238,7 +238,7 @@ adminHeader('Database Updates', 'updates');
                     </button>
                 </form>
                 <?php else: ?>
-                <form method="post" class="inline" onsubmit="return confirm('Run migration #<?php echo $migration['number']; ?>?');">
+                <form method="post" class="inline" data-cardify-confirm="Run migration #<?= htmlspecialchars((string)($migration['number']), ENT_QUOTES) ?>?">
                     <?php echo csrfField(); ?>
                     <input type="hidden" name="action" value="run_migration">
                     <input type="hidden" name="migration_number" value="<?php echo $migration['number']; ?>">

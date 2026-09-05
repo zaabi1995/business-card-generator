@@ -516,15 +516,15 @@ $isFreePlan = ($planInfo['plan'] ?? 'free') === 'free';
 <div class="flex items-center justify-between mb-6">
     <h2 id="plans" class="text-xl font-bold text-gray-900"><?= htmlspecialchars(t('billing.upgrade_your_plan')) ?></h2>
     <div class="flex items-center gap-2 bg-gray-100 p-1 rounded-xl" id="billingToggle">
-        <button type="button" onclick="setBillingCycle('monthly')" id="btn-monthly"
+        <button type="button" data-cardify-action="call" data-fn="setBillingCycle" data-args="[&quot;monthly&quot;]" id="btn-monthly"
                 class="px-4 py-2 text-sm font-medium rounded-lg bg-white shadow text-gray-900 transition-all"><?= htmlspecialchars(t('billing.cycle_monthly')) ?></button>
-        <button type="button" onclick="setBillingCycle('yearly')" id="btn-yearly"
+        <button type="button" data-cardify-action="call" data-fn="setBillingCycle" data-args="[&quot;yearly&quot;]" id="btn-yearly"
                 class="px-4 py-2 text-sm font-medium rounded-lg text-gray-500 hover:text-gray-700 transition-all">
             <?= htmlspecialchars(t('billing.cycle_yearly')) ?> <span class="ml-1 text-xs text-green-600 font-semibold"><?= htmlspecialchars(t('billing.save_20')) ?></span>
         </button>
     </div>
 </div>
-<script>
+<script<?= cspNonceAttr() ?>>
 function setBillingCycle(cycle) {
     document.querySelectorAll('input[name="billing_cycle"]').forEach(i => i.value = cycle);
     const isYearly = cycle === 'yearly';

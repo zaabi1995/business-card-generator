@@ -632,7 +632,7 @@ $basePath = getAdminBasePath();
     </form>
 </div>
 
-<script>
+<script<?= cspNonceAttr() ?>>
 <?php
 // The tier table, once, from the class that owns it. Both the PHP shop card
 // above and the JavaScript review panel below resolve an unpriced shop through

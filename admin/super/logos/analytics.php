@@ -57,7 +57,7 @@ function esc($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
 <h2 class="mt-8 text-lg font-semibold">Downloads (last 30 days)</h2>
 <canvas id="chart" class="mt-2" height="80"></canvas>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
+<script<?= cspNonceAttr() ?>>
 new Chart(document.getElementById('chart'), {
   type: 'line',
   data: {

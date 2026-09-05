@@ -123,7 +123,7 @@ adminHeader($pageTitle, 'growth');
         <?php if ($isSuper): ?>
         <form method="GET" class="flex items-center gap-2">
             <label for="company_id" class="text-xs font-medium text-gray-500 uppercase tracking-wider"><?= htmlspecialchars(t('growth.filter_company')) ?></label>
-            <select id="company_id" name="company_id" onchange="this.form.submit()"
+            <select id="company_id" name="company_id" data-cardify-submit-on-change
                     class="px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                 <option value=""><?= htmlspecialchars(t('growth.all_companies')) ?></option>
                 <?php foreach ($allCompanies as $c): ?>
@@ -245,12 +245,12 @@ adminHeader($pageTitle, 'growth');
             <table id="gdTopTable" class="w-full text-sm">
                 <thead class="bg-gray-50 text-xs text-gray-500 uppercase tracking-wider">
                     <tr>
-                        <th class="px-4 py-3 text-left cursor-pointer select-none" onclick="gdSort(0,'str')"><?= htmlspecialchars(t('growth.col_employee')) ?> <i class="fa-solid fa-sort text-gray-300"></i></th>
-                        <th class="px-4 py-3 text-right cursor-pointer select-none" onclick="gdSort(1,'num')"><?= htmlspecialchars(t('growth.col_views')) ?> <i class="fa-solid fa-sort text-gray-300"></i></th>
-                        <th class="px-4 py-3 text-right cursor-pointer select-none" onclick="gdSort(2,'num')"><?= htmlspecialchars(t('growth.col_clicks')) ?> <i class="fa-solid fa-sort text-gray-300"></i></th>
-                        <th class="px-4 py-3 text-right cursor-pointer select-none" onclick="gdSort(3,'num')"><?= htmlspecialchars(t('growth.col_viral')) ?> <i class="fa-solid fa-sort text-gray-300"></i></th>
-                        <th class="px-4 py-3 text-right cursor-pointer select-none" onclick="gdSort(4,'num')"><?= htmlspecialchars(t('growth.col_saves')) ?> <i class="fa-solid fa-sort text-gray-300"></i></th>
-                        <th class="px-4 py-3 text-right cursor-pointer select-none" onclick="gdSort(5,'num')"><?= htmlspecialchars(t('growth.col_conv')) ?> <i class="fa-solid fa-sort text-gray-300"></i></th>
+                        <th class="px-4 py-3 text-left cursor-pointer select-none" data-cardify-action="call" data-fn="gdSort" data-args="[0, &quot;str&quot;]"><?= htmlspecialchars(t('growth.col_employee')) ?> <i class="fa-solid fa-sort text-gray-300"></i></th>
+                        <th class="px-4 py-3 text-right cursor-pointer select-none" data-cardify-action="call" data-fn="gdSort" data-args="[1, &quot;num&quot;]"><?= htmlspecialchars(t('growth.col_views')) ?> <i class="fa-solid fa-sort text-gray-300"></i></th>
+                        <th class="px-4 py-3 text-right cursor-pointer select-none" data-cardify-action="call" data-fn="gdSort" data-args="[2, &quot;num&quot;]"><?= htmlspecialchars(t('growth.col_clicks')) ?> <i class="fa-solid fa-sort text-gray-300"></i></th>
+                        <th class="px-4 py-3 text-right cursor-pointer select-none" data-cardify-action="call" data-fn="gdSort" data-args="[3, &quot;num&quot;]"><?= htmlspecialchars(t('growth.col_viral')) ?> <i class="fa-solid fa-sort text-gray-300"></i></th>
+                        <th class="px-4 py-3 text-right cursor-pointer select-none" data-cardify-action="call" data-fn="gdSort" data-args="[4, &quot;num&quot;]"><?= htmlspecialchars(t('growth.col_saves')) ?> <i class="fa-solid fa-sort text-gray-300"></i></th>
+                        <th class="px-4 py-3 text-right cursor-pointer select-none" data-cardify-action="call" data-fn="gdSort" data-args="[5, &quot;num&quot;]"><?= htmlspecialchars(t('growth.col_conv')) ?> <i class="fa-solid fa-sort text-gray-300"></i></th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
@@ -351,7 +351,7 @@ adminHeader($pageTitle, 'growth');
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-<script>
+<script<?= cspNonceAttr() ?>>
 document.addEventListener('DOMContentLoaded', function () {
     const sectionLabels = <?php echo json_encode(array_values($sectionLabels)); ?>;
     const sectionData   = <?php echo json_encode(array_map(function ($s) { return (float) $s['percent']; }, $sectionData['sections'])); ?>;

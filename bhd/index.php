@@ -404,7 +404,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
 <footer class="bg-gray-900 text-gray-400 py-8 px-4">
     <div class="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
         <div class="flex items-center gap-3">
-            <img src="<?= getBasePath() ?>assets/images/logo-light.svg" alt="Cardify" class="h-7 w-auto" onerror="this.style.display='none'">
+            <img src="<?= getBasePath() ?>assets/images/logo-light.svg" alt="Cardify" class="h-7 w-auto" data-cardify-hide-on-error>
             <span class="text-sm">© <?= date('Y') ?> Cardify. All rights reserved.</span>
         </div>
         <div class="flex gap-6 text-sm">

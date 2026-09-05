@@ -90,7 +90,7 @@ $cardifyOgLocale = ($cardifyLocale === 'ar') ? 'ar_OM' : 'en_US';
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script>
+    <script<?= cspNonceAttr() ?>>
       // Defensively clear legacy language cookies on every page load so a
       // browser-cached HTML body (which never re-hits the server-side
       // Set-Cookie clearing path) cannot keep forcing Arabic. Runs in
@@ -195,7 +195,7 @@ $cardifyOgLocale = ($cardifyLocale === 'ar') ? 'ar_OM' : 'en_US';
              that aborts on every page. */ ?>
     <?php if (defined('GA_MEASUREMENT_ID') && preg_match('/^G-[A-Z0-9]{6,}$/', (string) GA_MEASUREMENT_ID)): ?>
     <!-- Google Analytics (deferred to after load) -->
-    <script>
+    <script<?= cspNonceAttr() ?>>
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
       gtag('js', new Date());
@@ -256,10 +256,10 @@ $cardifyOgLocale = ($cardifyLocale === 'ar') ? 'ar_OM' : 'en_US';
          most-used woff2 faces stay preloaded. ?v busts stale CF cache. -->
     <link rel="preload" href="https://design.bhd.om/fa/v7.2.0/webfonts/fa-brands-400.woff2?c=2" as="font" type="font/woff2" crossorigin>
     <link rel="preload" href="https://design.bhd.om/fa/v7.2.0/webfonts/fa-solid-900.woff2?c=2" as="font" type="font/woff2" crossorigin>
-    <link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/fontawesome.min.css?v=7.2.0" media="print" onload="this.onload=null;this.media='all'">
-    <link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/solid.min.css?v=7.2.0" media="print" onload="this.onload=null;this.media='all'">
-    <link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/regular.min.css?v=7.2.0" media="print" onload="this.onload=null;this.media='all'">
-    <link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/brands.min.css?v=7.2.0" media="print" onload="this.onload=null;this.media='all'">
+    <link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/fontawesome.min.css?v=7.2.0" media="print" data-cardify-async-css="media">
+    <link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/solid.min.css?v=7.2.0" media="print" data-cardify-async-css="media">
+    <link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/regular.min.css?v=7.2.0" media="print" data-cardify-async-css="media">
+    <link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/brands.min.css?v=7.2.0" media="print" data-cardify-async-css="media">
     <noscript>
         <link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/fontawesome.min.css?v=7.2.0">
         <link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/solid.min.css?v=7.2.0">
@@ -284,7 +284,7 @@ $cardifyOgLocale = ($cardifyLocale === 'ar') ? 'ar_OM' : 'en_US';
     <link rel="stylesheet" href="/assets/css/cardify-tailwind-supplement.css?v=<?php echo $cardifySupplementVersion; ?>">
 
     <!-- Flag Icons CSS, only needed on forms with phone/country selectors; non-blocking -->
-    <link rel="preload" as="style" href="/assets/vendor/flag-icons/css/flag-icons.min.css" onload="this.onload=null;this.rel='stylesheet'">
+    <link rel="preload" as="style" href="/assets/vendor/flag-icons/css/flag-icons.min.css" data-cardify-async-css="stylesheet">
     <noscript><link rel="stylesheet" href="/assets/vendor/flag-icons/css/flag-icons.min.css"></noscript>
     
     <!-- Custom Overrides -->
@@ -394,7 +394,7 @@ $cardifyOgLocale = ($cardifyLocale === 'ar') ? 'ar_OM' : 'en_US';
         }
     </style>
     <?php if ($enableThemeScript): ?>
-    <script>
+    <script<?= cspNonceAttr() ?>>
         if (localStorage.getItem('color-theme') === 'dark'
             || (!('color-theme' in localStorage)
                 && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
@@ -419,13 +419,18 @@ $cardifyOgLocale = ($cardifyLocale === 'ar') ? 'ar_OM' : 'en_US';
     <!-- BHD-Group shared design layer (design.bhd.om).
          Cardify keeps its own brand tokens + Tailwind theme; design.bhd.om
          adds Cmd+K palette + skeleton loaders as a complementary layer. -->
-    <link rel="stylesheet" href="https://design.bhd.om/cmdk.css" media="print" onload="this.onload=null;this.media='all'" />
-    <link rel="stylesheet" href="https://design.bhd.om/skeleton.css" media="print" onload="this.onload=null;this.media='all'" />
+    <link rel="stylesheet" href="https://design.bhd.om/cmdk.css" media="print" data-cardify-async-css="media" />
+    <link rel="stylesheet" href="https://design.bhd.om/skeleton.css" media="print" data-cardify-async-css="media" />
     <noscript>
         <link rel="stylesheet" href="https://design.bhd.om/cmdk.css" />
         <link rel="stylesheet" href="https://design.bhd.om/skeleton.css" />
     </noscript>
     <script src="https://design.bhd.om/cmdk.js" defer></script>
+    <?php /* The behaviours that used to sit in on* attributes. Placed after the
+       last async stylesheet so its first pass already sees every one of them:
+       an inline handler is inline script, and a CSP without 'unsafe-inline'
+       kills every one. */ ?>
+    <script src="<?php echo assetUrl('js/cardify-actions.js'); ?>?v=<?php echo @filemtime($_SERVER['DOCUMENT_ROOT'] . '/assets/js/cardify-actions.js') ?: time(); ?>"></script>
     <?php
     // Ambient 3D layer. Self-hosted Three, never a CDN. The loader is ~5 KB and
     // does nothing until after window load, then bails without importing Three
@@ -450,7 +455,7 @@ $cardifyOgLocale = ($cardifyLocale === 'ar') ? 'ar_OM' : 'en_US';
     <?php if ($cardifyAmbient3D): ?>
     <script defer src="<?= htmlspecialchars(getBasePath()) ?>assets/js/cardify-ambient-3d.js"></script>
     <?php endif; ?>
-    <script>
+    <script<?= cspNonceAttr() ?>>
       document.addEventListener('DOMContentLoaded', function () {
         if (!window.BHDCmdK) return;
         var isAr = document.documentElement.getAttribute('dir') === 'rtl';
@@ -501,14 +506,14 @@ html { scroll-padding-top: 5rem; }
     <?php if (!empty($cardifyTenantTheme['logo'])): ?>
     <div class="page-loader" id="pageLoader" style="--cardify-loader-primary: <?= htmlspecialchars($cardifyTenantTheme['primary'] ?? '#0f3354', ENT_QUOTES) ?>;">
         <div class="page-loader-ring">
-            <img src="<?= htmlspecialchars($cardifyTenantTheme['logo'], ENT_QUOTES) ?>" alt="<?= htmlspecialchars($brandName, ENT_QUOTES) ?>" onerror="this.style.display='none'">
+            <img src="<?= htmlspecialchars($cardifyTenantTheme['logo'], ENT_QUOTES) ?>" alt="<?= htmlspecialchars($brandName, ENT_QUOTES) ?>" data-cardify-hide-on-error>
         </div>
         <div class="page-loader-text">Loading...</div>
         <div class="page-loader-brand" style="background:linear-gradient(135deg, <?= htmlspecialchars($cardifyTenantTheme['primary'] ?? '#0f3354', ENT_QUOTES) ?> 0%, <?= htmlspecialchars($cardifyTenantTheme['secondary'] ?? '#c9a961', ENT_QUOTES) ?> 100%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;"><?php echo htmlspecialchars($brandName); ?></div>
     </div>
     <?php else: ?>
     <div class="page-loader" id="pageLoader">
-        <img src="<?php echo getBasePath(); ?>assets/images/cardify-loader.svg" alt="Loading" width="100" height="100" onerror="this.style.display='none'">
+        <img src="<?php echo getBasePath(); ?>assets/images/cardify-loader.svg" alt="Loading" width="100" height="100" data-cardify-hide-on-error>
         <div class="page-loader-text">Loading...</div>
         <div class="page-loader-brand"><?php echo $brandName; ?></div>
     </div>

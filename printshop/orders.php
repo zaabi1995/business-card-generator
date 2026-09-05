@@ -157,7 +157,7 @@ printshopHeader(t('printshoppages.title_orders', ['shop' => $printShop['name']])
                     Apply to Selected
                 </button>
             </form>
-            <button onclick="clearSelection()" class="ml-auto text-sm text-gray-500 hover:text-gray-700">Clear</button>
+            <button data-cardify-action="call" data-fn="clearSelection" class="ml-auto text-sm text-gray-500 hover:text-gray-700">Clear</button>
         </div>
 
         <!-- Orders List -->
@@ -176,7 +176,7 @@ printshopHeader(t('printshoppages.title_orders', ['shop' => $printShop['name']])
                     <thead class="bg-gray-50 border-b border-gray-200">
                         <tr>
                             <th class="px-4 py-3 text-left">
-                                <input type="checkbox" id="selectAll" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500" onchange="toggleAll(this)" aria-label="Select all orders on this page">
+                                <input type="checkbox" id="selectAll" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500" data-cardify-change-fn="toggleAll" data-arg="element" aria-label="Select all orders on this page">
                             </th>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Order</th>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Company</th>
@@ -196,7 +196,7 @@ printshopHeader(t('printshoppages.title_orders', ['shop' => $printShop['name']])
                         <tr class="hover:bg-gray-50 order-row" data-order-id="<?= $order['id'] ?>">
                             <td class="px-4 py-4">
                                 <input type="checkbox" class="order-checkbox rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                                       value="<?= $order['id'] ?>" onchange="updateSelection()"
+                                       value="<?= $order['id'] ?>" data-cardify-change-fn="updateSelection"
                                        aria-label="Select order #<?= (int) $order['id'] ?>">
                             </td>
                             <td class="px-4 py-4 tabular-nums">
@@ -302,7 +302,7 @@ printshopHeader(t('printshoppages.title_orders', ['shop' => $printShop['name']])
                                     if ($canCancelThis):
                                     ?>
                                     <button type="button"
-                                            onclick="window.dispatchEvent(new CustomEvent('ps:cancel-order', {detail: {id: <?= (int) $order['id'] ?>, ref: '#<?= (int) $order['id'] ?>'}}))"
+                                            data-cardify-action="dispatch" data-event="ps:cancel-order" data-detail="<?= htmlspecialchars(json_encode(['id' => (int) $order['id'], 'ref' => '#' . (int) $order['id']]), ENT_QUOTES) ?>"
                                             class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-sm font-medium border border-red-200 text-red-700 hover:bg-red-50 transition-colors"
                                             title="<?= htmlspecialchars(t('printshopdash.cancel_btn')) ?>">
                                         <i class="fa-solid fa-xmark"></i>
@@ -318,7 +318,7 @@ printshopHeader(t('printshoppages.title_orders', ['shop' => $printShop['name']])
             <?php endif; ?>
         </div>
 
-<script>
+<script<?= cspNonceAttr() ?>>
 function updateSelection() {
     const checked = document.querySelectorAll('.order-checkbox:checked');
     const count = checked.length;

@@ -123,7 +123,7 @@ adminHeader('Live Analytics', 'analytics');
             <p class="text-gray-600">Real-time card events. Updates without refresh.</p>
         </div>
         <div class="flex flex-wrap items-center gap-3">
-            <select onchange="laFilterEmployee(this.value)" class="px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm">
+            <select data-cardify-change-fn="laFilterEmployee" data-arg="value" class="px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm">
                 <option value="">All employees</option>
                 <?php foreach ($employees as $emp): ?>
                     <option value="<?php echo sanitize($emp['id']); ?>" <?php echo $employeeId === $emp['id'] ? 'selected' : ''; ?>>
@@ -151,7 +151,7 @@ adminHeader('Live Analytics', 'analytics');
 
     <script type="module" src="<?php echo getBasePath() . sanitize($bundle['js']); ?>"></script>
 
-    <script>
+    <script<?= cspNonceAttr() ?>>
         function laFilterEmployee(empId) {
             var url = new URL(window.location.href);
             if (empId) url.searchParams.set('employee', empId);

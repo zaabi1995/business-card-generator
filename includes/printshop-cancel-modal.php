@@ -5,8 +5,8 @@
  * Listens on `window` for `ps:cancel-order` CustomEvent with `detail: {id, ref}`.
  * Any cancel button on the page can dispatch the event:
  *
- *   <button onclick="window.dispatchEvent(new CustomEvent('ps:cancel-order',
- *           { detail: { id: 123, ref: '#123' } }))">Cancel</button>
+ *   a button that dispatches the CustomEvent 'ps:cancel-order' with
+ *   detail { id: 123, ref: '#123' }
  *
  * Posts to printshop/cancel-order.php with csrf_token, order_id, reason.
  *
@@ -78,7 +78,7 @@ if (!PrintShopAuth::can('cancel_order')) {
     </div>
 </div>
 
-<script>
+<script<?= cspNonceAttr() ?>>
 if (typeof window.psStrtr !== 'function') {
     window.psStrtr = function (str, k, v) { return String(str).split(k).join(v); };
 }

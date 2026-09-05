@@ -259,7 +259,7 @@ if ($__registryCss) {
 <div id="batch-render-front" style="position:absolute;left:-9999px;top:0;"></div>
 <div id="batch-render-back" style="position:absolute;left:-9999px;top:0;"></div>
 
-<script>
+<script<?= cspNonceAttr() ?>>
 var batchEmployees = <?php echo json_encode($employeeCards, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>;
 var hasTemplates = <?php echo $hasTemplates ? 'true' : 'false'; ?>;
 var BATCHGEN_I18N = <?php echo json_encode([

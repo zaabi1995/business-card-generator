@@ -465,7 +465,7 @@ $pageTitle = 'Welcome to Cardify';
 
 </main>
 
-<script>
+<script<?= cspNonceAttr() ?>>
 const basePath = <?= json_encode(getBasePath()) ?>;
 const adminBase = basePath + 'admin/';
 const initialSlug = <?= json_encode(($company['slug'] ?? '') ?: '') ?>;

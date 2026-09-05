@@ -155,7 +155,7 @@ printshopHeader(t('printshopinternal.operators_title', ['shop' => $shop['name']]
     </div>
 </div>
 
-<script>
+<script<?= cspNonceAttr() ?>>
 function operatorsPage() {
     return {
         open: false, mode: 'add',

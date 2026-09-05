@@ -104,7 +104,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
             <!-- Form -->
             <div class="bg-white rounded-xl shadow-sm p-6">
                 <h2 class="text-xl font-semibold text-gray-900 mb-4">Your WhatsApp number</h2>
-                <form id="waForm" class="space-y-4" onsubmit="return false;">
+                <form id="waForm" class="space-y-4" data-cardify-no-submit>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Country <span class="text-red-500">*</span></label>
                         <select id="country" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
@@ -210,7 +210,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
     </div>
 </div>
 
-<script>
+<script<?= cspNonceAttr() ?>>
 (function () {
     const countryEl = document.getElementById('country');
     const phoneEl = document.getElementById('phone');

@@ -92,7 +92,7 @@ adminHeader($pageTitle, 'analytics');
 
         <div class="flex flex-wrap items-center gap-3">
             <!-- Employee Filter -->
-            <select onchange="filterByEmployee(this.value)" class="px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm">
+            <select data-cardify-change-fn="filterByEmployee" data-arg="value" class="px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm">
                 <option value=""><?= htmlspecialchars(t('analytics.all_employees')) ?></option>
                 <?php foreach ($employees as $emp): ?>
                 <option value="<?php echo sanitize($emp['id']); ?>" <?php echo $employeeId === $emp['id'] ? 'selected' : ''; ?>>
@@ -102,7 +102,7 @@ adminHeader($pageTitle, 'analytics');
             </select>
 
             <!-- Time Period Filter -->
-            <select onchange="filterByDays(this.value)" class="px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm">
+            <select data-cardify-change-fn="filterByDays" data-arg="value" class="px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm">
                 <?php foreach ([7, 14, 30, 60, 90] as $d): ?>
                 <option value="<?= $d ?>" <?= $days === $d ? 'selected' : '' ?>><?= htmlspecialchars(str_replace(':n', (string) $d, t('analytics.last_days'))) ?></option>
                 <?php endforeach; ?>
@@ -318,7 +318,7 @@ adminHeader($pageTitle, 'analytics');
 <!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
-<script>
+<script<?= cspNonceAttr() ?>>
 // Helper functions
 function filterByEmployee(employeeId) {
     const url = new URL(window.location);

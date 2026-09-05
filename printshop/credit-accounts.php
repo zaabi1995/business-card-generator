@@ -225,7 +225,7 @@ printshopHeader(t('printshoppages.title_credit_accounts', ['shop' => $printShop[
                         <button type="submit" class="flex-1 bg-green-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-green-700 transition">
                             <i class="fa-solid fa-check mr-1"></i> <?= htmlspecialchars(t('printshopcredit.btn_approve')) ?>
                         </button>
-                        <button type="button" onclick="this.closest('form').querySelector('[name=action]').value='reject'; this.closest('form').submit();"
+                        <button type="button" data-cardify-action="set-field-and-submit" data-field="action" data-value="reject"
                                 class="px-4 bg-red-100 text-red-700 rounded-lg text-sm hover:bg-red-200 transition">
                             <?= htmlspecialchars(t('printshopcredit.btn_reject')) ?>
                         </button>
@@ -362,7 +362,7 @@ printshopHeader(t('printshoppages.title_credit_accounts', ['shop' => $printShop[
                             <?= csrfField() ?>
                             <input type="hidden" name="action" value="suspend">
                             <input type="hidden" name="account_id" value="<?= htmlspecialchars($acc['id']) ?>">
-                            <button type="submit" onclick="return confirm(<?= htmlspecialchars(json_encode(t('printshopcredit.confirm_suspend'), JSON_UNESCAPED_UNICODE), ENT_QUOTES) ?>)"
+                            <button type="submit" data-cardify-confirm="<?= htmlspecialchars(t('printshopcredit.confirm_suspend'), ENT_QUOTES) ?>"
                                     class="w-full py-1.5 border border-red-200 text-red-600 rounded-lg text-sm hover:bg-red-50 transition">
                                 <?= htmlspecialchars(t('printshopcredit.btn_suspend')) ?>
                             </button>

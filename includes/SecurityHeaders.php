@@ -110,34 +110,51 @@ class SecurityHeaders
 
     private static function buildCsp(string $nonce): string
     {
-        unset($nonce); // see the note below: a nonce would disable 'unsafe-inline'
+
         // Built from what the estate actually loads, measured across 19 public
         // pages on 5 Sep 2026 rather than guessed: self, design.bhd.om,
         // fonts.bhd.om, cdn.jsdelivr.net, the Google Maps embed, Cloudflare
         // insights, GA, reCAPTCHA and Paymob.
         //
-        // script-src carries 'unsafe-inline' and NO nonce, and that is a
-        // deliberate, uncomfortable choice. Those same 19 pages hold 212 inline
-        // <script> blocks and 318 on* attribute handlers. A nonce silently
-        // disables 'unsafe-inline' for browsers that understand it, so shipping
-        // the nonce would blank the site. Removing 318 inline handlers is its
-        // own project, not a header change.
+        // script-src carries a per-request nonce and NO 'unsafe-inline'.
         //
-        // What this policy still buys, with inline allowed: an injected
-        // <script src="https://evil/"> is refused, so is an injected <object>,
-        // <base> or cross-origin form post, and frame-ancestors closes
-        // clickjacking. That is worth having today; a nonce-based policy is
-        // worth having later.
+        // It could not, until 5 Sep 2026. The estate held 224 on* attribute
+        // handlers across 76 files and 117 executable inline <script> blocks,
+        // and a nonce silently disables 'unsafe-inline' for every browser that
+        // understands it, so shipping one would have blanked the site. Both
+        // were cleared first: every handler moved to a data attribute served by
+        // assets/js/cardify-actions.js, and every inline block now carries
+        // cspNonceAttr(). tests/php/csp_contract_test.php fails if either
+        // comes back.
+        //
+        // An injected inline <script> therefore does not run, which is the
+        // class the stored XSS on the public digital card belonged to. An
+        // injected <script src="https://evil/"> is refused too, so is an
+        // injected <object> or <base> and a cross-origin form post, and
+        // frame-ancestors closes clickjacking.
+        //
+        // 'unsafe-eval' remains, and the reason is measured rather than
+        // assumed: see the note on the script list below.
         $hosts = [
             'script' => [
-                // 'unsafe-eval' is here because Alpine evaluates every x- binding
-                // as a string. Shipping without it blanked the interactive layer
-                // across the whole site: "Alpine Expression Error: Evaluating a
-                // string as JavaScript violates the following Content Security
-                // Policy directive" on 16 of 22 pages, one minute after deploy.
-                // Alpine's CSP build removes the need, and rewriting every
-                // x-data expression into a component object is the price.
-                "'self'", "'unsafe-inline'", "'unsafe-eval'",
+                // 'unsafe-eval' is here because Alpine 3.15.12 compiles every
+                // x- binding with `new Function`. Shipping without it blanked
+                // the interactive layer across the whole site: "Alpine
+                // Expression Error: Evaluating a string as JavaScript violates
+                // the following Content Security Policy directive" on 16 of 22
+                // pages, one minute after deploy.
+                //
+                // The alternative is @alpinejs/csp, which does not evaluate
+                // expressions at all. It accepts only a bare property path or a
+                // method name, so every expression with an operator, a call or
+                // a literal has to become a method on a component registered
+                // through Alpine.data(). Counted on this tree: 1,175 Alpine
+                // expression attributes, of which 828 are not a bare property
+                // path, across 55 x-data roots of which 26 are inline object
+                // literals that the CSP build cannot parse either. admin/index
+                // alone holds 235. That is the exact remaining dependency, and
+                // it is a rewrite, not a header change.
+                "'self'", "'nonce-" . $nonce . "'", "'unsafe-eval'",
                 'https://design.bhd.om',
                 'https://cdn.jsdelivr.net',
                 'https://cdnjs.cloudflare.com',
@@ -226,5 +243,21 @@ class SecurityHeaders
             'upgrade-insecure-requests',
         ];
         return implode('; ', $parts);
+    }
+}
+
+if (!function_exists('cspNonceAttr')) {
+    /**
+     * The nonce attribute for an inline <script>, or '' when no policy is set.
+     *
+     * Defined here as well as in includes/functions.php, both guarded, because
+     * three shared partials that emit inline script (Currency.php,
+     * printshop-cancel-modal.php, JsonLd.php) are pulled in by entry points
+     * that do not all load functions.php. An undefined function here would be
+     * a fatal on the page, not a missing attribute.
+     */
+    function cspNonceAttr(): string
+    {
+        return ' nonce="' . htmlspecialchars(SecurityHeaders::nonce(), ENT_QUOTES) . '"';
     }
 }

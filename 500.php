@@ -29,7 +29,7 @@ http_response_code(500);
                     <i class="fa-solid fa-arrow-left mr-2"></i>
                     <?= htmlspecialchars(t('errors.go_home')) ?>
                 </a>
-                <button onclick="location.reload()" class="inline-flex items-center justify-center px-5 py-3 text-base font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 focus:ring-4 focus:ring-gray-300 transition-colors">
+                <button data-cardify-action="reload" class="inline-flex items-center justify-center px-5 py-3 text-base font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 focus:ring-4 focus:ring-gray-300 transition-colors">
                     <i class="fa-solid fa-rotate-right mr-2"></i>
                     <?= htmlspecialchars(t('common.try_again')) ?>
                 </button>

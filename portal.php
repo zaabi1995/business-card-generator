@@ -1276,7 +1276,7 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                 </div>
             </div>
             
-            <script>
+            <script<?= cspNonceAttr() ?>>
             // Handle 4-digit code input
             document.addEventListener('DOMContentLoaded', function() {
                 const inputs = document.querySelectorAll('#codeInputs input');
@@ -1473,7 +1473,7 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                                value="<?php echo htmlspecialchars($formData['email'] ?? ''); ?>"
                                placeholder="your.name@<?php echo htmlspecialchars($companyDomain ?: 'company.com'); ?>"
                                class="form-input"
-                               onblur="checkExistingEmployee(this.value)">
+                               data-cardify-blur-fn="checkExistingEmployee">
                         <?php if ($companyDomain): ?>
                         <p class="mt-1 text-xs text-gray-500"><?= htmlspecialchars(t('cardportal.email_domain_hint', ['domain' => $companyDomain])) ?></p>
                         <?php endif; ?>
@@ -1550,7 +1550,7 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2">
                             <?= htmlspecialchars(t('portal.full_name_ar')) ?>
-                            <button type="button" class="ml-2 text-xs text-blue-600 hover:text-blue-700" onclick="translateField('name_en', 'name_ar', 'name')">
+                            <button type="button" class="ml-2 text-xs text-blue-600 hover:text-blue-700" data-cardify-action="call" data-fn="translateField" data-args="[&quot;name_en&quot;, &quot;name_ar&quot;, &quot;name&quot;]">
                                 <i class="fa-solid fa-wand-magic-sparkles"></i> <?= htmlspecialchars(t('portal.ai_translate')) ?>
                             </button>
                         </label>
@@ -1577,7 +1577,7 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2">
                             <?= htmlspecialchars(t('portal.position_ar')) ?>
-                            <button type="button" class="ml-2 text-xs text-blue-600 hover:text-blue-700" onclick="translateField('position_en', 'position_ar', 'position')">
+                            <button type="button" class="ml-2 text-xs text-blue-600 hover:text-blue-700" data-cardify-action="call" data-fn="translateField" data-args="[&quot;position_en&quot;, &quot;position_ar&quot;, &quot;position&quot;]">
                                 <i class="fa-solid fa-wand-magic-sparkles"></i> <?= htmlspecialchars(t('portal.ai_translate')) ?>
                             </button>
                         </label>
@@ -1605,7 +1605,7 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2">
                             <?= htmlspecialchars(t('portal.position_ar_2')) ?>
-                            <button type="button" class="ml-2 text-xs text-blue-600 hover:text-blue-700" onclick="translateField('position_en_2', 'position_ar_2', 'position')">
+                            <button type="button" class="ml-2 text-xs text-blue-600 hover:text-blue-700" data-cardify-action="call" data-fn="translateField" data-args="[&quot;position_en_2&quot;, &quot;position_ar_2&quot;, &quot;position&quot;]">
                                 <i class="fa-solid fa-wand-magic-sparkles"></i> <?= htmlspecialchars(t('portal.ai_translate')) ?>
                             </button>
                         </label>
@@ -1633,7 +1633,7 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2">
                             <?= htmlspecialchars(t('portal.position_ar_3')) ?>
-                            <button type="button" class="ml-2 text-xs text-blue-600 hover:text-blue-700" onclick="translateField('position_en_3', 'position_ar_3', 'position')">
+                            <button type="button" class="ml-2 text-xs text-blue-600 hover:text-blue-700" data-cardify-action="call" data-fn="translateField" data-args="[&quot;position_en_3&quot;, &quot;position_ar_3&quot;, &quot;position&quot;]">
                                 <i class="fa-solid fa-wand-magic-sparkles"></i> <?= htmlspecialchars(t('portal.ai_translate')) ?>
                             </button>
                         </label>
@@ -1733,7 +1733,7 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2">
                             <?= htmlspecialchars(t('portal.address_01_ar')) ?>
-                            <button type="button" class="ml-2 text-xs text-blue-600 hover:text-blue-700" onclick="translateField('address_en', 'address_ar', 'address')">
+                            <button type="button" class="ml-2 text-xs text-blue-600 hover:text-blue-700" data-cardify-action="call" data-fn="translateField" data-args="[&quot;address_en&quot;, &quot;address_ar&quot;, &quot;address&quot;]">
                                 <i class="fa-solid fa-wand-magic-sparkles"></i> <?= htmlspecialchars(t('portal.ai_translate')) ?>
                             </button>
                         </label>
@@ -1751,7 +1751,7 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2">
                             <?= htmlspecialchars(t('portal.address_02_ar')) ?>
-                            <button type="button" class="ml-2 text-xs text-blue-600 hover:text-blue-700" onclick="translateField('address_2_en', 'address_2_ar', 'address')">
+                            <button type="button" class="ml-2 text-xs text-blue-600 hover:text-blue-700" data-cardify-action="call" data-fn="translateField" data-args="[&quot;address_2_en&quot;, &quot;address_2_ar&quot;, &quot;address&quot;]">
                                 <i class="fa-solid fa-wand-magic-sparkles"></i> <?= htmlspecialchars(t('portal.ai_translate')) ?>
                             </button>
                         </label>
@@ -1857,7 +1857,7 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                     <div class="pt-4 border-t border-gray-200" id="qrToggleBlock">
                         <label class="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
                             <input type="checkbox" name="include_qr" id="include_qr" value="1" checked
-                                   onchange="if(typeof scheduleLivePreview==='function'){ scheduleLivePreview(); }"
+                                   data-cardify-change-fn="scheduleLivePreview"
                                    class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
                             <span><?= htmlspecialchars(t('portal.include_qr')) ?></span>
                         </label>
@@ -1865,7 +1865,7 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
 
                     <!-- Step 1: Generate Preview Button -->
                     <div class="pt-4 border-t border-gray-200" id="generatePreviewSection">
-                        <button type="button" id="generatePreviewBtn" onclick="generatePreview()"
+                        <button type="button" id="generatePreviewBtn" data-cardify-action="call" data-fn="generatePreview"
                                 class="w-full px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-md transition-colors flex items-center justify-center gap-2">
                             <i class="fa-solid fa-eye"></i>
                             <?= htmlspecialchars(t('portal.btn_generate_preview')) ?>
@@ -1889,7 +1889,7 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                             <i class="fa-solid fa-paper-plane"></i>
                             <?= htmlspecialchars(t('portal.btn_submit_request')) ?>
                         </button>
-                        <button type="button" onclick="editForm()" class="w-full mt-2 px-4 py-2 text-gray-600 hover:text-gray-900 font-medium transition-colors">
+                        <button type="button" data-cardify-action="call" data-fn="editForm" class="w-full mt-2 px-4 py-2 text-gray-600 hover:text-gray-900 font-medium transition-colors">
                             <i class="fa-solid fa-pencil mr-1"></i> <?= htmlspecialchars(t('portal.btn_edit_details')) ?>
                         </button>
                     </div>
@@ -1958,7 +1958,7 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
     <!-- CardEditor (uses Fabric.js) -->
     <script src="<?php echo getBasePath(); ?>assets/js/card-editor.js?v=<?= @filemtime(__DIR__ . '/assets/js/card-editor.js') ?: '1' ?>"></script>
     
-    <script>
+    <script<?= cspNonceAttr() ?>>
     // Template data from PHP
     const basePath = '<?php echo getBasePath(); ?>';
     const companyName = '<?php echo addslashes($companyName); ?>';
@@ -2852,7 +2852,7 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
     <!-- Cardify portal step machine: server config + i18n injected here; the engine
          is authored in TypeScript (assets/ts/portal-issuance.ts) and compiled to
          assets/js/portal-issuance.js with esbuild, committed so the server needs no build. -->
-    <script>
+    <script<?= cspNonceAttr() ?>>
     window.CardifyPortal = {
         i18n: <?= json_encode([
             'step_of' => t('portal.issue_step_of'),
@@ -2905,7 +2905,7 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
     <script src="<?php echo getBasePath(); ?>assets/js/portal-issuance.js?v=<?= @filemtime(__DIR__ . '/assets/js/portal-issuance.js') ?: '1' ?>"></script>
 
     <!-- Page Loader Script - consistent with main site -->
-    <script>
+    <script<?= cspNonceAttr() ?>>
         (function() {
             const loader = document.getElementById('pageLoader');
             const minLoadTime = 200; // Fast load (0.2 seconds)

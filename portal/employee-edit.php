@@ -549,7 +549,7 @@ $pageTitle = t('portal.edit_my_details');
         </p>
     </div>
 
-    <script>
+    <script<?= cspNonceAttr() ?>>
     function leaveCard(init) {
         return {
             open: false,

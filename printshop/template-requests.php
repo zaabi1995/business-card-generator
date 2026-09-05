@@ -213,7 +213,7 @@ printshopHeader(t('printshoppages.title_template_requests'), 'template_requests'
                         <input type="hidden" name="action" value="update_status">
                         <input type="hidden" name="request_id" value="<?= sanitize($req['id']) ?>">
                         <label for="tpl_status_<?= sanitize($req['id']) ?>" class="sr-only"><?= htmlspecialchars(t('printshoptpl.col_status')) ?></label>
-                        <select name="status" id="tpl_status_<?= sanitize($req['id']) ?>" aria-label="<?= htmlspecialchars(t('printshoptpl.col_status')) ?>" class="text-xs border border-gray-200 rounded px-2 py-1 bg-white" onchange="this.form.submit()">
+                        <select name="status" id="tpl_status_<?= sanitize($req['id']) ?>" aria-label="<?= htmlspecialchars(t('printshoptpl.col_status')) ?>" class="text-xs border border-gray-200 rounded px-2 py-1 bg-white" data-cardify-submit-on-change>
                             <?php foreach (['pending','confirmed','printing','ready','delivered','cancelled'] as $s): ?>
                             <option value="<?= $s ?>" <?= $req['status'] === $s ? 'selected' : '' ?>><?= htmlspecialchars(t('printshoptpl.status_' . $s)) ?></option>
                             <?php endforeach; ?>

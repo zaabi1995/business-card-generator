@@ -334,7 +334,7 @@ adminHeader('Print Shops', 'print_shops');
                             <?php endif; ?>
                             
                             <!-- Delete Button -->
-                            <form method="post" class="inline" onsubmit="return confirm('Delete this print shop? This cannot be undone.')">
+                            <form method="post" class="inline" data-cardify-confirm="Delete this print shop? This cannot be undone.">
                                 <?php echo csrfField(); ?>
                                 <input type="hidden" name="action" value="delete">
                                 <input type="hidden" name="shop_id" value="<?php echo $shop['id']; ?>">
@@ -598,7 +598,7 @@ adminHeader('Print Shops', 'print_shops');
 
 </div>
 
-<script>
+<script<?= cspNonceAttr() ?>>
 function printShopManager() {
     return {
         showModal: false,

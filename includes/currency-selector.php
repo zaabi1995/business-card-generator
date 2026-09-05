@@ -37,7 +37,7 @@ if ($__curAria === 'currency.aria_select') { $__curAria = 'Select currency'; }
         <button type="button"
                 data-currency="<?= htmlspecialchars($code) ?>"
                 class="currency-option w-full <?= $__isRtl ? 'text-right' : 'text-left' ?> px-4 py-2 text-sm hover:bg-gray-50 flex items-center justify-between <?= $code === $currentCurrency ? 'bg-blue-50' : '' ?>"
-                onclick="cardifySetCurrency('<?= htmlspecialchars($code) ?>')">
+                data-cardify-action="set-currency" data-currency="<?= htmlspecialchars($code) ?>">
             <div>
                 <span class="font-mono font-semibold text-gray-900"><?= htmlspecialchars($code) ?></span>
                 <?php /* margin-inline-start, not ml-2: the compiled tailwind.min.css has no .ms-2 rule, so the utility class would be a silent no-op. */ ?>
@@ -53,7 +53,7 @@ if ($__curAria === 'currency.aria_select') { $__curAria = 'Select currency'; }
     </div>
 </div>
 
-<script>
+<script<?= cspNonceAttr() ?>>
 function cardifySetCurrency(code) {
     fetch('<?= getBasePath() ?>api/set-currency.php', {
         method: 'POST',

@@ -257,7 +257,7 @@ printshopHeader(t('printshoppages.title_settings', ['shop' => $printShop['name']
                                 <img src="<?php echo getBasePath() . ltrim($printShop['logo_path'], '/'); ?>" 
                                      alt="<?php echo sanitize($printShop['name']); ?>" 
                                      class="w-24 h-24 rounded-xl object-cover border border-gray-200 shadow-sm">
-                                <form method="post" class="absolute -top-2 -right-2" onsubmit="return confirm('Remove this logo?')">
+                                <form method="post" class="absolute -top-2 -right-2" data-cardify-confirm="Remove this logo?">
                                     <?php echo csrfField(); ?>
                                     <input type="hidden" name="action" value="delete_logo">
                                     <button type="submit" class="w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center shadow-sm transition-colors">

@@ -487,7 +487,7 @@ adminHeader(t('adminchrome.companies'), 'companies');
     </div>
 </div>
 
-<script>
+<script<?= cspNonceAttr() ?>>
 function companyManager() {
     return {
         showModal: false,

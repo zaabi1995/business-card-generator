@@ -140,7 +140,7 @@ unset($_SESSION['ps_login_flash']);
     </div>
 </div>
 
-<script>
+<script<?= cspNonceAttr() ?>>
 const PS_CSRF = <?= json_encode(generateCSRFToken()) ?>;
 const PS_BASE = <?= json_encode(getBasePath() . 'printshop/') ?>;
 function psLogin() {

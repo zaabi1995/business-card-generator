@@ -452,7 +452,7 @@ button[disabled]{opacity:.5;cursor:not-allowed}
   </p>
 </div>
 
-<script>
+<script<?= cspNonceAttr() ?>>
 (function () {
   // Auto-submit as soon as six digits are in, so nobody hunts for the button.
   var code = document.getElementById('code');

@@ -493,7 +493,7 @@ adminHeader('Email Settings', 'email-settings');
                 <p class="text-sm text-gray-500 mt-1">See how your emails will look.</p>
             </div>
             <div class="p-6">
-                <button type="button" onclick="openPreview()" class="w-full px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">
+                <button type="button" data-cardify-action="call" data-fn="openPreview" class="w-full px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">
                     <i class="fa-solid fa-eye mr-2"></i>Preview Email Template
                 </button>
             </div>
@@ -518,7 +518,7 @@ adminHeader('Email Settings', 'email-settings');
         <div class="inline-block w-full max-w-4xl my-8 text-left align-middle transition-all transform bg-white shadow-xl rounded-2xl">
             <div class="flex items-center justify-between p-6 border-b">
                 <h3 class="text-lg font-semibold text-gray-900">Email Template Preview</h3>
-                <button onclick="closePreview()" class="text-gray-400 hover:text-gray-600">
+                <button data-cardify-action="call" data-fn="closePreview" class="text-gray-400 hover:text-gray-600">
                     <i class="fa-solid fa-times text-xl"></i>
                 </button>
             </div>
@@ -529,7 +529,7 @@ adminHeader('Email Settings', 'email-settings');
     </div>
 </div>
 
-<script>
+<script<?= cspNonceAttr() ?>>
 function openPreview() {
     document.getElementById('previewModal').classList.remove('hidden');
     document.getElementById('previewFrame').src = 'email_preview.php?t=' + Date.now();

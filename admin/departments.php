@@ -274,7 +274,7 @@ adminHeader(t('departments.page_title'), 'departments');
                         >
                             <i class="fa-solid fa-pen-to-square"></i>
                         </button>
-                        <form method="post" class="inline" onsubmit="return confirm(<?= json_encode(t('departments.delete_confirm')) ?>)">
+                        <form method="post" class="inline" data-cardify-confirm="<?= htmlspecialchars(t('departments.delete_confirm'), ENT_QUOTES) ?>">
                             <?php echo csrfField(); ?>
                             <input type="hidden" name="action" value="delete">
                             <input type="hidden" name="department_id" value="<?php echo $dept['id']; ?>">
@@ -291,7 +291,7 @@ adminHeader(t('departments.page_title'), 'departments');
                 <div class="flex items-center gap-1.5 text-xs text-blue-600 mb-2">
                     <i class="fa-solid fa-link"></i>
                     <code class="bg-blue-50 px-1.5 py-0.5 rounded"><?php echo htmlspecialchars(getTenantUrl($companySlug, '/portal/' . $dept['portal_slug'])); ?></code>
-                    <button type="button" onclick="copyToClipboard('<?php echo getTenantUrl($companySlug, '/portal/' . $dept['portal_slug']); ?>')"
+                    <button type="button" data-cardify-action="call" data-fn="copyToClipboard" data-args="<?= htmlspecialchars(json_encode(['' . (getTenantUrl($companySlug, '/portal/' . $dept['portal_slug'])) . '']), ENT_QUOTES) ?>"
                             class="text-gray-400 hover:text-blue-600 transition-colors" title="<?= htmlspecialchars(t('departments.copy_link')) ?>">
                         <i class="fa-solid fa-copy"></i>
                     </button>
@@ -480,7 +480,7 @@ adminHeader(t('departments.page_title'), 'departments');
     </div>
 </div>
 
-<script>
+<script<?= cspNonceAttr() ?>>
 function copyToClipboard(text) {
     navigator.clipboard.writeText(text).then(() => {
         // Show brief feedback

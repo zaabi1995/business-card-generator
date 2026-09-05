@@ -47,6 +47,11 @@ function installerHeader($title, $basePath, $extraHead = '', $bodyClass = '') {
         [x-cloak] { display: none !important; }
     </style>
     <?php if (!empty($extraHead)) echo $extraHead; ?>
+    <?php /* Delegated behaviour, replacing the on* attributes. An inline
+       handler is inline script, and a CSP without 'unsafe-inline' kills every
+       one. Placed after the async stylesheets so its first pass already sees
+       them. */ ?>
+    <script src="/assets/js/cardify-actions.js?v=<?php echo @filemtime($_SERVER['DOCUMENT_ROOT'] . '/assets/js/cardify-actions.js') ?: time(); ?>"></script>
 </head>
 <body class="bg-gray-50 text-gray-900 antialiased <?php echo $bodyClass; ?>">
 <?php

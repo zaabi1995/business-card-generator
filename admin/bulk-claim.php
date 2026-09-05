@@ -532,7 +532,7 @@ adminHeader(t('adminchrome.bulk_claim'), 'reports');
                 </p>
             </div>
             <?php if ($validCount > 0): ?>
-            <form method="POST" onsubmit="return confirm(<?= json_encode(str_replace(':n', (string) $validCount, t('bulkclaim.confirm_send')), JSON_UNESCAPED_UNICODE) ?>);">
+            <form method="POST" data-cardify-confirm="<?= htmlspecialchars(str_replace(':n', (string) $validCount, t('bulkclaim.confirm_send')), ENT_QUOTES) ?>">
                 <input type="hidden" name="csrf_token" value="<?= sanitize($csrf) ?>">
                 <input type="hidden" name="action" value="send">
                 <input type="hidden" name="csv_text" value="<?= sanitize($previewCsv) ?>">

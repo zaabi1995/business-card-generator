@@ -112,7 +112,7 @@ adminHeader(($employee['name_en'] ?: $employee['email']), 'employees');
                class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50">
                 <i class="fa-solid fa-arrow-up-right-from-square"></i> Open public profile
             </a>
-            <button onclick="navigator.clipboard.writeText('<?= addslashes($publicUrl) ?>').then(()=>{this.querySelector('span').textContent='Copied!';setTimeout(()=>this.querySelector('span').textContent='Copy link',1500)})"
+            <button data-cardify-action="copy-icon" data-copy="<?= htmlspecialchars($publicUrl, ENT_QUOTES) ?>" data-copied-label="Copied!"
                     class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50">
                 <i class="fa-solid fa-link"></i> <span>Copy link</span>
             </button>

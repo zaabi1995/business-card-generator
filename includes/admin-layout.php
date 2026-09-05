@@ -569,6 +569,11 @@ function adminHeader($pageTitle = 'Dashboard', $currentPage = 'dashboard', $show
       .page-loader-ring img{max-width:70px;max-height:70px;object-fit:contain}
       @keyframes adminLoaderSpin{to{transform:rotate(360deg)}}
     </style>
+    <?php /* Delegated behaviour, replacing the on* attributes. An inline
+       handler is inline script, and a CSP without 'unsafe-inline' kills every
+       one. Placed after the async stylesheets so its first pass already sees
+       them. */ ?>
+    <script src="/assets/js/cardify-actions.js?v=<?php echo @filemtime($_SERVER['DOCUMENT_ROOT'] . '/assets/js/cardify-actions.js') ?: time(); ?>"></script>
 </head>
 <body class="bg-gray-50"<?php echo Impersonation::isActive() ? ' data-impersonating="true"' : ''; ?>>
     <?php Impersonation::renderBanner(); ?>
@@ -579,7 +584,7 @@ function adminHeader($pageTitle = 'Dashboard', $currentPage = 'dashboard', $show
     <div class="page-loader" id="pageLoader">
         <?php if (!empty($tBrandLogo)): ?>
         <div class="page-loader-ring">
-            <img src="<?= htmlspecialchars($tBrandLogo, ENT_QUOTES) ?>" alt="<?= htmlspecialchars($brandName, ENT_QUOTES) ?>" onerror="this.style.display='none'">
+            <img src="<?= htmlspecialchars($tBrandLogo, ENT_QUOTES) ?>" alt="<?= htmlspecialchars($brandName, ENT_QUOTES) ?>" data-cardify-hide-on-error>
         </div>
         <?php else: ?>
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="100" height="100" role="img" aria-label="Loading" class="page-loader-svg">
@@ -840,7 +845,7 @@ function adminFooter() {
     <script src="<?php echo getBasePath(); ?>assets/js/card-editor.js?v=<?php echo time(); ?>"></script>
     
     <!-- Page Loader Script (JS enhancement - CSS handles fallback) -->
-    <script>
+    <script<?= cspNonceAttr() ?>>
         (function() {
             var loader = document.getElementById('pageLoader');
             var minLoadTime = 200; // Minimum 0.2 seconds for smooth UX
@@ -868,7 +873,7 @@ function adminFooter() {
     </script>
     
     <!-- Sidebar toggle script -->
-    <script>
+    <script<?= cspNonceAttr() ?>>
         const sidebar = document.getElementById('sidebar');
         const sidebarBackdrop = document.getElementById('sidebarBackdrop');
         const toggleSidebarMobile = document.getElementById('toggleSidebarMobile');
@@ -913,7 +918,7 @@ function adminFooter() {
     <script src="<?php echo $__base; ?>assets/js/cardify-toast.js" defer></script>
     <script src="<?php echo $__base; ?>assets/js/cardify-forms.js" defer></script>
     <script src="<?php echo $__base; ?>assets/js/cardify-webvitals.js" defer></script>
-    <script>
+    <script<?= cspNonceAttr() ?>>
     if ('serviceWorker' in navigator && location.protocol === 'https:') {
         window.addEventListener('load', () => {
             navigator.serviceWorker.register('<?php echo $__base; ?>sw.js', { scope: '<?php echo $__base; ?>' })

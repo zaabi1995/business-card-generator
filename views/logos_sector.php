@@ -264,7 +264,7 @@ $page = $data['page'];
     <div class="p-6" id="logo-quick-body"></div>
 </dialog>
 
-<script>
+<script<?= cspNonceAttr() ?>>
 (function () {
     var qpDlg  = document.getElementById('logo-quick-preview');
     var qpBody = document.getElementById('logo-quick-body');

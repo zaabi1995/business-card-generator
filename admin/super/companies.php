@@ -226,7 +226,7 @@ adminHeader('Companies Management', 'companies');
                 <i class="fa-solid fa-search mr-2"></i>Filter
             </button>
         </form>
-        <button onclick="openCreateModal()" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+        <button data-cardify-action="call" data-fn="openCreateModal" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
             <i class="fa-solid fa-plus mr-2"></i>Add Company
         </button>
     </div>
@@ -333,7 +333,7 @@ adminHeader('Companies Management', 'companies');
                             <form method="POST"
                                   action="<?php echo getBasePath(); ?>admin/impersonate.php?action=start"
                                   class="inline m-0"
-                                  onsubmit="return confirm('Log in as <?php echo sanitize($company['name']); ?>? You will see Cardify as this company admin. The action is logged to the audit trail.');">
+                                  data-cardify-confirm="Log in as <?= htmlspecialchars((string)(sanitize($company['name'])), ENT_QUOTES) ?>? You will see Cardify as this company admin. The action is logged to the audit trail.">
                                 <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(generateCSRFToken()); ?>">
                                 <input type="hidden" name="company_id" value="<?php echo htmlspecialchars($company['id']); ?>">
                                 <button type="submit"
@@ -343,7 +343,7 @@ adminHeader('Companies Management', 'companies');
                                 </button>
                             </form>
                             <?php endif; ?>
-                            <button onclick="confirmDelete(<?php echo htmlspecialchars(json_encode($company['id']), ENT_QUOTES); ?>, <?php echo htmlspecialchars(json_encode($company['name']), ENT_QUOTES); ?>)"
+                            <button data-cardify-action="call" data-fn="confirmDelete" data-args="<?= htmlspecialchars(json_encode([$company['id'], $company['name']]), ENT_QUOTES) ?>"
                                     class="text-red-600 hover:text-red-800" title="Schedule deletion">
                                 <i class="fa-solid fa-trash"></i>
                             </button>
@@ -457,7 +457,7 @@ adminHeader('Companies Management', 'companies');
                 </div>
             </div>
             <div class="p-6 border-t bg-gray-50 flex justify-end gap-3">
-                <button type="button" onclick="closeModal()" class="px-4 py-2 border rounded-lg hover:bg-gray-100">Cancel</button>
+                <button type="button" data-cardify-action="call" data-fn="closeModal" class="px-4 py-2 border rounded-lg hover:bg-gray-100">Cancel</button>
                 <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Save Changes</button>
             </div>
         </form>
@@ -475,13 +475,13 @@ adminHeader('Companies Management', 'companies');
             <?php echo csrfField(); ?>
             <input type="hidden" name="action" value="delete_company">
             <input type="hidden" name="company_id" id="deleteCompanyId">
-            <button type="button" onclick="closeDeleteModal()" class="px-4 py-2 border rounded-lg hover:bg-gray-100">Cancel</button>
+            <button type="button" data-cardify-action="call" data-fn="closeDeleteModal" class="px-4 py-2 border rounded-lg hover:bg-gray-100">Cancel</button>
             <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">Schedule deletion</button>
         </form>
     </div>
 </div>
 
-<script>
+<script<?= cspNonceAttr() ?>>
 function openEditModal(company) {
     document.getElementById('modalTitle').textContent = 'Edit Company';
     document.getElementById('formAction').value = 'update_company';

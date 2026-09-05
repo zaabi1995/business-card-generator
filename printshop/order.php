@@ -694,12 +694,12 @@ printshopHeader(t('printshoppages.title_order_n', ['n' => $orderId, 'shop' => $p
                         <?php if (!empty($frontUrl) || !empty($backUrl)): ?>
                         <div class="mt-6 pt-6 border-t border-gray-100">
                             <div class="flex flex-wrap gap-3">
-                                <a href="#" onclick="downloadAllFiles(); return false;" 
+                                <a href="#" data-cardify-action="call" data-fn="downloadAllFiles" 
                                    class="inline-flex items-center gap-2 px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors">
                                     <i class="fa-solid fa-file-zipper"></i>
                                     Download All Files
                                 </a>
-                                <button type="button" onclick="openPrintReadyModal()" 
+                                <button type="button" data-cardify-action="call" data-fn="openPrintReadyModal" 
                                    class="inline-flex items-center gap-2 px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors">
                                     <i class="fa-solid fa-print"></i>
                                     Generate Print Sheet (A4)
@@ -1326,7 +1326,7 @@ printshopHeader(t('printshoppages.title_order_n', ['n' => $orderId, 'shop' => $p
 <!-- Print Ready Modal -->
 <div id="printReadyModal" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-modal="true">
     <div class="flex min-h-screen items-center justify-center p-4">
-        <div class="fixed inset-0 bg-gray-900/50 transition-opacity" onclick="closePrintReadyModal()"></div>
+        <div class="fixed inset-0 bg-gray-900/50 transition-opacity" data-cardify-action="call" data-fn="closePrintReadyModal"></div>
         
         <div class="relative w-full max-w-4xl bg-white rounded-2xl shadow-2xl">
             <!-- Header -->
@@ -1338,7 +1338,7 @@ printshopHeader(t('printshoppages.title_order_n', ['n' => $orderId, 'shop' => $p
                     </h3>
                     <p class="text-sm text-gray-500 mt-1">Create A4 PDF with cutting marks for professional printing</p>
                 </div>
-                <button type="button" onclick="closePrintReadyModal()" aria-label="Close print-ready modal" title="Close" class="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                <button type="button" data-cardify-action="call" data-fn="closePrintReadyModal" aria-label="Close print-ready modal" title="Close" class="p-2 hover:bg-gray-100 rounded-lg transition-colors">
                     <i class="fa-solid fa-times text-gray-400" aria-hidden="true"></i>
                 </button>
             </div>
@@ -1349,7 +1349,7 @@ printshopHeader(t('printshoppages.title_order_n', ['n' => $orderId, 'shop' => $p
                 <div class="grid md:grid-cols-3 gap-6 mb-6">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Paper Size</label>
-                        <select aria-label="Paper Size" id="printPaperSize" onchange="updatePrintPreview()" 
+                        <select aria-label="Paper Size" id="printPaperSize" data-cardify-change-fn="updatePrintPreview" 
                                 class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500">
                             <option value="A4" selected>A4 (210×297mm)</option>
                             <option value="A3">A3 (297×420mm)</option>
@@ -1370,7 +1370,7 @@ printshopHeader(t('printshoppages.title_order_n', ['n' => $orderId, 'shop' => $p
                             Scale: <span id="scaleValue">100</span>%
                         </label>
                         <input aria-label="Scale: 100 %" type="range" id="printScale" min="90" max="110" value="100" step="1"
-                               onchange="updateScaleValue(); updatePrintPreview()"
+                               data-cardify-change-fns="[&quot;updateScaleValue&quot;, &quot;updatePrintPreview&quot;]"
                                class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-purple-600">
                         <div class="flex justify-between text-xs text-gray-400 mt-1">
                             <span>90%</span>
@@ -1436,17 +1436,17 @@ printshopHeader(t('printshoppages.title_order_n', ['n' => $orderId, 'shop' => $p
                 
                 <!-- Generate Buttons -->
                 <div class="flex flex-wrap gap-3">
-                    <button type="button" onclick="generatePrintReadyPDF('both')" 
+                    <button type="button" data-cardify-action="call" data-fn="generatePrintReadyPDF" data-args="[&quot;both&quot;]" 
                             class="flex-1 inline-flex items-center justify-center gap-2 px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-semibold transition-colors">
                         <i class="fa-solid fa-file-pdf"></i>
                         Generate PDF (Front + Back)
                     </button>
-                    <button type="button" onclick="generatePrintReadyPDF('front')" 
+                    <button type="button" data-cardify-action="call" data-fn="generatePrintReadyPDF" data-args="[&quot;front&quot;]" 
                             class="inline-flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors">
                         <i class="fa-solid fa-image"></i>
                         Front Only
                     </button>
-                    <button type="button" onclick="generatePrintReadyPDF('back')" 
+                    <button type="button" data-cardify-action="call" data-fn="generatePrintReadyPDF" data-args="[&quot;back&quot;]" 
                             class="inline-flex items-center justify-center gap-2 px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-medium transition-colors">
                         <i class="fa-solid fa-image"></i>
                         Back Only
@@ -1465,7 +1465,7 @@ printshopHeader(t('printshoppages.title_order_n', ['n' => $orderId, 'shop' => $p
     </div>
 </div>
 
-<script>
+<script<?= cspNonceAttr() ?>>
 // Order data
 const orderData = {
     id: <?php echo $orderId; ?>,

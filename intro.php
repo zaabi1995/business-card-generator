@@ -42,7 +42,7 @@ $basePath = getBasePath();
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <script>
+    <script<?= cspNonceAttr() ?>>
         tailwind.config = {
             theme: {
                 extend: {
@@ -1194,7 +1194,7 @@ if ($introIso):
     </footer>
 
     <!-- GSAP Animations -->
-    <script>
+    <script<?= cspNonceAttr() ?>>
         // Register ScrollTrigger
         gsap.registerPlugin(ScrollTrigger);
         

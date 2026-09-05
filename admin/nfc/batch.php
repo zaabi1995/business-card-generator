@@ -189,7 +189,7 @@ adminHeader('NFC Tags', 'nfc-tags');
                 <h2 class="font-semibold">Batch <span class="font-mono text-sm text-gray-500"><?= htmlspecialchars($batchFilter) ?></span></h2>
                 <p class="text-sm text-gray-500"><?= $done ?> / <?= $total ?> programmed (<?= $pct ?>%)</p>
             </div>
-            <button onclick="window.print()" class="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm">Print QR sheet</button>
+            <button data-cardify-action="print" class="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm">Print QR sheet</button>
         </div>
         <div class="bg-gray-100 rounded-full h-2 overflow-hidden">
             <div class="bg-green-500 h-full" style="width: <?= $pct ?>%"></div>
@@ -213,7 +213,7 @@ adminHeader('NFC Tags', 'nfc-tags');
     </div>
 
     <script src="<?= htmlspecialchars(getBasePath()) ?>assets/js/qrcode-generator-1.4.4.min.js"></script>
-    <script>
+    <script<?= cspNonceAttr() ?>>
     document.querySelectorAll('.qr-target').forEach(function (el) {
         var url = el.getAttribute('data-url');
         var qr = qrcode(0, 'M');

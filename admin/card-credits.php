@@ -178,7 +178,7 @@ adminHeader(t('card_credits.page_title'), 'billing');
                 </div>
             </div>
         </div>
-        <script>
+        <script<?= cspNonceAttr() ?>>
           function ccCustom() {
             const tiers = <?= json_encode(array_map(static fn($b) => ['count' => $b['count'], 'price' => $b['price_per']], $BUNDLES)) ?>;
             return {
@@ -305,7 +305,7 @@ $__ccDefaultAmt   = number_format($__ccDefault['count'] * $__ccDefault['price_pe
 $__ccDefaultUrl   = $__ccBase . '&count=' . $__ccDefaultCount;
 $__ccSuccess      = getBasePath() . 'admin/card-credits.php';
 ?>
-<script>
+<script<?= cspNonceAttr() ?>>
   window.__cardifyNativeAP = {
     intentUrl: <?= json_encode($__ccDefaultUrl) ?>,
     apiBase: 'https://oman.paymob.com',
@@ -329,7 +329,7 @@ $__ccSuccess      = getBasePath() . 'admin/card-credits.php';
 </script>
 <script src="<?= getBasePath() ?>assets/js/paymob-apple-pay.js?v=<?= @filemtime(__DIR__ . '/../assets/js/paymob-apple-pay.js') ?: time() ?>"></script>
 <script src="<?= getBasePath() ?>assets/js/paymob-pixel.js?v=<?= @filemtime(__DIR__ . '/../assets/js/paymob-pixel.js') ?: time() ?>"></script>
-<script>
+<script<?= cspNonceAttr() ?>>
   // Keep the inline widgets' amount in sync with the selected bundle.
   (function () {
     var base = <?= json_encode($__ccBase) ?>;

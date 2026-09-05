@@ -371,7 +371,7 @@ $gs = static fn(string $k): string => htmlspecialchars(t('getstarted.' . $k));
     </section>
 </div>
 
-<script>
+<script<?= cspNonceAttr() ?>>
 /* Instant-card demo. Posts to instant_card.php, which enforces its own
    same-origin check, rate limits and email validation, so this side stays
    thin: collect, post, swap in the result or say why not. */

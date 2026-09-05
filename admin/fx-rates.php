@@ -76,7 +76,7 @@ adminHeader(t('adminchrome.fx_rates'), 'fx-rates');
 <div class="max-w-5xl mx-auto px-4 py-8">
     <div class="flex items-center justify-between mb-6">
         <h1 class="text-2xl font-bold text-gray-900"><?= htmlspecialchars(t('fxrates.page_h1')) ?></h1>
-        <form method="post" onsubmit="return confirm(<?= json_encode(t('fxrates.confirm_reset'), JSON_UNESCAPED_UNICODE) ?>)">
+        <form method="post" data-cardify-confirm="<?= htmlspecialchars(t('fxrates.confirm_reset'), ENT_QUOTES) ?>">
             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
             <input type="hidden" name="action" value="reset_seeds">
             <button type="submit" class="text-sm text-gray-600 hover:text-gray-900"><?= htmlspecialchars(t('fxrates.reset_btn')) ?></button>

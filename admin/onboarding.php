@@ -494,7 +494,7 @@ adminHeader(t('onboarding.welcome_title', ['name' => $companyName]), 'onboarding
     </div>
 </div>
 
-<script>
+<script<?= cspNonceAttr() ?>>
 // Localparts that collide with a real tenant path/dir (served before the
 // bare-slug card route). Keep in sync with the auto_generate.php copy.
 const CARDIFY_RESERVED_SLUGS = new Set([

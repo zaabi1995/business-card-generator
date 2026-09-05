@@ -331,7 +331,7 @@ adminHeader('Print Shops Management', 'print_shops');
             <a href="print_shops.php" class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-center">Clear</a>
             <?php endif; ?>
         </form>
-        <button onclick="openCreateModal()" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 whitespace-nowrap">
+        <button data-cardify-action="call" data-fn="openCreateModal" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 whitespace-nowrap">
             <i class="fa-solid fa-plus mr-2"></i>Add Print Shop
         </button>
     </div>
@@ -445,7 +445,7 @@ adminHeader('Print Shops Management', 'print_shops');
                                     class="text-blue-600 hover:text-blue-800" title="Edit">
                                 <i class="fa-solid fa-edit"></i>
                             </button>
-                            <button onclick="openResetPasswordModal(<?php echo $shop['id']; ?>, '<?php echo sanitize($shop['name']); ?>')" 
+                            <button data-cardify-action="call" data-fn="openResetPasswordModal" data-args="<?= htmlspecialchars(json_encode([(int) $shop['id'], $shop['name']]), ENT_QUOTES) ?>" 
                                     class="text-purple-600 hover:text-purple-800" title="Reset Password">
                                 <i class="fa-solid fa-key"></i>
                             </button>
@@ -460,7 +460,7 @@ adminHeader('Print Shops Management', 'print_shops');
                             </form>
                             <?php endif; ?>
                             <?php if (($shop['status'] ?? '') === 'active'): ?>
-                            <form method="POST" class="inline" onsubmit="return confirm('Suspend this print shop?')">
+                            <form method="POST" class="inline" data-cardify-confirm="Suspend this print shop?">
                                 <?php echo csrfField(); ?>
                                 <input type="hidden" name="action" value="suspend_shop">
                                 <input type="hidden" name="shop_id" value="<?php echo $shop['id']; ?>">
@@ -469,7 +469,7 @@ adminHeader('Print Shops Management', 'print_shops');
                                 </button>
                             </form>
                             <?php endif; ?>
-                            <button onclick="confirmDelete(<?php echo $shop['id']; ?>, '<?php echo sanitize($shop['name']); ?>')" 
+                            <button data-cardify-action="call" data-fn="confirmDelete" data-args="<?= htmlspecialchars(json_encode([(int) $shop['id'], $shop['name']]), ENT_QUOTES) ?>" 
                                     class="text-red-600 hover:text-red-800" title="Delete">
                                 <i class="fa-solid fa-trash"></i>
                             </button>
@@ -584,7 +584,7 @@ adminHeader('Print Shops Management', 'print_shops');
                 </div>
             </div>
             <div class="p-6 border-t bg-gray-50 flex justify-end gap-3">
-                <button type="button" onclick="closeModal()" class="px-4 py-2 border rounded-lg hover:bg-gray-100">Cancel</button>
+                <button type="button" data-cardify-action="call" data-fn="closeModal" class="px-4 py-2 border rounded-lg hover:bg-gray-100">Cancel</button>
                 <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Save Changes</button>
             </div>
         </form>
@@ -602,7 +602,7 @@ adminHeader('Print Shops Management', 'print_shops');
             <?php echo csrfField(); ?>
             <input type="hidden" name="action" value="delete_shop">
             <input type="hidden" name="shop_id" id="deleteShopId">
-            <button type="button" onclick="closeDeleteModal()" class="px-4 py-2 border rounded-lg hover:bg-gray-100">Cancel</button>
+            <button type="button" data-cardify-action="call" data-fn="closeDeleteModal" class="px-4 py-2 border rounded-lg hover:bg-gray-100">Cancel</button>
             <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">Delete Shop</button>
         </form>
     </div>
@@ -682,7 +682,7 @@ adminHeader('Print Shops Management', 'print_shops');
                 </div>
             </div>
             <div class="p-6 border-t bg-gray-50 flex justify-end gap-3">
-                <button type="button" onclick="closeCreateModal()" class="px-4 py-2 border rounded-lg hover:bg-gray-100">Cancel</button>
+                <button type="button" data-cardify-action="call" data-fn="closeCreateModal" class="px-4 py-2 border rounded-lg hover:bg-gray-100">Cancel</button>
                 <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">Create Print Shop</button>
             </div>
         </form>
@@ -707,14 +707,14 @@ adminHeader('Print Shops Management', 'print_shops');
                 <p class="text-xs text-gray-500 mt-1">Minimum 8 characters</p>
             </div>
             <div class="p-6 border-t bg-gray-50 flex justify-end gap-3">
-                <button type="button" onclick="closeResetPasswordModal()" class="px-4 py-2 border rounded-lg hover:bg-gray-100">Cancel</button>
+                <button type="button" data-cardify-action="call" data-fn="closeResetPasswordModal" class="px-4 py-2 border rounded-lg hover:bg-gray-100">Cancel</button>
                 <button type="submit" class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">Reset Password</button>
             </div>
         </form>
     </div>
 </div>
 
-<script>
+<script<?= cspNonceAttr() ?>>
 function openEditModal(shop) {
     document.getElementById('shopId').value = shop.id;
     document.getElementById('shopName').value = shop.name || '';

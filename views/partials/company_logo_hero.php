@@ -555,7 +555,7 @@ if ($src && $canDownload):
     </form>
 </dialog>
 
-<script>
+<script<?= cspNonceAttr() ?>>
 (function () {
     var dlg     = document.getElementById('cardify-logo-unlock');
     var form    = document.getElementById('cardify-logo-unlock-form');

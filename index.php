@@ -1386,7 +1386,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
     <!-- ========== SCRIPTS ========== -->
     <?php
     $extraScripts = <<<HTML
-    <script>
+    <script<?= cspNonceAttr() ?>>
         // Mobile menu toggle
         const mobileMenuBtn = document.getElementById('mobile-menu-btn');
         const mobileMenu = document.getElementById('mobile-menu');

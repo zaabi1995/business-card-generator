@@ -512,7 +512,7 @@ adminHeader(t('branding.page_title'), 'theme');
                 <div class="flex items-center gap-2">
                     <input type="text" value="<?php echo getTenantUrl($companySlug, '/portal'); ?>" readonly
                            class="flex-1 px-4 py-2.5 bg-white border border-blue-200 rounded-lg text-gray-900 font-mono text-sm">
-                    <button type="button" onclick="copyPortalLink()" class="px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                    <button type="button" data-cardify-action="call" data-fn="copyPortalLink" class="px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
                         <i class="fa-solid fa-copy"></i>
                     </button>
                 </div>
@@ -711,7 +711,7 @@ adminHeader(t('branding.page_title'), 'theme');
                                     <?= (int)$walletTheme['is_active'] === 1 ? 'Hide' : 'Publish' ?>
                                 </button>
                             </form>
-                            <form method="post" onsubmit="return confirm('Hide this Wallet theme? Existing selections will fall back safely.');">
+                            <form method="post" data-cardify-confirm="Hide this Wallet theme? Existing selections will fall back safely.">
                                 <?php echo csrfField(); ?>
                                 <input type="hidden" name="wallet_theme_id" value="<?= sanitize($walletTheme['id']) ?>">
                                 <input type="hidden" name="wallet_action" value="archive">
@@ -725,7 +725,7 @@ adminHeader(t('branding.page_title'), 'theme');
     </div>
 </section>
 
-<script>
+<script<?= cspNonceAttr() ?>>
 // Update color text inputs when color pickers change
 document.querySelectorAll('input[type="color"]').forEach(picker => {
     picker.addEventListener('input', function() {

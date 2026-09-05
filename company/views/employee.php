@@ -759,7 +759,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                             <div class="text-xs text-gray-500 truncate"><?php echo sanitize($svc['description']); ?></div>
                             <?php endif; ?>
                         </div>
-                        <form method="post" onsubmit="return confirm('Remove this service?');">
+                        <form method="post" data-cardify-confirm="Remove this service?">
                             <input type="hidden" name="action" value="delete_service">
                             <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token'] ?? ''; ?>">
                             <input type="hidden" name="service_id" value="<?php echo sanitize($svc['id']); ?>">
@@ -794,7 +794,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     <?php foreach ($sectionGallery as $img): ?>
                     <div class="relative group">
                         <img src="<?php echo sanitize($img['file_path']); ?>" alt="" class="w-full aspect-square object-cover rounded-lg border border-gray-200">
-                        <form method="post" class="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition" onsubmit="return confirm('Delete this photo?');">
+                        <form method="post" class="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition" data-cardify-confirm="Delete this photo?">
                             <input type="hidden" name="action" value="delete_gallery">
                             <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token'] ?? ''; ?>">
                             <input type="hidden" name="gallery_id" value="<?php echo sanitize($img['id']); ?>">
@@ -844,7 +844,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                             <?php endif; ?>
                             <div class="text-xs text-gray-600 italic">&ldquo;<?php echo sanitize($t['quote']); ?>&rdquo;</div>
                         </div>
-                        <form method="post" onsubmit="return confirm('Remove this testimonial?');">
+                        <form method="post" data-cardify-confirm="Remove this testimonial?">
                             <input type="hidden" name="action" value="delete_testimonial">
                             <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token'] ?? ''; ?>">
                             <input type="hidden" name="testimonial_id" value="<?php echo sanitize($t['id']); ?>">
@@ -902,7 +902,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                                 Redeemed <?php echo (int)$offer['redemption_count']; ?>×
                             </div>
                         </div>
-                        <form method="post" onsubmit="return confirm('Remove this offer?');">
+                        <form method="post" data-cardify-confirm="Remove this offer?">
                             <input type="hidden" name="action" value="delete_offer">
                             <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token'] ?? ''; ?>">
                             <input type="hidden" name="offer_id" value="<?php echo sanitize($offer['id']); ?>">
@@ -975,7 +975,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                                     <div class="text-sm font-medium text-gray-800 truncate" x-text="row.title"></div>
                                     <div class="text-xs text-gray-500" x-text="'OMR ' + Number(row.price).toFixed(3)"></div>
                                 </div>
-                                <form method="post" onsubmit="return confirm('Remove this product?');">
+                                <form method="post" data-cardify-confirm="Remove this product?">
                                     <input type="hidden" name="action" value="delete_product">
                                     <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token'] ?? ''; ?>">
                                     <input type="hidden" name="product_id" :value="row.id">
@@ -1067,7 +1067,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                                 </div>
                                 <?php endif; ?>
                             </div>
-                            <form method="post" onsubmit="return confirm('Remove this FAQ?');">
+                            <form method="post" data-cardify-confirm="Remove this FAQ?">
                                 <input type="hidden" name="action" value="delete_faq">
                                 <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token'] ?? ''; ?>">
                                 <input type="hidden" name="faq_id" value="<?php echo sanitize($faq['id']); ?>">
@@ -1158,7 +1158,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     <button type="submit" class="px-6 py-2 btn-primary rounded-lg font-medium">Save Links</button>
                 </div>
             </form>
-            <script>
+            <script<?= cspNonceAttr() ?>>
                 function socialLinksEditor(initial) {
                     const hints = <?php echo json_encode(array_map(function($p){ return $p['hint']; }, EmployeeSocials::PLATFORMS)); ?>;
                     return {
@@ -1278,7 +1278,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
 
                 <button type="submit" class="px-6 py-2 btn-primary rounded-lg font-medium">Save Hours</button>
             </form>
-            <script>
+            <script<?= cspNonceAttr() ?>>
                 function businessHoursEditor(initial) {
                     const KEYS = ['mon','tue','wed','thu','fri','sat','sun'];
                     const days = {};
@@ -1493,7 +1493,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                                     <input type="hidden" name="testimonial_id" value="<?php echo sanitize($t['id']); ?>">
                                     <button class="px-2 py-1 text-xs text-green-700 hover:underline">Restore</button>
                                 </form>
-                                <form method="post" onsubmit="return confirm('Remove permanently?');">
+                                <form method="post" data-cardify-confirm="Remove permanently?">
                                     <input type="hidden" name="action" value="delete_testimonial">
                                     <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token'] ?? ''; ?>">
                                     <input type="hidden" name="testimonial_id" value="<?php echo sanitize($t['id']); ?>">

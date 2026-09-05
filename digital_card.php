@@ -472,6 +472,11 @@ function renderBranded404($company, $theme) {
         .footer { margin-top: 32px; font-size: 11px; color: #444; }
         .footer a { color: <?php echo htmlspecialchars($accentColor); ?>; text-decoration: none; }
     </style>
+    <?php /* Delegated behaviour for this page. digital_card.php does not go
+       through ui-header.php, so it loads the module itself: the on* attributes
+       it used to carry are inline script, and a CSP without 'unsafe-inline'
+       kills every one. */ ?>
+    <script src="/assets/js/cardify-actions.js?v=<?php echo @filemtime(__DIR__ . '/assets/js/cardify-actions.js') ?: time(); ?>"></script>
 </head>
 <body>
     <div class="container">
@@ -538,7 +543,7 @@ $switchThirdUrl = ($thirdCode !== '' && $thirdLabel !== '')
     <link rel="icon" type="image/png" href="<?php echo (!empty($theme['favicon_path'])) ? htmlspecialchars(cardifyAssetUrl($theme['favicon_path'])) : ($logoPath ? htmlspecialchars($logoPath) : '/favicon.svg'); ?>">
     <?php if ($isRtl): ?>
     <link rel="preconnect" href="https://fonts.bhd.om" crossorigin>
-    <link rel="stylesheet" href="https://fonts.bhd.om/css2?family=Noto+Sans+Arabic:wght@400;500;600;700&display=swap" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="https://fonts.bhd.om/css2?family=Noto+Sans+Arabic:wght@400;500;600;700&display=swap" media="print" data-cardify-async-css="media">
     <noscript><link rel="stylesheet" href="https://fonts.bhd.om/css2?family=Noto+Sans+Arabic:wght@400;500;600;700&display=swap"></noscript>
     <?php endif; ?>
     <!-- Icons load async (media=print -> all on load) so text paints immediately; icons fill in a beat later.
@@ -546,9 +551,9 @@ $switchThirdUrl = ($thirdCode !== '' && $thirdLabel !== '')
          connection to the same origin, and Cloudflare cdn-cache + brotli applies the same as for the HTML. -->
     <link rel="preload" href="https://design.bhd.om/fa/v7.2.0/webfonts/fa-solid-900.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="preload" href="https://design.bhd.om/fa/v7.2.0/webfonts/fa-brands-400.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/fontawesome.min.css?v=7.2.0" media="print" onload="this.media='all'">
-    <link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/solid.min.css?v=7.2.0" media="print" onload="this.media='all'">
-    <link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/brands.min.css?v=7.2.0" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/fontawesome.min.css?v=7.2.0" media="print" data-cardify-async-css="media">
+    <link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/solid.min.css?v=7.2.0" media="print" data-cardify-async-css="media">
+    <link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/brands.min.css?v=7.2.0" media="print" data-cardify-async-css="media">
     <noscript>
         <link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/fontawesome.min.css?v=7.2.0">
         <link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/solid.min.css?v=7.2.0">
@@ -1374,6 +1379,11 @@ $switchThirdUrl = ($thirdCode !== '' && $thirdLabel !== '')
         .dcd-contact { margin-top: 16px; display: flex; flex-direction: column; gap: 5px; font-size: 13.5px; opacity: .92; }
         .dcd-contact i { width: 15px; opacity: .8; font-size: 12px; }
     </style>
+    <?php /* Delegated behaviour for this page. digital_card.php does not go
+       through ui-header.php, so it loads the module itself: the on* attributes
+       it used to carry are inline script, and a CSP without 'unsafe-inline'
+       kills every one. */ ?>
+    <script src="/assets/js/cardify-actions.js?v=<?php echo @filemtime(__DIR__ . '/assets/js/cardify-actions.js') ?: time(); ?>"></script>
 </head>
 <body class="<?php echo $isDarkPage ? 'force-dark' : 'force-light'; echo !empty($demoMeta) ? ' is-demo' : ''; ?>">
     <?php if (!empty($isDemoUnverified)): $__demoAr = (($locale ?? 'en') === 'ar'); ?>
@@ -1596,7 +1606,7 @@ $switchThirdUrl = ($thirdCode !== '' && $thirdLabel !== '')
             <?php if (!$isPendingPreview && $frontImage): // PDF is the printed-card design; hide when there is no card (e.g. photo-led vCard) ?>
             <a href="<?php echo htmlspecialchars($cardClickUrl('download_pdf', $pdfUrl)); ?>" class="bottom-btn btn-pdf" download><?= htmlspecialchars(t('digitalcard.btn_download_pdf')) ?></a>
             <?php endif; ?>
-            <button class="bottom-btn btn-share" onclick="shareCard()"><?= htmlspecialchars(t('digitalcard.btn_share')) ?></button>
+            <button class="bottom-btn btn-share" data-cardify-action="call" data-fn="shareCard"><?= htmlspecialchars(t('digitalcard.btn_share')) ?></button>
         </div>
 
         <?php /* Its own row, not a fourth item in the utility row above.
@@ -1749,7 +1759,7 @@ $switchThirdUrl = ($thirdCode !== '' && $thirdLabel !== '')
                     <h3><?= htmlspecialchars(t('digitalcard.section_gallery')) ?></h3>
                     <div class="gallery-grid">
                         <?php foreach ($sectionGallery as $img): ?>
-                            <img src="<?php echo htmlspecialchars(cardifyAssetUrl($img['file_path'])); ?>" alt="<?php echo htmlspecialchars($img['caption'] ?? ''); ?>" loading="lazy" onclick="window.open(this.src,'_blank')">
+                            <img src="<?php echo htmlspecialchars(cardifyAssetUrl($img['file_path'])); ?>" alt="<?php echo htmlspecialchars($img['caption'] ?? ''); ?>" loading="lazy" data-cardify-action="open-src">
                         <?php endforeach; ?>
                     </div>
                 </div>
@@ -1781,7 +1791,7 @@ $switchThirdUrl = ($thirdCode !== '' && $thirdLabel !== '')
                         <div style="font-size:13px; opacity:0.65; padding:8px 0 12px;"><?= htmlspecialchars(t('digitalcard.test_empty')) ?></div>
                     <?php endif; ?>
 
-                    <button type="button" class="testimonial-toggle" id="testimonialToggle" data-label-open="<?= htmlspecialchars(t('digitalcard.test_leave'), ENT_QUOTES) ?>" data-label-close="<?= htmlspecialchars(t('digitalcard.test_cancel'), ENT_QUOTES) ?>" onclick="(function(b){var f=document.getElementById('testimonialFormWrap');var open=f.style.display==='block';f.style.display=open?'none':'block';b.textContent=open?b.dataset.labelOpen:b.dataset.labelClose;})(this);"><?= htmlspecialchars(t('digitalcard.test_leave')) ?></button>
+                    <button type="button" class="testimonial-toggle" id="testimonialToggle" data-label-open="<?= htmlspecialchars(t('digitalcard.test_leave'), ENT_QUOTES) ?>" data-label-close="<?= htmlspecialchars(t('digitalcard.test_cancel'), ENT_QUOTES) ?>" data-cardify-action="toggle-block" data-target="testimonialFormWrap"><?= htmlspecialchars(t('digitalcard.test_leave')) ?></button>
                     <div id="testimonialFormWrap" style="display:none; margin-top:12px;">
                         <form id="testimonialForm" class="lead-form" enctype="multipart/form-data" autocomplete="off">
                             <input type="hidden" name="employee_id" value="<?php echo htmlspecialchars($employee['id']); ?>">
@@ -2105,7 +2115,7 @@ $switchThirdUrl = ($thirdCode !== '' && $thirdLabel !== '')
                 <div class="appt-success-msg"><?= htmlspecialchars(t('digitalcard.appt_sent_body')) ?></div>
             </div>
         </div>
-        <script>
+        <script<?= cspNonceAttr() ?>>
         (function(){
             var EID = <?php echo JsonLd::value($employee['id']); ?>;
             var MAX_ADV = <?php echo (int)$apptSettings['max_advance_days']; ?>;
@@ -2214,7 +2224,7 @@ $switchThirdUrl = ($thirdCode !== '' && $thirdLabel !== '')
             </a>
             <?php endif; ?>
         </div>
-        <script>
+        <script<?= cspNonceAttr() ?>>
             // Apple Wallet (.pkpass) only adds on iOS mobile (iPhone/iPad), so the
             // Apple button shows ONLY there. Google Wallet shows everywhere except
             // iOS. If nothing is left for the platform, drop the block so it leaves
@@ -2287,7 +2297,7 @@ $switchThirdUrl = ($thirdCode !== '' && $thirdLabel !== '')
 
     <div class="copy-toast" id="copyToast">Link copied!</div>
 
-    <script>
+    <script<?= cspNonceAttr() ?>>
         // ---- Theme toggle (visitor override) ----
         (function(){
             var COOKIE = 'cardify_card_theme';
@@ -2494,7 +2504,7 @@ $switchThirdUrl = ($thirdCode !== '' && $thirdLabel !== '')
         })();
     </script>
 
-    <script>
+    <script<?= cspNonceAttr() ?>>
         // Business Hours: expand/collapse weekly schedule
         (function () {
             var toggles = document.querySelectorAll('[data-hours-toggle]');

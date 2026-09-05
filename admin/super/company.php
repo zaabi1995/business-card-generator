@@ -380,7 +380,7 @@ $h = fn($v) => htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8');
         <div class="flex items-center gap-2 flex-wrap">
             <?php if ($company['status'] === 'active'): ?>
             <form method="POST" action="<?php echo getBasePath(); ?>admin/impersonate.php?action=start" class="m-0"
-                  onsubmit="return confirm('Log in as <?php echo $h($company['name']); ?>? Logged to the audit trail.');">
+                  data-cardify-confirm="Log in as <?= htmlspecialchars((string)($h($company['name'])), ENT_QUOTES) ?>? Logged to the audit trail.">
                 <input type="hidden" name="csrf_token" value="<?php echo $h($csrf); ?>">
                 <input type="hidden" name="company_id" value="<?php echo $h($company['id']); ?>">
                 <button class="px-3 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 text-sm font-medium"><i class="fa-solid fa-user-secret mr-1"></i>Impersonate</button>
@@ -388,7 +388,7 @@ $h = fn($v) => htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8');
             <?php endif; ?>
             <a href="<?php echo $h($tenantUrl); ?>" target="_blank" class="px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm font-medium"><i class="fa-solid fa-external-link mr-1"></i>Visit</a>
             <?php if ($company['status'] === 'active'): ?>
-            <form method="POST" class="m-0" onsubmit="return confirm('Suspend this company? Logins will be blocked.');">
+            <form method="POST" class="m-0" data-cardify-confirm="Suspend this company? Logins will be blocked.">
                 <input type="hidden" name="csrf_token" value="<?php echo $h($csrf); ?>">
                 <input type="hidden" name="company_id" value="<?php echo $h($company['id']); ?>">
                 <input type="hidden" name="action" value="suspend_company">
@@ -402,8 +402,8 @@ $h = fn($v) => htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8');
                 <button class="px-3 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 text-sm font-medium"><i class="fa-solid fa-play mr-1"></i>Activate</button>
             </form>
             <?php endif; ?>
-            <button onclick="openModal('resetPwModal')" class="px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm font-medium"><i class="fa-solid fa-key mr-1"></i>Reset password</button>
-            <button onclick="openModal('deleteModal')" class="px-3 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 text-sm font-medium"><i class="fa-solid fa-trash mr-1"></i>Delete</button>
+            <button data-cardify-action="call" data-fn="openModal" data-args="[&quot;resetPwModal&quot;]" class="px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm font-medium"><i class="fa-solid fa-key mr-1"></i>Reset password</button>
+            <button data-cardify-action="call" data-fn="openModal" data-args="[&quot;deleteModal&quot;]" class="px-3 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 text-sm font-medium"><i class="fa-solid fa-trash mr-1"></i>Delete</button>
         </div>
     </div>
 
@@ -425,7 +425,7 @@ $h = fn($v) => htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8');
     <div class="border-b border-gray-200 overflow-x-auto">
         <nav class="flex gap-1 px-2 min-w-max">
             <?php foreach ($tabs as $key => [$label, $icon]): ?>
-            <button type="button" data-tab="<?php echo $key; ?>" onclick="showTab('<?php echo $key; ?>')"
+            <button type="button" data-tab="<?php echo $key; ?>" data-cardify-action="call" data-fn="showTab" data-args="<?= htmlspecialchars(json_encode(['' . ($key) . '']), ENT_QUOTES) ?>"
                     class="cdm-tab whitespace-nowrap px-4 py-3 border-b-2 text-sm font-medium <?php echo $tab === $key ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'; ?>">
                 <i class="fa-solid <?php echo $icon; ?> mr-1"></i><?php echo $h($label); ?>
             </button>
@@ -510,7 +510,7 @@ $h = fn($v) => htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8');
                     · <?php echo $deptCount; ?> departments
                 </div>
                 <div class="flex gap-2">
-                    <button onclick="addEmp()" class="px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium"><i class="fa-solid fa-plus mr-1"></i>Add employee</button>
+                    <button data-cardify-action="call" data-fn="addEmp" class="px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium"><i class="fa-solid fa-plus mr-1"></i>Add employee</button>
                     <a href="employees.php?company_id=<?php echo urlencode($company['id']); ?>" class="px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm font-medium">Open full list</a>
                 </div>
             </div>
@@ -640,7 +640,7 @@ $h = fn($v) => htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8');
                             <td class="px-4 py-2"><span class="px-2 py-0.5 rounded-full text-xs <?php echo cdm_badge($o['status']); ?>"><?php echo $h($o['status']); ?></span></td>
                             <td class="px-4 py-2 text-gray-400"><?php echo $h($o['erp_invoice_number'] ?: $o['invoice_number'] ?: '-'); ?></td>
                             <td class="px-4 py-2"><?php echo $h(date('M d, Y', dbTs($o['created_at']))); ?></td>
-                            <td class="px-4 py-2 text-right"><button class="text-blue-600 hover:text-blue-800" title="Change status" onclick="orderStatus(<?php echo $h(json_encode($o['id'])); ?>, <?php echo $h(json_encode($o['status'])); ?>)"><i class="fa-solid fa-arrows-rotate"></i></button></td>
+                            <td class="px-4 py-2 text-right"><button class="text-blue-600 hover:text-blue-800" title="Change status" data-cardify-action="call" data-fn="orderStatus" data-args="<?= htmlspecialchars(json_encode([$o['id'], $o['status']]), ENT_QUOTES) ?>"><i class="fa-solid fa-arrows-rotate"></i></button></td>
                         </tr>
                         <?php endforeach; ?>
                     </tbody>
@@ -807,7 +807,7 @@ $h = fn($v) => htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8');
                 <label class="flex items-center gap-2 text-sm text-gray-600" id="empSkipInviteWrap"><input type="checkbox" name="skip_invite" value="1"> Don't send a card-edit invite</label>
             </div>
             <div class="p-5 border-t bg-gray-50 flex justify-end gap-3">
-                <button type="button" onclick="closeModal('empModal')" class="px-4 py-2 border rounded-lg hover:bg-gray-100">Cancel</button>
+                <button type="button" data-cardify-action="call" data-fn="closeModal" data-args="[&quot;empModal&quot;]" class="px-4 py-2 border rounded-lg hover:bg-gray-100">Cancel</button>
                 <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Save</button>
             </div>
         </form>
@@ -832,7 +832,7 @@ $h = fn($v) => htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8');
                 <input name="reason" placeholder="Reason (for cancel/reject)" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
             </div>
             <div class="p-5 border-t bg-gray-50 flex justify-end gap-3">
-                <button type="button" onclick="closeModal('orderModal')" class="px-4 py-2 border rounded-lg hover:bg-gray-100">Cancel</button>
+                <button type="button" data-cardify-action="call" data-fn="closeModal" data-args="[&quot;orderModal&quot;]" class="px-4 py-2 border rounded-lg hover:bg-gray-100">Cancel</button>
                 <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Update</button>
             </div>
         </form>
@@ -853,7 +853,7 @@ $h = fn($v) => htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8');
                 <input name="confirm_slug" placeholder="Type the slug to confirm: <?php echo $h($company['slug']); ?>" required class="w-full px-3 py-2 border border-gray-300 rounded-lg">
             </div>
             <div class="p-5 border-t bg-gray-50 flex justify-end gap-3">
-                <button type="button" onclick="closeModal('resetPwModal')" class="px-4 py-2 border rounded-lg hover:bg-gray-100">Cancel</button>
+                <button type="button" data-cardify-action="call" data-fn="closeModal" data-args="[&quot;resetPwModal&quot;]" class="px-4 py-2 border rounded-lg hover:bg-gray-100">Cancel</button>
                 <button type="submit" class="px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-black">Reset password</button>
             </div>
         </form>
@@ -874,14 +874,14 @@ $h = fn($v) => htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8');
                 <input name="confirm_slug" placeholder="Type the slug to confirm: <?php echo $h($company['slug']); ?>" required class="w-full px-3 py-2 border border-gray-300 rounded-lg">
             </div>
             <div class="p-5 border-t bg-gray-50 flex justify-end gap-3">
-                <button type="button" onclick="closeModal('deleteModal')" class="px-4 py-2 border rounded-lg hover:bg-gray-100">Cancel</button>
+                <button type="button" data-cardify-action="call" data-fn="closeModal" data-args="[&quot;deleteModal&quot;]" class="px-4 py-2 border rounded-lg hover:bg-gray-100">Cancel</button>
                 <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">Schedule deletion</button>
             </div>
         </form>
     </div>
 </div>
 
-<script>
+<script<?= cspNonceAttr() ?>>
 function showTab(name) {
     document.querySelectorAll('.cdm-panel').forEach(p => p.hidden = (p.dataset.tab !== name));
     document.querySelectorAll('.cdm-tab').forEach(b => {

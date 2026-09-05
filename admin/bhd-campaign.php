@@ -207,7 +207,7 @@ adminHeader(t('adminchrome.bhd_campaign_manager'), 'reports');
                             <i class="fa-solid fa-triangle-exclamation"></i>
                             <?= htmlspecialchars(t('bhdcampaign.send_warning')) ?>
                         </p>
-                        <button type="submit" onclick="return confirm(<?= json_encode(t('bhdcampaign.confirm_send'), JSON_UNESCAPED_UNICODE) ?>)"
+                        <button type="submit" data-cardify-confirm="<?= htmlspecialchars(t('bhdcampaign.confirm_send'), ENT_QUOTES) ?>"
                                 class="px-6 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl font-medium text-sm transition-colors flex items-center gap-2">
                             <i class="fa-brands fa-whatsapp"></i> <?= htmlspecialchars(t('bhdcampaign.btn_send')) ?>
                         </button>

@@ -88,7 +88,7 @@ printshopHeader($company['name'] . ' , ' . $shop['name'], 'clients');
            class="inline-flex items-center gap-2 px-4 py-2 bg-[#00718c] hover:bg-[#005b73] text-white rounded-lg text-sm font-medium shadow-sm">
             <i class="fa-solid fa-id-card"></i> Apply a design
         </a>
-        <button type="button" onclick="document.getElementById('newDesignModal').showModal()"
+        <button type="button" data-cardify-action="open-dialog" data-target="newDesignModal"
                 class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium shadow-sm">
             <i class="fa-solid fa-plus"></i> <?= htmlspecialchars(t('printshopinternal.create_design_btn')) ?>
         </button>
@@ -160,7 +160,7 @@ printshopHeader($company['name'] . ' , ' . $shop['name'], 'clients');
                 <h3 class="text-lg font-bold text-gray-900"><?= htmlspecialchars(t('printshopinternal.create_design_h')) ?></h3>
                 <p class="text-xs text-gray-500 mt-1"><?= htmlspecialchars(str_replace(':client', $company['name'], t('printshopinternal.create_design_sub'))) ?></p>
             </div>
-            <button type="button" onclick="document.getElementById('newDesignModal').close()" aria-label="<?= htmlspecialchars(t('printshopinternal.cancel_btn')) ?>" title="<?= htmlspecialchars(t('printshopinternal.cancel_btn')) ?>" class="text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-md p-1.5 transition-colors">
+            <button type="button" data-cardify-action="close-dialog" data-target="newDesignModal" aria-label="<?= htmlspecialchars(t('printshopinternal.cancel_btn')) ?>" title="<?= htmlspecialchars(t('printshopinternal.cancel_btn')) ?>" class="text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-md p-1.5 transition-colors">
                 <i class="fa-solid fa-xmark text-lg" aria-hidden="true"></i>
             </button>
         </div>
@@ -192,7 +192,7 @@ printshopHeader($company['name'] . ' , ' . $shop['name'], 'clients');
         <div id="newDesignStatus" class="hidden text-sm rounded-lg px-3 py-2"></div>
 
         <div class="flex items-center justify-end gap-2 pt-2 border-t border-gray-100">
-            <button type="button" onclick="document.getElementById('newDesignModal').close()"
+            <button type="button" data-cardify-action="close-dialog" data-target="newDesignModal"
                     class="px-3 py-2 text-sm text-gray-600 hover:text-gray-900"><?= htmlspecialchars(t('printshopinternal.cancel_btn')) ?></button>
             <button type="submit" id="newDesignSubmit"
                     class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white rounded-lg text-sm font-medium">
@@ -203,7 +203,7 @@ printshopHeader($company['name'] . ' , ' . $shop['name'], 'clients');
     </form>
 </dialog>
 
-<script>
+<script<?= cspNonceAttr() ?>>
 (function () {
     var form = document.getElementById('newDesignForm');
     if (!form) return;

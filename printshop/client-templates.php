@@ -78,7 +78,7 @@ printshopHeader($company['name'] . ' , Designs', 'clients');
             <div class="font-semibold text-gray-900 text-sm"><?= htmlspecialchars($p['label']) ?></div>
             <span class="inline-block mt-1 text-[11px] font-semibold px-2 py-0.5 rounded-full <?= $p['bilingual'] ? 'bg-violet-100 text-violet-700' : 'bg-gray-100 text-gray-600' ?>"><?= $p['bilingual'] ? 'AR + EN' : 'EN' ?></span>
           </div>
-          <form method="post" onsubmit="return confirm('Apply this design to all of <?= htmlspecialchars(addslashes($company['name'])) ?>\'s cards?');">
+          <form method="post" data-cardify-confirm="Apply this design to all of <?= htmlspecialchars((string)(htmlspecialchars(addslashes($company['name']))), ENT_QUOTES) ?>\'s cards?">
             <?= csrfField() ?>
             <input type="hidden" name="action" value="apply_preset">
             <input type="hidden" name="preset" value="<?= htmlspecialchars($p['id']) ?>">

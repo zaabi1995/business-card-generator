@@ -460,7 +460,7 @@ adminHeader('Short Links', 'short-links');
                             <a href="<?= sanitize($shortUrl); ?>" target="_blank" rel="noopener"
                                class="text-blue-600 hover:underline font-mono text-xs break-all"><?= sanitize($shortUrl); ?></a>
                             <button type="button"
-                                    onclick="navigator.clipboard.writeText('<?= sanitize($shortUrl); ?>'); this.innerHTML='<i class=\'fa-solid fa-check text-green-600\'></i>';"
+                                    data-cardify-action="copy" data-copy="<?= htmlspecialchars($shortUrl, ENT_QUOTES) ?>" data-copied-html="<?= htmlspecialchars('<i class=\'fa-solid fa-check text-green-600\'></i>', ENT_QUOTES) ?>"
                                     class="text-gray-400 hover:text-gray-600" title="Copy">
                                 <i class="fa-regular fa-copy"></i>
                             </button>
@@ -496,7 +496,7 @@ adminHeader('Short Links', 'short-links');
                                 </button>
                             </form>
                             <?php else: ?>
-                            <form method="post" class="inline-block mr-1" onsubmit="return confirm('Un-approve this link? It will stop redirecting.');">
+                            <form method="post" class="inline-block mr-1" data-cardify-confirm="Un-approve this link? It will stop redirecting.">
                                 <?= csrfField(); ?>
                                 <input type="hidden" name="action" value="unapprove">
                                 <input type="hidden" name="id" value="<?= (int)$l['id']; ?>">
@@ -506,7 +506,7 @@ adminHeader('Short Links', 'short-links');
                             </form>
                             <?php endif; ?>
                         <?php endif; ?>
-                        <form method="post" class="inline-block" onsubmit="return confirm('Delete this short link? This cannot be undone.');">
+                        <form method="post" class="inline-block" data-cardify-confirm="Delete this short link? This cannot be undone.">
                             <?= csrfField(); ?>
                             <input type="hidden" name="action" value="delete">
                             <input type="hidden" name="id" value="<?= (int)$l['id']; ?>">

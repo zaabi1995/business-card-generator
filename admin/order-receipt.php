@@ -129,7 +129,7 @@ try {
         <a href="<?= htmlspecialchars($altUrl) ?>" class="px-3 py-2 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors" title="<?= $isAr ? 'English' : 'العربية' ?>">
             <i class="fa-solid fa-language mr-1"></i> <?= $isAr ? 'EN' : 'AR' ?>
         </a>
-        <button onclick="window.print()" class="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors">
+        <button data-cardify-action="print" class="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors">
             <i class="fa-solid fa-print mr-1"></i> <?= htmlspecialchars(t('order.receipt_print_save')) ?>
         </button>
     </div>

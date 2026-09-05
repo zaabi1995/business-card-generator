@@ -289,7 +289,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
 </form>
 
 <script src="<?= htmlspecialchars(getBasePath()) ?>assets/js/fabric-5.3.1.min.js"></script>
-<script>
+<script<?= cspNonceAttr() ?>>
 (function() {
     const basePath = <?= json_encode(getBasePath()) ?>;
     const shopId = <?= json_encode($shopId) ?>;

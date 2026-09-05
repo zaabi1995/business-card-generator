@@ -304,11 +304,11 @@ adminHeader('Employees Management' . ($selectedCompanyName ? " - {$selectedCompa
                                     class="text-blue-600 hover:text-blue-800" title="Edit">
                                 <i class="fa-solid fa-edit"></i>
                             </button>
-                            <button onclick="openPasswordModal(<?php echo htmlspecialchars(json_encode((string)$emp['id']), ENT_QUOTES); ?>, <?php echo htmlspecialchars(json_encode($emp['name_en'] ?? $emp['email']), ENT_QUOTES); ?>)"
+                            <button data-cardify-action="call" data-fn="openPasswordModal" data-args="<?= htmlspecialchars(json_encode([(string)$emp['id'], $emp['name_en'] ?? $emp['email']]), ENT_QUOTES) ?>"
                                     class="text-purple-600 hover:text-purple-800" title="Reset Password">
                                 <i class="fa-solid fa-key"></i>
                             </button>
-                            <button onclick="confirmDelete(<?php echo htmlspecialchars(json_encode((string)$emp['id']), ENT_QUOTES); ?>, <?php echo htmlspecialchars(json_encode($emp['name_en'] ?? $emp['email']), ENT_QUOTES); ?>)"
+                            <button data-cardify-action="call" data-fn="confirmDelete" data-args="<?= htmlspecialchars(json_encode([(string)$emp['id'], $emp['name_en'] ?? $emp['email']]), ENT_QUOTES) ?>"
                                     class="text-red-600 hover:text-red-800" title="Delete">
                                 <i class="fa-solid fa-trash"></i>
                             </button>
@@ -420,7 +420,7 @@ adminHeader('Employees Management' . ($selectedCompanyName ? " - {$selectedCompa
                 </div>
             </div>
             <div class="p-6 border-t bg-gray-50 flex justify-end gap-3">
-                <button type="button" onclick="closeModal()" class="px-4 py-2 border rounded-lg hover:bg-gray-100">Cancel</button>
+                <button type="button" data-cardify-action="call" data-fn="closeModal" class="px-4 py-2 border rounded-lg hover:bg-gray-100">Cancel</button>
                 <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Save Changes</button>
             </div>
         </form>
@@ -445,7 +445,7 @@ adminHeader('Employees Management' . ($selectedCompanyName ? " - {$selectedCompa
                 <p class="text-xs text-gray-500 mt-1">Minimum 6 characters</p>
             </div>
             <div class="p-6 border-t bg-gray-50 flex justify-end gap-3">
-                <button type="button" onclick="closePasswordModal()" class="px-4 py-2 border rounded-lg hover:bg-gray-100">Cancel</button>
+                <button type="button" data-cardify-action="call" data-fn="closePasswordModal" class="px-4 py-2 border rounded-lg hover:bg-gray-100">Cancel</button>
                 <button type="submit" class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">Reset Password</button>
             </div>
         </form>
@@ -463,13 +463,13 @@ adminHeader('Employees Management' . ($selectedCompanyName ? " - {$selectedCompa
             <?php echo csrfField(); ?>
             <input type="hidden" name="action" value="delete_employee">
             <input type="hidden" name="employee_id" id="deleteEmpId">
-            <button type="button" onclick="closeDeleteModal()" class="px-4 py-2 border rounded-lg hover:bg-gray-100">Cancel</button>
+            <button type="button" data-cardify-action="call" data-fn="closeDeleteModal" class="px-4 py-2 border rounded-lg hover:bg-gray-100">Cancel</button>
             <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">Delete Employee</button>
         </form>
     </div>
 </div>
 
-<script>
+<script<?= cspNonceAttr() ?>>
 function openEditModal(emp) {
     document.getElementById('employeeId').value = emp.id;
     document.getElementById('empNameEn').value = emp.name_en || '';

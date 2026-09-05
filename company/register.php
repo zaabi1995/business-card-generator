@@ -110,7 +110,7 @@ $extraHead = <<<HTML
         .iti { width: 100%; display: block; }
         .iti__tel-input.form-input { padding-left: 3.5rem; }
     </style>
-    <script>
+    <script<?= cspNonceAttr() ?>>
         function checkEmailDomain() {
             const email = document.getElementById('admin_email').value;
             const slugField = document.getElementById('company_slug');
@@ -620,7 +620,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                                    value="<?php echo htmlspecialchars($_POST['admin_email'] ?? $prefillEmail); ?>"
                                    class="form-input" autocomplete="email" aria-required="true"
                                    placeholder="<?= htmlspecialchars(t('register.placeholder_email')) ?>" required
-                                   onchange="checkEmailDomain()" onkeyup="checkEmailDomain()">
+                                   data-cardify-change-fn="checkEmailDomain" data-cardify-keyup-fn="checkEmailDomain">
                         </div>
                     </div>
 
@@ -865,7 +865,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
         </div>
     </div>
 <script src="https://cdn.jsdelivr.net/npm/intl-tel-input@23.8.2/build/js/intlTelInput.min.js"></script>
-<script>
+<script<?= cspNonceAttr() ?>>
 (function () {
     var phoneEl = document.getElementById('phone');
     var hiddenEl = document.getElementById('phone_e164');
@@ -917,7 +917,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
     }
 })();
 </script>
-<script>
+<script<?= cspNonceAttr() ?>>
 // Join-or-create: record the answer in the hidden field before the form goes.
 // Written as a click handler rather than a named submit button because the
 // reCAPTCHA path re-submits with form.submit(), which drops button values.
@@ -934,7 +934,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
 <?php @include __DIR__ . '/../views/partials/trust_logo_strip.php'; ?>
 <?php require_once INCLUDES_DIR . '/Recaptcha.php'; if (Recaptcha::isConfigured()): $siteKey = Recaptcha::siteKey(); ?>
 <script src="https://www.google.com/recaptcha/api.js?render=<?= htmlspecialchars($siteKey) ?>"></script>
-<script>
+<script<?= cspNonceAttr() ?>>
 (function(){
     var form = document.getElementById('register-form');
     if (!form) return;

@@ -188,7 +188,7 @@ $adminBase = defined('COMPANY_ADMIN_BASE') ? COMPANY_ADMIN_BASE : getBasePath() 
                     <code class="bg-blue-100 px-3 py-1.5 rounded text-sm text-blue-800 font-mono">
                         <?php echo getTenantUrl($companySlug, '/portal'); ?>
                     </code>
-                    <button onclick="copyPortalLink()" class="px-3 py-1.5 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">
+                    <button data-cardify-action="call" data-fn="copyPortalLink" class="px-3 py-1.5 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">
                         <i class="fa-solid fa-copy mr-1"></i>Copy
                     </button>
                 </div>
@@ -387,7 +387,7 @@ $adminBase = defined('COMPANY_ADMIN_BASE') ? COMPANY_ADMIN_BASE : getBasePath() 
                             </button>
                             
                             <!-- Preview Card Button -->
-                            <button type="button" onclick="previewCard(<?php echo htmlspecialchars(json_encode([
+                            <button type="button" data-cardify-action="call" data-fn="previewCard" data-args="<?= htmlspecialchars(json_encode([[
                                 'name_en' => $req['name_en'],
                                 'name_ar' => $req['name_ar'],
                                 'position_en' => $req['position_en'],
@@ -402,7 +402,7 @@ $adminBase = defined('COMPANY_ADMIN_BASE') ? COMPANY_ADMIN_BASE : getBasePath() 
                                 'photo' => $req['photo'] ?? '',
                                 'preview_front' => $req['preview_front'] ?? '',
                                 'preview_back' => $req['preview_back'] ?? ''
-                            ])); ?>)" class="px-3 py-1.5 text-xs font-medium text-purple-700 bg-purple-100 rounded hover:bg-purple-200">
+                            ]]), ENT_QUOTES) ?>" class="px-3 py-1.5 text-xs font-medium text-purple-700 bg-purple-100 rounded hover:bg-purple-200">
                                 <i class="fa-solid fa-eye mr-1"></i>Preview Card
                             </button>
                             
@@ -426,7 +426,7 @@ $adminBase = defined('COMPANY_ADMIN_BASE') ? COMPANY_ADMIN_BASE : getBasePath() 
                             </a>
                             <?php endif; ?>
                             
-                            <form method="POST" class="inline" onsubmit="return confirm('Delete this request?')">
+                            <form method="POST" class="inline" data-cardify-confirm="Delete this request?">
                                 <?php echo csrfField(); ?>
                                 <input type="hidden" name="action" value="delete">
                                 <input type="hidden" name="request_id" value="<?php echo $req['id']; ?>">
@@ -466,13 +466,13 @@ $adminBase = defined('COMPANY_ADMIN_BASE') ? COMPANY_ADMIN_BASE : getBasePath() 
 </div>
 
 <!-- Card Preview Modal -->
-<div id="previewModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/60" onclick="closePreviewModal(event)">
-    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden" onclick="event.stopPropagation()">
+<div id="previewModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/60" data-cardify-action="call" data-fn="closePreviewModal" data-arg="event">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden" data-cardify-action="stop">
         <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-purple-600 to-blue-600">
             <h3 class="text-lg font-semibold text-white">
                 <i class="fa-solid fa-id-card mr-2"></i>Request Details
             </h3>
-            <button onclick="closePreviewModal()" class="text-white/80 hover:text-white">
+            <button data-cardify-action="call" data-fn="closePreviewModal" class="text-white/80 hover:text-white">
                 <i class="fa-solid fa-times text-xl"></i>
             </button>
         </div>
@@ -520,14 +520,14 @@ $adminBase = defined('COMPANY_ADMIN_BASE') ? COMPANY_ADMIN_BASE : getBasePath() 
             </div>
         </div>
         <div class="px-6 py-4 border-t border-gray-200 bg-gray-50 flex justify-end">
-            <button onclick="closePreviewModal()" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
+            <button data-cardify-action="call" data-fn="closePreviewModal" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
                 Close
             </button>
         </div>
     </div>
 </div>
 
-<script>
+<script<?= cspNonceAttr() ?>>
 function copyPortalLink() {
     const link = '<?php echo getTenantUrl($companySlug, '/portal'); ?>';
     navigator.clipboard.writeText(link).then(() => {
@@ -629,7 +629,7 @@ function generatePreview(side, container, employee) {
         const cardHtml = `
             <div class="flex flex-col items-center">
                 <div class="relative bg-white rounded-lg shadow-lg overflow-hidden" style="aspect-ratio: 3.5/2; max-width: 400px; width: 100%;">
-                    <img src="${imgUrl}" class="w-full h-full object-contain" onerror="this.parentElement.innerHTML='<div class=\\'text-center text-gray-400 p-8\\'><i class=\\'fa-solid fa-image-slash text-2xl mb-2\\'></i><p class=\\'text-sm\\'>Preview not available</p></div>'">
+                    <img src="${imgUrl}" class="w-full h-full object-contain" data-cardify-error-html="<div class='text-center text-gray-400 p-8'><i class='fa-solid fa-image-slash text-2xl mb-2'></i><p class='text-sm'>Preview not available</p></div>">
                 </div>
                 <p class="text-xs text-green-600 text-center mt-2 flex items-center gap-1">
                     <i class="fa-solid fa-check-circle"></i>
@@ -665,7 +665,7 @@ function generatePreview(side, container, employee) {
     const cardHtml = `
         <div class="flex flex-col items-center">
             <div class="relative bg-white rounded-lg shadow-lg overflow-hidden" style="aspect-ratio: 3.5/2; max-width: 350px; width: 100%;">
-                <img src="${bgUrl}" class="w-full h-full object-cover" onerror="this.style.background='#f3f4f6'">
+                <img src="${bgUrl}" class="w-full h-full object-cover" data-cardify-error-bg="#f3f4f6">
             </div>
             <p class="text-xs text-gray-400 text-center mt-2">${side === 'front' ? 'Front' : 'Back'} Template Only</p>
         </div>

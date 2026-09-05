@@ -302,7 +302,7 @@ adminHeader(t('generated.page_title'), 'generated');
                                 <a href="<?php echo $frontPngUrl; ?>" target="_blank" class="block group relative">
                                     <img src="<?php echo $frontPngUrl; ?>" alt="Front" loading="lazy" 
                                          class="w-20 h-12 object-cover rounded border border-gray-200 group-hover:border-blue-400 transition-colors"
-                                         onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 60%22><rect fill=%22%23f3f4f6%22 width=%22100%22 height=%2260%22/><text x=%2250%22 y=%2235%22 text-anchor=%22middle%22 fill=%22%239ca3af%22 font-size=%2210%22>No image</text></svg>'">
+                                         data-cardify-fallback-src="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 60%22><rect fill=%22%23f3f4f6%22 width=%22100%22 height=%2260%22/><text x=%2250%22 y=%2235%22 text-anchor=%22middle%22 fill=%22%239ca3af%22 font-size=%2210%22>No image</text></svg>">
                                     <span class="absolute -bottom-1 -right-1 bg-blue-500 text-white text-[8px] px-1 rounded">F</span>
                                 </a>
                                 <?php endif; ?>
@@ -310,7 +310,7 @@ adminHeader(t('generated.page_title'), 'generated');
                                 <a href="<?php echo $backPngUrl; ?>" target="_blank" class="block group relative">
                                     <img src="<?php echo $backPngUrl; ?>" alt="Back" loading="lazy" 
                                          class="w-20 h-12 object-cover rounded border border-gray-200 group-hover:border-green-400 transition-colors"
-                                         onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 60%22><rect fill=%22%23f3f4f6%22 width=%22100%22 height=%2260%22/><text x=%2250%22 y=%2235%22 text-anchor=%22middle%22 fill=%22%239ca3af%22 font-size=%2210%22>No image</text></svg>'">
+                                         data-cardify-fallback-src="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 60%22><rect fill=%22%23f3f4f6%22 width=%22100%22 height=%2260%22/><text x=%2250%22 y=%2235%22 text-anchor=%22middle%22 fill=%22%239ca3af%22 font-size=%2210%22>No image</text></svg>">
                                     <span class="absolute -bottom-1 -right-1 bg-green-500 text-white text-[8px] px-1 rounded">B</span>
                                 </a>
                                 <?php endif; ?>
@@ -407,14 +407,14 @@ adminHeader(t('generated.page_title'), 'generated');
                                     <div x-show="showMenu" x-transition x-cloak
                                         class="absolute right-0 bottom-full mb-2 w-48 bg-white rounded-lg shadow-xl border border-gray-200 py-1 z-50">
                                         <?php if ($frontHasPdf && $backHasPdf): ?>
-                                        <button onclick="downloadAsPDF('<?php echo $frontPdfUrl; ?>', '<?php echo $backPdfUrl; ?>', '<?php echo $employeeNameSlug; ?>')"
+                                        <button data-cardify-action="call" data-fn="downloadAsPDF" data-args="<?= htmlspecialchars(json_encode(['' . ($frontPdfUrl) . '', '' . ($backPdfUrl) . '', '' . ($employeeNameSlug) . '']), ENT_QUOTES) ?>"
                                             class="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2">
                                             <i class="fa-solid fa-file-pdf text-red-500 w-4"></i>
                                             <?= htmlspecialchars(t('generated.dl_pdf_hq')) ?>
                                         </button>
                                         <?php endif; ?>
                                         <?php if ($frontPngUrl && $backPngUrl): ?>
-                                        <button onclick="downloadAsPNGs('<?php echo $frontPngUrl; ?>', '<?php echo $backPngUrl; ?>', '<?php echo $employeeNameSlug; ?>')"
+                                        <button data-cardify-action="call" data-fn="downloadAsPNGs" data-args="<?= htmlspecialchars(json_encode(['' . ($frontPngUrl) . '', '' . ($backPngUrl) . '', '' . ($employeeNameSlug) . '']), ENT_QUOTES) ?>"
                                             class="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2">
                                             <i class="fa-solid fa-file-zipper text-yellow-500 w-4"></i>
                                             <?= htmlspecialchars(t('generated.dl_pngs_zip')) ?>
@@ -456,7 +456,7 @@ adminHeader(t('generated.page_title'), 'generated');
                                 </a>
                                 
                                 <!-- Delete -->
-                                <form method="post" class="inline" onsubmit="return confirm(<?= json_encode(t('generated.delete_confirm')) ?>)">
+                                <form method="post" class="inline" data-cardify-confirm="<?= htmlspecialchars(t('generated.delete_confirm'), ENT_QUOTES) ?>">
                                     <?php echo csrfField(); ?>
                                     <input type="hidden" name="action" value="delete">
                                     <input type="hidden" name="entry_id" value="<?php echo $entry['id']; ?>">
@@ -493,7 +493,7 @@ adminHeader(t('generated.page_title'), 'generated');
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
-<script>
+<script<?= cspNonceAttr() ?>>
 function isPDF(url) {
     return url.toLowerCase().endsWith('.pdf');
 }

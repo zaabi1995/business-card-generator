@@ -81,7 +81,7 @@ adminHeader($pageTitle, 'nfc-tags');
     </div>
 </div>
 
-<script>
+<script<?= cspNonceAttr() ?>>
 (function () {
     const cardUrl = <?= json_encode($cardUrl) ?>;
     const employeeId = <?= json_encode($employee['id']) ?>;

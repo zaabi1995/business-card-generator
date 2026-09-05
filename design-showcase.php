@@ -185,7 +185,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
   }
 </style>
 
-<script>
+<script<?= cspNonceAttr() ?>>
   // Registered before Alpine boots so <div x-data="showcase()"> can resolve it.
   // Defined as a plain function (not Alpine.data) to avoid ordering issues
   // with the deferred Alpine CDN script.
@@ -1234,7 +1234,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
 
 </div>
 
-<script>
+<script<?= cspNonceAttr() ?>>
 // Highlight sticky TOC entry for the visible section
 (function() {
   const tocLinks = Array.from(document.querySelectorAll('.sticky-toc a'));

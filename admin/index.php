@@ -539,7 +539,7 @@ if ($currentRole !== 'super_admin' && !empty($_SESSION['user_id'])) {
     </form>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/intl-tel-input@23.8.2/build/js/intlTelInput.min.js"></script>
-<script>
+<script<?= cspNonceAttr() ?>>
 (function () {
     var phoneEl = document.getElementById('bhd224-banner-phone');
     var hiddenEl = document.getElementById('bhd224-banner-phone-e164');
@@ -652,7 +652,7 @@ $ext = (defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slug'])) ? ''
 .animate-pulse-once { animation: pulseOnce 1.5s ease-in-out 2; }
 </style>
 <script src="<?= getBasePath() ?>assets/js/canvas-confetti.min.js" defer></script>
-<script>
+<script<?= cspNonceAttr() ?>>
 // Wizard-done confetti: 3-second burst in 3 volleys from opposing edges,
 // honors prefers-reduced-motion. Fires once per page load; no loop.
 (function () {
@@ -719,7 +719,7 @@ $ext = (defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slug'])) ? ''
             <i class="fa-solid fa-id-card text-xs"></i>
             Create My Card
         </a>
-        <button onclick="document.getElementById('bhd-welcome-banner').remove()" class="text-white/60 hover:text-white">
+        <button data-cardify-action="remove-element" data-target="bhd-welcome-banner" class="text-white/60 hover:text-white">
             <i class="fa-solid fa-xmark text-lg"></i>
         </button>
     </div>
@@ -755,10 +755,10 @@ $ext = (defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slug'])) ? ''
         </div>
     </div>
     <div class="flex items-center gap-3 flex-shrink-0">
-        <a href="#template-editor" onclick="document.getElementById('generate-cards-nudge').remove()" class="bg-white text-purple-700 font-semibold px-4 py-2 rounded-lg text-sm hover:bg-purple-50 transition-all whitespace-nowrap">
+        <a href="#template-editor" data-cardify-action="remove-element" data-target="generate-cards-nudge" class="bg-white text-purple-700 font-semibold px-4 py-2 rounded-lg text-sm hover:bg-purple-50 transition-all whitespace-nowrap">
             Design Template
         </a>
-        <button onclick="document.getElementById('generate-cards-nudge').remove()" class="text-white/60 hover:text-white">
+        <button data-cardify-action="remove-element" data-target="generate-cards-nudge" class="text-white/60 hover:text-white">
             <i class="fa-solid fa-xmark text-lg"></i>
         </button>
     </div>
@@ -779,7 +779,7 @@ $ext = (defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slug'])) ? ''
         <a href="<?= getAdminBasePath() ?>batch_generate<?= $batchExt ?>" class="flex-1 sm:flex-initial bg-white text-green-700 font-semibold px-4 py-2 rounded-lg text-sm hover:bg-green-50 transition-all whitespace-nowrap text-center">
             Generate All Cards
         </a>
-        <button onclick="document.getElementById('generate-cards-nudge').remove()" class="text-white/60 hover:text-white">
+        <button data-cardify-action="remove-element" data-target="generate-cards-nudge" class="text-white/60 hover:text-white">
             <i class="fa-solid fa-xmark text-lg"></i>
         </button>
     </div>
@@ -814,9 +814,9 @@ if ($currentRole !== 'super_admin' && !empty($companySlug)):
                         <i class="fa-solid fa-link text-white/70 text-xs flex-shrink-0"></i>
                         <input type="text" readonly value="<?= htmlspecialchars($portalShareUrl) ?>" id="portal-share-url"
                                class="flex-1 bg-transparent text-white text-sm font-mono tracking-tight outline-none min-w-0 truncate"
-                               onclick="this.select()">
+                               data-cardify-action="select-self">
                     </div>
-                    <button type="button" onclick="portalCopyShare()" id="portal-copy-btn"
+                    <button type="button" data-cardify-action="call" data-fn="portalCopyShare" id="portal-copy-btn"
                             class="bg-white font-semibold px-4 py-2.5 rounded-lg text-sm hover:bg-white/90 transition-all whitespace-nowrap flex items-center justify-center gap-2"
                             style="color: var(--tbrand,#007a99);">
                         <i class="fa-solid fa-copy text-xs"></i>
@@ -845,13 +845,13 @@ if ($currentRole !== 'super_admin' && !empty($companySlug)):
                 <div class="bg-white p-2 rounded-lg">
                     <img src="https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=<?= urlencode($portalShareUrl) ?>"
                          alt="Portal QR code" width="140" height="140" loading="lazy"
-                         onerror="this.style.display='none'">
+                         data-cardify-hide-on-error>
                 </div>
             </div>
         </div>
     </div>
 </div>
-<script>
+<script<?= cspNonceAttr() ?>>
 (function () {
     window.portalCopyShare = function () {
         var input = document.getElementById('portal-share-url');
@@ -894,7 +894,7 @@ if ($currentRole !== 'super_admin' && !empty($companySlug)):
             <div class="w-32 h-1.5 bg-gray-100 rounded-full overflow-hidden">
                 <div class="h-full bg-blue-500 rounded-full transition-all" style="width: <?= round($checklistDoneCount / count($checklistSteps) * 100) ?>%"></div>
             </div>
-            <button onclick="document.getElementById('getting-started-card').remove()" class="text-gray-300 hover:text-gray-500 transition-colors" title="Dismiss">
+            <button data-cardify-action="remove-element" data-target="getting-started-card" class="text-gray-300 hover:text-gray-500 transition-colors" title="Dismiss">
                 <i class="fa-solid fa-xmark"></i>
             </button>
         </div>
@@ -942,9 +942,9 @@ if ($currentRole !== 'super_admin' && !empty($companySlug)):
                         <i class="fa-solid fa-link text-white/70 text-xs flex-shrink-0"></i>
                         <input type="text" readonly value="<?= htmlspecialchars($referralShareUrl) ?>" id="bhd234-ref-url"
                                class="flex-1 bg-transparent text-white text-sm font-mono tracking-tight outline-none min-w-0 truncate"
-                               onclick="this.select()">
+                               data-cardify-action="select-self">
                     </div>
-                    <button type="button" onclick="bhd234CopyRef()" id="bhd234-copy-btn"
+                    <button type="button" data-cardify-action="call" data-fn="bhd234CopyRef" id="bhd234-copy-btn"
                             class="bg-white font-semibold px-4 py-2.5 rounded-lg text-sm hover:bg-white/90 transition-all whitespace-nowrap flex items-center justify-center gap-2"
                             style="color: #007a99;">
                         <i class="fa-solid fa-copy text-xs"></i>
@@ -971,7 +971,7 @@ if ($currentRole !== 'super_admin' && !empty($companySlug)):
         </div>
     </div>
 </div>
-<script>
+<script<?= cspNonceAttr() ?>>
 (function () {
     window.bhd234CopyRef = function () {
         var input = document.getElementById('bhd234-ref-url');
@@ -2254,7 +2254,7 @@ if ($currentRole !== 'super_admin' && !empty($companySlug)):
     </div>
 </div>
 
-<script>
+<script<?= cspNonceAttr() ?>>
     function templateEditor() {
         return {
             csrfToken: '<?php echo generateCSRFToken(); ?>',

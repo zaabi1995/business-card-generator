@@ -87,7 +87,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
             $fieldCount = count($tmpl['field_definitions']);
         ?>
         <div class="template-card bg-white rounded-2xl border border-gray-200 overflow-hidden cursor-pointer group"
-             onclick="window.location='<?= getBasePath() ?>customize.php?template=<?= urlencode($tmpl['id']) ?>'">
+             data-cardify-action="navigate" data-href="<?= getBasePath() ?>customize.php?template=<?= urlencode($tmpl['id']) ?>">
             <!-- Preview image -->
             <div class="aspect-[3.5/2] bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden relative">
                 <?php if ($thumbUrl): ?>

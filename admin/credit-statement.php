@@ -160,7 +160,7 @@ try {
     </a>
     <div class="flex items-center gap-2">
         <a href="<?= htmlspecialchars($altUrl) ?>" class="px-3 py-2 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors"><?= $isAr ? 'EN' : 'AR' ?></a>
-        <button onclick="window.print()" class="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium"><i class="fa-solid fa-print mr-1"></i> <?= htmlspecialchars(t('credit_statement.save_pdf')) ?></button>
+        <button data-cardify-action="print" class="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium"><i class="fa-solid fa-print mr-1"></i> <?= htmlspecialchars(t('credit_statement.save_pdf')) ?></button>
     </div>
 </div>
 <div class="max-w-3xl mx-auto my-6 bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">

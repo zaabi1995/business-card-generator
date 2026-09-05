@@ -791,7 +791,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 <div class="text-xs font-semibold uppercase tracking-widest text-gray-500 mb-2"><?= htmlspecialchars(t('obi.cite_short_label')) ?></div>
                 <div class="relative bg-gray-900 text-gray-100 rounded-xl p-5 font-mono text-sm leading-relaxed overflow-x-auto">
                     <code id="cite-short">Cardify Oman Business Index 2026, accessed <?= obiEscq(date('F j, Y')) ?>. https://cardify.om/oman-business-index</code>
-                    <button type="button" onclick="navigator.clipboard.writeText(document.getElementById('cite-short').textContent)" class="absolute top-3 right-3 px-2.5 py-1 rounded bg-white/10 hover:bg-white/20 text-xs font-semibold text-white transition">
+                    <button type="button" data-cardify-action="copy" data-copy-from="cite-short" class="absolute top-3 right-3 px-2.5 py-1 rounded bg-white/10 hover:bg-white/20 text-xs font-semibold text-white transition">
                         <?= htmlspecialchars(t('obi.cite_copy')) ?>
                     </button>
                 </div>
@@ -800,7 +800,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 <div class="text-xs font-semibold uppercase tracking-widest text-gray-500 mb-2"><?= htmlspecialchars(t('obi.cite_apa_label')) ?></div>
                 <div class="relative bg-gray-900 text-gray-100 rounded-xl p-5 font-mono text-sm leading-relaxed overflow-x-auto">
                     <code id="cite-apa">Cardify. (2026). <em>Oman Business Index 2026: The <?= obiEscq($totalFmt) ?> largest enterprises in the Sultanate</em>. Retrieved <?= obiEscq(date('F j, Y')) ?>, from https://cardify.om/oman-business-index</code>
-                    <button type="button" onclick="navigator.clipboard.writeText(document.getElementById('cite-apa').textContent)" class="absolute top-3 right-3 px-2.5 py-1 rounded bg-white/10 hover:bg-white/20 text-xs font-semibold text-white transition">
+                    <button type="button" data-cardify-action="copy" data-copy-from="cite-apa" class="absolute top-3 right-3 px-2.5 py-1 rounded bg-white/10 hover:bg-white/20 text-xs font-semibold text-white transition">
                         <?= htmlspecialchars(t('obi.cite_copy')) ?>
                     </button>
                 </div>

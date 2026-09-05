@@ -100,12 +100,38 @@ if (!function_exists('getBasePath')) {
         static $basePath = null;
         
         if ($basePath === null) {
+            // Where the app root sits under the document root. This is exact,
+            // and it replaces guessing from the script path against a list of
+            // known directories.
+            //
+            // That list had not kept up: `compare`, `glossary`, `portal`,
+            // `cron` and `data` were missing from it, so every page under
+            // /compare and /glossary computed a base of "/compare/" and asked
+            // for /compare/assets/css/cardify-tokens.css. Four of the seven
+            // stylesheets, the ambient script and three images 404'd on both
+            // routes, which is why they rendered unstyled. Measured live on
+            // 5 Sep 2026.
+            $docRoot = $_SERVER['DOCUMENT_ROOT'] ?? '';
+            if ($docRoot !== '' && defined('BASE_DIR')) {
+                $docRoot = rtrim(str_replace('\\', '/', realpath($docRoot) ?: $docRoot), '/');
+                $appRoot = rtrim(str_replace('\\', '/', realpath(BASE_DIR) ?: BASE_DIR), '/');
+                if ($docRoot !== '' && $appRoot !== '' && str_starts_with($appRoot, $docRoot)) {
+                    $suffix = substr($appRoot, strlen($docRoot));
+                    return $basePath = ($suffix === '' ? '/' : '/' . trim($suffix, '/') . '/');
+                }
+            }
+
             $scriptPath = $_SERVER['SCRIPT_NAME'] ?? $_SERVER['PHP_SELF'] ?? '/index.php';
             $scriptPath = str_replace('\\', '/', $scriptPath);
             $scriptDir = dirname($scriptPath);
             
             // Known subdirectories that are part of the app
-            $appDirs = ['admin', 'includes', 'company', 'amwalpay', 'paymob', 'webhooks', 'super', 'install', 'share', 'printshop', 'api', 'database', 'bhd', 'tools', 'industries', 'gcc', 'solutions', 'views'];
+            // The fallback, for a host that does not set DOCUMENT_ROOT. Kept in
+            // step with the real directories by tests/php/base_path_test.php.
+            $appDirs = ['admin', 'includes', 'company', 'amwalpay', 'paymob', 'webhooks', 'super',
+                'install', 'share', 'printshop', 'api', 'database', 'bhd', 'tools', 'industries',
+                'gcc', 'solutions', 'views', 'compare', 'glossary', 'portal', 'cron', 'data',
+                'blog', 'careers', 'logos', 'case-studies', 'scripts', 'ops', 'ar'];
             
             // Navigate up through app directories to find the root
             while (in_array(basename($scriptDir), $appDirs) && $scriptDir !== '/' && $scriptDir !== '.') {
@@ -1853,3 +1879,22 @@ if (!function_exists('getBhdTemplateDefinitions')) {
  */
 
 require_once __DIR__ . '/db_time.php';
+
+if (!function_exists('cspNonceAttr')) {
+    /**
+     * The nonce attribute for an inline <script>, or '' when the policy has
+     * not been sent.
+     *
+     * A Content-Security-Policy that carries a nonce ignores 'unsafe-inline'
+     * entirely, so an inline block without this attribute simply does not run.
+     * Every executable inline script on the site goes through here; the 126
+     * application/ld+json blocks do not need it, because a non-executable
+     * script type is not blocked.
+     */
+    function cspNonceAttr(): string
+    {
+        if (!class_exists('SecurityHeaders')) return '';
+        return ' nonce="' . htmlspecialchars(SecurityHeaders::nonce(), ENT_QUOTES) . '"';
+    }
+}
+

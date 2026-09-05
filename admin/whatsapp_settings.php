@@ -134,7 +134,7 @@ adminHeader('WhatsApp Settings', 'whatsapp');
                 </div>
                 <label class="relative inline-flex items-center cursor-pointer">
                     <input type="checkbox" name="enabled" value="1" <?php echo ($settings['enabled'] ?? false) ? 'checked' : ''; ?>
-                           onchange="this.form.submit()" class="sr-only peer">
+                           data-cardify-submit-on-change class="sr-only peer">
                     <div class="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
                 </label>
             </div>
@@ -168,7 +168,7 @@ adminHeader('WhatsApp Settings', 'whatsapp');
                 <label class="relative inline-flex items-center cursor-pointer shrink-0">
                     <input type="checkbox" name="scan_invite_enabled" value="1"
                            <?php echo !empty($companySettings['scan_invite_enabled']) ? 'checked' : ''; ?>
-                           onchange="this.form.submit()" class="sr-only peer">
+                           data-cardify-submit-on-change class="sr-only peer">
                     <div class="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
                 </label>
             </div>
@@ -216,7 +216,7 @@ adminHeader('WhatsApp Settings', 'whatsapp');
                        value="<?php echo !empty($settings['token']) ? '***hidden***' : ''; ?>"
                        class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
                        placeholder="Enter your Dardasha API token"
-                       onfocus="if(this.value==='***hidden***') this.value=''">
+                       data-cardify-clear-on-focus="***hidden***">
                 <p class="text-xs text-gray-500 mt-1">Bearer token for authenticating with the Dardasha API</p>
             </div>
 

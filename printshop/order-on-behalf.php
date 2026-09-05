@@ -264,7 +264,7 @@ printshopHeader('Order , ' . $company['name'], 'clients');
     <?php endif; ?>
 </div>
 
-<script>
+<script<?= cspNonceAttr() ?>>
 function orderForm() {
     const shopPricing = <?= json_encode($effectivePricing) ?>;
     const currency    = <?= json_encode($shop['currency'] ?? 'OMR') ?>;

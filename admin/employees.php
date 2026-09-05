@@ -1117,7 +1117,7 @@ adminHeader(t('employees.page_title'), 'employees');
                         <i class="fa-solid fa-rotate text-purple-500 w-4"></i><?= htmlspecialchars(t('employees.bulk_regenerate')) ?>
                     </a>
                     <?php if ($__bulkInviteCount >= 5): ?>
-                    <form method="POST" onsubmit="return confirm(<?= htmlspecialchars(json_encode(t('employees.bulk_invites_confirm', ['n' => $__bulkInviteCount])), ENT_QUOTES) ?>)">
+                    <form method="POST" data-cardify-confirm="<?= htmlspecialchars(t('employees.bulk_invites_confirm', ['n' => $__bulkInviteCount]), ENT_QUOTES) ?>">
                         <?= csrfField() ?>
                         <input type="hidden" name="action" value="bulk_send_edit_invites">
                         <button type="submit" class="w-full flex items-center gap-2.5 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50" title="<?= htmlspecialchars(t('employees.bulk_invites_tooltip')) ?>">
@@ -1174,7 +1174,7 @@ adminHeader(t('employees.page_title'), 'employees');
                 <option value="with_card"><?= htmlspecialchars(t('employees.filter_has_card')) ?></option>
                 <option value="no_card"><?= htmlspecialchars(t('employees.filter_no_card')) ?></option>
             </select>
-            <select onchange="window.location.href = '?sort=' + this.value + (window.location.search.match(/&?dept=[^&]+/) ? window.location.search.match(/&?dept=[^&]+/)[0] : '')" class="px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
+            <select data-cardify-navigate-on-change="?sort=__VALUE__<?= isset($_GET['dept']) && $_GET['dept'] !== '' ? '&dept=' . rawurlencode((string) $_GET['dept']) : '' ?>" class="px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
                 <option value="created_desc"<?= $sortParam==='created_desc'?' selected':'' ?>><?= htmlspecialchars(t('employees.sort_recently_added')) ?></option>
                 <option value="created_asc"<?= $sortParam==='created_asc'?' selected':'' ?>><?= htmlspecialchars(t('employees.sort_oldest')) ?></option>
                 <option value="name_asc"<?= $sortParam==='name_asc'?' selected':'' ?>><?= htmlspecialchars(t('employees.sort_name_az')) ?></option>
@@ -1430,19 +1430,19 @@ adminHeader(t('employees.page_title'), 'employees');
                                         <hr class="my-1 border-gray-100">
                                         <!-- Send to production Kanban (against the PO) -->
                                         <a href="javascript:void(0)"
-                                           onclick="sendToPrint('<?= htmlspecialchars($emp['id'], ENT_QUOTES) ?>', '<?= htmlspecialchars(addslashes($emp['name_en'] ?? 'Employee'), ENT_QUOTES) ?>')"
+                                           data-cardify-action="call" data-fn="sendToPrint" data-args="<?= htmlspecialchars(json_encode(['' . (htmlspecialchars($emp['id'], ENT_QUOTES)) . '', '' . (htmlspecialchars(addslashes($emp['name_en'] ?? 'Employee'), ENT_QUOTES)) . '']), ENT_QUOTES) ?>"
                                            class="flex items-start gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-blue-50">
                                             <i class="fa-solid fa-print text-green-600 w-4 mt-0.5"></i>
                                             <span><?= htmlspecialchars(t('employees.dl_send_print')) ?><span class="block text-[11px] text-gray-400"><?= htmlspecialchars(t('employees.dl_send_print_desc')) ?></span></span>
                                         </a>
                                         <hr class="my-1 border-gray-100">
                                         <?php if ($hasFrontPdf && $hasBackPdf): ?>
-                                        <a href="javascript:void(0)" onclick="downloadAsPDF('<?php echo $cardBaseUrl . str_replace('.png', '.pdf', $frontFilename); ?>', '<?php echo $cardBaseUrl . str_replace('.png', '.pdf', $backFilename); ?>', '<?php echo addslashes($emp['name_en'] ?? 'card'); ?>')"
+                                        <a href="javascript:void(0)" data-cardify-action="call" data-fn="downloadAsPDF" data-args="<?= htmlspecialchars(json_encode(['' . ($cardBaseUrl . str_replace('.png', '.pdf', $frontFilename)) . '', '' . ($cardBaseUrl . str_replace('.png', '.pdf', $backFilename)) . '', '' . (addslashes($emp['name_en'] ?? 'card')) . '']), ENT_QUOTES) ?>"
                                            class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
                                             <i class="fa-solid fa-file-pdf text-red-500 w-4"></i> <?= htmlspecialchars(t('employees.dl_pdf_preview')) ?>
                                         </a>
                                         <?php endif; ?>
-                                        <a href="javascript:void(0)" onclick="downloadAsPNGs('<?php echo $frontUrl; ?>', '<?php echo $backUrl; ?>', '<?php echo addslashes($emp['name_en'] ?? 'card'); ?>')"
+                                        <a href="javascript:void(0)" data-cardify-action="call" data-fn="downloadAsPNGs" data-args="<?= htmlspecialchars(json_encode(['' . ($frontUrl) . '', '' . ($backUrl) . '', '' . (addslashes($emp['name_en'] ?? 'card')) . '']), ENT_QUOTES) ?>"
                                            class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
                                             <i class="fa-solid fa-images text-blue-500 w-4"></i> <?= htmlspecialchars(t('employees.dl_pngs')) ?>
                                         </a>
@@ -1499,7 +1499,7 @@ adminHeader(t('employees.page_title'), 'employees');
                                         </a>
                                         <!-- Copy public link -->
                                         <button type="button"
-                                                onclick="navigator.clipboard.writeText('<?= addslashes($publicUrl) ?>').then(()=>{const i=this.querySelector('i');const c=i.className;i.className='fa-solid fa-check text-green-600 w-4';setTimeout(()=>i.className=c,1500)})"
+                                                data-cardify-action="copy-icon" data-copy="<?= htmlspecialchars($publicUrl, ENT_QUOTES) ?>" data-copied-icon="fa-solid fa-check text-green-600 w-4"
                                                 class="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
                                             <i class="fa-solid fa-share-nodes text-indigo-500 w-4"></i> <?= htmlspecialchars(t('employees.act_copy_public')) ?>
                                         </button>
@@ -1527,11 +1527,11 @@ adminHeader(t('employees.page_title'), 'employees');
                                         <button type="button"
                                                 class="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                                                 data-emp-id="<?php echo sanitize($emp['id']); ?>"
-                                                onclick="cardifyCopyEditLink(this)">
+                                                data-cardify-action="call" data-fn="cardifyCopyEditLink" data-arg="element">
                                             <i class="fa-solid fa-link text-gray-400 w-4"></i> <?= htmlspecialchars(t('employees.copy_link_title')) ?>
                                         </button>
                                         <!-- Send self-edit invite -->
-                                        <form method="post" onsubmit="return confirm(<?= htmlspecialchars(json_encode(t('employees.edit_invite_confirm')), ENT_QUOTES) ?>)">
+                                        <form method="post" data-cardify-confirm="<?= htmlspecialchars(t('employees.edit_invite_confirm'), ENT_QUOTES) ?>">
                                             <?php echo csrfField(); ?>
                                             <input type="hidden" name="action" value="resend_edit_invite">
                                             <input type="hidden" name="id" value="<?php echo sanitize($emp['id']); ?>">
@@ -1541,7 +1541,7 @@ adminHeader(t('employees.page_title'), 'employees');
                                         </form>
                                         <hr class="my-1 border-gray-100">
                                         <!-- Delete employee -->
-                                        <form method="post" onsubmit="return confirm(<?= htmlspecialchars(json_encode(t('employees.act_delete_confirm')), ENT_QUOTES) ?>)">
+                                        <form method="post" data-cardify-confirm="<?= htmlspecialchars(t('employees.act_delete_confirm'), ENT_QUOTES) ?>">
                                             <?php echo csrfField(); ?>
                                             <input type="hidden" name="action" value="delete">
                                             <input type="hidden" name="id" value="<?php echo sanitize($emp['id']); ?>">
@@ -2010,7 +2010,7 @@ adminHeader(t('employees.page_title'), 'employees');
                             </h4>
                             <p class="text-blue-600 text-sm mt-1"><?= htmlspecialchars(t('employees.import_template_sub')) ?></p>
                         </div>
-                        <button type="button" onclick="downloadEmployeeTemplate()" 
+                        <button type="button" data-cardify-action="call" data-fn="downloadEmployeeTemplate" 
                                 class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-2">
                             <i class="fa-solid fa-download"></i>
                             <?= htmlspecialchars(t('employees.import_download')) ?>
@@ -2296,7 +2296,7 @@ adminHeader(t('employees.page_title'), 'employees');
     </div>
 </div>
 
-<script>
+<script<?= cspNonceAttr() ?>>
 function employeeManager() {
     return {
         searchQuery: '',

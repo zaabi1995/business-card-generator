@@ -162,7 +162,7 @@ adminHeader('Print Orders', 'print_orders');
                         <span class="block text-xs"><?php echo date('g:i A', dbTs($order['created_at'])); ?></span>
                     </td>
                     <td class="px-6 py-4 text-right">
-                        <button onclick="openOrderModal(<?php echo htmlspecialchars(json_encode($order)); ?>)" 
+                        <button data-cardify-action="call" data-fn="openOrderModal" data-args="<?= htmlspecialchars(json_encode([$order]), ENT_QUOTES) ?>" 
                                 class="text-blue-600 hover:text-blue-700 font-medium text-sm">
                             <i class="fa-solid fa-eye mr-1"></i>
                             View
@@ -181,7 +181,7 @@ adminHeader('Print Orders', 'print_orders');
     <div class="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <div class="p-6 border-b border-gray-200 flex items-center justify-between">
             <h3 class="text-lg font-semibold text-gray-900">Order <span id="modal_order_id"></span></h3>
-            <button onclick="closeOrderModal()" class="text-gray-400 hover:text-gray-600">
+            <button data-cardify-action="call" data-fn="closeOrderModal" class="text-gray-400 hover:text-gray-600">
                 <i class="fa-solid fa-xmark text-xl"></i>
             </button>
         </div>
@@ -271,7 +271,7 @@ adminHeader('Print Orders', 'print_orders');
     </div>
 </div>
 
-<script>
+<script<?= cspNonceAttr() ?>>
 function openOrderModal(order) {
     document.getElementById('modal_order_id').textContent = '#' + order.id;
     document.getElementById('modal_form_order_id').value = order.id;

@@ -198,7 +198,7 @@ adminHeader(t('adminchrome.custom_domains'), 'custom-domains');
                                     <i class="fa-solid fa-rotate"></i> <?= htmlspecialchars(t('customdomains.btn_verify')) ?>
                                 </button>
                             </form>
-                            <form method="post" class="inline" onsubmit="return confirm(<?= json_encode(t('customdomains.confirm_remove'), JSON_UNESCAPED_UNICODE) ?>);">
+                            <form method="post" class="inline" data-cardify-confirm="<?= htmlspecialchars(t('customdomains.confirm_remove'), ENT_QUOTES) ?>">
                                 <?php echo csrfField(); ?>
                                 <input type="hidden" name="action" value="delete">
                                 <input type="hidden" name="id" value="<?php echo sanitize($d['id']); ?>">
@@ -213,7 +213,7 @@ adminHeader(t('adminchrome.custom_domains'), 'custom-domains');
                             <strong><?= htmlspecialchars(t('customdomains.dns_setup_label')) ?></strong>
                             <?= str_replace(':host', '<code>' . sanitize($d['domain']) . '</code>', t('customdomains.dns_instruction')) ?>
                             <button type="button" class="ml-2 text-blue-600 hover:underline"
-                                    onclick="navigator.clipboard.writeText('cardify.om')"><?= htmlspecialchars(t('customdomains.copy')) ?></button>
+                                    data-cardify-action="copy" data-copy="cardify.om"><?= htmlspecialchars(t('customdomains.copy')) ?></button>
                         </td>
                     </tr>
                 <?php endforeach; ?>

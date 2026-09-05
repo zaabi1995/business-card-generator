@@ -133,8 +133,8 @@ adminHeader('Share Links', 'share');
                             <div class="flex items-center gap-2">
                                 <input type="text" value="<?php echo $shareUrl; ?>" readonly 
                                        class="w-64 px-3 py-1.5 bg-gray-50 border border-gray-200 rounded text-sm text-gray-600 font-mono truncate"
-                                       onclick="this.select()">
-                                <button onclick="navigator.clipboard.writeText('<?php echo $shareUrl; ?>'); this.innerHTML='<i class=\'fa-solid fa-check\'></i>'; setTimeout(() => this.innerHTML='<i class=\'fa-solid fa-copy\'></i>', 2000)"
+                                       data-cardify-action="select-self">
+                                <button data-cardify-action="copy" data-copy="<?= htmlspecialchars($shareUrl, ENT_QUOTES) ?>" data-copied-html="<?= htmlspecialchars('<i class=\'fa-solid fa-check\'></i>', ENT_QUOTES) ?>"
                                         class="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
                                     <i class="fa-solid fa-copy"></i>
                                 </button>
@@ -172,7 +172,7 @@ adminHeader('Share Links', 'share');
                                    class="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
                                     <i class="fa-solid fa-external-link"></i>
                                 </a>
-                                <form method="post" class="inline" onsubmit="return confirm('Delete this link?')">
+                                <form method="post" class="inline" data-cardify-confirm="Delete this link?">
                                     <?php echo csrfField(); ?>
                                     <input type="hidden" name="action" value="delete">
                                     <input type="hidden" name="link_id" value="<?php echo $link['id']; ?>">

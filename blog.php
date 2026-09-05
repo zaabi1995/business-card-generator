@@ -291,7 +291,10 @@ require_once INCLUDES_DIR . '/ui-header.php';
                    class="w-10 h-10 rounded-full bg-blue-700 flex items-center justify-center hover:bg-blue-800 transition-colors">
                     <i class="fa-brands fa-linkedin-in text-lg" style="color:#fff"></i>
                 </a>
-                <button onclick="navigator.clipboard.writeText('<?= $blogBase ?>/<?= $displaySlug ?>').then(()=>{this.innerHTML='<i class=\'fa-solid fa-check\' style=\'color:#374151\'></i>';setTimeout(()=>{this.innerHTML='<i class=\'fa-solid fa-link\' style=\'color:#374151\'></i>'},2000)})"
+                <button type="button"
+                   data-cardify-action="copy"
+                   data-copy="<?= htmlspecialchars($blogBase . '/' . $displaySlug, ENT_QUOTES) ?>"
+                   data-copied-html="<?= htmlspecialchars('<i class="fa-solid fa-check" style="color:#374151"></i>', ENT_QUOTES) ?>"
                    class="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center hover:bg-gray-300 transition-colors">
                     <i class="fa-solid fa-link" style="color:#374151"></i>
                 </button>

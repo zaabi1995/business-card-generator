@@ -294,7 +294,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
             </div>
             <div class="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-md hover:border-blue-200 transition flex flex-col items-center text-center">
                 <div class="h-24 flex items-center justify-center mb-4 bg-gray-900 w-full rounded-xl">
-                    <img src="<?= getBasePath() ?>assets/images/logo-light.svg" alt="<?= t('press.alt_light_logo') ?>" class="max-h-12" onerror="this.src='<?= getBasePath() ?>assets/images/logo.svg';this.onerror=null;">
+                    <img src="<?= getBasePath() ?>assets/images/logo-light.svg" alt="<?= t('press.alt_light_logo') ?>" class="max-h-12" data-cardify-fallback-src="<?= getBasePath() ?>assets/images/logo.svg">
                 </div>
                 <div class="text-sm font-semibold text-gray-900 mb-1"><?= htmlspecialchars(t('press.asset_light')) ?></div>
                 <div class="text-xs text-gray-500 mb-3"><?= htmlspecialchars(t('press.asset_light_sub')) ?></div>

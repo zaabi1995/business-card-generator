@@ -11,8 +11,14 @@
  * pages: Alpine evaluates every x- binding as a string, so without
  * 'unsafe-eval' it throws "Alpine Expression Error: Evaluating a string as
  * JavaScript violates the following Content Security Policy directive" and no
- * dropdown, toggle or mobile menu works. Both facts are asserted here so
- * neither can come back quietly.
+ * dropdown, toggle or mobile menu works.
+ *
+ * script-src dropped 'unsafe-inline' for a per-request nonce on 5 Sep 2026.
+ * That needed two sweeps first: 224 on* attribute handlers across 76 files
+ * moved to data attributes served by assets/js/cardify-actions.js, and 117
+ * executable inline <script> blocks now carry cspNonceAttr(). A nonce disables
+ * 'unsafe-inline' for every browser that understands it, so either sweep left
+ * half-done would blank the site. All three facts are asserted here.
  */
 $root = dirname(__DIR__, 2);
 $sec  = file_get_contents($root . '/includes/SecurityHeaders.php');
@@ -41,13 +47,20 @@ cspCheck(
     'the top of the header emits no whitespace between PHP blocks'
 );
 
-// Alpine needs both. Losing either one takes the site's interactivity with it.
-foreach (["'unsafe-inline'", "'unsafe-eval'"] as $token) {
-    cspCheck(
-        preg_match("/'script' => \[.*?" . preg_quote($token, '/') . "/s", $sec) === 1,
-        "script-src keeps {$token}, which Alpine needs"
-    );
-}
+// Alpine 3.15.12 compiles every x- binding with new Function, so this one
+// stays until the 828 non-trivial expressions are rewritten for @alpinejs/csp.
+cspCheck(
+    preg_match("/'script' => \[.*?'unsafe-eval'/s", $sec) === 1,
+    "script-src keeps 'unsafe-eval', which Alpine needs"
+);
+cspCheck(
+    preg_match("/'script' => \[.*?nonce-/s", $sec) === 1,
+    'script-src carries the per-request nonce'
+);
+cspCheck(
+    preg_match("/'script' => \[[^\]]*'unsafe-inline'/s", $sec) !== 1,
+    "script-src no longer allows inline script"
+);
 
 // The directives that do the work even with inline allowed.
 foreach ([
@@ -82,11 +95,48 @@ cspCheck(
     'the policy allows the font host the house actually uses'
 );
 
-// A nonce would silently disable 'unsafe-inline' and blank the site.
+// The two sweeps the nonce depends on. Either one regressing blanks the site,
+// and neither is visible in the header itself.
+$root = dirname(__DIR__, 2);
+$handlers = [];
+$inlineNoNonce = [];
+$rii = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($root, FilesystemIterator::SKIP_DOTS));
+foreach ($rii as $file) {
+    if ($file->getExtension() !== 'php') continue;
+    $rel = str_replace($root . '/', '', $file->getPathname());
+    foreach (['tests/', 'vendor/', 'node_modules/', '.git/', '.worktrees/', 'web-react/'] as $skip) {
+        if (str_starts_with($rel, $skip)) continue 2;
+    }
+    $src = @file_get_contents($file->getPathname());
+    if ($src === false) continue;
+    if (preg_match('/\son(click|change|submit|input|load|error|keyup|keydown|focus|blur|mouseover|mouseout|toggle|select|paste)="/', $src)) {
+        $handlers[] = $rel;
+    }
+    // A bare executable <script> with no nonce would simply not run.
+    foreach (preg_split('/\R/', $src) as $line) {
+        $trimmed = ltrim($line);
+        if ($trimmed === '' || $trimmed[0] === '*' || str_starts_with($trimmed, '//')
+            || str_starts_with($trimmed, '/*') || str_starts_with($trimmed, '#')) continue;
+        if (preg_match('/(?<![\'"])<script>/', $line)) { $inlineNoNonce[] = $rel; break; }
+    }
+}
+cspCheck($handlers === [], 'no on* attribute handler is left anywhere in the tree',
+    implode(', ', array_slice($handlers, 0, 6)));
+cspCheck($inlineNoNonce === [], 'every executable inline script carries the nonce',
+    implode(', ', array_slice($inlineNoNonce, 0, 6)));
 cspCheck(
-    !preg_match("/'script' => \[.*?nonce-/s", $sec),
-    'script-src carries no nonce while 212 inline scripts remain'
+    is_file($root . '/assets/js/cardify-actions.js'),
+    'the delegated behaviour module that replaced the handlers is in the tree'
 );
+cspCheck(
+    str_contains($hdr, 'cardify-actions.js'),
+    'the shared header loads it, so every public page gets the behaviours'
+);
+$actions = (string) @file_get_contents($root . '/assets/js/cardify-actions.js');
+foreach (['eval(', 'new Function(', 'setTimeout("', 'innerHTML = raw'] as $smell) {
+    cspCheck(!str_contains($actions, $smell),
+        "cardify-actions.js does not reintroduce {$smell} to replace the handlers");
+}
 
 $emDash = "\xE2\x80\x94";
 cspCheck(!str_contains($sec, $emDash), 'includes/SecurityHeaders.php contains no em dash');

@@ -755,7 +755,7 @@ class Currency {
         $phoneCodes = json_encode(self::getPhoneCodes());
         
         return <<<JS
-<script>
+<script<?= cspNonceAttr() ?>>
 // Cardify Country/Currency Helper
 const CardifyGeo = {
     countryCurrency: {$countryCurrencyMap},
@@ -1206,7 +1206,7 @@ JS;
         foreach ($sortedCountries as $code => $country) {
             $html .= sprintf('
                         <li>
-                            <button type="button" onclick="selectPhoneCountry(\'%s\', \'%s\', \'%s\', \'%s\')" 
+                            <button type="button" data-cardify-action="select-phone-country" data-input-id="%s" data-country-code="%s" data-phone-code="%s" data-flag-class="%s" 
                                 class="inline-flex w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-600 dark:hover:text-white">
                                 <span class="%s fis rounded-sm me-2"></span>
                                 %s <span class="ms-auto text-gray-500">%s</span>
@@ -1270,7 +1270,7 @@ JS;
      */
     public static function getPhoneInputJavaScript() {
         return <<<'JS'
-<script>
+<script<?= cspNonceAttr() ?>>
 // Phone country selection handler for simple phone inputs
 function selectPhoneCountry(inputId, countryCode, phoneCode, flagClass) {
     // Update hidden input

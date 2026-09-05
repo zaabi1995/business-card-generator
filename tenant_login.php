@@ -580,7 +580,7 @@ html[dir=rtl] .code{letter-spacing:8px;direction:ltr}
 
 <?php if ($step === 'request'): ?>
 <script src="https://cdn.jsdelivr.net/npm/intl-tel-input@24.6.0/build/js/intlTelInput.min.js"></script>
-<script>
+<script<?= cspNonceAttr() ?>>
 (function () {
   const form       = document.querySelector('form.card');
   const hidden     = document.getElementById('identifier-hidden');
@@ -670,7 +670,7 @@ html[dir=rtl] .code{letter-spacing:8px;direction:ltr}
 </script>
 <?php endif; ?>
 <?php if ($step === 'verify'): ?>
-<script>
+<script<?= cspNonceAttr() ?>>
 (function () {
   // 50s resend countdown over a 45s server cooldown: when the button enables,
   // the server is guaranteed to accept, never a "please wait" after clicking.

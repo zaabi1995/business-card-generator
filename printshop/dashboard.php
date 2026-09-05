@@ -308,7 +308,7 @@ printshopHeader(t('printshoppages.title_dashboard', ['shop' => $printShop['name'
                 <?php if ($logoSrc): ?>
                     <img src="<?= htmlspecialchars($logoSrc) ?>" alt="" loading="lazy"
                          class="max-w-[80%] max-h-[80%] relative z-10 bg-gray-100"
-                         onerror="this.style.display='none'">
+                         data-cardify-hide-on-error>
                 <?php endif; ?>
             </div>
             <!-- Name + slug + status -->
@@ -524,7 +524,7 @@ printshopHeader(t('printshoppages.title_dashboard', ['shop' => $printShop['name'
                         </a>
                         <?php if ($canCancel): ?>
                         <button type="button"
-                                onclick="window.dispatchEvent(new CustomEvent('ps:cancel-order', {detail: {id: <?= (int) $order['id'] ?>, ref: '#<?= (int) $order['id'] ?>'}}))"
+                                data-cardify-action="dispatch" data-event="ps:cancel-order" data-detail="<?= htmlspecialchars(json_encode(['id' => (int) $order['id'], 'ref' => '#' . (int) $order['id']]), ENT_QUOTES) ?>"
                                 class="inline-flex items-center justify-center w-8 h-8 rounded-lg text-red-600 hover:text-white hover:bg-red-600 transition-colors"
                                 title="<?= htmlspecialchars(t('printshopdash.cancel_btn')) ?>"
                                 aria-label="<?= htmlspecialchars(t('printshopdash.cancel_btn')) ?>">
@@ -708,7 +708,7 @@ printshopHeader(t('printshoppages.title_dashboard', ['shop' => $printShop['name'
 </section>
 <?php endif; ?>
 
-<script>
+<script<?= cspNonceAttr() ?>>
 function tenantConsole() {
     return {
         q: '',

@@ -169,7 +169,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                         Download vCard
                     </a>
                     
-                    <button onclick="copyLink()" 
+                    <button data-cardify-action="call" data-fn="copyLink" 
                             class="flex items-center justify-center gap-3 w-full py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-xl transition-colors">
                         <i class="fa-solid fa-link"></i>
                         Copy Link
@@ -203,7 +203,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
 
 <!-- QR Code Script -->
 <script src="<?= htmlspecialchars(getBasePath()) ?>assets/js/qrcode-generator-1.4.4.min.js"></script>
-<script>
+<script<?= cspNonceAttr() ?>>
     // Generate QR Code
     const vcfUrl = <?php echo json_encode($vcfUrl); ?>;
     if (vcfUrl) {

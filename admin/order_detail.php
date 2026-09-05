@@ -346,7 +346,7 @@ adminHeader(t('adminchrome.order_number', ['n' => $orderId]), 'print');
                                 </span>
                                 <?php endif; ?>
                             <?php else: ?>
-                                <button onclick="document.getElementById('poUploadModal').classList.remove('hidden')"
+                                <button data-cardify-action="remove-class" data-target="poUploadModal" data-class="hidden"
                                         class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium">
                                     <i class="fa-solid fa-upload"></i> <?= htmlspecialchars(t('orderdetail.upload_po')) ?>
                                 </button>
@@ -527,12 +527,12 @@ adminHeader(t('adminchrome.order_number', ['n' => $orderId]), 'print');
 <!-- PO Upload Modal -->
 <div id="poUploadModal" class="hidden fixed inset-0 z-50 overflow-y-auto">
     <div class="flex items-center justify-center min-h-screen px-4">
-        <div class="fixed inset-0 bg-black/50" onclick="document.getElementById('poUploadModal').classList.add('hidden')"></div>
+        <div class="fixed inset-0 bg-black/50" data-cardify-action="add-class" data-target="poUploadModal" data-class="hidden"></div>
         
         <div class="relative bg-white rounded-2xl shadow-xl max-w-md w-full">
             <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
                 <h3 class="text-lg font-semibold text-gray-900"><?= htmlspecialchars(t('orderdetail.modal_upload_po')) ?></h3>
-                <button onclick="document.getElementById('poUploadModal').classList.add('hidden')" 
+                <button data-cardify-action="add-class" data-target="poUploadModal" data-class="hidden" 
                         class="text-gray-400 hover:text-gray-600">
                     <i class="fa-solid fa-times text-xl"></i>
                 </button>
@@ -557,7 +557,7 @@ adminHeader(t('adminchrome.order_number', ['n' => $orderId]), 'print');
                 </div>
                 
                 <div class="flex gap-3 pt-4">
-                    <button type="button" onclick="document.getElementById('poUploadModal').classList.add('hidden')"
+                    <button type="button" data-cardify-action="add-class" data-target="poUploadModal" data-class="hidden"
                             class="flex-1 px-4 py-2.5 border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50 font-medium">
                         <?= htmlspecialchars(t('orderdetail.cancel')) ?>
                     </button>

@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/JsonLd.php';
 /**
  * Lightweight Sentry client (Cat T action 456).
  *
@@ -79,7 +80,13 @@ class Sentry
     {
         if (!defined('SENTRY_DSN_PUBLIC') || !SENTRY_DSN_PUBLIC) return '';
         $dsn = htmlspecialchars(SENTRY_DSN_PUBLIC, ENT_QUOTES);
-        return '<script>window.__SENTRY_DSN__=' . json_encode(SENTRY_DSN_PUBLIC) . ';</script>';
+        // The nonce, or the block does not run under the policy. json_encode
+        // with the script-safe flags, or a DSN holding "</script>" would end
+        // the element early, which is exactly how the public digital card
+        // executed a name.
+        return '<script' . cspNonceAttr() . '>window.__SENTRY_DSN__='
+            . json_encode(SENTRY_DSN_PUBLIC, JsonLd::SAFE | JSON_UNESCAPED_SLASHES)
+            . ';</script>';
     }
 
     // --- internals ---

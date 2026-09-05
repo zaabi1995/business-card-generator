@@ -173,7 +173,7 @@ adminHeader('LinkedIn Carousels', 'linkedin-carousels');
                 <span class="text-xs" style="color: rgba(255,255,255,0.85);">Generated <?= htmlspecialchars(date('M j, H:i', dbTs($heroPost['linkedin_generated_at']))) ?></span>
             </div>
             <h2 class="text-2xl font-bold leading-tight" style="color: #fff;">
-                <a href="https://cardify.om/blog/<?= htmlspecialchars($heroPost['slug']) ?>" target="_blank" style="color: #fff; text-decoration: none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'"><?= htmlspecialchars($heroPost['title']) ?></a>
+                <a href="https://cardify.om/blog/<?= htmlspecialchars($heroPost['slug']) ?>" target="_blank" style="color: #fff; text-decoration: none;"><?= htmlspecialchars($heroPost['title']) ?></a>
             </h2>
         </div>
 
@@ -182,7 +182,7 @@ adminHeader('LinkedIn Carousels', 'linkedin-carousels');
             <div class="lg:col-span-2">
                 <div class="flex items-center justify-between mb-2">
                     <label class="text-xs font-semibold uppercase" style="color: #fff; letter-spacing: 0.05em;">LinkedIn caption (paste this)</label>
-                    <button type="button" onclick="copyHero()" id="heroCopyBtn" class="px-3 py-1.5 text-sm font-semibold rounded-md" style="background: #fff; color: #2563eb; border: 0; cursor: pointer;">
+                    <button type="button" data-cardify-action="call" data-fn="copyHero" id="heroCopyBtn" class="px-3 py-1.5 text-sm font-semibold rounded-md" style="background: #fff; color: #2563eb; border: 0; cursor: pointer;">
                         <i class="fa-solid fa-copy"></i> Copy caption
                     </button>
                 </div>
@@ -205,7 +205,7 @@ adminHeader('LinkedIn Carousels', 'linkedin-carousels');
                         <i class="fa-solid fa-check-circle"></i> Mark as posted
                     </button>
                 </form>
-                <form method="POST" class="block" onsubmit="return confirm('Regenerate carousel? Old text + PDF replaced.');">
+                <form method="POST" class="block" data-cardify-confirm="Regenerate carousel? Old text + PDF replaced.">
                     <?= csrfField() ?>
                     <input type="hidden" name="action" value="regenerate">
                     <input type="hidden" name="id" value="<?= $heroPost['id'] ?>">
@@ -241,7 +241,7 @@ adminHeader('LinkedIn Carousels', 'linkedin-carousels');
                 <div class="flex items-center gap-2 py-1.5" style="border-bottom: 1px solid rgba(255,255,255,0.12);">
                     <span class="w-20 flex-shrink-0" style="color: rgba(255,255,255,0.7);"><?= $label ?>:</span>
                     <span class="flex-1 truncate <?= $isAr ? 'text-right' : '' ?>" style="color: #fff;" <?= $isAr ? 'dir="rtl"' : '' ?>><?= htmlspecialchars($val) ?></span>
-                    <button type="button" onclick="copyTextDirectly(this, <?= json_encode($val, JSON_HEX_QUOT|JSON_HEX_APOS|JSON_HEX_AMP|JSON_UNESCAPED_UNICODE) ?>)" class="px-1.5 py-0.5 rounded" style="background: rgba(255,255,255,0.18); color: #fff; border: 0; cursor: pointer;">
+                    <button type="button" data-cardify-action="copy" data-copy="<?= htmlspecialchars((string) $val, ENT_QUOTES) ?>" class="px-1.5 py-0.5 rounded" style="background: rgba(255,255,255,0.18); color: #fff; border: 0; cursor: pointer;">
                         <i class="fa-solid fa-copy"></i>
                     </button>
                 </div>
@@ -292,7 +292,7 @@ adminHeader('LinkedIn Carousels', 'linkedin-carousels');
                 <!-- Title + meta -->
                 <div style="flex: 1 1 auto; min-width: 0;">
                     <h4 class="font-medium text-gray-900" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; <?= $isPosted ? 'opacity: 0.6;' : '' ?>">
-                        <a href="https://cardify.om/blog/<?= htmlspecialchars($p['slug']) ?>" target="_blank" style="color: inherit; text-decoration: none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'"><?= htmlspecialchars($p['title']) ?></a>
+                        <a href="https://cardify.om/blog/<?= htmlspecialchars($p['slug']) ?>" target="_blank" style="color: inherit; text-decoration: none;"><?= htmlspecialchars($p['title']) ?></a>
                     </h4>
                     <div class="text-xs text-gray-500" style="margin-top: 4px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
                         <span><i class="fa-regular fa-calendar"></i> <?= htmlspecialchars(date('Y-m-d', dbTs($p['published_at']))) ?></span>
@@ -317,7 +317,7 @@ adminHeader('LinkedIn Carousels', 'linkedin-carousels');
                             </button>
                         </form>
                     <?php else: ?>
-                        <button type="button" onclick="toggleRow(<?= $p['id'] ?>)" class="px-2.5 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs rounded" title="Show caption">
+                        <button type="button" data-cardify-action="call" data-fn="toggleRow" data-args="<?= htmlspecialchars(json_encode([(int) $p['id']]), ENT_QUOTES) ?>" class="px-2.5 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs rounded" title="Show caption">
                             <i class="fa-solid fa-eye"></i>
                         </button>
                         <a href="/admin/super/linkedin-carousel-download.php?id=<?= $p['id'] ?>" download class="px-2.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded" title="Download PDF">
@@ -342,7 +342,7 @@ adminHeader('LinkedIn Carousels', 'linkedin-carousels');
                                 </button>
                             </form>
                         <?php endif; ?>
-                        <form method="POST" class="inline" onsubmit="return confirm('Regenerate this carousel?');">
+                        <form method="POST" class="inline" data-cardify-confirm="Regenerate this carousel?">
                             <?= csrfField() ?>
                             <input type="hidden" name="action" value="regenerate">
                             <input type="hidden" name="id" value="<?= $p['id'] ?>">
@@ -360,7 +360,7 @@ adminHeader('LinkedIn Carousels', 'linkedin-carousels');
                 <div class="bg-gray-50 border border-gray-200 rounded-lg p-3">
                     <div class="flex items-center justify-between mb-2">
                         <label class="text-xs font-semibold uppercase tracking-wider text-gray-600">Caption</label>
-                        <button type="button" onclick="copyToClipboard(this, 'cap-<?= $p['id'] ?>')" class="px-2 py-1 bg-white border border-gray-300 hover:bg-gray-100 text-xs rounded">
+                        <button type="button" data-cardify-action="copy" data-copy-from="cap-<?= (int) $p['id'] ?>" class="px-2 py-1 bg-white border border-gray-300 hover:bg-gray-100 text-xs rounded">
                             <i class="fa-solid fa-copy"></i> Copy
                         </button>
                     </div>
@@ -379,7 +379,7 @@ adminHeader('LinkedIn Carousels', 'linkedin-carousels');
     </div>
 </div>
 
-<script>
+<script<?= cspNonceAttr() ?>>
 function copyHero() {
     const ta = document.getElementById('heroCaption');
     ta.select();

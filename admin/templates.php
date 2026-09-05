@@ -117,7 +117,7 @@ adminHeader(t('templates.page_title'), 'templates');
               <?= $p['bilingual'] ? 'AR + EN' : 'EN' ?>
             </span>
           </div>
-          <form method="post" onsubmit="return confirm('<?= htmlspecialchars(t('templates.apply_confirm')) ?>');">
+          <form method="post" data-cardify-confirm="<?= htmlspecialchars((string)(htmlspecialchars(t('templates.apply_confirm'))), ENT_QUOTES) ?>">
             <?= csrfField() ?>
             <input type="hidden" name="action" value="apply_preset">
             <input type="hidden" name="preset" value="<?= htmlspecialchars($p['id']) ?>">

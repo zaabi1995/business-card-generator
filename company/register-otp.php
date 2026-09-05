@@ -238,7 +238,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
 <?php @include __DIR__ . '/../views/partials/trust_logo_strip.php'; ?>
 <?php if (Recaptcha::isConfigured()): $siteKey = Recaptcha::siteKey(); ?>
 <script src="https://www.google.com/recaptcha/api.js?render=<?= htmlspecialchars($siteKey) ?>"></script>
-<script>
+<script<?= cspNonceAttr() ?>>
 (function(){
     var form = document.getElementById('otp-request-form');
     if (!form) return;

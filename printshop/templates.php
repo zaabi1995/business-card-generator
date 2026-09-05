@@ -119,7 +119,7 @@ printshopHeader(t('printshoppages.title_templates'), 'template_requests');
             <p class="text-xs text-blue-600 mt-0.5">Customers can browse and customize your templates at this link:</p>
             <code class="text-xs text-blue-700 font-mono mt-1 block break-all"><?= $shopTemplatesUrl ?></code>
         </div>
-        <button onclick="navigator.clipboard.writeText('<?= $shopTemplatesUrl ?>').then(() => this.textContent = 'Copied!')"
+        <button data-cardify-action="copy" data-copy="<?= htmlspecialchars($shopTemplatesUrl, ENT_QUOTES) ?>" data-copied-label="Copied!"
                 aria-label="Copy customer link <?= $shopTemplatesUrl ?>"
                 class="flex-shrink-0 text-xs bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg transition-colors">
             Copy Link
@@ -195,7 +195,7 @@ printshopHeader(t('printshoppages.title_templates'), 'template_requests');
                        class="flex-1 text-center text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 px-3 py-1.5 rounded-lg transition-colors">
                         <i class="fa-solid fa-eye mr-1"></i>Preview
                     </a>
-                    <form method="POST" class="inline" onsubmit="return confirm('Are you sure?')">
+                    <form method="POST" class="inline" data-cardify-confirm="Are you sure?">
                         <?= csrfField() ?>
                         <input type="hidden" name="action" value="toggle_active">
                         <input type="hidden" name="template_id" value="<?= sanitize($tmpl['id']) ?>">
@@ -203,7 +203,7 @@ printshopHeader(t('printshoppages.title_templates'), 'template_requests');
                             <i class="fa-solid fa-<?= $tmpl['is_active'] ? 'toggle-on text-green-500' : 'toggle-off' ?>" aria-hidden="true"></i>
                         </button>
                     </form>
-                    <form method="POST" class="inline" onsubmit="return confirm('Delete this template? This cannot be undone.')">
+                    <form method="POST" class="inline" data-cardify-confirm="Delete this template? This cannot be undone.">
                         <?= csrfField() ?>
                         <input type="hidden" name="action" value="delete">
                         <input type="hidden" name="template_id" value="<?= sanitize($tmpl['id']) ?>">

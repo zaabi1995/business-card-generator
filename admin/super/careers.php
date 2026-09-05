@@ -282,7 +282,7 @@ adminHeader('Careers Management', 'content');
                             <a href="?edit=<?php echo $listing['id']; ?>" class="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded">
                                 <i class="fa-solid fa-pen-to-square"></i>
                             </a>
-                            <form method="POST" class="inline" onsubmit="return confirm('Delete this listing?');">
+                            <form method="POST" class="inline" data-cardify-confirm="Delete this listing?">
                                 <?php echo csrfField(); ?>
                                 <input type="hidden" name="action" value="delete">
                                 <input type="hidden" name="id" value="<?php echo $listing['id']; ?>">

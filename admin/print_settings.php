@@ -162,7 +162,7 @@ adminHeader('Print Shop Settings', 'print');
                     <input type="text" name="webhook_url" value="<?php echo sanitize($settings['webhook_url'] ?? ''); ?>" 
                            class="flex-1 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
                            placeholder="<?php echo getBaseUrl(); ?>webhooks/print-status">
-                    <button type="button" onclick="document.querySelector('[name=webhook_url]').value = '<?php echo getBaseUrl(); ?>webhooks/print-status'" 
+                    <button type="button" data-cardify-action="set-value" data-selector="[name=webhook_url]" data-value="<?= htmlspecialchars(getBaseUrl() . 'webhooks/print-status', ENT_QUOTES) ?>" 
                             class="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-lg text-sm">
                         Auto-fill
                     </button>
@@ -325,7 +325,7 @@ adminHeader('Print Shop Settings', 'print');
     </a>
 </div>
 
-<script>
+<script<?= cspNonceAttr() ?>>
 // Update price preview dynamically
 function updatePricePreview() {
     const perCard = parseFloat(document.querySelector('[name=price_per_card]').value) || 0;

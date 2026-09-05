@@ -730,7 +730,7 @@ adminHeader(t('adminchrome.my_dashboard'), 'customer-dashboard');
     #bhd224-phone-edit.iti__tel-input { padding-left: 3.5rem !important; }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/intl-tel-input@23.8.2/build/js/intlTelInput.min.js"></script>
-<script>
+<script<?= cspNonceAttr() ?>>
 (function () {
     var phoneEl = document.getElementById('bhd224-phone-edit');
     var hiddenEl = document.getElementById('bhd224-phone-e164');

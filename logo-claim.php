@@ -230,7 +230,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 </div>
             </form>
 
-            <script>
+            <script<?= cspNonceAttr() ?>>
               (function () {
                 var sel = document.getElementById('proof_type');
                 var wrap = document.getElementById('proof_file_wrap');

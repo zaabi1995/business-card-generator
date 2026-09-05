@@ -105,7 +105,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
             <!-- Form -->
             <div class="bg-white rounded-xl shadow-sm p-6">
                 <h2 class="text-xl font-semibold text-gray-900 mb-4">Your details</h2>
-                <form id="vcardForm" class="space-y-4" onsubmit="return false;">
+                <form id="vcardForm" class="space-y-4" data-cardify-no-submit>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Full name <span class="text-red-500">*</span></label>
                         <input type="text" id="fullName" required placeholder="Ali Adnan Haider Darwish"
@@ -201,7 +201,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
     </div>
 </div>
 
-<script>
+<script<?= cspNonceAttr() ?>>
 (function () {
     const fields = ['fullName','jobTitle','company','phone','email','website','address'];
     const qrCanvas = document.getElementById('qrCanvas');

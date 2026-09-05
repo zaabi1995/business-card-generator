@@ -78,7 +78,7 @@ $processUrl = $apiUrl . '/payment/process';
         <?php endforeach; ?>
     </form>
     
-    <script>
+    <script<?= cspNonceAttr() ?>>
         // Auto-submit form
         document.getElementById('amwalForm').submit();
     </script>

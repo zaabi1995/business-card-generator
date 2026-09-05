@@ -63,7 +63,7 @@ elseif (!empty($minimalFooter)):
             <div class="grid md:grid-cols-2 lg:grid-cols-6 gap-8 mb-8">
                 <div class="lg:col-span-1">
                     <div class="flex items-center gap-3 mb-4">
-                        <img src="<?= $bp ?>assets/images/logo-light.svg" alt="<?= $bn ?>" class="h-8 w-auto" onerror="this.style.display='none'">
+                        <img src="<?= $bp ?>assets/images/logo-light.svg" alt="<?= $bn ?>" class="h-8 w-auto" data-cardify-hide-on-error>
                     </div>
                     <p class="text-gray-400 text-sm leading-relaxed"><?= htmlspecialchars(t('footer.tagline')) ?></p>
                 </div>
@@ -243,7 +243,7 @@ if ($currentPage !== 'index' && !($currentPage === 'blog' && isset($singlePost))
 <script defer src="/assets/flowbite/app.bundle.js?v=<?php echo $flowbiteJsVersion; ?>"></script>
     
     <!-- Page Loader Script (JS enhancement - CSS handles fallback) -->
-    <script>
+    <script<?= cspNonceAttr() ?>>
         (function() {
             var loader = document.getElementById('pageLoader');
             var minLoadTime = 200; // Minimum 0.2 seconds for smooth UX
@@ -271,7 +271,7 @@ if ($currentPage !== 'index' && !($currentPage === 'blog' && isset($singlePost))
     </script>
     
     <!-- Common Scripts -->
-    <script>
+    <script<?= cspNonceAttr() ?>>
         // Smooth scroll for anchor links
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
             anchor.addEventListener('click', function (e) {

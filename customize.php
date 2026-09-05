@@ -182,7 +182,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
-<script>
+<script<?= cspNonceAttr() ?>>
 (function() {
     const basePath = <?= json_encode(getBasePath()) ?>;
     const templateData = <?= json_encode($template) ?>;

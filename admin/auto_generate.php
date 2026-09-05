@@ -243,7 +243,7 @@ adminHeader(t('autogen.page_title'), 'employees');
      autoGenerator() Alpine components below. Define it here so both
      branches of the if/else have it; was previously only inside the
      usePreDesigned branch which broke the Fabric template path. -->
-<script>
+<script<?= cspNonceAttr() ?>>
 // Two contact fields holding the same number should print once. Digits only,
 // so formatting differences do not read as two different numbers.
 function sameNumber(a, b) {
@@ -396,7 +396,7 @@ foreach (array_keys($preDesignedLayouts) as $lid) {
     $allBackHtml[$lid] = CardLayouts::renderBack($lid, $employee, $company, $companyTheme);
 }
 ?>
-<script>
+<script<?= cspNonceAttr() ?>>
 const layoutFronts = <?php echo json_encode($allFrontHtml, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>;
 const layoutBacks = <?php echo json_encode($allBackHtml, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>;
 const layoutIds = <?php echo json_encode(array_keys($preDesignedLayouts)); ?>;
@@ -471,7 +471,7 @@ if ($__registryCss) {
 <!-- QR Code Generator -->
 <script src="<?= htmlspecialchars(getBasePath()) ?>assets/js/qrcode-generator-1.4.4.min.js"></script>
 
-<script>
+<script<?= cspNonceAttr() ?>>
 // AUTOGEN_I18N defined earlier (above the usePreDesigned if/else split).
 
 // Inject layout previews
@@ -860,7 +860,7 @@ function layoutGenerator() {
     <canvas id="cardCanvas" style="display: none;"></canvas>
 </div>
 
-<script>
+<script<?= cspNonceAttr() ?>>
 function autoGenerator() {
     return {
         status: 'generating',

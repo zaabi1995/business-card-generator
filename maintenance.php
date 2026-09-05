@@ -36,7 +36,7 @@ header('Retry-After: 3600'); // Suggest retry after 1 hour
             </div>
             
             <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
-                <button onclick="location.reload()" class="inline-flex items-center justify-center px-5 py-3 text-base font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:ring-4 focus:ring-blue-300 transition-colors">
+                <button data-cardify-action="reload" class="inline-flex items-center justify-center px-5 py-3 text-base font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:ring-4 focus:ring-blue-300 transition-colors">
                     <i class="fa-solid fa-rotate-right mr-2"></i>
                     Refresh page
                 </button>

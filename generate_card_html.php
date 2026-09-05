@@ -274,7 +274,7 @@ $brandName = defined('SITE_NAME') ? SITE_NAME : 'Cardify';
     <!-- Hidden canvas for rendering -->
     <canvas id="renderCanvas" style="display: none;"></canvas>
     
-    <script>
+    <script<?= cspNonceAttr() ?>>
         const config = {
             employeeId: '<?php echo $employeeId; ?>',
             basePath: '<?php echo $basePath; ?>',

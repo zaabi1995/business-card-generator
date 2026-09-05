@@ -256,14 +256,14 @@ adminHeader(t('order.checkout_title'), 'print');
             <?php if (($order['total'] ?? 0) >= 50): ?>
             <div class="mb-4 p-4 bg-blue-50 border border-blue-100 rounded-xl">
                 <label class="flex items-center gap-2 cursor-pointer mb-3">
-                    <input type="checkbox" id="depositToggle" class="rounded border-gray-300 text-blue-600" onchange="toggleDeposit(this)">
+                    <input type="checkbox" id="depositToggle" class="rounded border-gray-300 text-blue-600" data-cardify-change-fn="toggleDeposit" data-arg="element">
                     <span class="text-sm font-medium text-gray-700"><?= htmlspecialchars(t('order.deposit_toggle')) ?></span>
                 </label>
                 <div id="depositOptions" class="hidden">
                     <p class="text-xs text-gray-500 mb-2"><?= htmlspecialchars(t('order.deposit_help')) ?></p>
                     <div class="flex items-center gap-2 flex-wrap">
                         <?php foreach ([25, 30, 50] as $pct): ?>
-                        <button type="button" onclick="setDeposit(<?= $pct ?>)"
+                        <button type="button" data-cardify-action="call" data-fn="setDeposit" data-args="<?= htmlspecialchars(json_encode([(float) $pct]), ENT_QUOTES) ?>"
                                 class="deposit-btn px-3 py-1.5 text-sm border border-blue-300 rounded-lg text-blue-700 hover:bg-blue-100 transition-colors font-medium">
                             <?= $pct ?>%
                             <span class="text-xs text-blue-500">(<?= number_format(($order['total'] ?? 0) * ($pct/100), 3) ?> <?= $cur ?>)</span>
@@ -280,7 +280,7 @@ adminHeader(t('order.checkout_title'), 'print');
             </button>
             <p class="text-xs text-gray-500 mt-2 text-center"><?= htmlspecialchars(t('order.paymob_hint')) ?></p>
         </form>
-        <script>
+        <script<?= cspNonceAttr() ?>>
         function toggleDeposit(cb) {
             document.getElementById('depositOptions').classList.toggle('hidden', !cb.checked);
             if (!cb.checked) { setDeposit(0); }
@@ -396,7 +396,7 @@ adminHeader(t('order.checkout_title'), 'print');
 </div>
 
 <?php if ($order['payment_status'] !== 'paid'): ?>
-<script>
+<script<?= cspNonceAttr() ?>>
   // Hard fallback: order-checkout.php?order=..&hosted=1 auto-submits the hosted form.
   (function(){ try { var p = new URLSearchParams(location.search); if (p.get('hosted') === '1') { var f = document.getElementById('payForm'); if (f) { var d = document.getElementById('depositPctInput'); if (d) d.value = '0'; f.submit(); } } } catch(e){} })();
   window.__cardifyNativeAP = {

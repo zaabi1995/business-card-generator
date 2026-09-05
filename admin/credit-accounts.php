@@ -143,12 +143,12 @@ adminHeader(t('adminchrome.credit_accounts'), 'print');
                                     <i class="fa-solid fa-file-invoice"></i>
                                     <?= htmlspecialchars($acc['po_number'] ?? t('creditacc.view_po')) ?>
                                 </a>
-                                <button onclick="document.getElementById('po-form-<?= $acc['id'] ?>').classList.toggle('hidden')"
+                                <button data-cardify-action="toggle-class" data-target="po-form-<?= htmlspecialchars((string) $acc['id'], ENT_QUOTES) ?>" data-class="hidden"
                                         class="ml-2 text-xs text-gray-400 hover:text-gray-600">
                                     <i class="fa-solid fa-upload"></i>
                                 </button>
                             <?php else: ?>
-                                <button onclick="document.getElementById('po-form-<?= $acc['id'] ?>').classList.toggle('hidden')"
+                                <button data-cardify-action="toggle-class" data-target="po-form-<?= htmlspecialchars((string) $acc['id'], ENT_QUOTES) ?>" data-class="hidden"
                                         class="text-xs text-blue-600 hover:text-blue-800 font-medium">
                                     <i class="fa-solid fa-upload mr-1"></i><?= htmlspecialchars(t('creditacc.upload_po')) ?>
                                 </button>

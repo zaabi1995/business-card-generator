@@ -610,7 +610,7 @@ function logos_esc($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8
     <div class="p-6" id="logo-quick-body"><!-- populated by JS --></div>
 </dialog>
 
-<script>
+<script<?= cspNonceAttr() ?>>
 // Instant search-as-you-type for /logos. Debounced fetch to
 // /api/logos/list.php, replaces #logos-grid + result count in place.
 // URL state via pushState so filtered views are shareable + back-button friendly.

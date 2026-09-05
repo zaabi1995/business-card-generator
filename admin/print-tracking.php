@@ -145,7 +145,7 @@ adminHeader(t('print_tracking.title'), 'print-tracking');
             </button>
             <?php $primaryPo = ''; foreach ($pos as $p) { if (!empty($p['po_number'])) { $primaryPo = (string)$p['po_number']; break; } } ?>
             <?php if ($primaryPo !== ''): ?>
-            <form method="post" onsubmit="return confirm('Raise one consolidated BHD invoice for all unbilled production orders on PO <?= htmlspecialchars($primaryPo, ENT_QUOTES) ?>?');">
+            <form method="post" data-cardify-confirm="Raise one consolidated BHD invoice for all unbilled production orders on PO <?= htmlspecialchars((string)(htmlspecialchars($primaryPo, ENT_QUOTES)), ENT_QUOTES) ?>?">
                 <?= csrfField() ?>
                 <input type="hidden" name="action" value="bill_po">
                 <input type="hidden" name="po_number" value="<?= htmlspecialchars($primaryPo, ENT_QUOTES) ?>">
@@ -228,7 +228,7 @@ adminHeader(t('print_tracking.title'), 'print-tracking');
                             <?php else: ?><span class="text-gray-300">-</span><?php endif; ?>
                         </td>
                         <td class="px-5 py-3 text-right">
-                            <form method="post" class="inline" onsubmit="return confirm('Remove this print run?')">
+                            <form method="post" class="inline" data-cardify-confirm="Remove this print run?">
                                 <?= csrfField() ?>
                                 <input type="hidden" name="action" value="delete_run">
                                 <input type="hidden" name="id" value="<?= htmlspecialchars($r['id'], ENT_QUOTES) ?>">
@@ -277,7 +277,7 @@ adminHeader(t('print_tracking.title'), 'print-tracking');
                             <?php else: ?><span class="text-gray-300">-</span><?php endif; ?>
                         </td>
                         <td class="px-5 py-3 text-right">
-                            <form method="post" class="inline" onsubmit="return confirm('Remove this PO?')">
+                            <form method="post" class="inline" data-cardify-confirm="Remove this PO?">
                                 <?= csrfField() ?>
                                 <input type="hidden" name="action" value="delete_po">
                                 <input type="hidden" name="id" value="<?= htmlspecialchars($p['id'], ENT_QUOTES) ?>">
