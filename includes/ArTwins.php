@@ -26,8 +26,10 @@
  * raw Arabic character count. A count above the chrome floor passed both
  * /ar/blog (chrome Arabic over 7,302 Latin characters of English post titles)
  * and /ar/get-started (an entirely English landing body); the share caught
- * them at 0.13 and 0.24 against 0.73-0.96 for every real twin. Both now 301
- * to their English canonical instead of standing as a second English URL.
+ * them at 0.13 and 0.24 against 0.73-0.96 for every real twin. /ar/blog still
+ * 301s to its English canonical. /get-started was translated on 5 Sep 2026,
+ * body and all, and rejoined the list once tools/verify-ar-body.php measured
+ * the real share rather than the chrome floor.
  *
  * Adding an Arabic page is a two-step change, and tools/verify-ar-twins.php
  * fails if either step is missing:
@@ -60,6 +62,7 @@ class ArTwins
         '/contact',
         '/faq',
         '/gcc-business-index',
+        '/get-started',
         '/logos',
         '/logos/press',
         '/logos/terms',
@@ -102,7 +105,6 @@ class ArTwins
         '/cookies',
         '/delete-account',
         '/digital-business-card',
-        '/get-started',
         '/glossary',
         '/industries',
         '/intro',

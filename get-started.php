@@ -1,60 +1,175 @@
 <?php
 /**
- * Cardify - Get Started Landing Page (Google Ads / Paid Traffic)
- * Optimized for conversions with minimal distractions
+ * Cardify, /get-started. The paid-traffic landing page.
+ *
+ * It was English-only by convention rather than by architecture: the hero,
+ * the trust strip, the three steps, the feature grid and the closing block
+ * were all hardcoded English while the instant-card demo in the middle was
+ * already translated. /ar/get-started 301'd to the English URL because a
+ * body-language check measured its Arabic letter share at 0.24, which is
+ * chrome only. The body is translated now, so the Arabic URL serves Arabic.
+ *
+ * Campaign compatibility is deliberate: every inbound query parameter is
+ * carried onto the signup link, so utm_source, utm_campaign, gclid and ref
+ * survive the click instead of dying on this page. config.php already keys
+ * its session behaviour off those same parameters.
+ *
+ * The design follows the home page: the same hero gradient, badge pill, type
+ * scale, button weights and trust pills, so a visitor who arrives here from
+ * an ad and then browses the site does not cross a visual seam.
  */
 require_once __DIR__ . '/config.php';
 require_once INCLUDES_DIR . '/Auth.php';
+require_once INCLUDES_DIR . '/ArTwins.php';
+require_once INCLUDES_DIR . '/CardCatalogPricing.php';
 
-$pageTitle = 'Get Started, Free Business Cards for Your Omani Company';
-$pageDescription = 'Create professional digital and printed business cards for your team in minutes. Free forever for unlimited employees. Only pay when you order physical prints.';
-$canonicalUrl = 'https://cardify.om/get-started';
-$brandName = defined('SITE_NAME') ? SITE_NAME : 'Cardify';
+$isAr  = currentLocale() === 'ar';
+$dir   = currentDir();
+$base  = getBasePath();
 
-$showNavigation = false; // Minimal nav for landing page
+$pageTitle       = t('getstarted.page_title');
+$pageDescription = t('getstarted.page_desc');
+$canonicalUrl    = 'https://cardify.om' . ($isAr ? '/ar' : '') . '/get-started';
+$brandName       = defined('SITE_NAME') ? SITE_NAME : 'Cardify';
+
+/**
+ * Forward the campaign parameters onto the signup link.
+ *
+ * Only the known tracking keys travel, and each is length-capped, so this
+ * cannot be used to smuggle arbitrary query state into an internal URL.
+ */
+$campaignKeys = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'gclid', 'fbclid', 'msclkid', 'ref'];
+$campaign = [];
+foreach ($campaignKeys as $k) {
+    $v = $_GET[$k] ?? '';
+    if (is_string($v) && $v !== '') $campaign[$k] = substr($v, 0, 96);
+}
+$campaignQs  = $campaign ? ('?' . http_build_query($campaign)) : '';
+$registerUrl = $base . 'company/register.php' . $campaignQs;
+
+$waMsg = $isAr ? 'مرحباً، أرغب بعرض توضيحي لكارديفاي لشركتي' : 'Hi, I would like a demo of Cardify for my company';
+$waUrl = 'https://api.whatsapp.com/send?phone=96898899100&text=' . rawurlencode($waMsg);
+
+// The page carries its own minimal header, so the site nav stays off.
+$showNavigation = false;
+$bodyClass      = 'bg-white' . ($isAr ? ' font-arabic' : '');
+$bodyAttributes = $isAr ? 'dir="rtl" lang="ar"' : '';
 require_once INCLUDES_DIR . '/ui-header.php';
+
+$gs = static fn(string $k): string => htmlspecialchars(t('getstarted.' . $k));
 ?>
 
 <div class="min-h-screen bg-white">
-    <!-- Minimal Header -->
-    <div class="bg-white border-b border-gray-100 py-4 px-4">
-        <div class="max-w-5xl mx-auto flex items-center justify-between">
-            <a href="<?= getBasePath() ?>" class="flex items-center gap-2">
-                <img src="<?= getBasePath() ?>assets/images/logo.svg" alt="Cardify" class="h-8 w-auto">
+
+    <!-- Landing chrome: logo, language, sign in. Nothing else to click away with. -->
+    <div class="bg-white/90 backdrop-blur border-b border-gray-100 py-3 px-4 sticky top-0 z-30">
+        <div class="max-w-6xl mx-auto flex items-center justify-between gap-4">
+            <a href="<?= $base . ($isAr ? 'ar/' : '') ?>" class="flex items-center gap-2 shrink-0">
+                <img src="<?= assetUrl('images/logo.svg') ?>" alt="<?= htmlspecialchars($brandName) ?>" class="h-8 w-auto" width="120" height="32">
             </a>
-            <a href="<?= getBasePath() ?>login.php" class="text-sm text-gray-500 hover:text-gray-700">Already have an account? Sign in</a>
+            <div class="flex items-center gap-4 text-sm">
+                <a href="<?= htmlspecialchars(($isAr ? '/get-started' : '/ar/get-started') . $campaignQs) ?>"
+                   class="font-semibold text-gray-600 hover:text-gray-900" hreflang="<?= $isAr ? 'en' : 'ar' ?>">
+                    <?= $isAr ? 'English' : 'العربية' ?>
+                </a>
+                <span class="hidden sm:inline text-gray-400"><?= $gs('hero_signin') ?></span>
+                <a href="<?= $base ?>login.php" class="font-semibold text-blue-700 hover:text-blue-800"><?= $gs('hero_signin_cta') ?></a>
+            </div>
         </div>
     </div>
 
-    <!-- Hero Section -->
-    <div class="bg-gradient-to-br from-blue-600 via-blue-700 to-blue-900 text-white py-20 px-4">
-        <div class="max-w-5xl mx-auto text-center">
-            <div class="inline-flex items-center gap-2 bg-blue-500/30 rounded-full px-4 py-1.5 mb-6 text-sm">
-                <i class="fa-solid fa-star text-yellow-300"></i>
-                <span>Start free, no credit card needed</span>
+    <!-- Hero -->
+    <section class="hero-gradient pt-14 lg:pt-20 pb-14 lg:pb-20 overflow-hidden">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid lg:grid-cols-12 gap-10 lg:gap-12 items-center">
+
+                <div class="lg:col-span-7 text-center lg:text-start">
+                    <div class="inline-flex items-center gap-2 py-1 ps-1 pe-4 mb-6 text-sm bg-white border border-gray-200 rounded-full shadow-sm">
+                        <span class="inline-flex items-center gap-1 bg-blue-50 text-blue-700 font-semibold text-xs px-3 py-1 rounded-full"><span aria-hidden="true">🇴🇲</span> <?= $gs('hero_badge_loc') ?></span>
+                        <span class="font-medium text-gray-700"><?= $gs('hero_badge_copy') ?></span>
+                    </div>
+
+                    <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-tight text-gray-900 mb-6">
+                        <?= $gs('hero_h1') ?>
+                        <span class="text-blue-600 block"><?= $gs('hero_h1_accent') ?></span>
+                    </h1>
+
+                    <p class="text-lg lg:text-xl text-gray-600 mb-8 max-w-2xl mx-auto lg:mx-0 leading-relaxed">
+                        <?= $gs('hero_sub') ?>
+                    </p>
+
+                    <div class="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start mb-8">
+                        <a href="#instant-demo"
+                           class="inline-flex items-center justify-center gap-2 px-7 py-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl shadow-lg shadow-blue-600/30 transition-all hover:shadow-xl hover:-translate-y-0.5 text-lg">
+                            <?= $gs('hero_cta_try') ?>
+                            <i class="fa-solid fa-arrow-down" aria-hidden="true"></i>
+                        </a>
+                        <a href="<?= htmlspecialchars($registerUrl) ?>"
+                           class="inline-flex items-center justify-center gap-2 px-7 py-4 bg-white border-2 border-gray-200 hover:border-gray-300 text-gray-800 font-semibold rounded-xl transition-all text-lg">
+                            <?= $gs('hero_cta_signup') ?>
+                        </a>
+                    </div>
+
+                    <ul class="flex flex-wrap items-center justify-center lg:justify-start gap-3 text-sm" role="list">
+                        <li class="flex items-center gap-2 px-3 py-1.5 bg-green-50 text-green-700 rounded-full">
+                            <i class="fa-solid fa-circle-check" aria-hidden="true"></i><span><?= $gs('trust_free') ?></span>
+                        </li>
+                        <li class="flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-full">
+                            <i class="fa-solid fa-lock" aria-hidden="true"></i><span><?= $gs('trust_no_card') ?></span>
+                        </li>
+                        <li class="flex items-center gap-2 px-3 py-1.5 bg-amber-50 text-amber-700 rounded-full">
+                            <i class="fa-solid fa-language" aria-hidden="true"></i><span><?= $gs('trust_bilingual') ?></span>
+                        </li>
+                        <li class="flex items-center gap-2 px-3 py-1.5 bg-purple-50 text-purple-700 rounded-full">
+                            <i class="fa-solid fa-print" aria-hidden="true"></i><span><?= $gs('trust_printed') ?></span>
+                        </li>
+                    </ul>
+                </div>
+
+                <?php
+                /* The product object, flat. It is the same bilingual sample the
+                   home page hero carries, without the three.js layer: this page
+                   has one job and a rotating canvas is not it. Labelled a
+                   sample, because it is not a customer. */
+                ?>
+                <div class="lg:col-span-5 mt-4 lg:mt-0">
+                    <div class="mx-auto w-full max-w-sm">
+                        <div class="rounded-2xl shadow-2xl shadow-blue-900/20 overflow-hidden" style="background:linear-gradient(150deg,#067a98,#053b49)" role="img" aria-label="<?= htmlspecialchars(t('herocard.alt')) ?>">
+                            <div class="flex items-start justify-between px-5 pt-4 pb-2">
+                                <p class="text-[11px] font-bold tracking-[0.16em] uppercase text-white">Cardify</p>
+                                <span class="text-[10px] font-bold tracking-widest text-white rounded-full px-2 py-0.5" style="background:rgba(255,255,255,.22)"><?= $gs('sample_label') ?></span>
+                            </div>
+                            <div class="px-5 pb-3 grid grid-cols-2 gap-3 items-start">
+                                <div dir="ltr" class="text-left">
+                                    <p class="font-display font-bold text-white text-base sm:text-lg leading-tight">Aisha Al Balushi</p>
+                                    <p class="text-xs mt-1" style="color:rgba(255,255,255,.92)">Operations Manager</p>
+                                </div>
+                                <div dir="rtl" class="text-right">
+                                    <p class="font-display font-bold text-white text-base sm:text-lg leading-tight">عائشة البلوشي</p>
+                                    <p class="text-xs mt-1" style="color:rgba(255,255,255,.92)">مديرة العمليات</p>
+                                </div>
+                            </div>
+                            <div class="px-5 pb-3 flex items-end justify-between gap-3">
+                                <div class="space-y-1 text-xs" dir="ltr" style="color:rgba(255,255,255,.92)">
+                                    <p>aisha@example.om</p>
+                                    <p>+968 2200 0000</p>
+                                </div>
+                                <div class="shrink-0 w-12 h-12 rounded-lg flex items-center justify-center" aria-hidden="true" style="background:rgba(255,255,255,.96)">
+                                    <i class="fa-solid fa-qrcode text-2xl" style="color:#053b49"></i>
+                                </div>
+                            </div>
+                            <div class="px-5 py-2 flex items-center gap-2" style="background:rgba(0,0,0,.18)">
+                                <i class="fa-brands fa-apple" aria-hidden="true" style="color:rgba(255,255,255,.95)"></i>
+                                <i class="fa-brands fa-google" aria-hidden="true" style="color:rgba(255,255,255,.95)"></i>
+                                <p class="text-xs" style="color:rgba(255,255,255,.92)"><?= htmlspecialchars(t('herocard.wallet')) ?></p>
+                            </div>
+                        </div>
+                        <p class="mt-3 text-xs text-gray-500 text-center"><?= $gs('sample_note') ?></p>
+                    </div>
+                </div>
             </div>
-            <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
-                Professional Business Cards<br>
-                <span class="text-blue-200">in Minutes, Not Days</span>
-            </h1>
-            <p class="text-xl text-blue-100 max-w-2xl mx-auto mb-10">
-                Create stunning digital and printed business cards for your entire team.
-                Free forever for unlimited employees. No design skills needed.
-            </p>
-            <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                <a href="<?= getBasePath() ?>company/register.php"
-                   class="bg-white text-blue-700 font-bold px-10 py-4 rounded-xl text-lg hover:bg-blue-50 transition-all shadow-lg hover:shadow-xl">
-                    Create Free Account
-                    <i class="fa-solid fa-arrow-right ml-2"></i>
-                </a>
-                <a href="<?= getBasePath() ?>intro"
-                   class="border-2 border-white/30 text-white font-semibold px-10 py-4 rounded-xl text-lg hover:bg-white/10 transition-all">
-                    See How It Works
-                </a>
-            </div>
-            <p class="mt-4 text-blue-200 text-sm">No credit card required. Setup in 2 minutes.</p>
         </div>
-    </div>
+    </section>
 
     <!-- ===================== INSTANT CARD DEMO =====================
          Paid traffic used to land on a hero and a signup button with nothing
@@ -63,7 +178,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
          under the `demo` tenant and emails a verify link, which is the one
          thing a landing page for this product should let you do before you
          commit to an account. -->
-    <section id="instant-demo" class="bg-white py-16 px-4 border-b border-gray-100" aria-labelledby="instant-demo-h2">
+    <section id="instant-demo" class="bg-white py-16 px-4 border-b border-gray-100 scroll-mt-20" aria-labelledby="instant-demo-h2">
         <div class="max-w-3xl mx-auto">
             <div class="text-center mb-8">
                 <span class="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-blue-700 bg-blue-50 rounded-full px-3 py-1 mb-3">
@@ -138,144 +253,122 @@ require_once INCLUDES_DIR . '/ui-header.php';
         </div>
     </section>
 
-    <!-- Trust strip -->
-    <div class="bg-gray-50 py-8 px-4 border-b border-gray-100">
-        <div class="max-w-5xl mx-auto flex flex-wrap items-center justify-center gap-8 md:gap-16 text-center text-gray-700">
-            <div class="flex items-center gap-2">
-                <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9"/></svg>
-                <span class="font-semibold">Built for Oman</span>
-            </div>
-            <div class="flex items-center gap-2">
-                <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
-                <span class="font-semibold">Paymob verified</span>
-            </div>
-            <div class="flex items-center gap-2">
-                <svg class="w-5 h-5 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-                <span class="font-semibold">Free forever</span>
-            </div>
-            <div class="flex items-center gap-2">
-                <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
-                <span class="font-semibold">Print partners ready</span>
-            </div>
-        </div>
-    </div>
 
-    <!-- How It Works -->
-    <div class="py-20 px-4">
+    <!-- What it costs. Every amount comes from CardCatalogPricing. -->
+    <section class="bg-white py-16 px-4 border-b border-gray-100" aria-labelledby="gs-price-h2">
         <div class="max-w-5xl mx-auto">
-            <h2 class="text-3xl font-bold text-center text-gray-900 mb-4">How It Works</h2>
-            <p class="text-center text-gray-600 mb-12 max-w-2xl mx-auto">Three simple steps to professional business cards for your entire team.</p>
-
-            <div class="grid md:grid-cols-3 gap-8">
-                <div class="text-center">
-                    <div class="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                        <span class="text-2xl font-bold text-blue-600">1</span>
+            <p class="text-center text-sm font-semibold uppercase tracking-wider text-blue-700 mb-2"><?= $gs('price_eyebrow') ?></p>
+            <h2 id="gs-price-h2" class="text-3xl sm:text-4xl font-bold text-center text-gray-900 mb-10"><?= $gs('close_b') ?></h2>
+            <div class="grid sm:grid-cols-3 gap-5">
+                <?php
+                /* Full class strings, never built from a variable: the compiled
+                   Tailwind in assets/techwind holds only the utilities it was
+                   built with, and the page this replaced asked for bg-teal-100
+                   and bg-red-100, neither of which is in that file, so two of
+                   its six feature icons rendered on no background at all. */
+                foreach ([
+                    ['free',  'fa-infinity', 'bg-green-50 text-green-600'],
+                    ['print', 'fa-print',    'bg-blue-50 text-blue-600'],
+                    ['nfc',   'fa-wifi',     'bg-purple-50 text-purple-600'],
+                ] as [$k, $icon, $accent]): ?>
+                <div class="rounded-2xl border border-gray-200 p-6 flex flex-col">
+                    <div class="w-11 h-11 rounded-xl <?= $accent ?> flex items-center justify-center mb-4">
+                        <i class="fa-solid <?= $icon ?> text-lg" aria-hidden="true"></i>
                     </div>
-                    <h3 class="text-xl font-bold text-gray-900 mb-2">Sign Up Free</h3>
-                    <p class="text-gray-600">Create your company account in seconds. No credit card needed. Free forever for any team size.</p>
+                    <h3 class="font-bold text-gray-900 mb-1"><?= $gs('price_' . $k . '_h') ?></h3>
+                    <p class="text-2xl font-extrabold text-gray-900"><?= $gs('price_' . $k . '_v') ?></p>
+                    <?php if ($k !== 'free'): ?>
+                        <p class="text-xs text-gray-500 mb-3"><?= $gs('price_' . $k . '_u') ?></p>
+                    <?php else: ?>
+                        <p class="text-xs text-gray-500 mb-3">&nbsp;</p>
+                    <?php endif; ?>
+                    <p class="text-sm text-gray-600 leading-relaxed"><?= $gs('price_' . $k . '_b') ?></p>
                 </div>
-                <div class="text-center">
-                    <div class="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                        <span class="text-2xl font-bold text-blue-600">2</span>
-                    </div>
-                    <h3 class="text-xl font-bold text-gray-900 mb-2">Design Your Cards</h3>
-                    <p class="text-gray-600">Choose a template, upload your logo, add employee details. Our drag-and-drop editor makes it easy.</p>
-                </div>
-                <div class="text-center">
-                    <div class="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                        <span class="text-2xl font-bold text-blue-600">3</span>
-                    </div>
-                    <h3 class="text-xl font-bold text-gray-900 mb-2">Share or Print</h3>
-                    <p class="text-gray-600">Share digital cards instantly via QR code or WhatsApp. Order prints from local Omani print shops.</p>
-                </div>
+                <?php endforeach; ?>
             </div>
+            <p class="text-center mt-6">
+                <a href="<?= $base . ($isAr ? 'ar/' : '') ?>pricing" class="text-blue-700 font-semibold hover:underline"><?= $gs('price_link') ?></a>
+            </p>
         </div>
-    </div>
+    </section>
 
-    <!-- Features Grid -->
-    <div class="bg-gray-50 py-20 px-4">
+    <!-- How it works -->
+    <section class="bg-gray-50 py-16 px-4" aria-labelledby="gs-how-h2">
         <div class="max-w-5xl mx-auto">
-            <h2 class="text-3xl font-bold text-center text-gray-900 mb-12">Everything You Need</h2>
+            <p class="text-center text-sm font-semibold uppercase tracking-wider text-blue-700 mb-2"><?= $gs('how_eyebrow') ?></p>
+            <h2 id="gs-how-h2" class="text-3xl sm:text-4xl font-bold text-center text-gray-900 mb-3"><?= $gs('how_h2') ?></h2>
+            <p class="text-center text-gray-600 mb-12 max-w-2xl mx-auto"><?= $gs('how_sub') ?></p>
+            <ol class="grid md:grid-cols-3 gap-8" role="list">
+                <?php foreach ([1, 2, 3] as $n): ?>
+                <li class="text-center">
+                    <div class="w-14 h-14 bg-white border border-gray-200 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-sm">
+                        <span class="text-xl font-extrabold text-blue-600"><?= $n ?></span>
+                    </div>
+                    <h3 class="text-lg font-bold text-gray-900 mb-2"><?= $gs('how_' . $n . '_h') ?></h3>
+                    <p class="text-gray-600 leading-relaxed"><?= $gs('how_' . $n . '_b') ?></p>
+                </li>
+                <?php endforeach; ?>
+            </ol>
+        </div>
+    </section>
 
-            <div class="grid md:grid-cols-2 gap-6">
-                <div class="bg-white rounded-xl p-6 flex gap-4">
-                    <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                        <i class="fa-solid fa-mobile-screen text-blue-600 text-xl"></i>
+    <!-- What you get -->
+    <section class="bg-white py-16 px-4" aria-labelledby="gs-feat-h2">
+        <div class="max-w-5xl mx-auto">
+            <p class="text-center text-sm font-semibold uppercase tracking-wider text-blue-700 mb-2"><?= $gs('feat_eyebrow') ?></p>
+            <h2 id="gs-feat-h2" class="text-3xl sm:text-4xl font-bold text-center text-gray-900 mb-12"><?= $gs('feat_h2') ?></h2>
+            <div class="grid md:grid-cols-2 gap-5">
+                <?php foreach ([
+                    [1, 'fa-language',      'bg-blue-50',   'text-blue-600'],
+                    [2, 'fa-layer-group',   'bg-purple-50', 'text-purple-600'],
+                    [3, 'fa-qrcode',        'bg-amber-50',  'text-amber-600'],
+                    [4, 'fa-mobile-screen', 'bg-orange-50', 'text-orange-600'],
+                    [5, 'fa-user-pen',      'bg-green-50',  'text-green-600'],
+                    [6, 'fa-print',         'bg-red-50',    'text-red-600'],
+                ] as [$n, $icon, $bg, $fg]): ?>
+                <div class="rounded-2xl border border-gray-200 p-6 flex gap-4">
+                    <div class="w-12 h-12 <?= $bg ?> rounded-xl flex items-center justify-center flex-shrink-0">
+                        <i class="fa-solid <?= $icon ?> <?= $fg ?> text-lg" aria-hidden="true"></i>
                     </div>
-                    <div>
-                        <h3 class="font-bold text-gray-900 mb-1">Digital Cards</h3>
-                        <p class="text-gray-600 text-sm">Interactive digital cards with QR codes, NFC sharing, and click-to-call buttons.</p>
-                    </div>
-                </div>
-                <div class="bg-white rounded-xl p-6 flex gap-4">
-                    <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                        <i class="fa-solid fa-print text-green-600 text-xl"></i>
-                    </div>
-                    <div>
-                        <h3 class="font-bold text-gray-900 mb-1">Print Orders</h3>
-                        <p class="text-gray-600 text-sm">Order premium printed cards from verified print shops across Oman. Delivered to your door.</p>
-                    </div>
-                </div>
-                <div class="bg-white rounded-xl p-6 flex gap-4">
-                    <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                        <i class="fa-solid fa-users text-purple-600 text-xl"></i>
-                    </div>
-                    <div>
-                        <h3 class="font-bold text-gray-900 mb-1">Team Management</h3>
-                        <p class="text-gray-600 text-sm">Bulk generate cards for your entire team. Consistent branding across all employees.</p>
+                    <div class="min-w-0">
+                        <h3 class="font-bold text-gray-900 mb-1"><?= $gs('feat_' . $n . '_h') ?></h3>
+                        <p class="text-gray-600 text-sm leading-relaxed"><?= $gs('feat_' . $n . '_b') ?></p>
                     </div>
                 </div>
-                <div class="bg-white rounded-xl p-6 flex gap-4">
-                    <div class="w-12 h-12 bg-amber-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                        <i class="fa-solid fa-qrcode text-amber-600 text-xl"></i>
-                    </div>
-                    <div>
-                        <h3 class="font-bold text-gray-900 mb-1">QR Code Sharing</h3>
-                        <p class="text-gray-600 text-sm">Every card gets a unique QR code. Scan to save contacts instantly. Track scan analytics.</p>
-                    </div>
-                </div>
-                <div class="bg-white rounded-xl p-6 flex gap-4">
-                    <div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                        <i class="fa-brands fa-whatsapp text-red-600 text-xl"></i>
-                    </div>
-                    <div>
-                        <h3 class="font-bold text-gray-900 mb-1">WhatsApp Sharing</h3>
-                        <p class="text-gray-600 text-sm">Share your digital card via WhatsApp with one tap. Perfect for Oman's WhatsApp-first market.</p>
-                    </div>
-                </div>
-                <div class="bg-white rounded-xl p-6 flex gap-4">
-                    <div class="w-12 h-12 bg-teal-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                        <i class="fa-solid fa-language text-teal-600 text-xl"></i>
-                    </div>
-                    <div>
-                        <h3 class="font-bold text-gray-900 mb-1">Bilingual Support</h3>
-                        <p class="text-gray-600 text-sm">Create cards in English and Arabic. Full RTL support for Arabic text and layouts.</p>
-                    </div>
-                </div>
+                <?php endforeach; ?>
             </div>
         </div>
-    </div>
+    </section>
 
-    <!-- CTA Section -->
-    <div class="py-20 px-4">
+    <!-- Closing -->
+    <section class="bg-gray-50 py-16 px-4 border-t border-gray-100" aria-labelledby="gs-close-h2">
         <div class="max-w-3xl mx-auto text-center">
-            <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-                Start Creating Professional Business Cards Today
-            </h2>
-            <p class="text-lg text-gray-600 mb-8">
-                Free forever for unlimited employees. No credit card required. Takes 2 minutes to set up.
-            </p>
-            <a href="<?= getBasePath() ?>company/register.php"
-               class="inline-block bg-blue-600 text-white font-bold px-12 py-4 rounded-xl text-lg hover:bg-blue-700 transition-all shadow-lg hover:shadow-xl">
-                Create Free Account
-                <i class="fa-solid fa-arrow-right ml-2"></i>
-            </a>
+            <h2 id="gs-close-h2" class="text-3xl sm:text-4xl font-bold text-gray-900 mb-4"><?= $gs('close_h2') ?></h2>
+            <p class="text-lg text-gray-600 mb-8"><?= $gs('close_b') ?></p>
+            <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                <a href="<?= htmlspecialchars($registerUrl) ?>"
+                   class="inline-flex items-center justify-center gap-2 px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg shadow-blue-600/30 transition-all hover:shadow-xl hover:-translate-y-0.5 text-lg">
+                    <?= $gs('close_cta') ?>
+                    <i class="fa-solid <?= $isAr ? 'fa-arrow-left' : 'fa-arrow-right' ?>" aria-hidden="true"></i>
+                </a>
+                <a href="<?= htmlspecialchars($waUrl) ?>" target="_blank" rel="noopener"
+                   class="inline-flex items-center justify-center gap-2 px-8 py-4 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-xl transition-all text-lg">
+                    <i class="fa-brands fa-whatsapp" aria-hidden="true"></i>
+                    <?= $gs('close_demo') ?>
+                </a>
+            </div>
             <p class="mt-6 text-gray-500 text-sm">
-                Questions? <a href="<?= getBasePath() ?>contact" class="text-blue-600 hover:underline">Contact us</a>
-                or read our <a href="<?= getBasePath() ?>faq" class="text-blue-600 hover:underline">FAQ</a>
+                <?= str_replace(
+                    [':faq', ':contact'],
+                    [
+                        '<a href="' . htmlspecialchars($base . ($isAr ? 'ar/' : '') . 'faq') . '" class="text-blue-700 hover:underline">' . $gs('close_faq') . '</a>',
+                        '<a href="' . htmlspecialchars($base . ($isAr ? 'ar/' : '') . 'contact') . '" class="text-blue-700 hover:underline">' . $gs('close_contact') . '</a>',
+                    ],
+                    htmlspecialchars(t('getstarted.close_help'))
+                ) ?>
             </p>
         </div>
-    </div>
+    </section>
 </div>
 
 <script>
@@ -352,5 +445,6 @@ require_once INCLUDES_DIR . '/ui-header.php';
   });
 })();
 </script>
+
 
 <?php require_once INCLUDES_DIR . '/ui-footer.php'; ?>

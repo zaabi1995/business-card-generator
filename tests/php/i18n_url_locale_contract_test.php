@@ -29,7 +29,6 @@ $englishOnly = [
     '/glossary/vcard',
     '/blog/digital-business-cards-gcc',
     '/careers/product-designer',
-    '/get-started',
     '/digital-business-card',
 ];
 
@@ -41,7 +40,11 @@ foreach ($englishOnly as $path) {
 localeCheck('Press alias is English-only', ArTwins::isEnglishOnly('/press'), true);
 localeCheck('Media kit alias is English-only', ArTwins::isEnglishOnly('/media-kit'), true);
 
-$bilingualEnglish = ['/tools', '/solutions', '/pricing', '/companies/example'];
+// /get-started joined this list on 5 Sep 2026. It was English-only by
+// convention, not architecture: the instant-card demo in its middle was
+// already translated while the hero, the steps and the feature grid were
+// hardcoded English, so /ar/get-started measured 0.24 Arabic and 301'd away.
+$bilingualEnglish = ['/tools', '/solutions', '/pricing', '/companies/example', '/get-started'];
 foreach ($bilingualEnglish as $path) {
     localeCheck("Bilingual path is not EN-only: {$path}", ArTwins::isEnglishOnly($path), false);
     localeCheck("English twin owns locale: {$path}", I18n::canonicalLocaleForPath($path, 'cardify.om'), 'en');
