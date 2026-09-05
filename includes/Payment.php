@@ -297,15 +297,49 @@ class Payment {
     /**
      * Handle Paymob callback (both GET redirect and POST webhook)
      */
-    public static function handleCallback(array $data, ?string $hmac = null): array {
-        $db = Database::getInstance();
-
-        // Flatten nested Paymob response (POST webhook has 'obj' wrapper)
+    /**
+     * Flatten a Paymob callback into one array, and decide which fields the
+     * query string is allowed to contribute.
+     *
+     * Two things went wrong in the version this replaces, both found on
+     * 5 Sep 2026 with production showing 5 payments, 0 of them carrying a
+     * Paymob transaction id:
+     *
+     * 1. The POST webhook could not identify the payment at all. Paymob sends
+     *    the reference Cardify generated as obj.order.merchant_order_id, and
+     *    the flatten replaced obj.order with its numeric id and dropped it. The
+     *    notification_url carries no query string, so a server-to-server
+     *    callback reached "Missing order reference" every time and answered
+     *    400. Settlement depended entirely on the customer's browser finishing
+     *    the redirect.
+     *
+     * 2. The query string was merged over the body wholesale. merchant_order_id
+     *    and special_reference are NOT among the fields Paymob signs, so a
+     *    replayed genuine callback with ?special_reference=<other payment>
+     *    would still verify, and only the amount check stood between that and
+     *    settling somebody else's order of the same value. The query string can
+     *    no longer contribute a field that identifies or prices a payment.
+     *
+     * @param array $data  the callback body
+     * @param array $query the request query string
+     */
+    public static function flattenCallback(array $data, array $query = []): array
+    {
+        // The POST webhook wraps everything in 'obj'.
         if (isset($data['obj'])) {
             $obj = $data['obj'];
             $data = array_merge($data, $obj);
             if (isset($obj['order'])) {
-                $data['order'] = is_array($obj['order']) ? ($obj['order']['id'] ?? '') : $obj['order'];
+                if (is_array($obj['order'])) {
+                    // The reference Cardify generated lives here, and it is the
+                    // only way a POST webhook can name the payment.
+                    if (empty($data['merchant_order_id'])) {
+                        $data['merchant_order_id'] = $obj['order']['merchant_order_id'] ?? '';
+                    }
+                    $data['order'] = $obj['order']['id'] ?? '';
+                } else {
+                    $data['order'] = $obj['order'];
+                }
             }
             if (isset($obj['source_data'])) {
                 $data['source_data_pan'] = $obj['source_data']['pan'] ?? '';
@@ -340,10 +374,28 @@ class Payment {
             $data['card_integration_id']= $obj['integration_id'] ?? null;
         }
 
-        // Merge GET params if available
-        if (!empty($_GET)) {
-            $data = array_merge($data, $_GET);
+
+        // Fields that say WHICH payment this is and WHAT it settles. They come
+        // from the body, never from the query string.
+        $signedOrIdentity = [
+            'merchant_order_id', 'special_reference', 'order', 'id',
+            'amount_cents', 'currency', 'success', 'hmac',
+        ];
+        foreach ($query as $key => $value) {
+            if (in_array($key, $signedOrIdentity, true) && array_key_exists($key, $data)) {
+                continue;
+            }
+            $data[$key] = $value;
         }
+
+        return $data;
+    }
+
+    public static function handleCallback(array $data, ?string $hmac = null): array {
+        $db = Database::getInstance();
+
+        $data = self::flattenCallback($data, $_GET ?? []);
+
 
         $success = $data['success'] ?? null;
         $transactionId = $data['id'] ?? null;
@@ -396,6 +448,15 @@ class Payment {
                 'status' => 'paid',
                 'idempotent' => true
             ];
+        }
+
+        // A payment already bound to a Paymob order accepts callbacks only from
+        // that order. `order` is one of the fields Paymob signs, so this cannot
+        // be forged; merchant_order_id is not, which is the reason to check it.
+        if (!empty($payment['paymob_order_id']) && $orderId !== null
+            && (string) $payment['paymob_order_id'] !== (string) $orderId) {
+            error_log("Payment callback: order mismatch for {$merchantOrderId}. Bound to {$payment['paymob_order_id']}, callback carried {$orderId}");
+            return ['success' => false, 'error' => 'Order mismatch'];
         }
 
         // Verify amount matches
