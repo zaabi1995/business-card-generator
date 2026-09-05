@@ -1385,8 +1385,12 @@ require_once INCLUDES_DIR . '/ui-header.php';
 
     <!-- ========== SCRIPTS ========== -->
     <?php
+    // A heredoc does not run PHP tags. Written as a short-echo tag the nonce
+    // printed literally, the element stopped being a script, and the mobile
+    // menu toggle below it never ran.
+    $cardifyNonce = function_exists('cspNonceAttr') ? cspNonceAttr() : '';
     $extraScripts = <<<HTML
-    <script<?= cspNonceAttr() ?>>
+    <script{$cardifyNonce}>
         // Mobile menu toggle
         const mobileMenuBtn = document.getElementById('mobile-menu-btn');
         const mobileMenu = document.getElementById('mobile-menu');

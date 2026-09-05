@@ -80,6 +80,8 @@ $brandName = defined('SITE_NAME') ? SITE_NAME : 'Cardify';
 $pageTitle = t('register.page_title');
 $htmlClass = 'h-full bg-white';
 $bodyClass = 'h-full';
+// A heredoc does not run PHP tags, so the nonce is interpolated as a value.
+$cardifyNonce = function_exists('cspNonceAttr') ? cspNonceAttr() : '';
 $extraHead = <<<HTML
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intl-tel-input@23.8.2/build/css/intlTelInput.css">
     <style>
@@ -110,7 +112,7 @@ $extraHead = <<<HTML
         .iti { width: 100%; display: block; }
         .iti__tel-input.form-input { padding-left: 3.5rem; }
     </style>
-    <script<?= cspNonceAttr() ?>>
+    <script{$cardifyNonce}>
         function checkEmailDomain() {
             const email = document.getElementById('admin_email').value;
             const slugField = document.getElementById('company_slug');

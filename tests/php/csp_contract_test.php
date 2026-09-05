@@ -138,6 +138,75 @@ foreach (['eval(', 'new Function(', 'setTimeout("', 'innerHTML = raw'] as $smell
         "cardify-actions.js does not reintroduce {$smell} to replace the handlers");
 }
 
+
+// A PHP tag inside a heredoc or a nowdoc is literal text.
+//
+// The nonce sweep wrote a short-echo cspNonceAttr() tag into three of them.
+// The tag printed as text, the element stopped being a script, and what was
+// inside it never ran: the mobile menu toggle on the home page, the
+// country/currency helper and the phone-country picker on
+// /print-shops/register and /company/register.php. Every page still returned
+// 200, so the deploy smoke saw nothing; the responsive crawl found it as
+// 4,409px of horizontal overflow at 320px.
+$heredocLeaks = [];
+$it2 = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($root, FilesystemIterator::SKIP_DOTS));
+foreach ($it2 as $file) {
+    if ($file->getExtension() !== 'php') continue;
+    $rel = str_replace($root . '/', '', $file->getPathname());
+    foreach (['tests/', 'vendor/', 'node_modules/', '.git/', '.worktrees/', 'web-react/'] as $skip) {
+        if (str_starts_with($rel, $skip)) continue 2;
+    }
+    $src = @file_get_contents($file->getPathname());
+    if ($src === false || !str_contains($src, '<?')) continue;
+    $tokens = @token_get_all($src);
+    if (!is_array($tokens)) continue;
+    $depth = 0;
+    foreach ($tokens as $t) {
+        if (!is_array($t)) continue;
+        if ($t[0] === T_START_HEREDOC) { $depth++; continue; }
+        if ($t[0] === T_END_HEREDOC)   { $depth = max(0, $depth - 1); continue; }
+        // A short-echo tag inside a heredoc is always a mistake. A full
+        // "<?php" opener can be deliberate: install/index.php builds config.php
+        // that way, and that heredoc IS a PHP file.
+        if ($depth > 0 && in_array($t[0], [T_ENCAPSED_AND_WHITESPACE, T_STRING], true)
+            && str_contains((string) $t[1], '<' . '?=')) {
+            $heredocLeaks[] = $rel . ':' . $t[2];
+        }
+    }
+}
+cspCheck(
+    $heredocLeaks === [],
+    'no PHP tag is written inside a heredoc or nowdoc, where it would print as text',
+    implode(', ', array_slice($heredocLeaks, 0, 6))
+);
+
+// The same trap one level down: a closing tag inside a // comment ends the
+// PHP block, and everything after it becomes output.
+$commentLeaks = [];
+$it3 = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($root, FilesystemIterator::SKIP_DOTS));
+foreach ($it3 as $file) {
+    if ($file->getExtension() !== 'php') continue;
+    $rel = str_replace($root . '/', '', $file->getPathname());
+    foreach (['tests/', 'vendor/', 'node_modules/', '.git/', '.worktrees/', 'web-react/'] as $skip) {
+        if (str_starts_with($rel, $skip)) continue 2;
+    }
+    $src = @file_get_contents($file->getPathname());
+    if ($src === false) continue;
+    $tokens = @token_get_all($src);
+    if (!is_array($tokens)) continue;
+    foreach ($tokens as $t) {
+        if (!is_array($t) || $t[0] !== T_COMMENT) continue;
+        $text = (string) $t[1];
+        if (str_starts_with(ltrim($text), '//') && str_contains($text, '?>')
+            && !str_ends_with(rtrim($text), '?>')) {
+            $commentLeaks[] = $rel . ':' . $t[2];
+        }
+    }
+}
+cspCheck($commentLeaks === [],
+    'no // comment hides a closing PHP tag mid-line',
+    implode(', ', array_slice($commentLeaks, 0, 5)));
+
 $emDash = "\xE2\x80\x94";
 cspCheck(!str_contains($sec, $emDash), 'includes/SecurityHeaders.php contains no em dash');
 

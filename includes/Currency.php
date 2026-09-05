@@ -753,9 +753,15 @@ class Currency {
     public static function getJavaScriptHelper() {
         $countryCurrencyMap = self::getCountryCurrencyMapJson();
         $phoneCodes = json_encode(self::getPhoneCodes());
-        
+        // A heredoc does not run PHP tags, so the nonce is interpolated as a
+        // value. Written as a short-echo tag it printed literally on
+        // /print-shops/register and the whole helper stopped being a script.
+        // (A closing PHP tag inside a // comment ends the PHP block, so it
+        // cannot be quoted here either.)
+        $nonce = function_exists('cspNonceAttr') ? cspNonceAttr() : '';
+
         return <<<JS
-<script<?= cspNonceAttr() ?>>
+<script{$nonce}>
 // Cardify Country/Currency Helper
 const CardifyGeo = {
     countryCurrency: {$countryCurrencyMap},
@@ -1269,8 +1275,11 @@ JS;
      * Handles dropdown interactions, search, and country selection
      */
     public static function getPhoneInputJavaScript() {
-        return <<<'JS'
-<script<?= cspNonceAttr() ?>>
+        // A nowdoc interpolates nothing, so the nonce is concatenated on.
+        $nonce = function_exists('cspNonceAttr') ? cspNonceAttr() : '';
+
+        return '<script' . $nonce . '>' . <<<'JS'
+
 // Phone country selection handler for simple phone inputs
 function selectPhoneCountry(inputId, countryCode, phoneCode, flagClass) {
     // Update hidden input
