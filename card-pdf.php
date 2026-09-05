@@ -134,7 +134,13 @@ try {
         $accent = '#d4af37';
     }
 
-    $cardUrl = getTenantUrl($company['slug'], '/' . rawurlencode($employee['id']));
+    // The share URL, not a hand-built one. Building '/' . id here printed a
+    // dead link on the PDF and encoded it into the QR: nginx routes a bare
+    // token only when it is a single no-dot word or first.last, so an id like
+    // "abdalah.ah.tm" 404'd while /card/abdalah.ah.tm answered 200.
+    // CardifyConvention::employeeShareUrl() already knows all of that.
+    require_once INCLUDES_DIR . '/CardifyConvention.php';
+    $cardUrl = CardifyConvention::employeeShareUrl((string) $company['slug'], $employee);
 
     $name      = trim((string)($employee['name_en'] ?? $employee['name'] ?? '')) ?: 'Employee';
     $companyNm = trim((string)$company['name']);

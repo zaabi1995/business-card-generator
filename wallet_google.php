@@ -96,7 +96,12 @@ try {
     $slug   = $company['slug'] ?? $companySlug;
 
     // Tenant subdomain canonical URL (no double-slug regardless of host).
-    $cardUrl = getTenantUrl($slug, '/' . rawurlencode($employee['id']));
+    // The share URL, not a hand-built one. nginx routes a bare token only when
+    // it is a single no-dot word or first.last, so an id like "abdalah.ah.tm"
+    // gives a 404 while /card/abdalah.ah.tm answers 200.
+    // CardifyConvention::employeeShareUrl() already handles every shape.
+    require_once INCLUDES_DIR . '/CardifyConvention.php';
+    $cardUrl = CardifyConvention::employeeShareUrl((string) $slug, $employee);
 
     $hexBg = ($theme && !empty($theme['primary_color'])) ? $theme['primary_color'] : '#1a1a1a';
     if (strlen($hexBg) === 4) { // #rgb → #rrggbb
