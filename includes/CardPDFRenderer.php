@@ -24,7 +24,7 @@ class CardPDFRenderer
      *   matches Fabric to 0.02% of the card) but a static's stored `width` is
      *   not reliably its ink width, and Fabric zeroes it for statics anyway.
      */
-    const RENDERER_VERSION = 25;
+    const RENDERER_VERSION = 26;
 
     /**
      * Render or fetch a cached vector PDF for one employee.

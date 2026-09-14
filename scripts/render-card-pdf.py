@@ -1063,9 +1063,11 @@ def _draw_qr_code(page, qr_spec: dict, employee: dict, template: dict,
     qr_y_pt = float(qr_spec.get('y', 0)) * PX_TO_PT
     qr_size_pt = float(qr_spec.get('size', 100)) * PX_TO_PT
     if for_print:
-        from_origin_pt = 13  # BLEED_PT
-        qr_x_pt += from_origin_pt
-        qr_y_pt += from_origin_pt
+        # Offset by the card rect, the same origin the background and text use.
+        # A hard-coded 13 pt here (the real bleed is 8.504 pt) put every printed
+        # QR 1.59 mm down-right of the browser preview.
+        qr_x_pt += card_rect.x0
+        qr_y_pt += card_rect.y0
     rect = fitz.Rect(qr_x_pt, qr_y_pt, qr_x_pt + qr_size_pt, qr_y_pt + qr_size_pt)
 
     # Insert as raster (alpha if rounded panel was applied). For the press
