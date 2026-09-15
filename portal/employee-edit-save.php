@@ -193,6 +193,43 @@ try {
     }
 
     echo json_encode(['ok' => true, 'updated' => array_keys($update)]);
+
+    // Re-bake the printed card when a field that is ON the card changed. The
+    // page has no canvas, so nothing else refreshes generated_cards, and the
+    // public card kept showing the old title next to the new text. Runs after
+    // the response is flushed so autosave stays instant; never nulls or
+    // deletes the old image, the swap happens only once a new PNG decodes.
+    $cardFields = ['name_en','name_ar','position_en','position_ar','phone','mobile','email','website'];
+    if (array_intersect(array_keys($update), $cardFields)) {
+        if (function_exists('fastcgi_finish_request')) { fastcgi_finish_request(); }
+        try {
+            require_once INCLUDES_DIR . '/CardPDFRenderer.php';
+            require_once INCLUDES_DIR . '/functions.php';
+            $pdftoppm = trim((string)@shell_exec('command -v pdftoppm 2>/dev/null'));
+            $r = $pdftoppm !== '' ? CardPDFRenderer::render((string)$employee['id'], 'web') : ['success' => false];
+            if (!empty($r['success']) && !empty($r['path']) && is_file($r['path'])) {
+                $cid = (string)$employee['company_id'];
+                $cardsDir = rtrim(UPLOADS_DIR, '/') . '/companies/' . $cid . '/cards';
+                if (!is_dir($cardsDir)) @mkdir($cardsDir, 0755, true);
+                $uniq = time() . '_' . bin2hex(random_bytes(3));
+                $fPre = $cardsDir . '/card_front_' . $uniq;
+                $bPre = $cardsDir . '/card_back_'  . $uniq;
+                @exec(escapeshellarg($pdftoppm) . ' -r 300 -png -f 1 -l 1 -singlefile ' . escapeshellarg($r['path']) . ' ' . escapeshellarg($fPre) . ' 2>/dev/null');
+                @exec(escapeshellarg($pdftoppm) . ' -r 300 -png -f 2 -l 2 -singlefile ' . escapeshellarg($r['path']) . ' ' . escapeshellarg($bPre) . ' 2>/dev/null');
+                $frontOk = is_file($fPre . '.png') && @getimagesize($fPre . '.png') !== false;
+                $backOk  = is_file($bPre . '.png') && @getimagesize($bPre . '.png') !== false;
+                if ($frontOk) {
+                    foreach ([$fPre . '.png', $bPre . '.png'] as $pf) { if (is_file($pf)) @chmod($pf, 0644); }
+                    logGeneratedCard((string)$employee['id'], null, null,
+                        'card_front_' . $uniq . '.png', $backOk ? ('card_back_' . $uniq . '.png') : null, null, $cid);
+                } else {
+                    @unlink($fPre . '.png'); @unlink($bPre . '.png');
+                }
+            }
+        } catch (Throwable $e) {
+            error_log('[employee-edit-save] card re-bake failed: ' . $e->getMessage());
+        }
+    }
 } catch (Throwable $e) {
     error_log('[employee-edit-save] ' . $e->getMessage());
     http_response_code(500);

@@ -17,6 +17,19 @@ require_once INCLUDES_DIR . '/QRTracker.php';
 // (pretty magic-link /{employee_slug}/edit?t=, rewritten here by .htaccess).
 $token = trim($_GET['token'] ?? ($_GET['t'] ?? ''));
 $employee = EmployeeEditToken::verify($token);
+// Bilingual tenant = a live card template that prints an Arabic name. Only
+// then do the Arabic name/title inputs appear; an English-only card must not
+// grow two fields nobody prints.
+$bilingualCard = false;
+if ($employee) {
+    try {
+        foreach ($db->fetchAll("SELECT fields_json FROM templates WHERE company_id = :cid AND deleted_at IS NULL", ['cid' => $employee['company_id']]) as $tplRow) {
+            $tf = json_decode((string)($tplRow['fields_json'] ?? ''), true);
+            if (is_array($tf) && !empty($tf['name_ar']) && !array_key_exists('enabled', $tf['name_ar']) || (is_array($tf) && !empty($tf['name_ar']['enabled']))) { $bilingualCard = true; break; }
+        }
+    } catch (Throwable $e) { $bilingualCard = !empty($employee['name_ar']); }
+    if (!$bilingualCard && !empty($employee['name_ar'])) $bilingualCard = true;
+}
 
 $existingSocials = [];
 $publicCardUrl = '';
@@ -171,6 +184,7 @@ $pageTitle = t('portal.edit_my_details');
               'name_en' => $employee['name_en'],
               'name_ar' => $employee['name_ar'],
               'position_en' => $employee['position_en'],
+              'position_ar' => $employee['position_ar'] ?? '',
               'phone' => $employee['phone'],
               'mobile' => $employee['mobile'],
               'email' => $employee['email'],
@@ -270,13 +284,25 @@ $pageTitle = t('portal.edit_my_details');
                 <p class="mt-1 text-xs text-gray-400"><?= htmlspecialchars(t('portal.layout_hint')) ?></p>
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1"><?= htmlspecialchars(t('portal.first_name')) ?></label>
-                <input type="text" x-model="data.name_en" @input.debounce.800ms="save()" class="form-input" aria-label="<?= htmlspecialchars(t('portal.first_name')) ?>">
+                <label class="block text-sm font-medium text-gray-700 mb-1"><?= htmlspecialchars(t($bilingualCard ? 'portal.full_name' : 'portal.first_name')) ?></label>
+                <input type="text" x-model="data.name_en" @input.debounce.800ms="save()" class="form-input" dir="ltr" aria-label="<?= htmlspecialchars(t($bilingualCard ? 'portal.full_name' : 'portal.first_name')) ?>">
             </div>
+            <?php if ($bilingualCard): ?>
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1"><?= htmlspecialchars(t('portal.job_title')) ?></label>
-                <input type="text" x-model="data.position_en" @input.debounce.800ms="save()" class="form-input" aria-label="<?= htmlspecialchars(t('portal.job_title')) ?>">
+                <label class="block text-sm font-medium text-gray-700 mb-1"><?= htmlspecialchars(t('portal.name_ar')) ?></label>
+                <input type="text" x-model="data.name_ar" @input.debounce.800ms="save()" class="form-input" dir="rtl" lang="ar" aria-label="<?= htmlspecialchars(t('portal.name_ar')) ?>">
             </div>
+            <?php endif; ?>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1"><?= htmlspecialchars(t($bilingualCard ? 'portal.job_title_en' : 'portal.job_title')) ?></label>
+                <input type="text" x-model="data.position_en" @input.debounce.800ms="save()" class="form-input" dir="ltr" aria-label="<?= htmlspecialchars(t($bilingualCard ? 'portal.job_title_en' : 'portal.job_title')) ?>">
+            </div>
+            <?php if ($bilingualCard): ?>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1"><?= htmlspecialchars(t('portal.job_title_ar')) ?></label>
+                <input type="text" x-model="data.position_ar" @input.debounce.800ms="save()" class="form-input" dir="rtl" lang="ar" aria-label="<?= htmlspecialchars(t('portal.job_title_ar')) ?>">
+            </div>
+            <?php endif; ?>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1"><?= htmlspecialchars(t('common.phone')) ?></label>
