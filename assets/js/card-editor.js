@@ -970,6 +970,21 @@ class CardEditor {
             const _ltrLoad = Promise.resolve(document.fonts.load(_ltrSpec, String(options.text || ' ').slice(0, 32)))
                 .catch(() => {})
                 .then(() => {
+                    // Fabric caches per-character advances per family+weight
+                    // and never re-measures. When this face was still loading
+                    // at addTextField time the browser matched a sibling weight
+                    // of the same family (or a fallback), so the cached widths
+                    // are the WRONG face's: a right-aligned line keeps its
+                    // stale shorter lineWidth, spills past the object box and
+                    // clips its tail ("Ahmed Al Balushi" -> "Ahmed Al Balush",
+                    // Shield, cold cache). Drop that family's cache so the
+                    // initDimensions below re-measures with the real face.
+                    try {
+                        const _fab = (typeof window !== 'undefined' && window.fabric) || (typeof fabric !== 'undefined' ? fabric : null);
+                        if (_fab && _fab.cache && typeof _fab.cache.clearFontCache === 'function') {
+                            _fab.cache.clearFontCache(fieldOptions.fontFamily);
+                        }
+                    } catch (e) { /* best-effort */ }
                     textObj.set('dirty', true);
                     if (typeof textObj.initDimensions === 'function') textObj.initDimensions();
                     _fitWidth(); // re-widen with the now-loaded face so it can't clip its tail
