@@ -58,6 +58,20 @@ jobs:
           php-version: '8.2'
           coverage: none
 
+      # tests/php/card_detected_text_test.php imports scripts/render-card-images.py
+      # as a Python module to drive the field resolver against real input. That
+      # import needs the renderer's own dependencies, and this job installed
+      # none, so the suite reported "FAIL  the resolver ran" and this job was
+      # red on every push from 5 Sep 2026. The test already SKIPs when python3
+      # itself is absent; it cannot tell a missing library from a real break,
+      # so give it the libraries.
+      - uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5.3.0
+        with:
+          python-version: '3.11'
+
+      - name: Install the renderer's Python dependencies
+        run: python3 -m pip install --quiet pillow qrcode
+
       - name: Run tests/php
         run: |
           set -uo pipefail
@@ -128,7 +142,14 @@ jobs:
 
       - name: Install deps
         # pymupdf: render-card-pdf assertions. opencv + pillow: render-card-images.
-        run: python3 -m pip install --quiet pytest pymupdf opencv-python-headless pillow
+        # qrcode: a top-level import in render-card-images, so without it the
+        # renderer exits 1 and all three tests fail on the subprocess call.
+        # cairosvg (plus librsvg2-bin as the script's documented fallback):
+        # test_vector_background_renders_to_webp feeds the renderer an SVG, and
+        # a runner with neither raises svg_renderer_unavailable.
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq librsvg2-bin
+          python3 -m pip install --quiet pytest pymupdf opencv-python-headless pillow qrcode cairosvg
 
       - name: Run tests/python
         # test_invalidation.py already self-skips when it cannot SSH to the VPS,
