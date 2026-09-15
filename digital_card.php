@@ -80,6 +80,15 @@ require_once INCLUDES_DIR . '/JsonLd.php';
     }
 
     if (empty($companySlug) || empty($employeeId)) {
+        // A tenant host that maps to no company (a typo, a renamed slug) is a
+        // 404, not a server error. Before this every dotted path on such a
+        // host, e.g. nosuchtenant.cardify.om/some.person, answered 500.
+        require_once INCLUDES_DIR . '/TenantHost.php';
+        if (empty($companySlug) && TenantHost::isTenantHost()) {
+            http_response_code(404);
+            renderBranded404(null, null);
+            exit;
+        }
         throw new Exception('Missing parameters');
     }
 
