@@ -29,12 +29,20 @@ test('card-pdf returns a valid PDF for KNOWN_CARD', async ({ request }) => {
   expect(buf.subarray(0, 4).toString('ascii'), 'PDF magic').toBe('%PDF');
 
   const tmp = path.join('/tmp', `cv-${Date.now()}.pdf`);
+  const metaFile = `${tmp}.json`;
   fs.writeFileSync(tmp, buf);
   // Use PyMuPDF in a child process to verify the employee name renders.
-  const meta = execSync(
-    `python3 -c "import json,fitz; d=fitz.open('${tmp}'); fonts={f[3].split('+')[-1] for page in d for f in page.get_fonts(full=True)}; txt=''.join(page.get_text() for page in d); print(json.dumps({'fonts': sorted(fonts), 'has_known_name': '${KNOWN_CARD.name}' in txt, 'page_count': d.page_count}))"`
-  ).toString();
-  const m = JSON.parse(meta);
+  //
+  // PyMuPDF 1.28 prints MuPDF warnings ("warning: ...") on stdout. Parsing
+  // stdout therefore broke on every nightly run once CI picked up 1.28, with
+  // "Unexpected token 'w'". Have Python write the result to its own file, so
+  // nothing the library prints can corrupt it.
+  execSync(
+    `python3 -c "import json,fitz; d=fitz.open('${tmp}'); fonts={f[3].split('+')[-1] for page in d for f in page.get_fonts(full=True)}; txt=''.join(page.get_text() for page in d); open('${metaFile}','w').write(json.dumps({'fonts': sorted(fonts), 'has_known_name': '${KNOWN_CARD.name}' in txt, 'page_count': d.page_count}))"`
+  );
+  const m = JSON.parse(fs.readFileSync(metaFile, 'utf8'));
+  fs.rmSync(tmp, { force: true });
+  fs.rmSync(metaFile, { force: true });
   expect(m.page_count, 'PDF page count').toBeGreaterThanOrEqual(1);
   // Vector path embeds fonts, raster path does not. Accept either as long as
   // the name actually rendered. (Raster path encodes the name as glyphs in the
