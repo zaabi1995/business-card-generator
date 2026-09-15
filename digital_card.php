@@ -83,8 +83,11 @@ require_once INCLUDES_DIR . '/JsonLd.php';
         // A tenant host that maps to no company (a typo, a renamed slug) is a
         // 404, not a server error. Before this every dotted path on such a
         // host, e.g. nosuchtenant.cardify.om/some.person, answered 500.
-        require_once INCLUDES_DIR . '/TenantHost.php';
-        if (empty($companySlug) && TenantHost::isTenantHost()) {
+        // TenantHost::isTenantHost() is true only for a host that resolves to
+        // a company, so test the host SHAPE: any <sub>.cardify.om that is not
+        // the apex and did not resolve is an unknown tenant.
+        $__host = strtolower(preg_replace('/:\d+$/', '', (string)($_SERVER['HTTP_HOST'] ?? '')));
+        if (empty($companySlug) && $__host !== 'www.cardify.om' && preg_match('/^[a-z0-9-]+\.cardify\.om$/', $__host)) {
             http_response_code(404);
             renderBranded404(null, null);
             exit;
