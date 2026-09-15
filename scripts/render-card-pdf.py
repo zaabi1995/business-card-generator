@@ -964,16 +964,20 @@ def _draw_qr_code(page, qr_spec: dict, employee: dict, template: dict,
     # Style colors
     color = style.get('color', '#000000') or '#000000'
     bg_color = style.get('bg_color', '#ffffff') or '#ffffff'
+    # bg_color 'transparent' / 'none' = no panel at all: the modules sit
+    # straight on the card artwork (a gradient card shows no flat square).
+    bg_transparent = str(bg_color).strip().lower() in ('transparent', 'none')
     eye_color = style.get('eye_color') or color  # fallback to module color
     def hx(c):
         c = c.lstrip('#')
         return (int(c[0:2], 16), int(c[2:4], 16), int(c[4:6], 16))
-    fg_rgb, bg_rgb, eye_rgb = hx(color), hx(bg_color), hx(eye_color)
+    fg_rgb, eye_rgb = hx(color), hx(eye_color)
+    bg_rgb = (0, 0, 0, 0) if bg_transparent else hx(bg_color)
 
     # Render at high resolution: each module = 20px
     module_px = 20
     img_size = n * module_px
-    img = Image.new('RGB', (img_size, img_size), bg_rgb)
+    img = Image.new('RGBA' if bg_transparent else 'RGB', (img_size, img_size), bg_rgb)
     draw = ImageDraw.Draw(img)
 
     # Finder-eye regions: 7x7 modules in top-left, top-right, bottom-left
@@ -1042,7 +1046,7 @@ def _draw_qr_code(page, qr_spec: dict, employee: dict, template: dict,
     panel_radius_pct = float(style.get('panel_radius_pct', 0))
     if padding > 0 or panel_radius_pct > 0:
         panel_size = img_size + 2 * padding
-        panel = Image.new('RGB', (panel_size, panel_size), bg_rgb)
+        panel = Image.new('RGBA' if bg_transparent else 'RGB', (panel_size, panel_size), bg_rgb)
         panel.paste(img, (padding, padding))
         if panel_radius_pct > 0:
             radius = int(panel_size * panel_radius_pct / 100)
@@ -1073,7 +1077,7 @@ def _draw_qr_code(page, qr_spec: dict, employee: dict, template: dict,
     # Insert as raster (alpha if rounded panel was applied). For the press
     # (CMYK) profile, convert to a DeviceCMYK pixmap so the QR eyes/modules
     # land on the tenant's exact brand values instead of an RGB approximation.
-    if cmyk_cfg:
+    if cmyk_cfg and not bg_transparent:  # a CMYK pixmap has no alpha; keep the PNG path for a transparent panel
         page.insert_image(rect, pixmap=_pil_to_cmyk_pixmap(img, cmyk_cfg),
                           keep_proportion=False)
     else:

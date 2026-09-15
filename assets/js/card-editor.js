@@ -1294,8 +1294,11 @@ class CardEditor {
                 };
 
                 let moduleColor = s.color || '#000000';
-                const bgColor = s.bg_color || '#ffffff';
-                if (mode === 'empty_placeholder') {
+                // bg_color 'transparent' / 'none' = no panel: modules sit
+                // straight on the card artwork (mirrors render-card-pdf.py).
+                const bgTransparent = /^(transparent|none)$/i.test(String(s.bg_color || '').trim());
+                const bgColor = bgTransparent ? null : (s.bg_color || '#ffffff');
+                if (mode === 'empty_placeholder' && !bgTransparent) {
                     // Sampled "color" is just the luminance pick from Python;
                     // recompute on the JS side using the canonical bg so the
                     // contrast holds even if downstream code overrode bg_color.
@@ -1367,8 +1370,10 @@ class CardEditor {
                 // between the (optional) outer border and the QR modules.
                 // When panelRatio is 0, this fills the whole inner area
                 // edge-to-edge (current behaviour).
-                ctx.fillStyle = bgColor;
-                if (panelRadiusPct > 0 && typeof ctx.roundRect === 'function') {
+                if (bgColor) ctx.fillStyle = bgColor;
+                if (!bgColor) {
+                    // transparent panel: leave the canvas clear behind the modules
+                } else if (panelRadiusPct > 0 && typeof ctx.roundRect === 'function') {
                     ctx.beginPath();
                     ctx.roundRect(borderPx, borderPx, innerSize, innerSize, innerSize * panelRadiusPct / 100);
                     ctx.fill();
