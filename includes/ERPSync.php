@@ -387,7 +387,15 @@ class ERPSync {
             return null;
         }
 
-        $url = rtrim($settings['erp_api_url'], '/') . "/download/{$type}/{$type}-{$id}.pdf";
+        // The delivery note is the odd one out. /download/deliverynote/... is
+        // advertised by the ERP but always answers 404: that handler builds the
+        // model name as "Deliverynote" while the model is registered as
+        // "DeliveryNote", so it never resolves. /api/deliverynote/pdf/<id>
+        // renders the same document and works. Live-verified, both routes.
+        $base = rtrim($settings['erp_api_url'], '/');
+        $url  = $type === 'deliverynote'
+              ? $base . '/api/deliverynote/pdf/' . $id
+              : $base . "/download/{$type}/{$type}-{$id}.pdf";
         $ch  = curl_init($url);
         curl_setopt_array($ch, [
             CURLOPT_FILE           => $fh,
