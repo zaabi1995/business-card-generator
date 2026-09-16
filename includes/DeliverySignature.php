@@ -33,10 +33,11 @@ class DeliverySignature
         return getTenantUrl($slug, '/admin/sign-delivery?t=' . urlencode($token));
     }
 
-    /** Where the signed copies are kept: outside the web root, like the POs. */
+    /** Where the signed copies are kept: private/, which nginx refuses to
+     *  serve, the same place the purchase orders go. */
     public static function dir(): string
     {
-        return defined('MHD_DN_DIR') ? MHD_DN_DIR : dirname(BASE_DIR) . '/cardify-private/dn';
+        return defined('MHD_DN_DIR') ? MHD_DN_DIR : BASE_DIR . '/private/dn';
     }
 
     /**

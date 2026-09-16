@@ -76,8 +76,8 @@ t('the PO number is read',     ($r['po'] ?? '') === '4191000258');
 $row = $db->fetchOne("SELECT fulfilment_state, po_number, po_file FROM card_requests WHERE id = ?", [$rid]);
 t('the job reached po_received', ($row['fulfilment_state'] ?? '') === 'po_received');
 t('the PO number is stored',     ($row['po_number'] ?? '') === '4191000258');
-t('the file is kept out of the web root',
-  strpos((string)($row['po_file'] ?? ''), BASE_DIR) !== 0 && is_file((string)$row['po_file']));
+t('the file is kept where nginx will not serve it',
+  strpos((string)($row['po_file'] ?? ''), BASE_DIR . '/private/') === 0 && is_file((string)$row['po_file']));
 
 @unlink((string)$row['po_file']);
 $db->query("DELETE FROM card_request_events WHERE request_id = ?", [$rid]);

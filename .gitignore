@@ -125,3 +125,6 @@ promo/cardify-yc-demo*.mp4
 # reads them from the repo.
 __pycache__/
 *.py[cod]
+
+# MHD purchase orders and signed delivery notes (nginx refuses to serve it)
+/private/

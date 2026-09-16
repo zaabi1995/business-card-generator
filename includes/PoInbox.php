@@ -29,11 +29,13 @@ class PoInbox
         return defined('MHD_PO_MAILDIR') ? MHD_PO_MAILDIR : '/www/vmail/bhdoman.com/sales';
     }
 
-    /** Purchase orders are kept outside the web root: nginx serves uploads/ and
-     *  storage/ as static files, and these are MHD's commercial documents. */
+    /** Purchase orders are MHD's commercial documents, so they are kept in
+     *  private/, which nginx refuses to serve. Not outside the web root:
+     *  PHP-FPM runs with open_basedir confined to the site directory, so a path
+     *  above it cannot be written from a page at all. */
     public static function poDir(): string
     {
-        return defined('MHD_PO_DIR') ? MHD_PO_DIR : dirname(BASE_DIR) . '/cardify-private/po';
+        return defined('MHD_PO_DIR') ? MHD_PO_DIR : BASE_DIR . '/private/po';
     }
 
     public static function extractRef(string $subject): ?string
