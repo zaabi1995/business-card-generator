@@ -60,7 +60,7 @@ t('state really is po_received',
 t('approval status untouched',
   ($db->fetchOne("SELECT status s FROM card_requests WHERE id = ?", [$rid])['s'] ?? '') === 'pending');
 $ev = CardJob::events($rid);
-t('four events recorded',   count($ev) === 4);
+t('three events recorded',  count($ev) === 3);   // the two refused moves write nothing
 t('evidence kept the PO',   strpos(json_encode($ev), '4191000999') !== false);
 
 $db->query("DELETE FROM card_request_events WHERE request_id = ?", [$rid]);
