@@ -43,7 +43,7 @@ class ERPSync {
         'Lamination'          => 'Matte',
         'Card Shape'          => 'Standard',
         'Rounded Corners'     => 'Without Rounded Corners',
-        'Print Sides'         => 'Double Side',
+        'Print Sides'         => 'Single Side',
     ];
 
     /** The spec as the ERP wants it on a line item. */
