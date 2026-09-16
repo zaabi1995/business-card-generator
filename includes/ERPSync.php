@@ -26,6 +26,37 @@ class ERPSync {
     const ERP_PRODUCT_NAME = 'Business Card';
 
     /**
+     * Business Card is a configurable product: the ERP refuses a quote whose
+     * line does not answer every required option ("missing Business Card Paper,
+     * missing Lamination, missing Card Shape, missing Rounded Corners, missing
+     * Print Sides"). Cardify's self-service flow prints one specification, so
+     * the answers are fixed here rather than asked for.
+     *
+     * These are the exact option values BHD already bills MHD on: Art 300 GSM
+     * matte, standard shape, square corners, printed both sides because the card
+     * carries an English front and an Arabic back. Every value is verified
+     * against the ProductAttribute records; an unknown value fails validation
+     * just as a missing one does.
+     */
+    const ERP_CARD_SPEC = [
+        'Business Card Paper' => 'Art 300 GSM',
+        'Lamination'          => 'Matte',
+        'Card Shape'          => 'Standard',
+        'Rounded Corners'     => 'Without Rounded Corners',
+        'Print Sides'         => 'Double Side',
+    ];
+
+    /** The spec as the ERP wants it on a line item. */
+    private static function cardSelectedAttributes(): array
+    {
+        $out = [];
+        foreach (self::ERP_CARD_SPEC as $attributeName => $value) {
+            $out[] = ['attributeName' => $attributeName, 'value' => $value];
+        }
+        return $out;
+    }
+
+    /**
      * Load ERP settings from erp_settings table.
      */
     public static function getSettings(): array {
@@ -360,11 +391,12 @@ class ERPSync {
                 // productId or productName on every item, and ERPSync sent
                 // neither, so every quote it raised was rejected. Cardify only
                 // ever prints business cards, so the canonical product is fixed.
-                'productId'   => self::ERP_PRODUCT_ID,
-                'productName' => self::ERP_PRODUCT_NAME,
-                'itemName'    => $description,
-                'quantity'    => $qty ?: 1,
-                'price'       => $unit,
+                'productId'          => self::ERP_PRODUCT_ID,
+                'productName'        => self::ERP_PRODUCT_NAME,
+                'selectedAttributes' => self::cardSelectedAttributes(),
+                'itemName'           => $description,
+                'quantity'           => $qty ?: 1,
+                'price'              => $unit,
             ]],
         ];
 
