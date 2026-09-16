@@ -76,7 +76,7 @@ if ($db->isConnected()) {
     }
     
     $departments = $db->fetchAll(
-        "SELECT id, name, slug, template_pair_id, portal_passcode, responsible_email, cc_emails, include_qr_default FROM departments WHERE company_id = :id AND portal_enabled = 1 ORDER BY name",
+        "SELECT id, name, slug, template_pair_id, portal_passcode, responsible_email, cc_emails, include_qr_default, head_email, erp_client_name, card_unit_price FROM departments WHERE company_id = :id AND portal_enabled = 1 ORDER BY name",
         ['id' => $companyId]
     );
     
@@ -1226,7 +1226,8 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                 <div class="flex items-center justify-between gap-3">
                     <div class="flex items-center gap-3 min-w-0 flex-1">
                         <?php
-                        $logoPath = $companyTheme['logo_path'] ?? $company['logo_path'] ?? null;
+                        require_once INCLUDES_DIR . '/ThemeImage.php';
+                        $logoPath = ThemeImage::preferWeb($companyTheme['logo_path'] ?? $company['logo_path'] ?? null) ?: null;
                         if (!empty($logoPath)):
                         ?>
                         <img src="<?php echo imageUrl($logoPath); ?>" alt="<?php echo htmlspecialchars($companyName); ?>" class="h-10 w-auto rounded-xl flex-shrink-0">
