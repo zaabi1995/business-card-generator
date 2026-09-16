@@ -171,4 +171,91 @@ class MhdMailer
             error_log('[MhdMailer] log failed: ' . $e->getMessage());
         }
     }
+
+    /**
+     * Send an arbitrary flow email as sales@bhdoman.com, with any number of
+     * attachments. Additive: sendCard, body, buildMime, smtpSend and log are
+     * untouched, because buildMime's boundary is derived from md5($subject . $to)
+     * and the exact bytes it emits are part of its contract.
+     *
+     * The MAIL FROM stays self::SENDER. That is not cosmetic: Postfix's
+     * sender_dependent_relayhost_maps routes @bhdoman.com through the Microsoft
+     * 365 smarthost, which is the only path that reaches Trend-Micro-protected
+     * MHD. A cardify.om sender is blocked.
+     *
+     * @param array $attachments list of ['path' => absolute path, 'name' => filename]
+     * @return array ['ok'=>bool, 'error'=>?string, 'recipients'=>array]
+     */
+    public static function sendRaw(array $to, array $cc, string $subject, string $html, array $attachments = []): array
+    {
+        $to = array_values(array_filter(array_map('trim', $to),
+            fn($e) => $e !== '' && filter_var($e, FILTER_VALIDATE_EMAIL)));
+        if (!$to) {
+            return ['ok' => false, 'error' => 'no valid recipient', 'recipients' => []];
+        }
+        // Same filter sendCard uses: case-insensitive against the To, so a CC that
+        // differs only in case does not receive a second copy.
+        $cc = array_values(array_unique(array_filter(array_map('trim', $cc),
+            fn($e) => $e !== '' && filter_var($e, FILTER_VALIDATE_EMAIL)
+                   && !in_array(strtolower($e), array_map('strtolower', $to), true))));
+
+        // buildMime reads the file unguarded, so a missing path would ship a
+        // zero-byte attachment and nobody would notice. Drop it and say so.
+        $files = [];
+        $missing = [];
+        foreach ($attachments as $a) {
+            $path = (string)($a['path'] ?? '');
+            if ($path === '' || !is_file($path)) { $missing[] = $path; continue; }
+            $name = (string)($a['name'] ?? basename($path));
+            $files[] = ['path' => $path, 'name' => self::safeFilename($name)];
+        }
+
+        $mime = self::buildMimeMulti($to, $cc, $subject, $html, $files);
+        $recipients = array_merge($to, $cc);
+        $res = self::smtpSend(self::SENDER, $recipients, $mime);
+        self::log($to[0], $subject, $res['ok'], $res['error'] ?? null, [
+            'cc'          => implode(',', $cc),
+            'to_extra'    => implode(',', array_slice($to, 1)),
+            'attachments' => implode(',', array_column($files, 'name')),
+            'missing'     => implode(',', $missing),
+        ]);
+        return ['ok' => $res['ok'], 'error' => $res['error'] ?? null, 'recipients' => $recipients];
+    }
+
+    /** $filename is interpolated raw into two MIME parameters, so keep it boring. */
+    private static function safeFilename(string $name): string
+    {
+        $base = preg_replace('/[^A-Za-z0-9._-]+/', '-', $name);
+        return $base !== '' ? $base : 'attachment.pdf';
+    }
+
+    /** buildMime with many attachments instead of exactly one. */
+    private static function buildMimeMulti(array $to, array $cc, string $subject, string $html, array $files): string
+    {
+        $eol      = "\r\n";
+        $boundary = 'mhd-' . bin2hex(substr(md5($subject . $to[0]), 0, 12));
+        $subjEnc  = '=?UTF-8?B?' . base64_encode($subject) . '?=';
+
+        $h  = 'From: ' . self::SENDER_NAME . ' <' . self::SENDER . '>' . $eol;
+        $h .= 'To: ' . implode(', ', $to) . $eol;
+        if ($cc) { $h .= 'Cc: ' . implode(', ', $cc) . $eol; }
+        $h .= 'Subject: ' . $subjEnc . $eol;
+        $h .= 'MIME-Version: 1.0' . $eol;
+        $h .= 'Content-Type: multipart/mixed; boundary="' . $boundary . '"' . $eol;
+
+        $b  = '--' . $boundary . $eol;
+        $b .= 'Content-Type: text/html; charset=UTF-8' . $eol;
+        $b .= 'Content-Transfer-Encoding: base64' . $eol . $eol;
+        $b .= chunk_split(base64_encode($html)) . $eol;
+        foreach ($files as $f) {
+            $b .= '--' . $boundary . $eol;
+            $b .= 'Content-Type: application/pdf; name="' . $f['name'] . '"' . $eol;
+            $b .= 'Content-Transfer-Encoding: base64' . $eol;
+            $b .= 'Content-Disposition: attachment; filename="' . $f['name'] . '"' . $eol . $eol;
+            $b .= chunk_split(base64_encode((string)file_get_contents($f['path']))) . $eol;
+        }
+        $b .= '--' . $boundary . '--' . $eol;
+
+        return $h . $eol . $b;
+    }
 }

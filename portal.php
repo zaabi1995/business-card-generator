@@ -12,6 +12,7 @@ require_once INCLUDES_DIR . '/TenantHost.php';
 require_once INCLUDES_DIR . '/AdminApprovalToken.php';
 require_once INCLUDES_DIR . '/CardPrice.php';
 require_once INCLUDES_DIR . '/CardJob.php';
+require_once INCLUDES_DIR . '/CardJobMailer.php';
 
 // Get company slug and optional department slug from URL. When the
 // request lands on a tenant subdomain (ohb.cardify.om/portal), pull
@@ -510,6 +511,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['portal_passcode'])) 
             
             $db->insert('card_requests', $insertData);
 
+            // The job ref is the tag that lets a purchase-order reply be matched
+            // back to this job later. Derived from the request id, so it is stable
+            // and a retry mints the same one rather than a duplicate.
+            $jobRef = CardJob::mintRef($requestId);
+            try {
+                $db->query("UPDATE card_requests SET job_ref = ?, quantity_ordered = ? WHERE id = ?",
+                           [$jobRef, $quantityRequested, $requestId]);
+            } catch (Throwable $e) {
+                error_log('[portal job_ref] ' . $e->getMessage());
+            }
+
             $success = true;
 
             // MHD-style email-on-send: when the chosen department routes to a
@@ -605,7 +617,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['portal_passcode'])) 
                 // Magic-link approval, the admin approves straight from the
                 // email without logging in first. Token is scoped to this
                 // company + request so a leaked link can't touch anything else.
-                $approvalToken = AdminApprovalToken::mint($companyId, $requestId, $adminEmail);
+                // A division that routes to its own mailbox approves its own cards.
+                // Falling back to the company address would send every division's
+                // request to the CEO's office, which is how it used to work.
+                $approverEmail = trim((string)($sendDept['responsible_email'] ?? '')) ?: $adminEmail;
+                $approvalToken = AdminApprovalToken::mint($companyId, $requestId, $approverEmail, 'card_request');
                 $approveUrl = getTenantUrl($companySlug, '/admin/one-tap-approve?t=' . urlencode($approvalToken));
                 $reviewUrl = getTenantUrl($companySlug, '/admin/approve-request?t=' . urlencode($approvalToken));
 
@@ -623,7 +639,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['portal_passcode'])) 
                     ? '<p style="text-align:center;margin:16px 0;"><img src="' . htmlspecialchars($frontAbsUrl, ENT_QUOTES) . '" alt="Card design" style="max-width:320px;width:100%;border-radius:8px;border:1px solid #e5e7eb;"></p>'
                     : '';
 
-                Mailer::sendTemplate($adminEmail, 'admin_new_request', [
+                // A division with its own mailbox gets the approval there, with its
+                // head copied, over the sales@bhdoman.com transport. Mailer has no CC
+                // and sends as cardify.om, which MHD's Trend Micro blocks, so the old
+                // path could neither copy the head nor reliably arrive.
+                $__routed = false;
+                if (!empty($sendDept['responsible_email'])) {
+                    try {
+                        $__r = CardJobMailer::sendForApproval(
+                            $formData + [
+                                'id'               => $requestId,
+                                'job_ref'          => $jobRef ?? '',
+                                'quantity_ordered' => $quantityRequested,
+                                'company_slug'     => $companySlug,
+                            ],
+                            $sendDept, $approvalToken, $frontAbsUrl);
+                        $__routed = !empty($__r['ok']);
+                        if (!$__routed) { error_log('[portal approval] ' . ($__r['error'] ?? 'unknown')); }
+                    } catch (Throwable $e) {
+                        error_log('[portal approval] ' . $e->getMessage());
+                    }
+                }
+                if (!$__routed) Mailer::sendTemplate($adminEmail, 'admin_new_request', [
                     'employee_name' => $employeeName,
                     'company_name' => $companyName,
                     'design_preview_html' => $designPreviewHtml,

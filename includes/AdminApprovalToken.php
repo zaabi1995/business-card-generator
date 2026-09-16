@@ -21,7 +21,7 @@ class AdminApprovalToken
      * Mint a fresh token for a company/request/admin. Returns the
      * plain 40-char token to embed in the approval link.
      */
-    public static function mint(string $companyId, string $requestId, string $adminEmail): string
+    public static function mint(string $companyId, string $requestId, string $adminEmail, string $purpose = 'card_request'): string
     {
         $db = Database::getInstance();
         $plain = bin2hex(random_bytes(self::BYTES));
@@ -32,6 +32,7 @@ class AdminApprovalToken
             'company_id'   => $companyId,
             'request_id'   => $requestId,
             'admin_email'  => $adminEmail,
+            'purpose'      => $purpose,
             'token'        => $plain,
             // gmdate, not date. config.php sets Asia/Muscat but the PDO
             // connection never issues SET time_zone, so MySQL stays on UTC and
@@ -51,19 +52,26 @@ class AdminApprovalToken
      * expired. Does not check used_at, callers decide what an already
      * used token should show; consumeApprove() is the single-use gate.
      */
-    public static function verify(string $token): ?array
+    public static function verify(string $token, ?string $expectedPurpose = null): ?array
     {
         if (!preg_match('/^[a-f0-9]{40}$/i', $token)) return null;
 
         $db = Database::getInstance();
         $row = $db->fetchOne(
-            "SELECT company_id, request_id, admin_email, expires_at, used_at
+            "SELECT company_id, request_id, admin_email, purpose, expires_at, used_at
              FROM admin_approval_tokens
              WHERE token = :token AND expires_at > NOW() LIMIT 1",
             ['token' => $token]
         );
 
-        return $row ?: null;
+        if (!$row) { return null; }
+        // A token minted to approve a card request must not be able to sign a
+        // delivery note, and the reverse. Callers that care pass the purpose
+        // they expect; callers that do not keep today's behaviour.
+        if ($expectedPurpose !== null && ($row['purpose'] ?? 'card_request') !== $expectedPurpose) {
+            return null;
+        }
+        return $row;
     }
 
     /**
