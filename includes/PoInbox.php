@@ -46,6 +46,20 @@ class PoInbox
         return preg_match(self::PO_RE, $text, $m) ? $m[1] : null;
     }
 
+    /** Our own domains. A purchase order never comes from one of these. */
+    public static function isOwnSender(string $from): bool
+    {
+        $own = ['bhdoman.com', 'bhd.om', 'cardify.om'];
+        if (!preg_match('/([A-Z0-9._%+-]+@[A-Z0-9.-]+)/i', $from, $m)) {
+            return false;
+        }
+        $domain = strtolower(substr(strrchr($m[1], '@'), 1));
+        foreach ($own as $d) {
+            if ($domain === $d || str_ends_with($domain, '.' . $d)) { return true; }
+        }
+        return false;
+    }
+
     /**
      * File one message.
      *
@@ -58,6 +72,13 @@ class PoInbox
         $ref = self::extractRef((string)($message['subject'] ?? ''));
         if (!$ref) {
             return ['matched' => false, 'reason' => 'no job ref in subject'];
+        }
+        // sales@bhdoman.com is copied on every quotation we send, so our own
+        // outgoing mail is sitting in this mailbox carrying the same job ref and
+        // a PDF. Without this guard the poller would file BHD's own quotation as
+        // MHD's purchase order.
+        if (self::isOwnSender((string)($message['from'] ?? ''))) {
+            return ['matched' => false, 'ref' => $ref, 'reason' => 'sent by us'];
         }
         $job = CardJob::findByRef($ref);
         if (!$job) {

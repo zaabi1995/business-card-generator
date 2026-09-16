@@ -33,6 +33,12 @@ t('eleven digits is not a PO',  PoInbox::extractPoNumber('ref 41910002581')     
 t('a phone number is not a PO', PoInbox::extractPoNumber('call 96871557505')     === null);
 
 // ingest() refuses everything it cannot prove, and says why.
+t('our own outgoing copy is refused',
+  (PoInbox::ingest(['subject' => '[MHD-A1B2C3] Quotation',
+                    'from' => 'BHD Printing <sales@bhdoman.com>'])['reason'] ?? '') === 'sent by us');
+t('a real customer sender is not refused as ours',
+  PoInbox::isOwnSender('Devanand V <devanand.v@mhd.co.om>') === false);
+
 t('no ref is refused',
   (PoInbox::ingest(['subject' => 'RE: business cards'])['reason'] ?? '') === 'no job ref in subject');
 t('an unknown ref is refused',
