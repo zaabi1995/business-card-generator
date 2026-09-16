@@ -472,6 +472,22 @@ require_once INCLUDES_DIR . '/JsonLd.php';
         if (is_file($logoFsPath)) {
             $ld = @getimagesize($logoFsPath);
             if ($ld && !empty($ld[0]) && !empty($ld[1])) { $logoW = (int)$ld[0]; $logoH = (int)$ld[1]; }
+            // getimagesize() returns false for SVG, which would leave the
+            // reserved box at aspect-ratio:auto and shift the page on load.
+            // Read the ratio off the viewBox (or width/height) instead.
+            if (!$logoW && strtolower((string)pathinfo($logoFsPath, PATHINFO_EXTENSION)) === 'svg') {
+                $head = (string)@file_get_contents($logoFsPath, false, null, 0, 2048);
+                if (preg_match('/viewBox\s*=\s*"\s*[\d.eE+-]+[,\s]+[\d.eE+-]+[,\s]+([\d.eE+-]+)[,\s]+([\d.eE+-]+)/', $head, $m)
+                    || preg_match('/\bwidth\s*=\s*"([\d.]+)(?:px)?"[^>]*?\bheight\s*=\s*"([\d.]+)(?:px)?"/', $head, $m)) {
+                    $vw = (float)$m[1]; $vh = (float)$m[2];
+                    if ($vw > 0 && $vh > 0) {
+                        // Scaled to whole px so the ratio survives the CSS var
+                        // and the width/height attributes stay integers.
+                        $logoW = (int)round($vw * 100);
+                        $logoH = (int)round($vh * 100);
+                    }
+                }
+            }
         }
     }
     // Optional per-tenant cap for the header logo. Clamped to the container's
@@ -720,6 +736,13 @@ $switchThirdUrl = ($thirdCode !== '' && $thirdLabel !== '')
             aspect-ratio: var(--logo-ratio, auto);
             object-fit: contain;
             border-radius: 8px;
+        }
+        /* A single-ink dark logo disappears on the dark page. Opt in per tenant
+           (company_themes.logo_dark_invert): brightness(0) flattens the art to
+           black, invert(1) takes it to pure white, which is exact for monochrome
+           line art and wrong for a colour logo, hence opt-in. */
+        body.force-dark .company-logo.logo-invert-dark img {
+            filter: brightness(0) invert(1);
         }
 
         /* Motion tokens: stronger than the built-in CSS easings, which lack punch. */
@@ -1603,7 +1626,7 @@ $switchThirdUrl = ($thirdCode !== '' && $thirdLabel !== '')
           if ($logoW && $logoH) { $__logoVars[] = "--logo-ratio: {$logoW} / {$logoH}"; }
           if (!empty($logoMaxPx)) { $__logoVars[] = "--logo-max: {$logoMaxPx}px"; }
         ?>
-        <div class="company-logo"<?php if ($__logoVars): ?> style="<?php echo htmlspecialchars(implode('; ', $__logoVars) . ';'); ?>"<?php endif; ?>>
+        <div class="company-logo<?php echo !empty($theme['logo_dark_invert']) ? ' logo-invert-dark' : ''; ?>"<?php if ($__logoVars): ?> style="<?php echo htmlspecialchars(implode('; ', $__logoVars) . ';'); ?>"<?php endif; ?>>
             <img src="<?php echo htmlspecialchars($logoPath); ?>" alt="<?php echo htmlspecialchars($companyName); ?>"
                  <?php if ($logoW && $logoH): ?>width="<?php echo $logoW; ?>" height="<?php echo $logoH; ?>"<?php endif; ?>
                  loading="lazy" decoding="async" fetchpriority="low">
