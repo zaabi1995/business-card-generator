@@ -35,6 +35,8 @@ return [
     'quantity_label'    => 'Quantity',
     'quantity_1'        => '1 set (standard)',
     'quantity_n'        => ':n pcs',
+    'routes_to'         => 'This goes to :division, :email, for approval.',
+    'routes_to_cc'      => 'This goes to :division, :email, for approval. :head is copied.',
     'quantity_200'      => '200 pcs (standard)',
     'quantity_hint'     => 'Choose how many cards you need printed',
 

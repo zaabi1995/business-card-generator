@@ -35,6 +35,8 @@ return [
     'quantity_label'    => 'الكمية',
     'quantity_1'        => 'مجموعة واحدة (قياسية)',
     'quantity_n'        => ':n بطاقة',
+    'routes_to'         => 'يُرسل هذا الطلب إلى :division، :email، للموافقة.',
+    'routes_to_cc'      => 'يُرسل هذا الطلب إلى :division، :email، للموافقة. نسخة إلى :head.',
     'quantity_200'      => '٢٠٠ بطاقة (قياسي)',
     'quantity_hint'     => 'اختر عدد البطاقات المطلوب طباعتها',
 

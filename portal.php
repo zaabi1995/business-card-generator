@@ -10,6 +10,8 @@ require_once __DIR__ . '/config.php';
 require_once INCLUDES_DIR . '/Mailer.php';
 require_once INCLUDES_DIR . '/TenantHost.php';
 require_once INCLUDES_DIR . '/AdminApprovalToken.php';
+require_once INCLUDES_DIR . '/CardPrice.php';
+require_once INCLUDES_DIR . '/CardJob.php';
 
 // Get company slug and optional department slug from URL. When the
 // request lands on a tenant subdomain (ohb.cardify.om/portal), pull
@@ -349,7 +351,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['portal_passcode'])) 
     $requestType = $_POST['request_type'] ?? 'new';
     $requestNotes = trim($_POST['request_notes'] ?? '');
     $defaultQty = (int)($company['default_order_qty'] ?? 200);
-    $quantityRequested = max(1, (int)($_POST['quantity_requested'] ?? $defaultQty));
+    // Only the standard lots are self-service. Anything else is quoted by hand,
+    // so an off-menu value falls back rather than producing a price we never set.
+    $quantityRequested = (int)($_POST['quantity_requested'] ?? $defaultQty);
+    if (!CardPrice::isStandardQuantity($quantityRequested)) {
+        $quantityRequested = CardPrice::DEFAULT_QTY;
+    }
     
     // Check if email already exists as employee - determine request type
     $existingEmployee = null;
@@ -1440,7 +1447,14 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                     <?php if (empty($dept['slug'])) continue; ?>
                     <a href="<?= htmlspecialchars(getTenantUrl($companySlug, '/portal/' . $dept['slug']), ENT_QUOTES, 'UTF-8') ?>"
                        class="group flex items-center justify-between gap-3 bg-white border border-gray-200 rounded-xl px-5 py-4 hover:border-blue-400 hover:shadow-sm transition-all">
-                        <span class="font-semibold text-gray-900"><?= htmlspecialchars($dept['name']) ?></span>
+                        <span class="min-w-0">
+                            <span class="block font-semibold text-gray-900"><?= htmlspecialchars($dept['name']) ?></span>
+                            <?php if (!empty($dept['responsible_email'])): ?>
+                            <!-- Say where the request lands before the choice is made, so
+                                 nobody has to ask who is holding up their card. -->
+                            <span class="block text-xs text-gray-500 mt-0.5 truncate"><?= htmlspecialchars($dept['responsible_email']) ?></span>
+                            <?php endif; ?>
+                        </span>
                         <i class="fa-solid fa-arrow-right text-gray-300 group-hover:text-blue-500 transition-colors"></i>
                     </a>
                     <?php endforeach; ?>
@@ -1495,6 +1509,17 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                             <p><?= htmlspecialchars(t('cardportal.request_form_sub')) ?></p>
                             <?php if ($companyDomain): ?>
                             <p class="issue-domain"><i class="fa-solid fa-shield-halved"></i><?= htmlspecialchars(t('cardportal.domain_restricted', ['domain' => $companyDomain])) ?></p>
+                            <?php endif; ?>
+                            <?php if (!empty($selectedDepartment['responsible_email'])): ?>
+                            <!-- Who receives this request, named on the form itself. -->
+                            <p class="issue-domain"><i class="fa-solid fa-paper-plane"></i><?= htmlspecialchars(t(
+                                empty($selectedDepartment['head_email']) ? 'portal.routes_to' : 'portal.routes_to_cc',
+                                [
+                                    'division' => $selectedDepartment['name'],
+                                    'email'    => $selectedDepartment['responsible_email'],
+                                    'head'     => $selectedDepartment['head_email'] ?? '',
+                                ]
+                            )) ?></p>
                             <?php endif; ?>
                         </div>
 
@@ -1579,10 +1604,14 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                             <?= htmlspecialchars(t('portal.quantity_label')) ?>
                         </label>
                         <select name="quantity_requested" id="quantity_requested" class="form-input">
-                            <option value="100"><?= htmlspecialchars(str_replace(':n', '100', t('portal.quantity_n'))) ?></option>
-                            <option value="200" selected><?= htmlspecialchars(t('portal.quantity_200')) ?></option>
-                            <option value="500"><?= htmlspecialchars(str_replace(':n', '500', t('portal.quantity_n'))) ?></option>
-                            <option value="1000"><?= htmlspecialchars(str_replace(':n', '1000', t('portal.quantity_n'))) ?></option>
+                            <?php // The standard lots BHD actually bills. 500 and 1000 were
+                                  // offered but never ordered, and they price differently. ?>
+                            <?php foreach (CardPrice::QUANTITIES as $__q): ?>
+                            <option value="<?= (int)$__q ?>"<?= $__q === CardPrice::DEFAULT_QTY ? ' selected' : '' ?>><?=
+                                htmlspecialchars($__q === CardPrice::DEFAULT_QTY
+                                    ? t('portal.quantity_200')
+                                    : str_replace(':n', (string)$__q, t('portal.quantity_n'))) ?></option>
+                            <?php endforeach; ?>
                         </select>
                         <p class="mt-1 text-xs text-gray-500"><?= htmlspecialchars(t('portal.quantity_hint')) ?></p>
                     </div>
