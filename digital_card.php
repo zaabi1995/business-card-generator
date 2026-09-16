@@ -459,6 +459,18 @@ require_once INCLUDES_DIR . '/JsonLd.php';
     //   'photo' = always the photo-led layout (initials fallback if no photo)
     // When photo-led, the printed card is still reachable behind a small
     // "View business card" reveal so it is never lost.
+    // Same reason as the card and the photo: reserve the box, do not let the
+    // brand mark race the page's own text. Tenant logos are uploaded at
+    // whatever size the client had (the largest on file is a 98KB PNG drawn at
+    // 23px tall), so this one is measured too.
+    $logoW = 0; $logoH = 0;
+    if (!empty($logoPath)) {
+        $logoFsPath = __DIR__ . (parse_url($logoPath, PHP_URL_PATH) ?: '');
+        if (is_file($logoFsPath)) {
+            $ld = @getimagesize($logoFsPath);
+            if ($ld && !empty($ld[0]) && !empty($ld[1])) { $logoW = (int)$ld[0]; $logoH = (int)$ld[1]; }
+        }
+    }
     $photoUrl = !empty($employee['photo']) ? cardifyAssetUrl($employee['photo']) : '';
     if ($photoUrl !== '') {
         $photoFsPath = __DIR__ . (parse_url($photoUrl, PHP_URL_PATH) ?: '');
@@ -676,8 +688,14 @@ $switchThirdUrl = ($thirdCode !== '' && $thirdLabel !== '')
             margin-bottom: 10px;
         }
         .company-logo img {
+            /* width/height on the tag give the intrinsic ratio; these cap the
+               drawn size. aspect-ratio keeps the reserved box correct while the
+               file is still in flight, so nothing under the logo moves. */
             max-width: 96px;
+            width: auto;
             height: auto;
+            aspect-ratio: var(--logo-ratio, auto);
+            object-fit: contain;
             border-radius: 8px;
         }
 
@@ -1550,8 +1568,10 @@ $switchThirdUrl = ($thirdCode !== '' && $thirdLabel !== '')
     <div class="page-container">
         <!-- Company Logo -->
         <?php if ($logoPath): ?>
-        <div class="company-logo">
-            <img src="<?php echo htmlspecialchars($logoPath); ?>" alt="<?php echo htmlspecialchars($companyName); ?>">
+        <div class="company-logo"<?php if ($logoW && $logoH): ?> style="--logo-ratio: <?php echo $logoW; ?> / <?php echo $logoH; ?>;"<?php endif; ?>>
+            <img src="<?php echo htmlspecialchars($logoPath); ?>" alt="<?php echo htmlspecialchars($companyName); ?>"
+                 <?php if ($logoW && $logoH): ?>width="<?php echo $logoW; ?>" height="<?php echo $logoH; ?>"<?php endif; ?>
+                 loading="lazy" decoding="async" fetchpriority="low">
         </div>
         <?php endif; ?>
 
