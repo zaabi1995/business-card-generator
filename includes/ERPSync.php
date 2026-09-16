@@ -421,6 +421,61 @@ class ERPSync {
         return $path;
     }
 
+    /**
+     * Put a picture on a quote line.
+     *
+     * The ERP owns this: PATCH /api/quote/item-image/<quoteId>/<line> converts
+     * the image to WebP, stores it, and propagates it to the invoice, the sales
+     * order, the delivery note and the manufacturing order. Quote.pug and
+     * Invoice.pug already render it as a 36 x 36 avatar beside the line, so
+     * nothing has to change on the ERP side.
+     *
+     * @return array ['success'=>bool,'message'=>string]
+     */
+    public static function setQuoteItemImage(string $quoteId, string $imagePath, int $line = 0): array
+    {
+        if (!preg_match('/^[a-f0-9]{24}$/i', $quoteId) || !is_file($imagePath)) {
+            return ['success' => false, 'message' => 'bad quote id or missing image'];
+        }
+        $settings = self::getSettings();
+        if (empty($settings['erp_api_url']) || empty($settings['erp_api_token'])) {
+            return ['success' => false, 'message' => 'ERP not configured'];
+        }
+        $bytes = @file_get_contents($imagePath);
+        if ($bytes === false || $bytes === '') {
+            return ['success' => false, 'message' => 'cannot read image'];
+        }
+        $mime = (new finfo(FILEINFO_MIME_TYPE))->buffer($bytes) ?: 'image/png';
+
+        $url = rtrim($settings['erp_api_url'], '/')
+             . '/api/quote/item-image/' . $quoteId . '/' . max(0, $line);
+        $ch  = curl_init($url);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_CUSTOMREQUEST  => 'PATCH',
+            CURLOPT_POSTFIELDS     => json_encode([
+                'image' => 'data:' . $mime . ';base64,' . base64_encode($bytes),
+            ]),
+            CURLOPT_HTTPHEADER     => [
+                'Content-Type: application/json',
+                'Authorization: Bearer ' . $settings['erp_api_token'],
+            ],
+            CURLOPT_TIMEOUT        => 60,
+            CURLOPT_SSL_VERIFYPEER => true,
+        ]);
+        $body = curl_exec($ch);
+        $code = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $err  = curl_error($ch);
+        curl_close($ch);
+
+        if ($err || $code < 200 || $code >= 300) {
+            $msg = $err ?: (json_decode((string)$body, true)['message'] ?? "HTTP {$code}");
+            error_log("ERPSync::setQuoteItemImage {$quoteId}: {$msg}");
+            return ['success' => false, 'message' => $msg];
+        }
+        return ['success' => true, 'message' => 'image set'];
+    }
+
     public static function createQuote(int $orderId): array
     {
         if (!self::isEnabled()) {

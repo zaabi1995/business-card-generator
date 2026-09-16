@@ -243,6 +243,20 @@ if ($r['success'] && $r['employee_id']) {
 
             $quote = ERPSync::isEnabled() ? ERPSync::createQuote($orderId) : ['success' => false, 'message' => 'erp disabled'];
             if (!empty($quote['success'])) {
+                // Ali, 16 Sep 2026: show the card on the quotation. The ERP
+                // propagates the picture to the invoice, the sales order, the
+                // delivery note and the manufacturing order on its own.
+                try {
+                    require_once INCLUDES_DIR . '/CardThumb.php';
+                    $qid   = (string)($quote['data']['quoteId'] ?? '');
+                    $thumb = $qid !== '' ? CardThumb::forRequest($request + ['employee_id' => $r['employee_id']]) : null;
+                    if ($thumb) {
+                        ERPSync::setQuoteItemImage($qid, $thumb);
+                        @unlink($thumb);
+                    }
+                } catch (Throwable $e) {
+                    error_log('[mhd quote image] ' . $e->getMessage());
+                }
                 CardJob::transition($request['id'], 'quoted', [
                     'actor' => 'system', 'order' => $orderId,
                     'quote' => $quote['data']['quoteId'] ?? null,

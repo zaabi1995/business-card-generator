@@ -64,6 +64,33 @@ class CardJob
     }
 
     /**
+     * Record something that happened to a job without moving it on: a signed
+     * delivery note, a document re-sent, a note from the console. The event is
+     * written with to_state = 'note:<kind>', so a reader filtering on STATES
+     * sees only real transitions and the history still carries the proof.
+     */
+    public static function note(string $requestId, string $kind, array $evidence = []): bool
+    {
+        $db  = Database::getInstance();
+        $row = $db->fetchOne(
+            "SELECT id, company_id, " . self::COL . " AS state FROM card_requests WHERE id = :id",
+            ['id' => $requestId]);
+        if (!$row) {
+            return false;
+        }
+        $db->insert('card_request_events', [
+            'id'         => function_exists('generateUUID') ? generateUUID() : bin2hex(random_bytes(16)),
+            'request_id' => $requestId,
+            'company_id' => $row['company_id'],
+            'from_state' => $row['state'],
+            'to_state'   => 'note:' . $kind,
+            'actor'      => $evidence['actor'] ?? null,
+            'evidence'   => json_encode($evidence, JSON_UNESCAPED_UNICODE),
+        ]);
+        return true;
+    }
+
+    /**
      * Move a job forward. Returns false and writes nothing when the move is not
      * allowed, or when the row has already moved on because another worker won.
      */
