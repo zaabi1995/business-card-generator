@@ -326,11 +326,19 @@ require_once INCLUDES_DIR . '/JsonLd.php';
     // image letterboxes and the card shows blank bands above and below it. So measure
     // the real image and let it size its own box. Any card shape then fits, 90x50,
     // 85x55, square, or a custom die, with no per-tenant configuration.
+    // Intrinsic pixel sizes, emitted as width/height on the <img> so the browser
+    // reserves the exact box before the file arrives. Without them a lazily
+    // loaded card image has zero height until it decodes and everything below
+    // it jumps. aspect-ratio alone does not help the back face, which is
+    // absolutely positioned.
+    $frontW = 0; $frontH = 0; $backW = 0; $backH = 0; $photoW = 0; $photoH = 0;
     if ($frontImage !== '') {
         $frontFsPath = __DIR__ . (parse_url($frontImage, PHP_URL_PATH) ?: '');
         if (is_file($frontFsPath)) {
             $dim = @getimagesize($frontFsPath);
             if ($dim && !empty($dim[0]) && !empty($dim[1])) {
+                $frontW = (int)$dim[0];
+                $frontH = (int)$dim[1];
                 $measuredAspect = $dim[0] / $dim[1];
                 // Clamp so a corrupt or mis-generated file cannot wreck the layout.
                 if ($measuredAspect >= 0.5 && $measuredAspect <= 3.0) {
@@ -345,6 +353,13 @@ require_once INCLUDES_DIR . '/JsonLd.php';
             // alpha channel, drop the rectangle and let the image cast its own
             // silhouette shadow instead. Opaque cards are untouched.
             $cardHasAlpha = imageHasAlphaChannel($frontFsPath);
+        }
+    }
+    if ($backImage !== '') {
+        $backFsPath = __DIR__ . (parse_url($backImage, PHP_URL_PATH) ?: '');
+        if (is_file($backFsPath)) {
+            $bd = @getimagesize($backFsPath);
+            if ($bd && !empty($bd[0]) && !empty($bd[1])) { $backW = (int)$bd[0]; $backH = (int)$bd[1]; }
         }
     }
 
@@ -433,7 +448,7 @@ require_once INCLUDES_DIR . '/JsonLd.php';
     // Social links are rendered in the hero (above the fold), so they must
     // load before the early flush. Every OTHER section-data query has been
     // moved past the flush boundary (search "DEFERRED-LOAD" below) so the
-    // hero + Save/Download/Share buttons can paint before those queries run.
+    // hero + Save Contact button can paint before those queries run.
     $socialLinks = EmployeeSocials::loadForEmployee($employee['id']);
 
     // ---- Profile-photo (vCard) layout -------------------------------------
@@ -445,6 +460,13 @@ require_once INCLUDES_DIR . '/JsonLd.php';
     // When photo-led, the printed card is still reachable behind a small
     // "View business card" reveal so it is never lost.
     $photoUrl = !empty($employee['photo']) ? cardifyAssetUrl($employee['photo']) : '';
+    if ($photoUrl !== '') {
+        $photoFsPath = __DIR__ . (parse_url($photoUrl, PHP_URL_PATH) ?: '');
+        if (is_file($photoFsPath)) {
+            $pd = @getimagesize($photoFsPath);
+            if ($pd && !empty($pd[0]) && !empty($pd[1])) { $photoW = (int)$pd[0]; $photoH = (int)$pd[1]; }
+        }
+    }
     $cardLayout = strtolower(trim((string)($employee['card_page_layout'] ?? 'auto')));
     if (!in_array($cardLayout, ['auto', 'card', 'photo'], true)) $cardLayout = 'auto';
     $leadWithPhoto = ($cardLayout === 'photo') || ($cardLayout === 'auto' && $photoUrl !== '');
@@ -508,7 +530,7 @@ function renderBranded404($company, $theme) {
        through ui-header.php, so it loads the module itself: the on* attributes
        it used to carry are inline script, and a CSP without 'unsafe-inline'
        kills every one. */ ?>
-    <script src="/assets/js/cardify-actions.js?v=<?php echo @filemtime(__DIR__ . '/assets/js/cardify-actions.js') ?: time(); ?>"></script>
+    <script async src="/assets/js/cardify-actions.js?v=<?php echo @filemtime(__DIR__ . '/assets/js/cardify-actions.js') ?: time(); ?>"></script>
 </head>
 <body>
     <div class="container">
@@ -683,7 +705,41 @@ $switchThirdUrl = ($thirdCode !== '' && $thirdLabel !== '')
             height: 100%;
             object-fit: contain;
             display: block;
+            /* Fade in when the file lands. The box is already the right size
+               (aspect-ratio on .card-flip-inner + width/height on the <img>),
+               so nothing below it moves. */
+            opacity: 0;
+            transition: opacity 0.28s var(--ease-out);
         }
+        .card-face img.is-loaded { opacity: 1; }
+
+        /* ---- Skeletons -------------------------------------------------
+           The text of this page is server-rendered and paints first; the card
+           artwork and the profile photo are the only parts that wait on a
+           network round trip. A shimmering placeholder holds their exact box
+           so the page reads as complete from the first frame and nothing
+           reflows when the image arrives. Purely decorative, so it is removed
+           for anyone who asked for reduced motion (see below). */
+        .img-skeleton {
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            background: <?php echo $isDarkPage ? 'rgba(255,255,255,0.06)' : '#eceff3'; ?>;
+            overflow: hidden;
+        }
+        .img-skeleton::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            transform: translateX(-100%);
+            background: linear-gradient(90deg, transparent, <?php echo $isDarkPage ? 'rgba(255,255,255,0.09)' : 'rgba(255,255,255,0.75)'; ?>, transparent);
+            animation: cardify-shimmer 1.35s infinite;
+        }
+        @keyframes cardify-shimmer { 100% { transform: translateX(100%); } }
+        /* Once the image is in, the placeholder goes. display:none, not opacity,
+           so the shimmer animation stops costing a repaint on a phone. */
+        .is-loaded ~ .img-skeleton,
+        .card-face img.is-loaded + .img-skeleton { display: none; }
         .card-back-face {
             transform: rotateY(180deg);
         }
@@ -702,6 +758,8 @@ $switchThirdUrl = ($thirdCode !== '' && $thirdLabel !== '')
         /* Reduced motion: keep the flip + opacity feedback, drop the movement. */
         @media (prefers-reduced-motion: reduce) {
             .card-flip-inner { transition-duration: 0.01ms; }
+            .img-skeleton::after { animation: none; }
+            .card-face img, .avatar-photo { transition: none; opacity: 1; }
             .action-btn:active,
             .bottom-btn:active,
             .wallet-buttons .wallet-btn:active,
@@ -709,7 +767,6 @@ $switchThirdUrl = ($thirdCode !== '' && $thirdLabel !== '')
             @media (hover: hover) and (pointer: fine) {
                 .social-link:hover { transform: none; }
             }
-            .copy-toast { transition-duration: 0.01ms; }
         }
         .tap-hint {
             text-align: center;
@@ -725,6 +782,16 @@ $switchThirdUrl = ($thirdCode !== '' && $thirdLabel !== '')
             justify-content: center;
             margin: 4px auto 10px;
         }
+        /* Positioning context for the round skeleton, and a fixed box so the
+           name below never moves while the photo downloads. */
+        .avatar-frame {
+            position: relative;
+            width: 124px;
+            height: 124px;
+            border-radius: 50%;
+        }
+        .avatar-frame .avatar-photo { position: absolute; inset: 0; }
+        .avatar-frame .img-skeleton { border-radius: 50%; }
         .avatar-photo {
             width: 124px;
             height: 124px;
@@ -734,6 +801,8 @@ $switchThirdUrl = ($thirdCode !== '' && $thirdLabel !== '')
             box-shadow: <?php echo $isDarkPage ? '0 6px 24px rgba(0,0,0,0.4)' : '0 4px 20px rgba(0,0,0,0.15)'; ?>;
             background: <?php echo $isDarkPage ? '#1a1a1a' : '#f0f0f0'; ?>;
         }
+        img.avatar-photo { opacity: 0; transition: opacity 0.28s var(--ease-out); }
+        img.avatar-photo.is-loaded { opacity: 1; }
         .avatar-initials {
             display: flex;
             align-items: center;
@@ -821,6 +890,13 @@ $switchThirdUrl = ($thirdCode !== '' && $thirdLabel !== '')
             transition: transform 0.16s var(--ease-out), opacity 0.16s var(--ease-out);
         }
         .action-btn:active { opacity: 0.85; transform: scale(0.97); }
+        /* Icon + label. The icon face arrives with the async Font Awesome sheet,
+           after the label has already painted. It cannot shift the layout: the
+           button height is fixed by min-height and the <i> reserves its own
+           width, so the glyph fades into a slot that is already there. */
+        .action-btn i { font-size: 13px; width: 1em; flex-shrink: 0; }
+        .action-btn span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .action-btn { gap: 7px; }
         .btn-call { background: <?php echo htmlspecialchars($accentColor); ?>; }
         /* WhatsApp brand green with white text measures 1.98:1, far under the
            4.5:1 AA needs at 13px/600 (this does not qualify as large text).
@@ -944,27 +1020,33 @@ $switchThirdUrl = ($thirdCode !== '' && $thirdLabel !== '')
         .social-link:hover, .social-link:focus-visible { box-shadow: 0 4px 12px rgba(0,0,0,.3); }
         <?php endif; ?>
 
-        /* Bottom Buttons */
+        /* Save Contact, the single primary action, full width of the rail. */
         .bottom-buttons {
             display: flex;
-            gap: 10px;
             max-width: 400px;
             margin: 10px auto 0;
         }
         .bottom-btn {
             flex: 1;
-            padding: 10px;
-            border-radius: 10px;
+            /* Taller than the Call / WhatsApp / Email row on purpose. This is the
+               one thing a person scanning a card is here to do, and a 52px target
+               clears Apple's 44pt minimum with room to spare on a moving thumb. */
+            min-height: 52px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 9px;
+            padding: 12px 16px;
+            border-radius: 12px;
             text-align: center;
-            font-size: 14px;
-            font-weight: 600;
+            font-size: 15px;
+            font-weight: 700;
             /* <button> elements don't inherit body's font-family in most
                browsers; they fall back to a UA-specific font. In Arabic this
                showed the Share label in a different face than Save/Call/etc.
                Forcing inherit keeps the whole row in Noto Sans Arabic. */
             font-family: inherit;
             text-decoration: none;
-            display: block;
             cursor: pointer;
             border: none;
             transition: opacity 0.2s;
@@ -974,20 +1056,15 @@ $switchThirdUrl = ($thirdCode !== '' && $thirdLabel !== '')
         button { font-family: inherit; }
         .bottom-btn { transition: transform 0.16s var(--ease-out), opacity 0.16s var(--ease-out); }
         .bottom-btn:active { opacity: 0.85; transform: scale(0.97); }
+        .bottom-btn i { font-size: 15px; flex-shrink: 0; }
         .btn-save {
             background: <?php echo htmlspecialchars($accentColor); ?>;
             color: white;
-        }
-        .btn-share {
-            <?php if ($isDarkPage): ?>
-            background: rgba(255,255,255,0.08);
-            color: #ddd;
-            border: 1px solid rgba(255,255,255,0.12);
-            <?php else: ?>
-            background: white;
-            color: #333;
-            border: 1px solid #ddd;
-            <?php endif; ?>
+<?php /* 8-digit hex only when the brand colour really is 6-digit hex, an
+         "#abc" or a named colour would make "#abc33" and kill the rule. */ ?>
+<?php if (preg_match('/^#[0-9a-fA-F]{6}$/', (string)$accentColor)): ?>
+            box-shadow: 0 2px 10px <?php echo htmlspecialchars($accentColor); ?>33;
+<?php endif; ?>
         }
         /* The app hand-off. Peer of the Wallet row, not of the utility row:
            full width, accent-tinted rather than another neutral, so it reads as
@@ -1052,17 +1129,6 @@ $switchThirdUrl = ($thirdCode !== '' && $thirdLabel !== '')
         }
         .app-open-btn svg { flex-shrink: 0; }
 
-        .btn-pdf {
-            <?php if ($isDarkPage): ?>
-            background: rgba(255,255,255,0.12);
-            color: #fff;
-            border: 1px solid rgba(255,255,255,0.2);
-            <?php else: ?>
-            background: #f3f4f6;
-            color: #111;
-            border: 1px solid #d1d5db;
-            <?php endif; ?>
-        }
         /* Wallet buttons */
         .wallet-buttons {
             display: flex;
@@ -1112,27 +1178,6 @@ $switchThirdUrl = ($thirdCode !== '' && $thirdLabel !== '')
             color: <?php echo htmlspecialchars($accentColor); ?>;
             text-decoration: none;
             font-weight: 600;
-        }
-
-        /* Copy toast */
-        .copy-toast {
-            position: fixed;
-            bottom: 24px;
-            left: 50%;
-            transform: translateX(-50%) translateY(20px);
-            background: rgba(0,0,0,0.85);
-            color: white;
-            padding: 10px 20px;
-            border-radius: 8px;
-            font-size: 13px;
-            opacity: 0;
-            transition: transform 0.3s var(--ease-out), opacity 0.3s var(--ease-out);
-            pointer-events: none;
-            z-index: 100;
-        }
-        .copy-toast.show {
-            opacity: 1;
-            transform: translateX(-50%) translateY(0);
         }
 
         /* Public Card Sections */
@@ -1422,11 +1467,25 @@ $switchThirdUrl = ($thirdCode !== '' && $thirdLabel !== '')
         .dcd-contact { margin-top: 16px; display: flex; flex-direction: column; gap: 5px; font-size: 13.5px; opacity: .92; }
         .dcd-contact i { width: 15px; opacity: .8; font-size: 12px; }
     </style>
+    <?php /* Without JS the fade-in never fires, so the hero images would stay
+       at opacity 0. Put them back and drop the placeholders. */ ?>
+    <noscript><style>
+        .card-face img, img.avatar-photo { opacity: 1 !important; }
+        .img-skeleton { display: none !important; }
+    </style></noscript>
     <?php /* Delegated behaviour for this page. digital_card.php does not go
        through ui-header.php, so it loads the module itself: the on* attributes
        it used to carry are inline script, and a CSP without 'unsafe-inline'
-       kills every one. */ ?>
-    <script src="/assets/js/cardify-actions.js?v=<?php echo @filemtime(__DIR__ . '/assets/js/cardify-actions.js') ?: time(); ?>"></script>
+       kills every one.
+
+       async, not a plain <script src>: parsed synchronously in <head> it held
+       the FIRST PAINT of a scan-landing page behind a JS download on a phone
+       connection. Nothing above the fold depends on it now, Call, WhatsApp,
+       Email and Save Contact are plain <a href>, so the hero is usable while
+       the file is still in flight. The module self-runs scanAsyncCss()
+       immediately AND again on DOMContentLoaded, and every other behaviour is
+       delegated from document, so arriving late costs nothing. */ ?>
+    <script async src="/assets/js/cardify-actions.js?v=<?php echo @filemtime(__DIR__ . '/assets/js/cardify-actions.js') ?: time(); ?>"></script>
 </head>
 <body class="<?php echo $isDarkPage ? 'force-dark' : 'force-light'; echo !empty($demoMeta) ? ' is-demo' : ''; ?>">
     <?php if (!empty($isDemoUnverified)): $__demoAr = (($locale ?? 'en') === 'ar'); ?>
@@ -1472,7 +1531,18 @@ $switchThirdUrl = ($thirdCode !== '' && $thirdLabel !== '')
         <!-- Profile photo hero (vCard layout) -->
         <div class="avatar-hero">
             <?php if ($photoUrl !== ''): ?>
-            <img class="avatar-photo" src="<?php echo htmlspecialchars($photoUrl); ?>" alt="<?php echo htmlspecialchars($name); ?>" loading="eager">
+            <?php /* The photo is the only above-the-fold thing that waits on the
+                     network. It is deliberately NOT eager any more: the name,
+                     title, buttons and contact rows are server-rendered text and
+                     must paint without queuing behind an image. The frame holds
+                     its exact 124px box and shimmers until the file lands, so
+                     the layout is final from the first frame. */ ?>
+            <span class="avatar-frame">
+                <img class="avatar-photo" src="<?php echo htmlspecialchars($photoUrl); ?>" alt="<?php echo htmlspecialchars($name); ?>"
+                     <?php if ($photoW && $photoH): ?>width="<?php echo $photoW; ?>" height="<?php echo $photoH; ?>"<?php endif; ?>
+                     loading="lazy" decoding="async" fetchpriority="low" data-cardify-img>
+                <span class="img-skeleton" aria-hidden="true"></span>
+            </span>
             <?php else: ?>
             <div class="avatar-photo avatar-initials" style="background: <?php echo htmlspecialchars($accentColor, ENT_QUOTES); ?>;"><?php echo $initials !== '' ? htmlspecialchars($initials) : '<i class="fa-solid fa-user"></i>'; ?></div>
             <?php endif; ?>
@@ -1496,12 +1566,25 @@ $switchThirdUrl = ($thirdCode !== '' && $thirdLabel !== '')
         <?php endif; ?>
         <div class="card-flip-container<?php echo $backImage ? '' : ' no-back'; ?><?php echo $cardHasAlpha ? ' die-cut' : ''; ?>" id="cardFlip"<?php echo $backImage ? ' role="button" tabindex="0" aria-label="' . htmlspecialchars(t('digitalcard.tap_to_flip'), ENT_QUOTES) . '"' : ''; ?>>
             <div class="card-flip-inner" id="cardInner" style="--card-aspect: <?php echo htmlspecialchars($cardAspectCss, ENT_QUOTES); ?>;">
+                <?php /* fetchpriority was high here, which put the card artwork
+                         ahead of the page's own text in the browser's queue on
+                         the exact connection where that hurts most. The box is
+                         fully reserved (aspect-ratio on .card-flip-inner plus
+                         the intrinsic width/height below), so the image can
+                         arrive whenever it arrives without moving anything, and
+                         a shimmer holds the space meanwhile. */ ?>
                 <div class="card-face">
-                    <img src="<?php echo htmlspecialchars($frontImage); ?>" alt="<?= htmlspecialchars(t('digitalcard.alt_card_front')) ?>" fetchpriority="high" decoding="async">
+                    <img src="<?php echo htmlspecialchars($frontImage); ?>" alt="<?= htmlspecialchars(t('digitalcard.alt_card_front')) ?>"
+                         <?php if ($frontW && $frontH): ?>width="<?php echo $frontW; ?>" height="<?php echo $frontH; ?>"<?php endif; ?>
+                         loading="lazy" decoding="async" fetchpriority="low" data-cardify-img>
+                    <span class="img-skeleton" aria-hidden="true"></span>
                 </div>
                 <?php if ($backImage): ?>
                 <div class="card-face card-back-face">
-                    <img src="<?php echo htmlspecialchars($backImage); ?>" alt="<?= htmlspecialchars(t('digitalcard.alt_card_back')) ?>" loading="lazy">
+                    <img src="<?php echo htmlspecialchars($backImage); ?>" alt="<?= htmlspecialchars(t('digitalcard.alt_card_back')) ?>"
+                         <?php if ($backW && $backH): ?>width="<?php echo $backW; ?>" height="<?php echo $backH; ?>"<?php endif; ?>
+                         loading="lazy" decoding="async" fetchpriority="low" data-cardify-img>
+                    <span class="img-skeleton" aria-hidden="true"></span>
                 </div>
                 <?php endif; ?>
             </div>
@@ -1556,15 +1639,15 @@ $switchThirdUrl = ($thirdCode !== '' && $thirdLabel !== '')
         <!-- Action Buttons -->
         <div class="action-buttons">
             <?php if (($mobile || $phone) && $showHeroAction('call')): ?>
-            <a href="<?php echo htmlspecialchars($cardClickUrl($mobile ? 'click_mobile' : 'click_phone', 'tel:' . ($mobile ?: $phone))); ?>" class="action-btn btn-call"><?= htmlspecialchars(t('digitalcard.btn_call')) ?></a>
+            <a href="<?php echo htmlspecialchars($cardClickUrl($mobile ? 'click_mobile' : 'click_phone', 'tel:' . ($mobile ?: $phone))); ?>" class="action-btn btn-call"><i class="fa-solid fa-phone" aria-hidden="true"></i><span><?= htmlspecialchars(t('digitalcard.btn_call')) ?></span></a>
             <?php endif; ?>
 
             <?php if ($waPhone && $showHeroAction('whatsapp')): ?>
-            <a href="<?php echo htmlspecialchars($cardClickUrl('click_whatsapp', 'https://api.whatsapp.com/send?phone=' . $waPhone)); ?>" class="action-btn btn-whatsapp" target="_blank" rel="noopener"><?= htmlspecialchars(t('digitalcard.btn_whatsapp')) ?></a>
+            <a href="<?php echo htmlspecialchars($cardClickUrl('click_whatsapp', 'https://api.whatsapp.com/send?phone=' . $waPhone)); ?>" class="action-btn btn-whatsapp" target="_blank" rel="noopener"><i class="fa-brands fa-whatsapp" aria-hidden="true"></i><span><?= htmlspecialchars(t('digitalcard.btn_whatsapp')) ?></span></a>
             <?php endif; ?>
 
             <?php if ($email && $showHeroAction('email')): ?>
-            <a href="<?php echo htmlspecialchars($cardClickUrl('click_email', 'mailto:' . $email)); ?>" class="action-btn btn-email"><?= htmlspecialchars(t('digitalcard.btn_email')) ?></a>
+            <a href="<?php echo htmlspecialchars($cardClickUrl('click_email', 'mailto:' . $email)); ?>" class="action-btn btn-email"><i class="fa-solid fa-envelope" aria-hidden="true"></i><span><?= htmlspecialchars(t('digitalcard.btn_email')) ?></span></a>
             <?php endif; ?>
         </div>
 
@@ -1640,17 +1723,25 @@ $switchThirdUrl = ($thirdCode !== '' && $thirdLabel !== '')
         </div>
         <?php endif; ?>
 
-        <!-- Save & Share -->
-        <?php $pdfUrl = '/card-pdf.php?i=' . urlencode($employee['id']); ?>
+        <?php /* Save Contact, on its own full-width row.
+
+           This row used to carry three buttons: Save Contact, Download PDF and
+           Share. Splitting a 400px rail three ways made the one action that
+           matters look like a third of the choice, and the other two were
+           answering questions nobody scanning a card asks. Download PDF handed
+           over a print artwork file, which is a production asset, not a
+           contact. Share duplicated the browser's own share control and, with
+           no navigator.share, silently degraded to a clipboard copy plus a
+           toast. Both are gone. Save Contact is now the single primary action
+           and fills the row. */ ?>
+        <?php if ($email): ?>
         <div class="bottom-buttons">
-            <?php if ($email): ?>
-            <a href="<?php echo htmlspecialchars($cardClickUrl('save_contact', $vcfUrl)); ?>" class="bottom-btn btn-save" download><?= htmlspecialchars(t('digitalcard.btn_save_contact')) ?></a>
-            <?php endif; ?>
-            <?php if (!$isPendingPreview && $frontImage): // PDF is the printed-card design; hide when there is no card (e.g. photo-led vCard) ?>
-            <a href="<?php echo htmlspecialchars($cardClickUrl('download_pdf', $pdfUrl)); ?>" class="bottom-btn btn-pdf" download><?= htmlspecialchars(t('digitalcard.btn_download_pdf')) ?></a>
-            <?php endif; ?>
-            <button class="bottom-btn btn-share" data-cardify-action="call" data-fn="shareCard"><?= htmlspecialchars(t('digitalcard.btn_share')) ?></button>
+            <a href="<?php echo htmlspecialchars($cardClickUrl('save_contact', $vcfUrl)); ?>" class="bottom-btn btn-save" download>
+                <i class="fa-solid fa-user-plus" aria-hidden="true"></i>
+                <span><?= htmlspecialchars(t('digitalcard.btn_save_contact')) ?></span>
+            </a>
         </div>
+        <?php endif; ?>
 
         <?php /* Its own row, not a fourth item in the utility row above.
                  Four buttons inside a 400px rail gave each ~90px, which is why
@@ -1676,12 +1767,43 @@ $switchThirdUrl = ($thirdCode !== '' && $thirdLabel !== '')
             </a>
         </div>
 
+        <?php /* Runs while the hero is still streaming, before the deferred
+                 section queries below. Tiny on purpose: the whole job is to
+                 swap a placeholder for an image the moment the file is in.
+                 An image already in cache reports complete synchronously and
+                 is revealed on this pass, with no flash of skeleton. */ ?>
+        <script<?= cspNonceAttr() ?>>
+        (function () {
+            function reveal(img) {
+                if (!img || img.dataset.cardifyRevealed) return;
+                img.dataset.cardifyRevealed = '1';
+                img.classList.add('is-loaded');
+            }
+            function bind() {
+                var imgs = document.querySelectorAll('img[data-cardify-img]');
+                for (var i = 0; i < imgs.length; i++) {
+                    (function (img) {
+                        // naturalWidth guards the case where complete is true
+                        // because the request FAILED, not because it finished.
+                        if (img.complete && img.naturalWidth > 0) { reveal(img); return; }
+                        img.addEventListener('load', function () { reveal(img); }, { once: true });
+                        // A broken file must not leave a shimmer running for
+                        // ever: reveal anyway so the alt text takes the box.
+                        img.addEventListener('error', function () { reveal(img); }, { once: true });
+                    })(imgs[i]);
+                }
+            }
+            bind();
+            document.addEventListener('DOMContentLoaded', bind);
+        })();
+        </script>
+
         <?php
         // ================================================================
         // EARLY FLUSH BOUNDARY
         // ================================================================
         // The hero (name, position, contact buttons, contact rows, social
-        // links, Save/Download/Share) is now on the wire. Push it to the
+        // links, Save Contact) is now on the wire. Push it to the
         // browser before we touch the DB for any below-the-fold section.
         // X-Accel-Buffering: no (sent at the top of this file) tells nginx
         // not to buffer; Cloudflare forwards streaming responses unchanged.
@@ -2338,7 +2460,6 @@ $switchThirdUrl = ($thirdCode !== '' && $thirdLabel !== '')
         <?php endif; ?>
     </div>
 
-    <div class="copy-toast" id="copyToast">Link copied!</div>
 
     <script<?= cspNonceAttr() ?>>
         // ---- Theme toggle (visitor override) ----
@@ -2408,52 +2529,6 @@ $switchThirdUrl = ($thirdCode !== '' && $thirdLabel !== '')
                     doFlip();
                 }
             });
-        }
-
-        // Share. Prefer the clean tenant-slug URL (e.g. adnan.cardify.om/jarwish9)
-        // over the long /card/{employee_id} variant the visitor may have landed
-        // on. Falls back to window.location.href when no clean URL is known.
-        const __shareUrl = <?php
-            $emailLocal = '';
-            if (!empty($email) && strpos($email, '@') !== false) {
-                $emailLocal = strtolower(substr($email, 0, strpos($email, '@')));
-                $emailLocal = preg_replace('/[^a-z0-9._-]/', '', $emailLocal);
-            }
-            $tenantSlug = $company['slug'] ?? '';
-            if ($tenantSlug && $emailLocal) {
-                echo JsonLd::value('https://' . $tenantSlug . '.cardify.om/' . $emailLocal);
-            } else {
-                echo 'window.location.href';
-            }
-        ?>;
-        function shareCard() {
-            const shareData = {
-                title: <?php echo JsonLd::value($name . ' - ' . $companyName); ?>,
-                text: <?php echo JsonLd::value($name . ' - ' . $position . ' at ' . $companyName); ?>,
-                url: __shareUrl
-            };
-
-            if (navigator.share) {
-                navigator.share(shareData).catch(() => {});
-            } else {
-                // Fallback: copy to clipboard
-                navigator.clipboard.writeText(__shareUrl).then(() => {
-                    const toast = document.getElementById('copyToast');
-                    toast.classList.add('show');
-                    setTimeout(() => toast.classList.remove('show'), 2000);
-                }).catch(() => {
-                    // Final fallback
-                    const input = document.createElement('input');
-                    input.value = __shareUrl;
-                    document.body.appendChild(input);
-                    input.select();
-                    document.execCommand('copy');
-                    document.body.removeChild(input);
-                    const toast = document.getElementById('copyToast');
-                    toast.classList.add('show');
-                    setTimeout(() => toast.classList.remove('show'), 2000);
-                });
-            }
         }
 
         // Star picker for testimonial form
