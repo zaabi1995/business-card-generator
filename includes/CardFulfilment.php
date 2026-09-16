@@ -83,9 +83,8 @@ class CardFulfilment
     /**
      * Render the card exactly as it will print and send it to production.
      *
-     * WhatsApp is where BHD's production team work, but the number is not
-     * configured yet and a phone number is never guessed, so this goes by email
-     * until mhd_production_whatsapp is set.
+     * By email, which is what Ali chose on 16 Sep 2026 when asked whether the
+     * artwork should reach production on WhatsApp instead.
      */
     public static function handToProduction(array $job, array $dept): array
     {
