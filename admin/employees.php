@@ -1193,7 +1193,10 @@ adminHeader(t('employees.page_title'), 'employees');
         .cf-inner { position:absolute; inset:0; transform-style:preserve-3d; transition:transform .6s cubic-bezier(.77,0,.175,1); }
         .cf-inner.cf-on { transform:rotateY(180deg); }
         .cf-face { position:absolute; inset:0; backface-visibility:hidden; -webkit-backface-visibility:hidden; display:flex; align-items:center; justify-content:center; }
-        .cf-face img { max-width:100%; max-height:100%; border-radius:.5rem; box-shadow:0 6px 18px -6px rgba(15,23,42,.35); }
+        /* drop-shadow, not box-shadow: a die-cut card (Mays is a hexagon) is a PNG
+           with transparent corners, and box-shadow would draw a rectangle around it.
+           On an opaque rectangular card the two render the same. */
+        .cf-face img { max-width:100%; max-height:100%; border-radius:.5rem; filter:drop-shadow(0 5px 9px rgba(15,23,42,.35)); }
         .cf-back { transform:rotateY(180deg); }
         @media (prefers-reduced-motion: reduce) { .cf-inner { transition:none; } }
         /* RTL: the built Tailwind has no logical-inset utilities, so flip the

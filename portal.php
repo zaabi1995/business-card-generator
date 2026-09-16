@@ -256,6 +256,17 @@ $formData = [
 $portalPhotoEnabled = !array_key_exists('portal_photo_enabled', $company)
     || (int)$company['portal_photo_enabled'] === 1;
 
+// A die-cut design (Mays prints a hexagon) has a transparent background outside
+// the cut. The live preview must not paint a white canvas or sit in a rounded
+// rectangle, or the card reads as "the shape printed on a rectangular card".
+// Detected from the artwork, so no per-tenant configuration.
+$portalDieCut = false;
+$frontBgProbe = $activeFrontTemplate['backgroundImage'] ?? '';
+if ($frontBgProbe !== '' && function_exists('imageHasAlphaChannel')) {
+    $probePath = __DIR__ . (parse_url($frontBgProbe, PHP_URL_PATH) ?: '');
+    $portalDieCut = imageHasAlphaChannel($probePath);
+}
+
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['portal_passcode'])) {
     if (!validateCSRFToken($_POST['csrf_token'] ?? '')) {
@@ -1021,7 +1032,16 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
     @keyframes livepulse{0%{box-shadow:0 0 0 0 rgba(0,155,193,.5)}70%{box-shadow:0 0 0 7px rgba(0,155,193,0)}100%{box-shadow:0 0 0 0 rgba(0,155,193,0)}}
     .issue-card-stack{display:flex;flex-direction:column;gap:12px}
     .issue-card-stack .canvas-preview-wrapper{border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow)}
+    /* Die-cut design: no rectangular frame. The canvas is transparent outside the
+       cut, so the shadow goes on the canvas and follows the real silhouette. */
+    .issue-card-stack.die-cut .canvas-preview-wrapper{border:0;border-radius:0;box-shadow:none;background:none;overflow:visible}
+    .issue-card-stack.die-cut .canvas-preview-wrapper .canvas-container,
+    .issue-card-stack.die-cut .canvas-preview-wrapper canvas{filter:drop-shadow(0 4px 14px rgba(15,23,42,.20))}
+    .issue-card-stack.die-cut #frontLoading,
+    .issue-card-stack.die-cut #backLoading{background:none}
     .issue-card-fallback{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff;box-shadow:var(--shadow)}
+    .issue-card-fallback.die-cut{border:0;border-radius:0;background:none;box-shadow:none;overflow:visible}
+    .issue-card-fallback.die-cut img{filter:drop-shadow(0 4px 14px rgba(15,23,42,.20))}
     .issue-card-fallback img{display:block;width:100%}
     .issue-card-note{margin-top:12px;font-size:12.5px;color:var(--ink-soft);display:flex;align-items:flex-start;gap:8px}
     .issue-card-note i{color:var(--brand-700);font-style:normal;margin-top:1px}
@@ -1421,7 +1441,7 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                     <aside class="issue-card-hold">
                         <div class="issue-card-label"><span id="previewTitle"><?= htmlspecialchars(t('portal.issue_card_label')) ?></span><span class="live-dot" aria-hidden="true"></span></div>
                         <?php if ($showPreview && ($activeFrontTemplate || $activeBackTemplate)): ?>
-                        <div class="issue-card-stack" id="generatedPreview">
+                        <div class="issue-card-stack<?php echo $portalDieCut ? ' die-cut' : ''; ?>" id="generatedPreview">
                             <div class="canvas-preview-wrapper rounded-lg border border-gray-200 relative">
                                 <canvas id="previewFrontCanvas"></canvas>
                                 <div id="frontLoading" class="absolute inset-0 bg-gray-100 flex items-center justify-center">
@@ -1436,7 +1456,7 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                             </div>
                         </div>
                         <?php elseif ($activeFrontTemplate && !empty($activeFrontTemplate['backgroundImage'])): ?>
-                        <div class="issue-card-fallback">
+                        <div class="issue-card-fallback<?php echo $portalDieCut ? ' die-cut' : ''; ?>">
                             <img src="<?php echo imageUrl($activeFrontTemplate['backgroundImage']); ?>" alt="<?= htmlspecialchars($companyName) ?>">
                         </div>
                         <?php endif; ?>
@@ -1978,6 +1998,9 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
     const backTemplate = <?php echo json_encode($activeBackTemplate); ?>;
     
     // CardEditor instances
+    // True when the design is a die cut: keep the canvas transparent outside the
+    // cut so the CSS drop-shadow can follow the real silhouette.
+    const PORTAL_DIE_CUT = <?php echo $portalDieCut ? 'true' : 'false'; ?>;
     let frontEditor = null;
     let backEditor = null;
     let previewGenerated = false;
@@ -2081,7 +2104,7 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
             frontEditor = new CardEditor('previewFrontCanvas', {
                 width: frontDims.width,
                 height: frontDims.height,
-                backgroundColor: '#ffffff',
+                backgroundColor: PORTAL_DIE_CUT ? 'transparent' : '#ffffff',
                 onReady: () => {
                     if (frontEditor.canvas) frontEditor.canvas.selection = false;
                     setTimeout(() => scaleCanvasToFit('previewFrontCanvas', frontDims.width), 50);
@@ -2093,7 +2116,7 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
             backEditor = new CardEditor('previewBackCanvas', {
                 width: backDims.width,
                 height: backDims.height,
-                backgroundColor: '#ffffff',
+                backgroundColor: PORTAL_DIE_CUT ? 'transparent' : '#ffffff',
                 onReady: () => {
                     if (backEditor.canvas) backEditor.canvas.selection = false;
                     setTimeout(() => scaleCanvasToFit('previewBackCanvas', backDims.width), 50);
@@ -2236,7 +2259,7 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
 
         // Clear existing content
         editor.canvas.clear();
-        editor.canvas.backgroundColor = '#ffffff';
+        editor.canvas.backgroundColor = PORTAL_DIE_CUT ? 'transparent' : '#ffffff';
         editor.fields = {};
         
         // Load background image with the transform the admin saved (so stretch,
