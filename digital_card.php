@@ -513,7 +513,7 @@ function renderBranded404($company, $theme) {
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= htmlspecialchars(t('digitalcard.unavailable_title')) ?><?php echo $companyName ? ' - ' . htmlspecialchars($companyName) : ''; ?></title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -564,7 +564,14 @@ $switchThirdUrl = ($thirdCode !== '' && $thirdLabel !== '')
 <html lang="<?php echo htmlspecialchars($htmlLang, ENT_QUOTES); ?>"<?php echo $isRtl ? ' dir="rtl"' : ''; ?>>
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <?php /* No user-scalable=no. It blocked pinch zoom, and this is a page
+       people hold at arm's length to read a phone number off, or zoom into to
+       look at the printed artwork. iOS Safari has ignored the flag since iOS
+       10; Android Chrome and in-app webviews still honour it, so it was
+       genuinely trapping those readers at 100%. Every tap target on the page
+       is 44px or more, so the double-tap-zoom misfire it used to guard against
+       is not a risk any more. */ ?>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="robots" content="noindex, nofollow">
     <title><?php echo htmlspecialchars($name); ?> - <?php echo htmlspecialchars($companyName); ?></title>
     <meta name="description" content="<?php echo htmlspecialchars($name . ' - ' . $position . ' at ' . $companyName); ?>">
@@ -1024,7 +1031,7 @@ $switchThirdUrl = ($thirdCode !== '' && $thirdLabel !== '')
         .bottom-buttons {
             display: flex;
             max-width: 400px;
-            margin: 10px auto 0;
+            margin: 8px auto 0;
         }
         .bottom-btn {
             flex: 1;
@@ -1057,6 +1064,17 @@ $switchThirdUrl = ($thirdCode !== '' && $thirdLabel !== '')
         .bottom-btn { transition: transform 0.16s var(--ease-out), opacity 0.16s var(--ease-out); }
         .bottom-btn:active { opacity: 0.85; transform: scale(0.97); }
         .bottom-btn i { font-size: 15px; flex-shrink: 0; }
+        /* A keyboard user got only the UA default ring, which all but vanishes
+           on a saturated brand fill. Draw our own, offset so it reads on both
+           the dark and the light button. */
+        .action-btn:focus-visible,
+        .bottom-btn:focus-visible,
+        .app-open-btn:focus-visible,
+        .contact-row:focus-visible,
+        .wallet-buttons .wallet-btn:focus-visible {
+            outline: 2px solid <?php echo $isDarkPage ? '#ffffff' : '#111827'; ?>;
+            outline-offset: 2px;
+        }
         .btn-save {
             background: <?php echo htmlspecialchars($accentColor); ?>;
             color: white;
