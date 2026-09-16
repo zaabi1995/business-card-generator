@@ -607,11 +607,21 @@ $switchThirdUrl = ($thirdCode !== '' && $thirdLabel !== '')
     <link rel="stylesheet" href="https://fonts.bhd.om/css2?family=Noto+Sans+Arabic:wght@400;500;600;700&display=swap" media="print" data-cardify-async-css="media">
     <noscript><link rel="stylesheet" href="https://fonts.bhd.om/css2?family=Noto+Sans+Arabic:wght@400;500;600;700&display=swap"></noscript>
     <?php endif; ?>
-    <!-- Icons load async (media=print -> all on load) so text paints immediately; icons fill in a beat later.
-         Font Awesome is self-hosted on cardify.om: no third-party DNS lookup, reuses the existing HTTP/2
-         connection to the same origin, and Cloudflare cdn-cache + brotli applies the same as for the HTML. -->
-    <link rel="preload" href="https://design.bhd.om/fa/v7.2.0/webfonts/fa-solid-900.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="preload" href="https://design.bhd.om/fa/v7.2.0/webfonts/fa-brands-400.woff2" as="font" type="font/woff2" crossorigin>
+    <!-- Icons load async (media=print -> all on load) so text paints immediately; icons fill in a beat later. -->
+    <?php /* preconnect, not preload.
+
+       The two icon webfonts used to be rel="preload". That starts them at
+       HIGHEST priority in the first round trip, and on a throttled 3G profile
+       fa-solid-900 held the pipe until 18.7s while the card artwork, which is
+       the thing the visitor came to see, did not finish until 10.8s. The page
+       was queueing decoration ahead of content.
+
+       Nothing here NEEDS an icon to be understood: every glyph sits beside its
+       own text label and carries aria-hidden. So the fonts are now discovered
+       the normal way, when the async stylesheet activates, and arrive behind
+       the page's own bytes. preconnect keeps the DNS + TLS handshake to
+       design.bhd.om warm so that discovery costs a request, not a round trip. */ ?>
+    <link rel="preconnect" href="https://design.bhd.om" crossorigin>
     <link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/fontawesome.min.css?v=7.2.0" media="print" data-cardify-async-css="media">
     <link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/solid.min.css?v=7.2.0" media="print" data-cardify-async-css="media">
     <link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/brands.min.css?v=7.2.0" media="print" data-cardify-async-css="media">
