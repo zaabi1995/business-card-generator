@@ -39,6 +39,10 @@ class CardJobMailer
 
         $slug   = (string)($req['company_slug'] ?? 'mhd');
         $action = getTenantUrl($slug, '/admin/one-tap-approve?t=' . urlencode($token));
+        // The one-tap page only confirms an approval; rejecting and editing live
+        // on the full review page. Saying otherwise sent people looking for a
+        // button that is not there.
+        $review = getTenantUrl($slug, '/admin/approve-request?t=' . urlencode($token));
 
         $e = fn($v) => htmlspecialchars((string)$v, ENT_QUOTES);
         $preview = $previewUrl !== ''
@@ -68,7 +72,9 @@ class CardJobMailer
               . 'padding:13px 30px;border-radius:6px;text-decoration:none;font-weight:bold;display:inline-block">'
               . 'Review and approve</a></p>'
               . '<p style="color:#6b7280;font-size:13px">Approving raises the quotation and emails it to this '
-              . 'address. Nothing prints until you send the purchase order. The same page lets you reject.</p>'
+              . 'address. Nothing prints until you send the purchase order.</p>'
+              . '<p style="color:#6b7280;font-size:13px">To decline instead, or to change anything first, '
+              . 'open <a href="' . $e($review) . '" style="color:#0f4c81">the full request</a>.</p>'
               . '<p>Regards,<br>BHD Printing &amp; Designing</p></div>';
 
         $cc = array_values(array_filter([
