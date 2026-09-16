@@ -13,7 +13,16 @@
  */
 class ERPSync {
 
-    /** The canonical BHD-ERP product every Cardify print order books against. */
+    /**
+     * The canonical BHD-ERP product every Cardify print order books against.
+     *
+     * The ID is what matters. adminApi.js documents the item as
+     * "productId|productName", but directSaleCosting.js productIdFromItem()
+     * reads only productId / product._id / product, so a name alone still
+     * fails validation with "Sale line 1 is not linked to a canonical ERP
+     * product". The name is sent too, for the ERP's own display.
+     */
+    const ERP_PRODUCT_ID   = '69a1ff55e4073809642483c9';
     const ERP_PRODUCT_NAME = 'Business Card';
 
     /**
@@ -351,6 +360,7 @@ class ERPSync {
                 // productId or productName on every item, and ERPSync sent
                 // neither, so every quote it raised was rejected. Cardify only
                 // ever prints business cards, so the canonical product is fixed.
+                'productId'   => self::ERP_PRODUCT_ID,
                 'productName' => self::ERP_PRODUCT_NAME,
                 'itemName'    => $description,
                 'quantity'    => $qty ?: 1,
