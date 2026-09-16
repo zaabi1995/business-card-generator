@@ -14,6 +14,17 @@ require_once INCLUDES_DIR . '/CardPrice.php';
 require_once INCLUDES_DIR . '/CardJob.php';
 require_once INCLUDES_DIR . '/CardJobMailer.php';
 
+// The portal needs a session of its own. A tenant request arrives as index.php,
+// which config.php treats as a public SEO page and deliberately serves without a
+// session so Google can cache it. That left generateCSRFToken() with nowhere to
+// store the token: it returned a fresh random string on every call, so the token
+// in the form matched nothing and validateCSRFToken() refused EVERY submission
+// with "Invalid request. Please try again." The passcode gate reads the session
+// too. Nothing has been printed yet at this point, so starting one here is safe.
+if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
+    @session_start();
+}
+
 // Get company slug and optional department slug from URL. When the
 // request lands on a tenant subdomain (ohb.cardify.om/portal), pull
 // the slug from TenantHost so nginx doesn't need to inject it.
