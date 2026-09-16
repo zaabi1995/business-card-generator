@@ -188,6 +188,18 @@ class DatabaseAdapter {
                 error_log('[createCompany] default theme seed failed: ' . $themeErr->getMessage());
             }
 
+            // Seed the tenant's default WALLET theme too. Without a company row
+            // flagged is_default, WalletThemeCatalog::defaultTheme() falls through
+            // to the platform "Cardify Teal" theme, whose logo_mode is 'cardify' --
+            // so the tenant's staff hand a customer an Apple/Google pass in
+            // Cardify's colour carrying Cardify's logo. That is a white-label leak,
+            // not a cosmetic default. Mirrors the brand colour seeded just above.
+            try {
+                self::seedDefaultWalletTheme($company['id'], '#009bc1');
+            } catch (Exception $walletErr) {
+                error_log('[createCompany] wallet theme seed failed: ' . $walletErr->getMessage());
+            }
+
             // Initialize company directories
             getCompanyUploadsDir($company['id']);
             getCompanyTemplatesDir($company['id']);
@@ -197,6 +209,59 @@ class DatabaseAdapter {
         } catch (Exception $e) {
             return ['success' => false, 'error' => 'Failed to create company: ' . $e->getMessage()];
         }
+    }
+
+    /**
+     * Give a company its own default wallet theme, so Apple and Google passes
+     * carry the tenant's colour and logo instead of the Cardify platform theme.
+     *
+     * Idempotent: a company that already has an active default is left alone.
+     * Text colour is chosen for contrast against the brand colour, matching
+     * WalletThemeResolver::companyFallback().
+     */
+    public static function seedDefaultWalletTheme($companyId, $brandColor = '#009bc1')
+    {
+        if (!self::useDatabase() || !$companyId) {
+            return false;
+        }
+        $existing = self::$db->fetchOne(
+            "SELECT id FROM wallet_themes
+              WHERE company_id = :cid AND is_default = 1 AND is_active = 1 LIMIT 1",
+            ['cid' => $companyId]
+        );
+        if ($existing) {
+            return false;
+        }
+        $hex = strtolower(trim((string)$brandColor));
+        if (!preg_match('/^#[0-9a-f]{6}$/', $hex)) {
+            $hex = '#009bc1';
+        }
+        // Relative luminance, same threshold the rest of the wallet code uses.
+        $srgb = function ($c) {
+            $c /= 255;
+            return $c <= 0.03928 ? $c / 12.92 : pow(($c + 0.055) / 1.055, 2.4);
+        };
+        $lum = 0.2126 * $srgb(hexdec(substr($hex, 1, 2)))
+             + 0.7152 * $srgb(hexdec(substr($hex, 3, 2)))
+             + 0.0722 * $srgb(hexdec(substr($hex, 5, 2)));
+        $text = ((1.05) / ($lum + 0.05)) >= 3.0 ? '#ffffff' : '#111827';
+
+        $name = self::$db->fetchOne("SELECT name FROM companies WHERE id = :cid", ['cid' => $companyId]);
+        self::$db->insert('wallet_themes', [
+            'id'               => generateUUID(),
+            'company_id'       => $companyId,
+            'name_en'          => substr((string)($name['name'] ?? 'Company'), 0, 120),
+            'name_ar'          => null,
+            'style'            => 'eventTicket',
+            'background_color' => $hex,
+            'foreground_color' => $text,
+            'label_color'      => $text,
+            'logo_mode'        => 'company',
+            'is_default'       => 1,
+            'is_active'        => 1,
+            'sort_order'       => 0,
+        ]);
+        return true;
     }
     
     /**
