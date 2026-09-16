@@ -22,6 +22,9 @@ class ERPSync {
      * fails validation with "Sale line 1 is not linked to a canonical ERP
      * product". The name is sent too, for the ERP's own display.
      */
+    /** VAT the ERP applies to a Cardify quote, as a percentage. */
+    const ERP_TAX_RATE     = 5;
+
     const ERP_PRODUCT_ID   = '69a1ff55e4073809642483c9';
     const ERP_PRODUCT_NAME = 'Business Card';
 
@@ -377,13 +380,21 @@ class ERPSync {
         }
 
         $amount = (float)$order['total'];
-        // 5 decimals, not 3. The ERP recomputes quantity x price and refuses a
-        // quote whose total does not match, and rounding a per-unit price to 3
-        // decimals throws that total off whenever gross/qty is not a clean
-        // 3-decimal number: 6.300 over 200 cards is 0.0315, which rounded to
-        // 0.032 made the ERP compute 6.400 and reject the quote. Keeping the
-        // precision lets the ERP's own gross-price branch resolve it to 6.300.
-        $unit = $qty > 0 ? round($amount / $qty, 5) : $amount;
+        // The ERP wants the NET unit price on the line and the GROSS total in
+        // `amount`, then recomputes quantity x price + VAT and refuses a quote
+        // whose total does not match. This divided the GROSS total by quantity,
+        // so a 6.300 order over 200 cards sent 0.0315 (or 0.032 once rounded to
+        // 3 decimals) instead of 0.030, and the ERP answered "does not equal the
+        // canonical configured total 6.400" on every single quote.
+        // Verified against the live endpoint: unit 0.030 with amount 6.300 is
+        // accepted, unit 0.0315 with the same amount is refused.
+        // subtotal_excl_vat is the order's own net figure when the VAT
+        // breakdown was captured (migration 089). Back the rate out only when
+        // it was not, so an order that was never 5%-inclusive is not discounted.
+        $net  = (float)($order['subtotal_excl_vat'] ?? 0) > 0
+              ? (float)$order['subtotal_excl_vat']
+              : $amount / (1 + (self::ERP_TAX_RATE / 100));
+        $unit = $qty > 0 ? round($net / $qty, 5) : $net;
         $payload = [
             'clientName'  => $clientName,
             'orderNumber' => $order['order_number'],

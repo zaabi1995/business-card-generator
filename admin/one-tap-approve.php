@@ -232,6 +232,9 @@ if ($r['success'] && $r['employee_id']) {
                 'paper_type'      => 'Art 300 GSM',
                 'finish'          => 'matte',
                 'total'           => $price['gross'],
+                'subtotal_excl_vat' => $price['net'],
+                'tax_rate'        => CardPrice::VAT_RATE,
+                'tax_amount'      => $price['vat'],
                 'erp_client_name' => $dept['erp_client_name'],
                 'status'          => 'pending',
             ]);
