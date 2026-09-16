@@ -263,7 +263,11 @@ $portalPhotoEnabled = !array_key_exists('portal_photo_enabled', $company)
 $portalDieCut = false;
 $frontBgProbe = $activeFrontTemplate['backgroundImage'] ?? '';
 if ($frontBgProbe !== '' && function_exists('imageHasAlphaChannel')) {
-    $probePath = __DIR__ . (parse_url($frontBgProbe, PHP_URL_PATH) ?: '');
+    // backgroundImage is stored relative on some tenants ("uploads/...") and
+    // absolute on others ("/uploads/..."). Concatenating the relative form onto
+    // __DIR__ produced "/www/wwwroot/cardify.omuploads/...", so the probe always
+    // missed and open_basedir logged a warning on every portal view.
+    $probePath = __DIR__ . '/' . ltrim(parse_url($frontBgProbe, PHP_URL_PATH) ?: '', '/');
     $portalDieCut = imageHasAlphaChannel($probePath);
 }
 
@@ -2738,6 +2742,14 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
         // Don't translate if already in progress
         if (isTranslating[targetId]) return;
         isTranslating[targetId] = true;
+
+        // The endpoint round-trips an LLM and measured 16.3s, so the person has
+        // plenty of time to type their own Arabic while a blur-triggered call is
+        // still in flight. Remember what the field held when we asked; if it has
+        // changed by the time the answer lands, their text wins. Without this an
+        // employee's real Arabic name was silently replaced by a transliteration
+        // and printed on the card.
+        const startedWith = targetEl.value;
         
         // Find the translate button and show loading.
         // NOT parentElement.querySelector('.translate-btn'): these buttons live
@@ -2784,6 +2796,8 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
             }
             
             if (data.translation) {
+                // Never overwrite what the person typed while we were waiting.
+                if (targetEl.value !== startedWith) { return; }
                 targetEl.value = data.translation;
                 targetEl.classList.add('auto-filled');
                 setTimeout(() => targetEl.classList.remove('auto-filled'), 2000);
