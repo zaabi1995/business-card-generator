@@ -1,0 +1,200 @@
+<?php
+require_once __DIR__ . '/CardJob.php';
+
+/**
+ * PoInbox, purchase-order intake from the sales@bhdoman.com mailbox.
+ *
+ * MHD reply to the quotation email with their purchase order as a PDF. The
+ * reply is matched to its job by the [MHD-XXXXXX] tag in the subject, because
+ * Outlook rewrites threading headers and References cannot be relied on. The
+ * purchase-order number is ten digits beginning 41, which is MHD's own format
+ * on every purchase order they have ever sent BHD (35 of them, checked).
+ *
+ * The mailbox is read from its Maildir on this same server, not over IMAP:
+ * sales@bhdoman.com is a local Dovecot account, so there is no password to
+ * store, and nothing here marks a message read or moves it. The sales team's
+ * mailbox is left exactly as they left it.
+ *
+ * Idempotent on the message key: every message examined is recorded in
+ * mhd_po_seen, so a replay files nothing twice.
+ */
+class PoInbox
+{
+    private const REF_RE = '/\[(MHD-[A-Z0-9]{6})\]/i';
+    private const PO_RE  = '/(?<!\d)(41\d{8})(?!\d)/';
+
+    /** The Maildir of the mailbox that receives the replies. */
+    public static function maildir(): string
+    {
+        return defined('MHD_PO_MAILDIR') ? MHD_PO_MAILDIR : '/www/vmail/bhdoman.com/sales';
+    }
+
+    /** Purchase orders are kept outside the web root: nginx serves uploads/ and
+     *  storage/ as static files, and these are MHD's commercial documents. */
+    public static function poDir(): string
+    {
+        return defined('MHD_PO_DIR') ? MHD_PO_DIR : dirname(BASE_DIR) . '/cardify-private/po';
+    }
+
+    public static function extractRef(string $subject): ?string
+    {
+        return preg_match(self::REF_RE, $subject, $m) ? strtoupper($m[1]) : null;
+    }
+
+    public static function extractPoNumber(string $text): ?string
+    {
+        return preg_match(self::PO_RE, $text, $m) ? $m[1] : null;
+    }
+
+    /**
+     * File one message.
+     *
+     * @param array $message ['message_key','message_id','subject','from','body',
+     *                        'attachments'=>[['name','data']]]
+     * @return array ['matched'=>bool,'ref'=>?string,'po'=>?string,'reason'=>?string]
+     */
+    public static function ingest(array $message): array
+    {
+        $ref = self::extractRef((string)($message['subject'] ?? ''));
+        if (!$ref) {
+            return ['matched' => false, 'reason' => 'no job ref in subject'];
+        }
+        $job = CardJob::findByRef($ref);
+        if (!$job) {
+            return ['matched' => false, 'ref' => $ref, 'reason' => 'no such job'];
+        }
+        // The flow state, not card_requests.status, which only ever holds the
+        // approval verdict.
+        $state = (string)($job['fulfilment_state'] ?? '');
+        if ($state !== 'quoted') {
+            return ['matched' => false, 'ref' => $ref, 'reason' => "job is {$state}, not quoted"];
+        }
+
+        $pdf = null;
+        foreach (($message['attachments'] ?? []) as $a) {
+            if (preg_match('/\.pdf$/i', (string)($a['name'] ?? ''))) { $pdf = $a; break; }
+        }
+        if (!$pdf) {
+            return ['matched' => false, 'ref' => $ref, 'reason' => 'no pdf attached'];
+        }
+
+        $dir = self::poDir() . '/' . date('Y/m');
+        if (!is_dir($dir) && !@mkdir($dir, 0750, true) && !is_dir($dir)) {
+            return ['matched' => false, 'ref' => $ref, 'reason' => 'cannot create ' . $dir];
+        }
+        $path = $dir . '/' . $ref . '-' . preg_replace('/[^A-Za-z0-9._-]/', '_', $pdf['name']);
+        if (file_put_contents($path, $pdf['data']) === false) {
+            return ['matched' => false, 'ref' => $ref, 'reason' => 'cannot write ' . $path];
+        }
+        @chmod($path, 0640);
+
+        // The number is on the document itself more often than in the covering
+        // note, so read the PDF's own text last rather than give up.
+        $po = self::extractPoNumber($pdf['name'] . ' ' . (string)($message['subject'] ?? '')
+                                    . ' ' . (string)($message['body'] ?? ''));
+        if (!$po) {
+            $po = self::extractPoNumber(self::pdfText($path));
+        }
+
+        $db = Database::getInstance();
+        $db->query("UPDATE card_requests SET po_number = ?, po_file = ? WHERE id = ?",
+                   [$po, $path, $job['id']]);
+        $moved = CardJob::transition($job['id'], 'po_received', [
+            'actor'      => $message['from'] ?? null,
+            'po'         => $po,
+            'message_id' => $message['message_id'] ?? null,
+            'file'       => basename($path),
+        ]);
+
+        return ['matched' => $moved, 'ref' => $ref, 'po' => $po,
+                'reason' => $moved ? null : 'job moved on before this reply was filed'];
+    }
+
+    /**
+     * Read the mailbox and file every purchase-order reply found.
+     *
+     * @param  int $limit    messages to examine in one run
+     * @param  int $sinceDays how far back to look on a first run
+     * @return array one result row per message examined
+     */
+    public static function poll(int $limit = 50, int $sinceDays = 3): array
+    {
+        $root = self::maildir();
+        $files = [];
+        foreach (['new', 'cur'] as $box) {
+            foreach (glob($root . '/' . $box . '/*') ?: [] as $f) {
+                if (is_file($f) && filemtime($f) >= time() - ($sinceDays * 86400)) {
+                    $files[$f] = filemtime($f);
+                }
+            }
+        }
+        asort($files);
+
+        $out = [];
+        foreach (array_keys($files) as $file) {
+            if (count($out) >= $limit) { break; }
+            // The Maildir flag suffix changes when a human reads the message,
+            // so the key is the part before it: the same message keeps one key.
+            $key = preg_replace('/:2,.*$/', '', basename($file));
+            if (self::alreadySeen($key)) { continue; }
+
+            $msg = self::parse($file);
+            if ($msg === null) {
+                self::remember($key, '', null, 'unparseable');
+                $out[] = ['matched' => false, 'reason' => 'unparseable', 'file' => basename($file)];
+                continue;
+            }
+            $msg['message_key'] = $key;
+            $r = self::ingest($msg);
+            self::remember($key, (string)$msg['subject'], $r['ref'] ?? null,
+                           $r['matched'] ? 'filed' : ($r['reason'] ?? 'skipped'));
+            // Only the ones that concern a job are worth reporting.
+            if (!empty($r['ref'])) {
+                $out[] = $r + ['subject' => $msg['subject']];
+            }
+        }
+        return $out;
+    }
+
+    // ---- internals -------------------------------------------------
+
+    /** Parse one message file with the Python helper. */
+    private static function parse(string $file): ?array
+    {
+        $script = BASE_DIR . '/scripts/mhd/parse-mail.py';
+        if (!is_file($script)) { return null; }
+        $cmd = 'python3 ' . escapeshellarg($script) . ' ' . escapeshellarg($file) . ' 2>/dev/null';
+        $json = shell_exec($cmd);
+        $data = json_decode((string)$json, true);
+        if (!is_array($data)) { return null; }
+        foreach ($data['attachments'] ?? [] as $i => $a) {
+            $data['attachments'][$i]['data'] = base64_decode((string)($a['b64'] ?? ''), true) ?: '';
+            unset($data['attachments'][$i]['b64']);
+        }
+        return $data;
+    }
+
+    private static function pdfText(string $path): string
+    {
+        $out = shell_exec('pdftotext -q ' . escapeshellarg($path) . ' - 2>/dev/null');
+        return (string)$out;
+    }
+
+    private static function alreadySeen(string $key): bool
+    {
+        return (bool)Database::getInstance()->fetchOne(
+            "SELECT message_key FROM mhd_po_seen WHERE message_key = :k", ['k' => $key]);
+    }
+
+    private static function remember(string $key, string $subject, ?string $ref, string $outcome): void
+    {
+        try {
+            Database::getInstance()->query(
+                "INSERT IGNORE INTO mhd_po_seen (message_key, subject, job_ref, outcome)
+                 VALUES (?, ?, ?, ?)",
+                [$key, mb_substr($subject, 0, 255), $ref, mb_substr($outcome, 0, 190)]);
+        } catch (Exception $e) {
+            error_log('PoInbox::remember ' . $e->getMessage());
+        }
+    }
+}
