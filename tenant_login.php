@@ -418,7 +418,8 @@ if (!empty($tenant['id'])) {
                 $brandSecondary = $theme['secondary_color'];
             }
             if (!$logoUrl && !empty($theme['logo_path']) && is_file(__DIR__ . $theme['logo_path'])) {
-                $logoUrl = $theme['logo_path'];
+                require_once INCLUDES_DIR . '/ThemeImage.php';
+                $logoUrl = ThemeImage::preferWeb($theme['logo_path']);
             }
         }
     } catch (Throwable $_) { /* company_themes may not exist on legacy installs */ }

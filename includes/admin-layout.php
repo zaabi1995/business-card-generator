@@ -238,8 +238,13 @@ function adminHeader($pageTitle = 'Dashboard', $currentPage = 'dashboard', $show
                     if ($p[0] === '/') return $p;
                     return '/uploads/' . ltrim($p, '/');
                 };
-                $tBrandLogo    = $_norm($_theme['logo_path']    ?? null);
-                $tBrandFavicon = $_norm($_theme['favicon_path'] ?? null);
+                require_once __DIR__ . '/ThemeImage.php';
+                $_logoRaw = $_theme['logo_path'] ?? null;
+                $tBrandLogo    = $_norm(ThemeImage::preferWeb($_logoRaw) ?: null);
+                // Favicon falls back to the logo below; resolve the icon
+                // variant off the file that actually gets used. PNG, not WebP:
+                // Safari does not render a WebP favicon.
+                $tBrandFavicon = $_norm(ThemeImage::preferIcon(($_theme['favicon_path'] ?? null) ?: $_logoRaw) ?: null);
                 // Auto-derive favicon from logo when not explicitly set, the
                 // most common case after registration. Browsers accept SVG /
                 // PNG logos as favicons directly.

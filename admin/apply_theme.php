@@ -90,6 +90,12 @@ $palette = LogoPalette::extract($logoPath);
 $faviconAbs = LogoPalette::generateFavicon($logoPath, $companyDir);
 $faviconRel = $faviconAbs ? '/uploads/companies/' . $companyId . '/favicon.png' : null;
 
+// Capped WebP siblings for the browser-facing surfaces. The originals stay
+// untouched so the wallet passes and the print paths read the uploaded bytes.
+require_once INCLUDES_DIR . '/ThemeImage.php';
+ThemeImage::ensureVariants('/uploads/companies/' . $companyId . '/logo.' . $ext, ThemeImage::LOGO_MAX);
+if ($faviconRel) { ThemeImage::ensureVariants($faviconRel, ThemeImage::FAVICON_MAX); }
+
 // Persist into company_themes (upsert)
 $db = Database::getInstance();
 $existing = $db->fetchOne("SELECT id FROM company_themes WHERE company_id = :id LIMIT 1", ['id' => $companyId]);

@@ -319,7 +319,8 @@ try {
             $brandPrimary = $theme['primary_color'];
         }
         if (!$logoUrl && !empty($theme['logo_path']) && is_file(__DIR__ . $theme['logo_path'])) {
-            $logoUrl = $theme['logo_path'];
+            require_once INCLUDES_DIR . '/ThemeImage.php';
+            $logoUrl = ThemeImage::preferWeb($theme['logo_path']);
         }
     }
 } catch (Throwable $_) { /* legacy installs may not have company_themes */ }

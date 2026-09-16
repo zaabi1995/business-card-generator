@@ -126,7 +126,15 @@ function uploadCompanyLogo($file, $companyId) {
     if (!move_uploaded_file($file['tmp_name'], $dest)) return null;
     @chmod($dest, 0644);
 
-    return getWebPath($dest);
+    $webPath = getWebPath($dest);
+    // Capped WebP sibling for the browser-facing surfaces. The original stays
+    // untouched so the wallet passes and print paths read the uploaded bytes.
+    // The logo.* glob above cannot delete a stale "logo_web.webp"; the mtime
+    // check inside ensureVariants / preferWeb is what retires it.
+    require_once INCLUDES_DIR . '/ThemeImage.php';
+    ThemeImage::ensureVariants($webPath, ThemeImage::LOGO_MAX);
+
+    return $webPath;
 }
 
 function saveCompanyTheme($db, $companyId, $logoPath, $templateKey, $source) {

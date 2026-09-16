@@ -68,6 +68,11 @@ if (!move_uploaded_file($_FILES['logo']['tmp_name'], $dir . '/' . $fname)) {
 }
 $logoPath = $rel . '/' . $fname; // stored WITHOUT the uploads/ prefix (see my-card.php)
 
+// Capped WebP sibling for the browser-facing surfaces. The original stays
+// untouched so the wallet passes and print paths read the uploaded bytes.
+require_once __DIR__ . '/../../includes/ThemeImage.php';
+ThemeImage::ensureVariants($logoPath, ThemeImage::LOGO_MAX);
+
 try {
     $db = Database::getInstance();
     $theme = $db->fetchOne("SELECT id, logo_path FROM company_themes WHERE company_id = :cid", ['cid' => $companyId]);
@@ -77,6 +82,10 @@ try {
         $old = (string)($theme['logo_path'] ?? '');
         if ($old !== '' && strpos($old, 'companies/' . $companyId . '/theme/scan_logo_') === 0) {
             @unlink(__DIR__ . '/../../uploads/' . ltrim($old, '/'));
+            // ...and its web siblings, or the theme dir collects orphans.
+            foreach (ThemeImage::siblingsOf($old) as $__sib) {
+                @unlink(__DIR__ . '/../../uploads/' . ltrim($__sib, '/'));
+            }
         }
     } else {
         $db->insert('company_themes', ['id' => generateUUID(), 'company_id' => $companyId, 'logo_path' => $logoPath, 'primary_color' => '#009bc1']);

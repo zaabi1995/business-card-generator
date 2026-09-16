@@ -329,7 +329,12 @@ function onboarding_save_logo_file(string $companyId, string $dataUrl): ?string
     $absPath  = $logosDir . '/' . $filename;
     if (file_put_contents($absPath, $bin) === false) return null;
     @chmod($absPath, 0644);
-    return '/uploads/logos/' . $filename;
+    $webPath = '/uploads/logos/' . $filename;
+    // Capped WebP sibling for the browser-facing surfaces. The original stays
+    // untouched so the wallet passes and print paths read the uploaded bytes.
+    require_once INCLUDES_DIR . '/ThemeImage.php';
+    ThemeImage::ensureVariants($webPath, ThemeImage::LOGO_MAX);
+    return $webPath;
 }
 
 /**

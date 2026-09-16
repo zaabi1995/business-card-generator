@@ -131,8 +131,17 @@ class TenantHost
             return '/uploads/' . ltrim($p, '/');
         };
 
-        $logoUrl    = $normalize($theme['logo_path']    ?? null);
-        $faviconUrl = $normalize($theme['favicon_path'] ?? null);
+        // Prefer the capped sibling when the upload step or the backfill has
+        // produced one. Originals are untouched and still serve the wallet
+        // passes and print paths. The <img> surfaces take WebP; the favicon
+        // link takes the same-format PNG (Safari does not do WebP favicons).
+        require_once __DIR__ . '/ThemeImage.php';
+        $logoRaw    = $theme['logo_path']    ?? null;
+        $faviconRaw = $theme['favicon_path'] ?? null;
+        $logoUrl    = $normalize(ThemeImage::preferWeb($logoRaw) ?: null);
+        // Favicon falls back to the logo below; resolve the icon variant off
+        // whichever file actually gets used, not off the WebP logo URL.
+        $faviconUrl = $normalize(ThemeImage::preferIcon($faviconRaw ?: $logoRaw) ?: null);
 
         // Auto-derive favicon from logo when not explicitly set. Most
         // tenants only upload one logo; the browser accepts SVG / PNG

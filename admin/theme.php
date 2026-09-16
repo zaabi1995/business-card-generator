@@ -7,6 +7,7 @@ requireAdmin();
 require_once INCLUDES_DIR . '/Auth.php';
 require_once INCLUDES_DIR . '/admin-layout.php';
 require_once INCLUDES_DIR . '/WalletThemePolicy.php';
+require_once INCLUDES_DIR . '/ThemeImage.php';
 
 $db = Database::getInstance();
 $companyId = getCurrentCompanyId();
@@ -177,6 +178,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$isWalletAction) {
             $filename = 'logo_' . time() . '.' . $ext;
             if (move_uploaded_file($_FILES['logo']['tmp_name'], $uploadDir . $filename)) {
                 $logoPath = 'companies/' . $companyId . '/theme/' . $filename;
+                // Capped WebP sibling for the browser-facing surfaces. The
+                // original stays untouched for the wallet passes and print.
+                ThemeImage::ensureVariants($logoPath, ThemeImage::LOGO_MAX);
             }
         }
     }
@@ -192,6 +196,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$isWalletAction) {
             $filename = 'favicon_' . time() . '.' . $ext;
             if (move_uploaded_file($_FILES['favicon']['tmp_name'], $uploadDir . $filename)) {
                 $faviconPath = 'companies/' . $companyId . '/theme/' . $filename;
+                ThemeImage::ensureVariants($faviconPath, ThemeImage::FAVICON_MAX);
             }
         }
     }

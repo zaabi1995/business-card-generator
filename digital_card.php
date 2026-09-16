@@ -28,6 +28,7 @@ require_once INCLUDES_DIR . '/JsonLd.php';
     require_once INCLUDES_DIR . '/EmployeeSocials.php';
     require_once INCLUDES_DIR . '/CardAnalytics.php';
     require_once INCLUDES_DIR . '/ColorContrast.php';
+    require_once INCLUDES_DIR . '/ThemeImage.php';
     require_once INCLUDES_DIR . '/AppEntity.php';  // r116: the smart-banner app id is the entity's, not a literal
 
     /**
@@ -442,8 +443,10 @@ require_once INCLUDES_DIR . '/JsonLd.php';
         return empty($heroActions) || in_array($k, $heroActions, true);
     };
 
-    // Logo path
-    $logoPath = ($theme && !empty($theme['logo_path'])) ? cardifyAssetUrl($theme['logo_path']) : '';
+    // Logo path. ThemeImage::preferWeb swaps in the capped WebP sibling when
+    // one exists; the original still serves the wallet passes and print.
+    $logoPath = ($theme && !empty($theme['logo_path']))
+        ? cardifyAssetUrl(ThemeImage::preferWeb($theme['logo_path'])) : '';
 
     // Social links are rendered in the hero (above the fold), so they must
     // load before the early flush. Every OTHER section-data query has been
@@ -513,7 +516,8 @@ function renderBranded404($company, $theme) {
     // auto-picked as primary_color) that would render the Call / Save Contact
     // buttons and section headers invisible. No-op for readable brand colours.
     $accentColor = ColorContrast::safeAccent($accentColor);
-    $logoPath = ($theme && !empty($theme['logo_path'])) ? cardifyAssetUrl($theme['logo_path']) : '';
+    $logoPath = ($theme && !empty($theme['logo_path']))
+        ? cardifyAssetUrl(ThemeImage::preferWeb($theme['logo_path'])) : '';
     $companyName = $company ? ($company['name'] ?? '') : '';
     // Demo/instant cards: show the person's typed company (employee.company_en),
     // not the shared `demo` tenant name, so the card reads as their own.
@@ -613,7 +617,13 @@ $switchThirdUrl = ($thirdCode !== '' && $thirdLabel !== '')
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:image" content="<?php echo htmlspecialchars($__ogImage, ENT_QUOTES); ?>">
     <?php endif; ?>
-    <link rel="icon" type="image/png" href="<?php echo (!empty($theme['favicon_path'])) ? htmlspecialchars(cardifyAssetUrl($theme['favicon_path'])) : ($logoPath ? htmlspecialchars($logoPath) : '/favicon.svg'); ?>">
+    <?php
+    // Favicon: the capped PNG sibling when one exists, else the original.
+    // Not the WebP variant that $logoPath uses, Safari will not render it.
+    $__iconSrc = ($theme['favicon_path'] ?? '') ?: ($theme['logo_path'] ?? '');
+    $__iconUrl = $__iconSrc !== '' ? cardifyAssetUrl(ThemeImage::preferIcon($__iconSrc)) : '/favicon.svg';
+    ?>
+    <link rel="icon" href="<?php echo htmlspecialchars($__iconUrl); ?>">
     <?php if ($isRtl): ?>
     <link rel="preconnect" href="https://fonts.bhd.om" crossorigin>
     <link rel="stylesheet" href="https://fonts.bhd.om/css2?family=Noto+Sans+Arabic:wght@400;500;600;700&display=swap" media="print" data-cardify-async-css="media">
