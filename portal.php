@@ -250,6 +250,12 @@ $formData = [
     'fax'          => $company['default_fax']          ?? '',
 ];
 
+// Per-tenant gate for the "Add a photo" step. Column defaults to 1, and a tenant
+// row that predates the column reads as enabled, so nothing changes for anyone
+// who has not deliberately switched it off.
+$portalPhotoEnabled = !array_key_exists('portal_photo_enabled', $company)
+    || (int)$company['portal_photo_enabled'] === 1;
+
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['portal_passcode'])) {
     if (!validateCSRFToken($_POST['csrf_token'] ?? '')) {
@@ -1457,12 +1463,16 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                          them into question panels at runtime without renaming anything. -->
                     <div id="issueFields">
 
-                    <!-- Photo upload (Concept B step; handler already reads $_FILES['photo']) -->
+                    <!-- Photo upload (Concept B step; handler already reads $_FILES['photo']).
+                         Gated per tenant: a card design with no photo should not ask for one.
+                         Column defaults to 1, so every other tenant is unchanged. -->
+                    <?php if ($portalPhotoEnabled): ?>
                     <div id="photoBlock">
                         <label class="block text-sm font-semibold text-gray-700 mb-2"><?= htmlspecialchars(t('portal.issue_photo_cta')) ?></label>
                         <input type="file" name="photo" id="photo" accept="image/jpeg,image/png,image/gif,image/webp" class="form-input">
                         <p class="mt-1 text-xs text-gray-500"><?= htmlspecialchars(t('portal.issue_photo_hint')) ?></p>
                     </div>
+                    <?php endif; ?>
 
                     <!-- Email (always shown - required for submission) -->
                     <div>

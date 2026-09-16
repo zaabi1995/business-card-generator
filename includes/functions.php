@@ -766,6 +766,60 @@ function getCompanyTemplatesDir($companyId) {
 /**
  * Get company cards directory
  */
+/**
+ * True when a PNG or WebP carries transparency.
+ *
+ * Die-cut cards (a hexagon, a rounded shield, any custom die) are saved as images
+ * whose area outside the cut is transparent. Surfaces that frame the card need to
+ * know, so they can drop a rectangular border/shadow that would otherwise draw a
+ * box around the shape. Header-only read: no GD, no full decode. WebP matters
+ * because the nightly card-web-variant cron serves a .webp as front_web_path.
+ */
+function imageHasAlphaChannel($path) {
+    if (!is_file($path)) return false;
+    $fh = @fopen($path, 'rb');
+    if (!$fh) return false;
+    $head = fread($fh, 33);
+    if (strlen($head) < 16) { fclose($fh); return false; }
+
+    if (substr($head, 0, 8) === "\x89PNG\r\n\x1a\n") {
+        $colourType = ord($head[25]);          // IHDR byte 10 (offset 8 + 8 + 9)
+        if ($colourType === 4 || $colourType === 6) { fclose($fh); return true; }
+        // Palette / greyscale can still be keyed transparent via a tRNS chunk.
+        fseek($fh, 33, SEEK_SET);
+        $hasTrns = false;
+        while (!feof($fh)) {
+            $hdr = fread($fh, 8);
+            if (strlen($hdr) < 8) break;
+            $len  = unpack('N', substr($hdr, 0, 4))[1];
+            $type = substr($hdr, 4, 4);
+            if ($type === 'tRNS') { $hasTrns = true; break; }
+            if ($type === 'IDAT' || $type === 'IEND') break;
+            fseek($fh, $len + 4, SEEK_CUR);    // skip data + CRC
+        }
+        fclose($fh);
+        return $hasTrns;
+    }
+
+    if (substr($head, 0, 4) === 'RIFF' && substr($head, 8, 4) === 'WEBP') {
+        $chunk = substr($head, 12, 4);
+        if ($chunk === 'VP8X') {               // extended: alpha is flag bit 0x10
+            fclose($fh);
+            return (ord($head[20]) & 0x10) !== 0;
+        }
+        if ($chunk === 'VP8L') {               // lossless: alpha_is_used is bit 28
+            $bits = unpack('V', substr($head, 21, 4))[1];
+            fclose($fh);
+            return (($bits >> 28) & 1) === 1;
+        }
+        fclose($fh);
+        return false;                          // plain VP8 (lossy) has no alpha
+    }
+
+    fclose($fh);
+    return false;
+}
+
 function getCompanyCardsDir($companyId) {
     $dir = COMPANIES_UPLOADS_DIR . '/' . $companyId . '/cards';
     if (!is_dir($dir)) {

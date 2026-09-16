@@ -215,6 +215,7 @@ require_once INCLUDES_DIR . '/JsonLd.php';
     // identical proportions. Fallback = standard business card 1.545:1.
     require_once INCLUDES_DIR . '/CardRenderer.php';
     $cardAspect = 1.545;
+    $cardHasAlpha = false;
     try {
         $rendererCtx = CardRenderer::forEmployee((string)$employee['id']);
         if ($rendererCtx && !empty($rendererCtx['aspect_ratio'])) {
@@ -325,6 +326,13 @@ require_once INCLUDES_DIR . '/JsonLd.php';
                     $cardAspectCss = number_format($cardAspect, 4, '.', '') . ' / 1';
                 }
             }
+            // A die-cut card (Mays is a hexagon) is saved as a PNG whose corners
+            // are transparent. The rectangular border-radius + box-shadow on
+            // .card-face then draws a rectangle around the shape, which reads as
+            // "hexagon printed on a rectangular card". When the image carries an
+            // alpha channel, drop the rectangle and let the image cast its own
+            // silhouette shadow instead. Opaque cards are untouched.
+            $cardHasAlpha = imageHasAlphaChannel($frontFsPath);
         }
     }
 
@@ -666,6 +674,17 @@ $switchThirdUrl = ($thirdCode !== '' && $thirdLabel !== '')
         }
         .card-back-face {
             transform: rotateY(180deg);
+        }
+        /* Die-cut card: the PNG is transparent outside the cut, so a rectangular
+           radius + box-shadow would draw a box around the shape. Let the image
+           cast a shadow in its own silhouette instead. */
+        .card-flip-container.die-cut .card-face {
+            border-radius: 0;
+            overflow: visible;
+            box-shadow: none;
+        }
+        .card-flip-container.die-cut .card-face img {
+            filter: drop-shadow(<?php echo $isDarkPage ? '0 6px 18px rgba(0,0,0,0.45)' : '0 4px 14px rgba(0,0,0,0.20)'; ?>);
         }
 
         /* Reduced motion: keep the flip + opacity feedback, drop the movement. */
@@ -1463,7 +1482,7 @@ $switchThirdUrl = ($thirdCode !== '' && $thirdLabel !== '')
         <details class="view-card-toggle">
             <summary class="view-card-summary"><i class="fa-solid fa-id-card" aria-hidden="true"></i> <?= htmlspecialchars(t('digitalcard.view_card')) ?></summary>
         <?php endif; ?>
-        <div class="card-flip-container<?php echo $backImage ? '' : ' no-back'; ?>" id="cardFlip"<?php echo $backImage ? ' role="button" tabindex="0" aria-label="' . htmlspecialchars(t('digitalcard.tap_to_flip'), ENT_QUOTES) . '"' : ''; ?>>
+        <div class="card-flip-container<?php echo $backImage ? '' : ' no-back'; ?><?php echo $cardHasAlpha ? ' die-cut' : ''; ?>" id="cardFlip"<?php echo $backImage ? ' role="button" tabindex="0" aria-label="' . htmlspecialchars(t('digitalcard.tap_to_flip'), ENT_QUOTES) . '"' : ''; ?>>
             <div class="card-flip-inner" id="cardInner" style="--card-aspect: <?php echo htmlspecialchars($cardAspectCss, ENT_QUOTES); ?>;">
                 <div class="card-face">
                     <img src="<?php echo htmlspecialchars($frontImage); ?>" alt="<?= htmlspecialchars(t('digitalcard.alt_card_front')) ?>" fetchpriority="high" decoding="async">
