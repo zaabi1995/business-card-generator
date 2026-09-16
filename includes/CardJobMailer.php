@@ -255,9 +255,9 @@ class CardJobMailer
     /**
      * Hand the print-ready artwork to production.
      *
-     * Ali wants this on WhatsApp. The number is not configured and a phone
-     * number is never guessed, so until mhd_production_whatsapp is set it goes
-     * to the production mailbox, which is the same address BHD print from today.
+     * Ali asked for WhatsApp first and then chose email, 16 Sep 2026: the
+     * production mailbox is where BHD print from today, so the artwork goes
+     * there. MHD_PRODUCTION_EMAIL overrides it if production ever move.
      */
     public static function sendToProduction(array $req, array $dept, string $artworkPath): array
     {
