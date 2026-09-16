@@ -38,7 +38,9 @@ try {
 $upcomingAppts = 0;
 try {
     $upcomingAppts = (int)($db->fetchOne(
-        "SELECT COUNT(*) c FROM appointments WHERE company_id = :cid AND scheduled_at > NOW() AND status IN ('pending','confirmed')",
+        // slot_start, not scheduled_at: the column has never existed, so this
+        // count threw on every Orders page load and the badge read zero.
+        "SELECT COUNT(*) c FROM appointments WHERE company_id = :cid AND slot_start > NOW() AND status IN ('pending','confirmed')",
         ['cid' => $companyId]
     )['c'] ?? 0);
 } catch (Throwable $e) { /* table may not exist */ }

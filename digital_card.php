@@ -132,10 +132,22 @@ require_once INCLUDES_DIR . '/JsonLd.php';
     // Shared with api/scan/resolve-card.php so both surfaces resolve a token
     // to an employee identically instead of drifting apart.
     $employee = CardifyConvention::resolveEmployeeToken($employeeId, $company['id']);
+
+    // Tenants that run the portal as an internal HR queue keep a submitted card
+    // off the public web until an admin approves it. The portal still creates
+    // the employee row on submit (the print PDF and its email need it), so the
+    // gate lives here: a 'pending' employee reads as not-found, and the
+    // pending-request fallback below is skipped. approveRequestChain() sets the
+    // employee to 'active', which publishes the card.
+    $requiresApproval = !empty($company['card_requires_approval']);
+    if ($requiresApproval && $employee && ($employee['status'] ?? '') === 'pending') {
+        $employee = null;
+    }
+
     // Fall back to the latest pending/approved card_request so a freshly
     // submitted request still resolves to an E-Card page; the actual VCF
     // download button below also honours this fallback.
-    if (!$employee) {
+    if (!$employee && !$requiresApproval) {
         $db2 = Database::getInstance();
         $req = null;
         if (strpos($employeeId, '@') !== false) {

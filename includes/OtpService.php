@@ -204,10 +204,33 @@ class OtpService
     /**
      * Render an email template, returning [$subject, $body].
      */
+    /**
+     * The brand the recipient thinks they are signing in to. On a tenant
+     * subdomain that is the tenant, not Cardify: an MHD employee getting a
+     * mail headed "Your Cardify verification code" has no idea what it is for.
+     * Falls back to Cardify on the apex host.
+     */
+    private static function brandName(string $locale = 'en'): string
+    {
+        if (class_exists('TenantHost')) {
+            try {
+                $t = TenantHost::resolve();
+                if ($locale === 'ar') {
+                    $ar = trim((string)($t['name_ar'] ?? ''));
+                    if ($ar !== '') return $ar;
+                }
+                $n = trim((string)($t['name'] ?? ''));
+                if ($n !== '') return $n;
+            } catch (Throwable $e) { /* fall through to the default */ }
+        }
+        return $locale === 'ar' ? 'كارديفاي' : 'Cardify';
+    }
+
     private static function renderEmailTemplate(string $name, string $code): array
     {
         $locale = function_exists('currentLocale') ? currentLocale() : 'en';
         $expiresInMinutes = (int) (self::TTL_SECONDS / 60);
+        $brand = self::brandName($locale);
         $path = __DIR__ . "/notifications/templates/{$name}.{$locale}.php";
         if (!is_file($path)) {
             $path = __DIR__ . "/notifications/templates/{$name}.en.php";

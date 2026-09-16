@@ -523,7 +523,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['portal_passcode'])) 
                         'position_en_3' => $formData['position_en_3'], 'position_ar_3' => $formData['position_ar_3'],
                         'mobile'        => $mob,                       'mobile_ar'     => $mobAr,
                         'email'         => $formData['email'],
-                        'department_id' => $formData['department_id'] ?: null, 'status' => 'active',
+                        'department_id' => $formData['department_id'] ?: null,
+                        // A tenant that runs the portal as an HR queue keeps the
+                        // card off the public web until an admin approves it.
+                        // approveRequestChain() flips this to 'active'.
+                        'status' => empty($company['card_requires_approval']) ? 'active' : 'pending',
                     ];
                     if ($db->fetchOne("SELECT id FROM employees WHERE id = :id", ['id' => $empId])) {
                         $db->update('employees', $empData, 'id = :id', ['id' => $empId]);
@@ -2313,7 +2317,12 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
         // Add text fields using CardEditor
         if (template && template.fields) {
             for (const [key, field] of Object.entries(template.fields)) {
-                if (!field.enabled) continue;
+                // qr_code is the one exception: MHD-style slots ship enabled:false
+                // and are force-enabled server-side when the person ticks "Include
+                // QR code", so gating the preview on field.enabled meant the QR
+                // never drew and nobody could see where it lands. The branch below
+                // decides from the tickbox instead.
+                if (!field.enabled && key !== 'qr_code') continue;
 
                 // Decorations baked into the background PNG at import time
                 // (render_in_bg) are already pixels in the bg. Re-drawing them
@@ -2378,9 +2387,11 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                 // so the QR is dynamic per person. Lock it against user movement
                 // on the portal preview (designer is the only place to reposition).
                 if (key === 'qr_code') {
-                    // Honor the "Include QR code" tickbox: skip the QR entirely when off.
+                    // Honor the "Include QR code" tickbox: skip the QR entirely when
+                    // off. With no tickbox on the form, fall back to the slot's own
+                    // enabled flag so tenants that never show a QR do not gain one.
                     var __qrEl = document.getElementById('include_qr');
-                    if (__qrEl && !__qrEl.checked) { continue; }
+                    if (__qrEl ? !__qrEl.checked : !field.enabled) { continue; }
                     const vcfUrl = getVcfUrl(data.email);
                     try {
                         const qrObj = await editor.addQRCode(vcfUrl, {
@@ -2873,6 +2884,21 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
         }, 3000);
     }
     
+    // Ticking "Include QR code" has to redraw the card, otherwise the preview
+    // keeps whatever state it had when it was first generated and the person
+    // cannot see the QR appear or go away.
+    document.addEventListener('DOMContentLoaded', function () {
+        const qrBox = document.getElementById('include_qr');
+        if (qrBox) {
+            qrBox.addEventListener('change', function () {
+                const gen = document.getElementById('generatedPreview');
+                if (gen && gen.style.display !== 'none' && typeof generatePreview === 'function') {
+                    generatePreview();
+                }
+            });
+        }
+    });
+
     // Optional: Auto-translate on blur (when user leaves field)
     document.addEventListener('DOMContentLoaded', function() {
         const autoTranslateFields = ['name_en', 'position_en'];
