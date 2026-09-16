@@ -66,7 +66,16 @@ class CardPDFRenderer
         // Explicit include_qr=true must DRAW the QR even when the template's
         // qr_code slot ships enabled=false (MHD slots default off; the tickbox
         // is the opt-in). Forced below onto each page's qr spec.
-        $forceQr = array_key_exists('include_qr', $opts) && (bool)$opts['include_qr'];
+        //
+        // qr_force_allowed gates that override. It defaults TRUE so every existing
+        // caller behaves exactly as before; the portal passes FALSE when neither the
+        // design nor the department asked for a QR, which stops a slot-less design
+        // (Mays' die-cut hexagon) from gaining a QR stamped over its own text.
+        $forceAllowed = !array_key_exists('qr_force_allowed', $opts)
+            || (bool) $opts['qr_force_allowed'];
+        $forceQr = $forceAllowed
+            && array_key_exists('include_qr', $opts)
+            && (bool) $opts['include_qr'];
         // 'press' = the clean per-card print download: print font-embed + 3mm
         // bleed + crop marks + DeviceCMYK (exact tenant brand values) + a
         // CutContour cut-line layer. 'print' stays RGB/no-bleed so the A4

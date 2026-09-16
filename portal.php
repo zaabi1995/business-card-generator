@@ -220,6 +220,20 @@ foreach ([$activeFrontTemplate, $activeBackTemplate] as $__tpl) {
     }
 }
 
+// Does the DESIGN have a QR slot? A template whose qr_code ships enabled=false has
+// no QR in the artwork, so the card must not gain one. MHD is the exception: its
+// division templates ship the slot off on purpose and the department opts back in
+// via departments.include_qr_default, which is what the tickbox is for. Anything
+// else, and a tenant like Mays (a die-cut hexagon with no QR anywhere in the
+// design) gets a QR stamped over its own website line.
+$qrSlotEnabled = false;
+foreach ([$activeFrontTemplate, $activeBackTemplate] as $__tpl) {
+    if (!empty($__tpl['fields']['qr_code']['enabled'])) { $qrSlotEnabled = true; break; }
+}
+$qrDeptOptIn = !empty($selectedDepartment['include_qr_default']);
+$qrToggleVisible = $qrSlotEnabled || $qrDeptOptIn;
+$qrCheckedByDefault = $qrToggleVisible;
+
 // If no templates or no enabled fields, show all common fields
 if (empty($enabledFields)) {
     $enabledFields = [
@@ -535,7 +549,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['portal_passcode'])) 
                         $db->insert('employees', ['id' => $empId] + $empData);
                     }
                     $includeQr = !empty($_POST['include_qr']);
-                    $pdf = CardPDFRenderer::render($empId, 'print', ['include_qr' => $includeQr]);
+                    $pdf = CardPDFRenderer::render($empId, 'print', [
+                        'include_qr'       => $includeQr,
+                        'qr_force_allowed' => $qrSlotEnabled || $qrDeptOptIn,
+                    ]);
                     if (!empty($pdf['success']) && is_file($pdf['path'])) {
                         $cc = array_values(array_filter(array_map('trim', explode(',', (string)($sendDept['cc_emails'] ?? '')))));
                         MhdMailer::sendCard([
@@ -1891,15 +1908,19 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                     </div>
                     <?php endforeach; ?>
 
-                    <!-- QR code toggle -->
+                    <!-- QR code toggle. Hidden when the design has no QR slot and no
+                         department opted in: an option that cannot change anything is
+                         worse than no option. -->
+                    <?php if ($qrToggleVisible): ?>
                     <div class="pt-4 border-t border-gray-200" id="qrToggleBlock">
                         <label class="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
-                            <input type="checkbox" name="include_qr" id="include_qr" value="1" checked
+                            <input type="checkbox" name="include_qr" id="include_qr" value="1"<?= $qrCheckedByDefault ? ' checked' : '' ?>
                                    data-cardify-change-fn="scheduleLivePreview"
                                    class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
                             <span><?= htmlspecialchars(t('portal.include_qr')) ?></span>
                         </label>
                     </div>
+                    <?php endif; ?>
 
                     <!-- Step 1: Generate Preview Button -->
                     <div class="pt-4 border-t border-gray-200" id="generatePreviewSection">
@@ -2008,6 +2029,8 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
     // CardEditor instances
     // True when the design is a die cut: keep the canvas transparent outside the
     // cut so the CSS drop-shadow can follow the real silhouette.
+    // True only when a department explicitly opted into a QR the design lacks (MHD).
+    const PORTAL_QR_FORCE_ALLOWED = <?php echo $qrDeptOptIn ? 'true' : 'false'; ?>;
     const PORTAL_DIE_CUT = <?php echo $portalDieCut ? 'true' : 'false'; ?>;
     let frontEditor = null;
     let backEditor = null;
@@ -2387,11 +2410,15 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                 // so the QR is dynamic per person. Lock it against user movement
                 // on the portal preview (designer is the only place to reposition).
                 if (key === 'qr_code') {
-                    // Honor the "Include QR code" tickbox: skip the QR entirely when
-                    // off. With no tickbox on the form, fall back to the slot's own
-                    // enabled flag so tenants that never show a QR do not gain one.
+                    // The design decides whether a QR exists; the tickbox only decides
+                    // whether to print the one the design already has. A slot shipping
+                    // enabled=false means there is no QR in the artwork, so letting a
+                    // ticked box override it stamped a QR over Mays' own website line.
+                    // PORTAL_QR_FORCE_ALLOWED is the MHD escape hatch: its division
+                    // templates ship the slot off and the department opts back in.
+                    if (!field.enabled && !PORTAL_QR_FORCE_ALLOWED) { continue; }
                     var __qrEl = document.getElementById('include_qr');
-                    if (__qrEl ? !__qrEl.checked : !field.enabled) { continue; }
+                    if (__qrEl && !__qrEl.checked) { continue; }
                     const vcfUrl = getVcfUrl(data.email);
                     try {
                         const qrObj = await editor.addQRCode(vcfUrl, {
