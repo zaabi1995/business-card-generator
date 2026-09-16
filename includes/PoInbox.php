@@ -110,6 +110,7 @@ class PoInbox
             return ['matched' => false, 'ref' => $ref, 'reason' => 'cannot write ' . $path];
         }
         @chmod($path, 0640);
+        self::ownedByTheWebUser($dir, $path);
 
         // The number is on the document itself more often than in the covering
         // note, so read the PDF's own text last rather than give up.
@@ -215,6 +216,21 @@ class PoInbox
             unset($data['attachments'][$i]['b64']);
         }
         return $data;
+    }
+
+    /**
+     * The poller runs as root from cron, so what it writes lands root:root and
+     * the console, which runs as www, could not read it back. Hand it over.
+     */
+    private static function ownedByTheWebUser(string ...$paths): void
+    {
+        if (!function_exists('posix_geteuid') || posix_geteuid() !== 0) {
+            return;
+        }
+        foreach ($paths as $p) {
+            @chown($p, 'www');
+            @chgrp($p, 'www');
+        }
     }
 
     private static function pdfText(string $path): string
