@@ -245,10 +245,11 @@ if ($r['success'] && $r['employee_id']) {
                     'quote' => $quote['data']['quoteId'] ?? null,
                 ]);
             } else {
-                error_log('[mhd quote] ' . ($quote['message'] ?? 'unknown'));
-                if (method_exists('ERPSync', 'enqueueRetry')) {
-                    ERPSync::enqueueRetry($orderId, 'createQuote', $quote['message'] ?? 'unknown');
-                }
+                // Log and carry on. ERPSync::enqueueRetry is for PAYMENT retries and
+                // takes six arguments; calling it here threw and cost the division
+                // its quotation email. BHD picks the failure up from the log and the
+                // order stays on print_orders with no erp_quote_id.
+                error_log('[mhd quote] order ' . $orderId . ': ' . ($quote['message'] ?? 'unknown'));
             }
             // The division is asked for the purchase order either way. A quote
             // that has not reached the ERP yet is a BHD problem, not theirs.

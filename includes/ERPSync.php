@@ -13,6 +13,9 @@
  */
 class ERPSync {
 
+    /** The canonical BHD-ERP product every Cardify print order books against. */
+    const ERP_PRODUCT_NAME = 'Business Card';
+
     /**
      * Load ERP settings from erp_settings table.
      */
@@ -342,9 +345,16 @@ class ERPSync {
             'description' => $description,
             'currency'    => $order['currency'] ?? 'OMR',
             'items'       => [[
-                'itemName' => $description,
-                'quantity' => $qty ?: 1,
-                'price'    => $unit,
+                // The ERP refuses a line that is not linked to a canonical
+                // product: directSaleCosting.js throws "Sale line 1 is not linked
+                // to a canonical ERP product". adminApi.js create-quote wants
+                // productId or productName on every item, and ERPSync sent
+                // neither, so every quote it raised was rejected. Cardify only
+                // ever prints business cards, so the canonical product is fixed.
+                'productName' => self::ERP_PRODUCT_NAME,
+                'itemName'    => $description,
+                'quantity'    => $qty ?: 1,
+                'price'       => $unit,
             ]],
         ];
 
