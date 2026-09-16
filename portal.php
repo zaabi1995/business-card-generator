@@ -632,6 +632,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['portal_passcode'])) 
                 if (!empty($previewPath)) {
                     $frontAbsUrl = 'https://' . (defined('APP_HOST') ? APP_HOST : 'cardify.om') . '/' . ltrim($previewPath, '/');
                 }
+                // The Arabic back too, and the on-disk paths so both sides can be
+                // attached rather than only linked. An approver who cannot load
+                // remote images in their mail client still gets the files.
+                $backAbsUrl  = '';
+                $backPath    = $insertData['preview_back_path'] ?? $insertData['preview_back'] ?? '';
+                if (!empty($backPath)) {
+                    $backAbsUrl = 'https://' . (defined('APP_HOST') ? APP_HOST : 'cardify.om') . '/' . ltrim($backPath, '/');
+                }
+                $previewFrontAbs = $previewPath ? __DIR__ . '/' . ltrim($previewPath, '/') : '';
+                $previewBackAbs  = $backPath    ? __DIR__ . '/' . ltrim($backPath, '/')    : '';
 
                 // Build the design block only when a preview exists, so the
                 // email never shows a broken-image icon.
@@ -653,7 +663,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['portal_passcode'])) 
                                 'quantity_ordered' => $quantityRequested,
                                 'company_slug'     => $companySlug,
                             ],
-                            $sendDept, $approvalToken, $frontAbsUrl);
+                            $sendDept, $approvalToken, [
+                                'front_url'  => $frontAbsUrl,
+                                'back_url'   => $backAbsUrl,
+                                'front_path' => $previewFrontAbs,
+                                'back_path'  => $previewBackAbs,
+                            ]);
                         $__routed = !empty($__r['ok']);
                         if (!$__routed) { error_log('[portal approval] ' . ($__r['error'] ?? 'unknown')); }
                     } catch (Throwable $e) {

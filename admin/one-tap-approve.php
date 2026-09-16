@@ -196,6 +196,68 @@ $sendToPrint = (bool)($_POST['send_to_print'] ?? false);
 $r = approveRequestChain($request, $company, $row['company_id'], $row['admin_email'], $sendToPrint);
 
 if ($r['success'] && $r['employee_id']) {
+    // Approval raises the quotation and asks for the purchase order. Wrapped
+    // whole: the token is already consumed by this point, so a failure here must
+    // never cost the approval itself. It lands on the ERP retry queue instead.
+    try {
+        require_once INCLUDES_DIR . '/CardJob.php';
+        require_once INCLUDES_DIR . '/CardJobMailer.php';
+        require_once INCLUDES_DIR . '/CardPrice.php';
+        require_once INCLUDES_DIR . '/ERPSync.php';
+
+        // Nothing upstream loads the department, and it carries the approver,
+        // the head to copy, the ERP client and the rate.
+        $dept = !empty($request['department_id']) ? $db->fetchOne(
+            "SELECT * FROM departments WHERE id = :did AND company_id = :cid",
+            ['did' => $request['department_id'], 'cid' => $row['company_id']]) : null;
+
+        if ($dept && !empty($dept['responsible_email'])) {
+            CardJob::transition($request['id'], 'approved', [
+                'actor' => $row['admin_email'], 'employee' => $r['employee_id'],
+            ]);
+
+            $qty   = (int)($request['quantity_ordered'] ?? CardPrice::DEFAULT_QTY);
+            if (!CardPrice::isStandardQuantity($qty)) { $qty = CardPrice::DEFAULT_QTY; }
+            $price = CardPrice::quote($qty, (float)($dept['card_unit_price'] ?? CardPrice::UNIT_PRICE));
+
+            // The print order is what hands the job to the ERP methods that
+            // already exist. erp_client_name carries the DIVISION's account:
+            // ERPSync resolves the client by joining companies, so without this
+            // every division would quote against the parent.
+            $db->insert('print_orders', [
+                'company_id'      => $row['company_id'],
+                'department_id'   => $request['department_id'],
+                'order_number'    => $request['job_ref'] ?: ('MHD-' . substr($request['id'], 0, 6)),
+                'quantity'        => $price['qty'],
+                'paper_type'      => 'Art 300 GSM',
+                'finish'          => 'matte',
+                'total'           => $price['gross'],
+                'erp_client_name' => $dept['erp_client_name'],
+                'status'          => 'pending',
+            ]);
+            $orderId = (int)$db->getConnection()->lastInsertId();
+            $db->query("UPDATE card_requests SET erp_order_id = ? WHERE id = ?", [$orderId, $request['id']]);
+
+            $quote = ERPSync::isEnabled() ? ERPSync::createQuote($orderId) : ['success' => false, 'message' => 'erp disabled'];
+            if (!empty($quote['success'])) {
+                CardJob::transition($request['id'], 'quoted', [
+                    'actor' => 'system', 'order' => $orderId,
+                    'quote' => $quote['data']['quoteId'] ?? null,
+                ]);
+            } else {
+                error_log('[mhd quote] ' . ($quote['message'] ?? 'unknown'));
+                if (method_exists('ERPSync', 'enqueueRetry')) {
+                    ERPSync::enqueueRetry($orderId, 'createQuote', $quote['message'] ?? 'unknown');
+                }
+            }
+            // The division is asked for the purchase order either way. A quote
+            // that has not reached the ERP yet is a BHD problem, not theirs.
+            CardJobMailer::sendQuotation($request, $dept, $price, $quote['data'] ?? []);
+        }
+    } catch (Throwable $e) {
+        error_log('[mhd post-approve] ' . $e->getMessage());
+    }
+
     $target = $adminBase . 'batch_generate?employee_id=' . urlencode($r['employee_id'])
         . '&auto_generate=1&send_email=1';
     if (!headers_sent()) {

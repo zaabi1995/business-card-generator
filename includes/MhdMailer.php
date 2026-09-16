@@ -222,6 +222,18 @@ class MhdMailer
         return ['ok' => $res['ok'], 'error' => $res['error'] ?? null, 'recipients' => $recipients];
     }
 
+    /** Attachments are PDFs and card designs, so the type follows the extension. */
+    private static function mimeFor(string $name): string
+    {
+        switch (strtolower(pathinfo($name, PATHINFO_EXTENSION))) {
+            case 'png':  return 'image/png';
+            case 'jpg':
+            case 'jpeg': return 'image/jpeg';
+            case 'webp': return 'image/webp';
+            default:     return 'application/pdf';
+        }
+    }
+
     /** $filename is interpolated raw into two MIME parameters, so keep it boring. */
     private static function safeFilename(string $name): string
     {
@@ -249,7 +261,7 @@ class MhdMailer
         $b .= chunk_split(base64_encode($html)) . $eol;
         foreach ($files as $f) {
             $b .= '--' . $boundary . $eol;
-            $b .= 'Content-Type: application/pdf; name="' . $f['name'] . '"' . $eol;
+            $b .= 'Content-Type: ' . self::mimeFor($f['name']) . '; name="' . $f['name'] . '"' . $eol;
             $b .= 'Content-Transfer-Encoding: base64' . $eol;
             $b .= 'Content-Disposition: attachment; filename="' . $f['name'] . '"' . $eol . $eol;
             $b .= chunk_split(base64_encode((string)file_get_contents($f['path']))) . $eol;

@@ -27,7 +27,7 @@ class CardJobMailer
      *
      * @return array ['ok'=>bool, 'error'=>?string, 'recipients'=>array]
      */
-    public static function sendForApproval(array $req, array $dept, string $token, string $previewUrl = ''): array
+    public static function sendForApproval(array $req, array $dept, string $token, array $designs = []): array
     {
         $to = trim((string)($dept['responsible_email'] ?? ''));
         if ($to === '') {
@@ -45,10 +45,29 @@ class CardJobMailer
         $review = getTenantUrl($slug, '/admin/approve-request?t=' . urlencode($token));
 
         $e = fn($v) => htmlspecialchars((string)$v, ENT_QUOTES);
-        $preview = $previewUrl !== ''
-            ? '<p style="text-align:center;margin:18px 0"><img src="' . $e($previewUrl)
-              . '" alt="Card design" style="max-width:340px;width:100%;border-radius:8px;border:1px solid #e5e7eb"></p>'
-            : '';
+
+        // Both sides, English front and Arabic back, shown inline and attached.
+        // The approver should be able to check the Arabic without opening
+        // anything, and keep both files without going back to the portal.
+        $preview = '';
+        $files   = [];
+        foreach ([['front', 'English front'], ['back', 'Arabic back']] as [$side, $label]) {
+            $url  = trim((string)($designs[$side . '_url']  ?? ''));
+            $path = trim((string)($designs[$side . '_path'] ?? ''));
+            if ($url !== '') {
+                $preview .= '<div style="display:inline-block;margin:8px 6px;text-align:center;vertical-align:top">'
+                          . '<img src="' . $e($url) . '" alt="' . $e($label) . '" '
+                          . 'style="max-width:320px;width:100%;border-radius:8px;border:1px solid #e5e7eb"><br>'
+                          . '<span style="font-size:12px;color:#6b7280">' . $e($label) . '</span></div>';
+            }
+            if ($path !== '' && is_file($path)) {
+                $files[] = ['path' => $path,
+                            'name' => ($ref !== '' ? $ref . '-' : '') . $side . '.png'];
+            }
+        }
+        if ($preview !== '') {
+            $preview = '<div style="text-align:center;margin:18px 0">' . $preview . '</div>';
+        }
 
         $rows = '';
         foreach ([
@@ -70,7 +89,7 @@ class CardJobMailer
               . '<table style="border-collapse:collapse;margin:14px 0">' . $rows . '</table>'
               . '<p style="margin:26px 0"><a href="' . $e($action) . '" style="background:#0f4c81;color:#fff;'
               . 'padding:13px 30px;border-radius:6px;text-decoration:none;font-weight:bold;display:inline-block">'
-              . 'Review and approve</a></p>'
+              . 'Approve</a></p>'
               . '<p style="color:#6b7280;font-size:13px">Approving raises the quotation and emails it to this '
               . 'address. Nothing prints until you send the purchase order.</p>'
               . '<p style="color:#6b7280;font-size:13px">To decline instead, or to change anything first, '
@@ -83,6 +102,62 @@ class CardJobMailer
         ]));
 
         $subject = ($ref !== '' ? "[{$ref}] " : '') . "Business card approval: {$name}, {$div}";
+        return MhdMailer::sendRaw([$to], $cc, $subject, $html, $files);
+    }
+
+    /**
+     * The quotation email, sent the moment a division approves.
+     *
+     * ERPSync returns document ids, never PDF paths, so the figures are set out
+     * in the body and the ERP quote number is quoted for reference. Attaching
+     * the PDF needs a fetch from BHD-ERP, which is the next piece of work.
+     *
+     * The subject keeps the job ref so the purchase-order reply can be matched
+     * back to this job without relying on threading headers.
+     */
+    public static function sendQuotation(array $req, array $dept, array $price, array $erp = []): array
+    {
+        $to = trim((string)($dept['responsible_email'] ?? ''));
+        if ($to === '') {
+            return ['ok' => false, 'error' => 'department has no approver', 'recipients' => []];
+        }
+        $e    = fn($v) => htmlspecialchars((string)$v, ENT_QUOTES);
+        $name = trim((string)($req['name_en'] ?? '')) ?: trim((string)($req['name_ar'] ?? '')) ?: 'the employee';
+        $div  = (string)($dept['name'] ?? 'MHD');
+        $ref  = (string)($req['job_ref'] ?? '');
+        $num  = trim((string)($erp['quoteNumber'] ?? ''));
+        $omr  = fn($v) => number_format((float)$v, 3);
+
+        $html = '<div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#222;line-height:1.6">'
+              . '<p>Thank you. The card for <strong>' . $e($name) . '</strong> is approved for <strong>'
+              . $e($div) . '</strong>, and our quotation is below.</p>'
+              . ($num !== '' ? '<p>Quotation <strong>' . $e($num) . '</strong></p>' : '')
+              . '<table style="border-collapse:collapse;margin:16px 0;font-size:14px">'
+              . '<tr><td style="padding:6px 16px 6px 0;color:#6b7280">Item</td>'
+              . '<td style="padding:6px 0"><strong>' . $e($price['description']) . '</strong></td></tr>'
+              . '<tr><td style="padding:6px 16px 6px 0;color:#6b7280">Quantity</td>'
+              . '<td style="padding:6px 0"><strong>' . (int)$price['qty'] . ' cards</strong></td></tr>'
+              . '<tr><td style="padding:6px 16px 6px 0;color:#6b7280">Unit price</td>'
+              . '<td style="padding:6px 0">OMR ' . $omr($price['unit']) . '</td></tr>'
+              . '<tr><td style="padding:6px 16px 6px 0;color:#6b7280">Net</td>'
+              . '<td style="padding:6px 0">OMR ' . $omr($price['net']) . '</td></tr>'
+              . '<tr><td style="padding:6px 16px 6px 0;color:#6b7280">VAT 5%</td>'
+              . '<td style="padding:6px 0">OMR ' . $omr($price['vat']) . '</td></tr>'
+              . '<tr><td style="padding:8px 16px 6px 0;color:#111"><strong>Total</strong></td>'
+              . '<td style="padding:8px 0"><strong>OMR ' . $omr($price['gross']) . '</strong></td></tr>'
+              . '</table>'
+              . '<p style="background:#f1f5f9;border-radius:8px;padding:14px 16px;margin:20px 0">'
+              . '<strong>To go ahead, reply to this email with your purchase order attached.</strong><br>'
+              . '<span style="color:#6b7280;font-size:13px">Keep the subject line as it is. That is how your '
+              . 'purchase order is matched to this job. We will send the invoice and the delivery note back '
+              . 'as soon as it arrives, and the cards go to print.</span></p>'
+              . '<p>Regards,<br>BHD Printing &amp; Designing</p></div>';
+
+        $cc = array_values(array_filter([
+            trim((string)($dept['head_email'] ?? '')),
+            self::BHD_OWNER,
+        ]));
+        $subject = ($ref !== '' ? "[{$ref}] " : '') . "Quotation for {$name}, {$div}";
         return MhdMailer::sendRaw([$to], $cc, $subject, $html);
     }
 }
