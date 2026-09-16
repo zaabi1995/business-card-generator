@@ -212,7 +212,12 @@ class ERPSync {
         // Fetch the order
         $db = Database::getInstance();
         $order = $db->fetchOne("
-            SELECT po.*, c.name AS company_name, c.erp_client_name
+            SELECT po.*, c.name AS company_name,
+                   -- Aliased. po.* already carries the ORDER's erp_client_name,
+                   -- which is the DIVISION account; selecting the company's under
+                   -- the same key overwrote it, so every division quote went to
+                   -- the tenant's own account instead.
+                   c.erp_client_name AS company_erp_client_name
             FROM print_orders po
             LEFT JOIN companies c ON po.company_id = c.id
             WHERE po.id = :id
@@ -228,10 +233,14 @@ class ERPSync {
         $finish = ucfirst(str_replace('_', ' ', $order['finish'] ?? 'standard'));
         $description = "Business Cards × {$qty} ({$paper}, {$finish}), Order {$order['order_number']}";
 
-        // Determine ERP client name: company override → settings default → company name
+        // ERP client: division account → company override → settings default → company name
         $clientName = !empty($order['erp_client_name'])
             ? $order['erp_client_name']
-            : (!empty($settings['erp_client_name']) ? $settings['erp_client_name'] : $order['company_name']);
+            : (!empty($order['company_erp_client_name'])
+                ? $order['company_erp_client_name']
+                : (!empty($settings['erp_client_name'])
+                    ? $settings['erp_client_name']
+                    : $order['company_name']));
 
         if (empty($clientName)) {
             return ['success' => false, 'message' => 'Cannot sync: no ERP client name configured'];
@@ -352,7 +361,12 @@ class ERPSync {
         $settings = self::getSettings();
         $db = Database::getInstance();
         $order = $db->fetchOne("
-            SELECT po.*, c.name AS company_name, c.erp_client_name
+            SELECT po.*, c.name AS company_name,
+                   -- Aliased. po.* already carries the ORDER's erp_client_name,
+                   -- which is the DIVISION account; selecting the company's under
+                   -- the same key overwrote it, so every division quote went to
+                   -- the tenant's own account instead.
+                   c.erp_client_name AS company_erp_client_name
             FROM print_orders po
             LEFT JOIN companies c ON po.company_id = c.id
             WHERE po.id = :id
@@ -371,10 +385,15 @@ class ERPSync {
         $finish = ucfirst(str_replace('_', ' ', $order['finish'] ?? 'standard'));
         $description = "Business Cards x {$qty} ({$paper}, {$finish}), Order {$order['order_number']}";
 
-        // Company override (OHB = Oman Housing Bank S.A.O.G.) then settings then name.
+        // Division account, then company override (OHB = Oman Housing Bank
+        // S.A.O.G.), then settings, then the tenant name.
         $clientName = !empty($order['erp_client_name'])
             ? $order['erp_client_name']
-            : (!empty($settings['erp_client_name']) ? $settings['erp_client_name'] : $order['company_name']);
+            : (!empty($order['company_erp_client_name'])
+                ? $order['company_erp_client_name']
+                : (!empty($settings['erp_client_name'])
+                    ? $settings['erp_client_name']
+                    : $order['company_name']));
         if (empty($clientName)) {
             return ['success' => false, 'message' => 'Cannot quote: no ERP client name configured'];
         }
