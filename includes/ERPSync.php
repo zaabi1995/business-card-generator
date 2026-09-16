@@ -43,7 +43,7 @@ class ERPSync {
         'Lamination'          => 'Matte',
         'Card Shape'          => 'Standard',
         'Rounded Corners'     => 'Without Rounded Corners',
-        'Print Sides'         => 'Single Side',
+        'Print Sides'         => 'Double Side',
     ];
 
     /** The spec as the ERP wants it on a line item. */
@@ -377,7 +377,13 @@ class ERPSync {
         }
 
         $amount = (float)$order['total'];
-        $unit = $qty > 0 ? round($amount / $qty, 3) : $amount;
+        // 5 decimals, not 3. The ERP recomputes quantity x price and refuses a
+        // quote whose total does not match, and rounding a per-unit price to 3
+        // decimals throws that total off whenever gross/qty is not a clean
+        // 3-decimal number: 6.300 over 200 cards is 0.0315, which rounded to
+        // 0.032 made the ERP compute 6.400 and reject the quote. Keeping the
+        // precision lets the ERP's own gross-price branch resolve it to 6.300.
+        $unit = $qty > 0 ? round($amount / $qty, 5) : $amount;
         $payload = [
             'clientName'  => $clientName,
             'orderNumber' => $order['order_number'],
