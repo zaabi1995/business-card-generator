@@ -127,8 +127,28 @@ class PoInbox
             'file'       => basename($path),
         ]);
 
-        return ['matched' => $moved, 'ref' => $ref, 'po' => $po,
-                'reason' => $moved ? null : 'job moved on before this reply was filed'];
+        if (!$moved) {
+            return ['matched' => false, 'ref' => $ref, 'po' => $po,
+                    'reason' => 'job moved on before this reply was filed'];
+        }
+
+        // The purchase order is filed and the job has moved. Everything after
+        // this point is best effort: a slow ERP must never cost us the PO.
+        $after = [];
+        try {
+            require_once __DIR__ . '/CardFulfilment.php';
+            $fresh = Database::getInstance()->fetchOne(
+                "SELECT * FROM card_requests WHERE id = :id", ['id' => $job['id']]);
+            $after = CardFulfilment::afterPo($fresh ?: $job);
+        } catch (Throwable $e) {
+            error_log('[mhd afterPo] ' . $e->getMessage());
+            $after = ['errors' => [$e->getMessage()]];
+        }
+
+        return ['matched' => true, 'ref' => $ref, 'po' => $po,
+                'invoice' => $after['invoice'] ?? null,
+                'state'   => $after['state'] ?? 'po_received',
+                'errors'  => $after['errors'] ?? []];
     }
 
     /**

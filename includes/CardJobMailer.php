@@ -186,4 +186,119 @@ class CardJobMailer
         return $sent;
     }
 
+    /**
+     * The documents email, sent the moment the purchase order is filed.
+     *
+     * Quotation, invoice and delivery note, all three as the ERP's own PDFs,
+     * which already carry BHD's signature and stamp. Nothing is retyped into
+     * the body: the documents are the documents.
+     *
+     * @param array $erp ['quoteId','invoiceId','invoiceNumber','deliveryId','po']
+     */
+    public static function sendDocuments(array $req, array $dept, array $erp, ?string $signUrl = null): array
+    {
+        $to = trim((string)($dept['responsible_email'] ?? ''));
+        if ($to === '') {
+            return ['ok' => false, 'error' => 'department has no approver', 'recipients' => []];
+        }
+        $e    = fn($v) => htmlspecialchars((string)$v, ENT_QUOTES);
+        $name = trim((string)($req['name_en'] ?? '')) ?: trim((string)($req['name_ar'] ?? '')) ?: 'the employee';
+        $div  = (string)($dept['name'] ?? 'MHD');
+        $ref  = (string)($req['job_ref'] ?? '');
+        $po   = trim((string)($erp['po'] ?? ''));
+        $inv  = trim((string)($erp['invoiceNumber'] ?? ''));
+
+        $files = [];
+        $wanted = [
+            ['quote',        (string)($erp['quoteId'] ?? ''),    'Quotation'],
+            ['invoice',      (string)($erp['invoiceId'] ?? ''),  'Invoice'],
+            ['deliverynote', (string)($erp['deliveryId'] ?? ''), 'Delivery note'],
+        ];
+        $missing = [];
+        foreach ($wanted as [$type, $id, $label]) {
+            if ($id === '') { $missing[] = $label; continue; }
+            $fileName = $ref !== '' ? $ref . '-' . $type : $type;
+            $path = ERPSync::fetchDocumentPdf($type, $id, $fileName);
+            if ($path === null) { $missing[] = $label; continue; }
+            $files[] = ['path' => $path, 'name' => $fileName . '.pdf'];
+        }
+
+        $sign = $signUrl
+            ? '<p style="margin:26px 0"><a href="' . $e($signUrl) . '" style="background:#0f4c81;color:#fff;'
+              . 'padding:13px 30px;border-radius:6px;text-decoration:none;font-weight:bold;display:inline-block">'
+              . 'Sign the delivery note</a></p>'
+              . '<p style="color:#6b7280;font-size:13px">One click signs it. There is nothing to print, '
+              . 'scan or send back.</p>'
+            : '';
+
+        $html = '<div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#222;line-height:1.6">'
+              . '<p>Your purchase order' . ($po !== '' ? ' <strong>' . $e($po) . '</strong>' : '')
+              . ' is received' . ($inv !== '' ? ', and invoice <strong>' . $e($inv) . '</strong> is raised' : '')
+              . '. The card for <strong>' . $e($name) . '</strong> (' . $e($div) . ') is now in production.</p>'
+              . '<p>The quotation, the invoice and the delivery note are attached.</p>'
+              . ($missing ? '<p style="color:#6b7280;font-size:13px">Following separately: '
+                            . $e(implode(', ', $missing)) . '.</p>' : '')
+              . $sign
+              . '</div>';
+
+        $cc = array_values(array_filter([
+            trim((string)($dept['head_email'] ?? '')),
+            self::BHD_OWNER,
+        ]));
+        $subject = ($ref !== '' ? "[{$ref}] " : '') . "Invoice and delivery note: {$name}, {$div}";
+        $sent = MhdMailer::sendRaw([$to], $cc, $subject, $html, $files);
+
+        foreach ($files as $f) { @unlink($f['path']); }
+        return $sent;
+    }
+
+    /**
+     * Hand the print-ready artwork to production.
+     *
+     * Ali wants this on WhatsApp. The number is not configured and a phone
+     * number is never guessed, so until mhd_production_whatsapp is set it goes
+     * to the production mailbox, which is the same address BHD print from today.
+     */
+    public static function sendToProduction(array $req, array $dept, string $artworkPath): array
+    {
+        if (!is_file($artworkPath)) {
+            return ['ok' => false, 'error' => 'no artwork file', 'recipients' => []];
+        }
+        $e    = fn($v) => htmlspecialchars((string)$v, ENT_QUOTES);
+        $name = trim((string)($req['name_en'] ?? '')) ?: trim((string)($req['name_ar'] ?? '')) ?: 'employee';
+        $div  = (string)($dept['name'] ?? 'MHD');
+        $ref  = (string)($req['job_ref'] ?? '');
+        $qty  = (int)($req['quantity_ordered'] ?? 0);
+        $po   = trim((string)($req['po_number'] ?? ''));
+
+        $rows = '';
+        foreach ([
+            'Name'     => $req['name_en'] ?? '',
+            'Division' => $div,
+            'Quantity' => $qty ? $qty . ' cards' : '',
+            'Stock'    => 'Art 300 GSM, matte, double sided',
+            'PO'       => $po,
+        ] as $k => $v) {
+            if (trim((string)$v) === '') { continue; }
+            $rows .= '<tr><td style="padding:3px 14px 3px 0;color:#6b7280">' . $e($k)
+                   . '</td><td style="padding:3px 0"><strong>' . $e($v) . '</strong></td></tr>';
+        }
+
+        $html = '<div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#222;line-height:1.6">'
+              . '<p>Print ready. The artwork is attached, both sides, at press size.</p>'
+              . '<table style="border-collapse:collapse;margin:14px 0">' . $rows . '</table>'
+              . '</div>';
+
+        $file = [['path' => $artworkPath,
+                  'name' => ($ref !== '' ? $ref : 'card') . '-print-ready.pdf']];
+        $subject = ($ref !== '' ? "[{$ref}] " : '') . "Print ready: {$name}, {$div}"
+                 . ($qty ? ", {$qty} cards" : '');
+        return MhdMailer::sendRaw([self::productionMailbox()], [], $subject, $html, $file);
+    }
+
+    private static function productionMailbox(): string
+    {
+        return defined('MHD_PRODUCTION_EMAIL') ? MHD_PRODUCTION_EMAIL : self::BHD_OWNER;
+    }
+
 }
