@@ -94,8 +94,7 @@ class CardJobMailer
               . 'address. Nothing prints until you send the purchase order.</p>'
               . '<p style="color:#6b7280;font-size:13px">To decline instead, or to change anything first, '
               . 'open <a href="' . $e($review) . '" style="color:#0f4c81">the full request</a>.</p>'
-              . '<p style="margin-top:22px">Regards,</p>'
-              . self::signature() . '</div>';
+              . '<p style="margin-top:22px">Regards,<br>BHD Printing &amp; Designing</p></div>';
 
         $cc = array_values(array_filter([
             trim((string)($dept['head_email'] ?? '')),
@@ -152,8 +151,7 @@ class CardJobMailer
               . '<span style="color:#6b7280;font-size:13px">Keep the subject line as it is. That is how your '
               . 'purchase order is matched to this job. We will send the invoice and the delivery note back '
               . 'as soon as it arrives, and the cards go to print.</span></p>'
-              . '<p style="margin-top:22px">Regards,</p>'
-              . self::signature() . '</div>';
+              . '<p style="margin-top:22px">Regards,<br>BHD Printing &amp; Designing</p></div>';
 
         $cc = array_values(array_filter([
             trim((string)($dept['head_email'] ?? '')),
@@ -163,26 +161,4 @@ class CardJobMailer
         return MhdMailer::sendRaw([$to], $cc, $subject, $html);
     }
 
-    /**
-     * The BHD sign-off. Same block on every flow email, so a division always
-     * knows who to call and the mail reads as BHD rather than as a system.
-     */
-    private static function signature(): string
-    {
-        return '<table style="border-collapse:collapse;margin-top:26px;padding-top:16px;'
-             . 'border-top:1px solid #e5e7eb;font-family:Arial,Helvetica,sans-serif"><tr>'
-             . '<td style="vertical-align:top;padding-right:16px">'
-             . '<img src="https://bhdoman.com/logos/bhd-email-logo.png" alt="BHD Printing &amp; Designing"'
-             . ' width="172" height="29" style="display:block;border:0"></td>'
-             . '<td style="vertical-align:top;font-size:13px;color:#374151;line-height:1.65">'
-             . '<div style="font-weight:bold;color:#0f4c81;font-size:14px">BHD Printing &amp; Designing</div>'
-             . '<div style="color:#6b7280">Bin Haider Darwish L.L.C.</div>'
-             . '<div style="margin-top:6px">'
-             . '<a href="mailto:sales@bhdoman.com" style="color:#0f4c81;text-decoration:none">sales@bhdoman.com</a>'
-             . ' &nbsp;&middot;&nbsp; <a href="tel:+96891117795" style="color:#0f4c81;text-decoration:none">+968 9111 7795</a>'
-             . '</div>'
-             . '<div><a href="https://bhdoman.com" style="color:#0f4c81;text-decoration:none">bhdoman.com</a></div>'
-             . '<div style="color:#9ca3af;margin-top:6px;font-size:12px">Muscat, Sultanate of Oman</div>'
-             . '</td></tr></table>';
-    }
 }

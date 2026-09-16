@@ -19,7 +19,16 @@ class MhdMailer
     const SENDER_NAME = 'BHD Printing & Designing';
     const BHD_OWNER   = 'sales@bhdoman.com';
     const SMTP_HOST   = '127.0.0.1';
-    const SMTP_PORT   = 25;
+    /**
+     * 10026, not 25. Postfix runs the BHD signature filter as a content_filter
+     * on the submission paths only (587, 465) and on this localhost-only
+     * service, which master.cf documents as "for automated VPS-to-self mails
+     * that need the BHD signature". Port 25 has no content_filter, so mail
+     * injected there went out unsigned. Still mynetworks-trusted, so no AUTH,
+     * and the sender_dependent_relayhost routing to the Microsoft 365 smarthost
+     * is unchanged.
+     */
+    const SMTP_PORT   = 10026;
 
     /**
      * @param array $c keys: employee_email, employee_name, division_name,
