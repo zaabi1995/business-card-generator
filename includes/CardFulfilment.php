@@ -47,14 +47,23 @@ class CardFulfilment
                FROM print_orders WHERE id = :id", ['id' => $orderId]);
         $out['invoice'] = $order['erp_invoice_number'] ?? null;
 
-        // 2. MHD get the quotation, the invoice and the delivery note, as files.
+        // 2. MHD get the quotation, the invoice and the delivery note, as files,
+        //    with a link that signs the delivery note in one click.
+        $signUrl = null;
+        if ($dept && !empty($dept['responsible_email'])) {
+            require_once __DIR__ . '/DeliverySignature.php';
+            $slug = $db->fetchOne("SELECT slug FROM companies WHERE id = :c",
+                                  ['c' => $job['company_id']])['slug'] ?? 'mhd';
+            $signUrl = DeliverySignature::mintLink($job + ['company_slug' => $slug],
+                                                   (string)$dept['responsible_email']);
+        }
         $docs = CardJobMailer::sendDocuments($job, $dept ?: [], [
             'quoteId'       => $order['erp_quote_id'] ?? '',
             'invoiceId'     => $order['erp_invoice_id'] ?? '',
             'invoiceNumber' => $order['erp_invoice_number'] ?? '',
             'deliveryId'    => $order['delivery_note_external_id'] ?? '',
             'po'            => $job['po_number'] ?? '',
-        ]);
+        ], $signUrl);
         $out['documents'] = !empty($docs['ok']);
         if (!$out['documents']) { $out['errors'][] = 'documents: ' . ($docs['error'] ?? 'unknown'); }
 
