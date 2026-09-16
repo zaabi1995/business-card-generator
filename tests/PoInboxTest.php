@@ -31,6 +31,12 @@ t('PO number from a filename',
 t('nine digits is not a PO',    PoInbox::extractPoNumber('reference 419100025')  === null);
 t('eleven digits is not a PO',  PoInbox::extractPoNumber('ref 41910002581')      === null);
 t('a phone number is not a PO', PoInbox::extractPoNumber('call 96871557505')     === null);
+t('MHD Logistics number their own way',
+  PoInbox::extractPoNumber('our PO MHDL-PO/255 refers') === 'MHDL-PO/255');
+t('a labelled number of another length counts',
+  PoInbox::extractPoNumber('PO No. 480120014 attached') === '480120014');
+t('an unlabelled odd number does not',
+  PoInbox::extractPoNumber('invoice reference 480120014') === null);
 
 // ingest() refuses everything it cannot prove, and says why.
 t('our own outgoing copy is refused',

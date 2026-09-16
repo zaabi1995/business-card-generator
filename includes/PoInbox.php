@@ -21,7 +21,19 @@ require_once __DIR__ . '/CardJob.php';
 class PoInbox
 {
     private const REF_RE = '/\[(MHD-[A-Z0-9]{6})\]/i';
-    private const PO_RE  = '/(?<!\d)(41\d{8})(?!\d)/';
+
+    /**
+     * The purchase-order formats MHD actually use, strictest first.
+     * 41 plus eight digits is the standard one, on 35 of the purchase orders on
+     * file. MHD Logistics number theirs MHDL-PO/255. A few divisions send other
+     * lengths (480120014 on INV-4213), which are only taken when the number is
+     * labelled as a purchase order, so a phone number is never mistaken for one.
+     */
+    private const PO_PATTERNS = [
+        '/(?<!\d)(41\d{8})(?!\d)/',
+        '/\b(MHDL-PO\/\d{1,6})\b/i',
+        '/\b(?:P\.?O\.?|purchase\s+order)(?:\s*(?:no\.?|number|#|:))?[\s.:#-]{0,4}([0-9]{8,12})(?!\d)/i',
+    ];
 
     /** The Maildir of the mailbox that receives the replies. */
     public static function maildir(): string
@@ -45,7 +57,10 @@ class PoInbox
 
     public static function extractPoNumber(string $text): ?string
     {
-        return preg_match(self::PO_RE, $text, $m) ? $m[1] : null;
+        foreach (self::PO_PATTERNS as $re) {
+            if (preg_match($re, $text, $m)) { return $m[1]; }
+        }
+        return null;
     }
 
     /** Our own domains. A purchase order never comes from one of these. */
