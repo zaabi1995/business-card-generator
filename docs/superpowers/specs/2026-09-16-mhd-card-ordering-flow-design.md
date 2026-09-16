@@ -27,13 +27,22 @@ The work is a state machine over these parts, plus purchase-order intake, plus a
 
 | # | Step | Who acts | What they do |
 |---|---|---|---|
-| 1 | Submit | Employee | Picks division, fills name, title, mobile, sees the card, submits |
+| 1 | Submit | Employee | Picks division, sees where it will go, fills name, title, mobile, sees the card, submits |
 | 2 | Approve | Division mailbox | One tap in an email, Approve or Reject |
 | 3 | Quote | BHD-ERP, automatic | Raises a real quotation, emails it |
 | 4 | Purchase order | Division mailbox | Replies to that email with the PO attached |
 | 5 | Documents | BHD-ERP, automatic | Quote becomes invoice, delivery note issued, all signed by BHD |
 | 6 | Production | Cardify, automatic | Print-ready PDF to BHD production on WhatsApp, job on the kanban |
 | 7 | Receipt | Division mailbox | One tap on dispatch signs the delivery note |
+
+### Step 1, telling the employee where it goes
+
+The moment a division is picked, the form says who will receive the request, by name and
+address: "This goes to Technology & Communications, tech.comm@mhd.co.om, for approval."
+The same line repeats on the review step and in the confirmation the employee gets.
+
+Nobody should have to ask who is holding up their card. If a division has a head on CC,
+that is shown too.
 
 ### Status model
 
@@ -128,6 +137,10 @@ Automotive has never ordered a card from BHD. Its division comes off the picker.
 
 ## Pricing
 
+**Standard card only.** Art 300 GSM, matte, the stock MHD buys on almost every order. No
+spot UV, no FBB 400, no foil, no die cut. Those are real products BHD sells, but they are
+quoted by hand and they do not belong in a self-service flow.
+
 Flat rate, matching what BHD already bills MHD.
 
 | Quantity | Ex-VAT | Inc 5% VAT |
@@ -137,9 +150,10 @@ Flat rate, matching what BHD already bills MHD.
 | 300 | 9.000 | 9.450 |
 | 400 | 12.000 | 12.600 |
 
-Rate held in `departments.card_unit_price`, defaulting to 0.030, so a division on a
-special stock can differ without a code change. Anything outside the table is quoted by
-hand, as today.
+Rate held in `departments.card_unit_price`, defaulting to 0.030. The portal offers only
+these four quantities. Anything else, and any non-standard stock, stays a phone call to
+BHD sales exactly as it is today. The quotation line reads "Business Card (Art 300 GSM,
+Matte)" so the invoice matches the historic wording.
 
 ## The console
 

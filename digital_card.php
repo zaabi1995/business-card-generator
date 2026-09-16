@@ -681,6 +681,9 @@ $switchThirdUrl = ($thirdCode !== '' && $thirdLabel !== '')
             padding: 12px 16px 12px;
             width: 100%;
         }
+        /* Clearance for the absolutely positioned top controls (12px top plus a
+           ~30px control, plus a little air) when no logo row is there to do it. */
+        .page-container.has-top-controls { padding-top: 50px; }
 
         /* Company Logo */
         .company-logo {
@@ -1565,7 +1568,14 @@ $switchThirdUrl = ($thirdCode !== '' && $thirdLabel !== '')
         </nav>
         <?php endif; ?>
     </div>
-    <div class="page-container">
+    <?php /* The theme toggle and language pills are absolutely positioned in
+             the top corner. The company logo row normally sits under them and
+             keeps the hero clear. With no logo the hero starts at the very top
+             and the controls land on it: on a three-language tenant the pill
+             group is wide enough to push the toggle into the middle, and it
+             came down on the ambassador's face. Reserve the strip instead. */ ?>
+    <?php $__hasTopControls = ($themeToggleEnabled || $ecardBilingual || $switchThirdUrl !== ''); ?>
+    <div class="page-container<?php echo (empty($logoPath) && $__hasTopControls) ? ' has-top-controls' : ''; ?>">
         <!-- Company Logo -->
         <?php if ($logoPath): ?>
         <div class="company-logo"<?php if ($logoW && $logoH): ?> style="--logo-ratio: <?php echo $logoW; ?> / <?php echo $logoH; ?>;"<?php endif; ?>>
