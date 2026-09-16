@@ -474,6 +474,13 @@ require_once INCLUDES_DIR . '/JsonLd.php';
             if ($ld && !empty($ld[0]) && !empty($ld[1])) { $logoW = (int)$ld[0]; $logoH = (int)$ld[1]; }
         }
     }
+    // Optional per-tenant cap for the header logo. Clamped to the container's
+    // 388px content width so a bad value cannot blow out the layout.
+    $logoMaxPx = 0;
+    if ($theme && !empty($theme['logo_max_px'])) {
+        $logoMaxPx = max(48, min(388, (int)$theme['logo_max_px']));
+    }
+
     $photoUrl = !empty($employee['photo']) ? cardifyAssetUrl($employee['photo']) : '';
     if ($photoUrl !== '') {
         $photoFsPath = __DIR__ . (parse_url($photoUrl, PHP_URL_PATH) ?: '');
@@ -704,7 +711,10 @@ $switchThirdUrl = ($thirdCode !== '' && $thirdLabel !== '')
             /* width/height on the tag give the intrinsic ratio; these cap the
                drawn size. aspect-ratio keeps the reserved box correct while the
                file is still in flight, so nothing under the logo moves. */
-            max-width: 96px;
+            /* 96px suits a square mark. A wide bilingual wordmark (Shield is
+               4.9:1) draws only 20px tall at that cap, so a tenant can raise it
+               with company_themes.logo_max_px. Unset = 96px, unchanged. */
+            max-width: var(--logo-max, 96px);
             width: auto;
             height: auto;
             aspect-ratio: var(--logo-ratio, auto);
@@ -1588,7 +1598,12 @@ $switchThirdUrl = ($thirdCode !== '' && $thirdLabel !== '')
     <div class="page-container<?php echo (empty($logoPath) && $__hasTopControls) ? ' has-top-controls' : ''; ?>">
         <!-- Company Logo -->
         <?php if ($logoPath): ?>
-        <div class="company-logo"<?php if ($logoW && $logoH): ?> style="--logo-ratio: <?php echo $logoW; ?> / <?php echo $logoH; ?>;"<?php endif; ?>>
+        <?php
+          $__logoVars = [];
+          if ($logoW && $logoH) { $__logoVars[] = "--logo-ratio: {$logoW} / {$logoH}"; }
+          if (!empty($logoMaxPx)) { $__logoVars[] = "--logo-max: {$logoMaxPx}px"; }
+        ?>
+        <div class="company-logo"<?php if ($__logoVars): ?> style="<?php echo htmlspecialchars(implode('; ', $__logoVars) . ';'); ?>"<?php endif; ?>>
             <img src="<?php echo htmlspecialchars($logoPath); ?>" alt="<?php echo htmlspecialchars($companyName); ?>"
                  <?php if ($logoW && $logoH): ?>width="<?php echo $logoW; ?>" height="<?php echo $logoH; ?>"<?php endif; ?>
                  loading="lazy" decoding="async" fetchpriority="low">

@@ -180,7 +180,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$isWalletAction) {
                 $logoPath = 'companies/' . $companyId . '/theme/' . $filename;
                 // Capped WebP sibling for the browser-facing surfaces. The
                 // original stays untouched for the wallet passes and print.
-                ThemeImage::ensureVariants($logoPath, ThemeImage::LOGO_MAX);
+                ThemeImage::ensureVariants($logoPath,
+                    ThemeImage::logoMaxFor($theme['logo_max_px'] ?? 0));
             }
         }
     }

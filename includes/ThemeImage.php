@@ -39,6 +39,21 @@ final class ThemeImage
     public const SUFFIX_WEBP = '_web.webp';
     public const SUFFIX_PNG  = '_web.png';
 
+    /**
+     * Long-edge cap for a tenant whose card page raises the header logo above
+     * the default 96px (company_themes.logo_max_px). LOGO_MAX = 400 is ~4x for a
+     * 96px draw, but only 1.7x once a wide wordmark draws at 240px, which looks
+     * soft on a phone. Targets 2.5x the tenant's cap (sharp on a phone without
+     * paying 3x the bytes on fine line art) and never goes below 400, so a
+     * tenant with no cap set is byte-identical to before.
+     */
+    public static function logoMaxFor($logoMaxPx): int
+    {
+        $cap = (int) $logoMaxPx;
+        if ($cap <= 0) return self::LOGO_MAX;
+        return max(self::LOGO_MAX, min(2000, (int) round($cap * 2.5)));
+    }
+
     /** prefer*() runs on every page render; memoise the stat calls. */
     private static array $preferCache = [];
 
