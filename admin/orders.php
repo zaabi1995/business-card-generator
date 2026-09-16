@@ -54,7 +54,7 @@ adminHeader('Orders', 'orders');
         <p class="text-sm text-gray-500 mt-1"><?= htmlspecialchars(t('ordershub.lead')) ?></p>
     </header>
 
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <a href="<?= htmlspecialchars($basePath . 'requests' . $ext, ENT_QUOTES) ?>"
            class="group p-6 bg-white rounded-2xl border border-gray-200 hover:border-blue-300 hover:shadow-sm transition-all">
             <div class="flex items-start justify-between mb-3">
@@ -95,6 +95,17 @@ adminHeader('Orders', 'orders');
             </div>
             <h3 class="font-semibold text-gray-900 mb-1"><?= htmlspecialchars(t('ordershub.appointments')) ?></h3>
             <p class="text-sm text-gray-500"><?= htmlspecialchars(t('ordershub.appointments_sub')) ?></p>
+        </a>
+
+        <a href="<?= htmlspecialchars($basePath . 'card-jobs' . $ext, ENT_QUOTES) ?>"
+           class="group p-6 bg-white rounded-2xl border border-gray-200 hover:border-blue-300 hover:shadow-sm transition-all">
+            <div class="flex items-start justify-between mb-3">
+                <div class="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center group-hover:bg-slate-200 transition-colors">
+                    <i class="fa-solid fa-file-invoice text-slate-600"></i>
+                </div>
+            </div>
+            <h3 class="font-semibold text-gray-900 mb-1"><?= htmlspecialchars(t('cardjobs.title')) ?></h3>
+            <p class="text-sm text-gray-500"><?= htmlspecialchars(t('cardjobs.hub_sub')) ?></p>
         </a>
     </div>
 </div>

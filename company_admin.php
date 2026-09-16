@@ -134,6 +134,8 @@ try {
         'demo-clear'          => 'admin/demo-clear.php',
         // 6-tab IA consolidation (May 2026)
         'orders'              => 'admin/orders.php',
+        'card-jobs'           => 'admin/card-jobs.php',
+        'card-job-file'       => 'admin/card-job-file.php',
         'order-timeline'      => 'admin/order-timeline.php',
         'print-tracking'      => 'admin/print-tracking.php',
         'send-to-print'       => 'admin/send-to-print.php',

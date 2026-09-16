@@ -1,0 +1,38 @@
+<?php
+/**
+ * The card job console (admin/card-jobs.php): every MHD card order, its state
+ * and its documents in one place.
+ */
+return [
+    'title'          => 'Card Jobs',
+    'lead'           => 'Every card order, where it has reached, and every document it carries.',
+    'hub_sub'        => 'Approval, quotation, purchase order, invoice and delivery, per job.',
+    'employee'       => 'Employee',
+    'division'       => 'Division',
+    'state'          => 'State',
+    'quantity'       => 'Quantity',
+    'po'             => 'Purchase order',
+    'invoice'        => 'Invoice',
+    'updated'        => 'Last change',
+    'documents'      => 'Documents',
+    'history'        => 'History',
+    'quotation'      => 'Quotation',
+    'delivery_note'  => 'Delivery note',
+    'signed_dn'      => 'Signed delivery note',
+    'artwork'        => 'Print-ready artwork',
+    'none'           => 'No card jobs yet.',
+    'scope_division' => 'You are seeing your own division.',
+    'scope_all'      => 'You are seeing every division.',
+    'cards'          => 'cards',
+    'open'           => 'Open',
+    'search'         => 'Search by name, division, job or purchase order',
+    'total_jobs'     => 'jobs',
+    'state_submitted'     => 'Waiting for approval',
+    'state_approved'      => 'Approved',
+    'state_quoted'        => 'Quoted',
+    'state_po_received'   => 'Purchase order received',
+    'state_in_production' => 'In production',
+    'state_dispatched'    => 'Dispatched',
+    'state_delivered'     => 'Delivered',
+    'state_rejected'      => 'Rejected',
+];
