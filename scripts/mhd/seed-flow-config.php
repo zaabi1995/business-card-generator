@@ -26,7 +26,9 @@ $CID = 'a9ba4c5e-7b8e-4ccc-a3bd-08ab9af7b1d5';
 // slug => [head to CC, BHD-ERP client name]
 $MAP = [
     'itics'              => ['bipin.k@mhd.co.om',       'MOHSIN HAIDER DARWISH (ITICS)'],
-    'tech-comm'          => ['rajanikanth.r@mhd.co.om', 'Mohsin Haider Darwish LLC.(Technology and Communication Division)'],
+    // The (Technology and Communication Division) account was a duplicate and
+    // was merged into this one on 16 Sep 2026, with its VAT number and mailbox.
+    'tech-comm'          => ['rajanikanth.r@mhd.co.om', 'Mohsin Haider Darwish LLC.(ITICS-Tech & Comm)'],
     'infrastructure'     => ['himanshu.p@mhd.co.om',    'MOHSIN HAIDER DARWISH (Infrastructure & Building Systems)'],
     'office-products'    => ['sadasivam@mhd.co.om',     'Mohsin Haider Darwish LLC.(ITICS - Office Products Division)'],
     'consumer'           => [null,                      'Mohsin Haider Darwish L.L.C.( Consumer Division )'],
