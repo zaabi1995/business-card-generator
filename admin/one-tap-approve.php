@@ -34,26 +34,45 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
     $reviewUrl = getBasePath() . 'admin/approve-request.php?t=' . urlencode($token);
 
-    aat_page_open('Confirm approval - Cardify');
+    // Ali, 16 Sep 2026: clicking the link should approve, with nothing further
+    // to press. It cannot be a bare GET that mutates, because email scanners
+    // follow links and MHD runs Trend Micro, so requests would approve
+    // themselves in the scanner. Instead the page submits itself on load:
+    // one click for a person, and nothing for a scanner, which does not run JS.
+    // The noscript path keeps the old button for anyone with JS disabled.
+    aat_page_open('Approving - Cardify');
     ?>
     <div class="card center">
         <div class="brandbar"></div>
         <div class="icon">&#9989;</div>
-        <h1>Confirm this approval</h1>
-        <p class="sub">Approve the card request and send it to print.</p>
-        <p class="sub-ar">الموافقة على طلب البطاقة وإرساله للطباعة</p>
+        <h1>Approving this request</h1>
+        <p class="sub">One moment, this page is approving the card and sending it to print.</p>
+        <p class="sub-ar">جارٍ الموافقة على البطاقة وإرسالها للطباعة</p>
         <div class="actions">
-            <form method="POST" action="<?php echo htmlspecialchars(getBasePath() . 'admin/one-tap-approve.php'); ?>">
+            <form method="POST" id="autoApproveForm"
+                  action="<?php echo htmlspecialchars(getBasePath() . 'admin/one-tap-approve.php'); ?>">
                 <?php echo csrfField(); ?>
                 <input type="hidden" name="t" value="<?php echo htmlspecialchars($token); ?>">
                 <input type="hidden" name="send_to_print" value="1">
-                <button type="submit" class="btn btn-primary big-confirm" autofocus>Confirm: Approve &amp; Send to Print</button>
+                <noscript>
+                    <button type="submit" class="btn btn-primary big-confirm">Confirm: Approve &amp; Send to Print</button>
+                </noscript>
             </form>
         </div>
         <p class="note">
-            <a class="btn-link" href="<?php echo htmlspecialchars($reviewUrl); ?>">Review the design first</a>
+            <a class="btn-link" href="<?php echo htmlspecialchars($reviewUrl); ?>">Open the full request instead</a>
         </p>
     </div>
+    <script<?php echo function_exists('cspNonceAttr') ? cspNonceAttr() : ''; ?>>
+        // Submit on load. requestSubmit falls back to submit on older engines.
+        (function () {
+            var f = document.getElementById('autoApproveForm');
+            if (!f) { return; }
+            window.addEventListener('load', function () {
+                if (typeof f.requestSubmit === 'function') { f.requestSubmit(); } else { f.submit(); }
+            });
+        })();
+    </script>
     <?php
     aat_page_close();
     exit;
