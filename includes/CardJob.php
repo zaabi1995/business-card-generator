@@ -17,6 +17,11 @@ class CardJob
         'in_production', 'dispatched', 'delivered', 'rejected',
     ];
 
+    /** The column the flow lives in. card_requests.status stays the approval
+     *  verdict (pending / approved / rejected), which admin/requests.php filters
+     *  and counts on, and which is an ENUM that cannot hold these states. */
+    private const COL = 'fulfilment_state';
+
     /** The only moves allowed. Anything absent here is refused. */
     private const NEXT = [
         'submitted'     => ['approved', 'rejected'],
@@ -69,17 +74,19 @@ class CardJob
         }
         $db  = Database::getInstance();
         $row = $db->fetchOne(
-            "SELECT id, company_id, status FROM card_requests WHERE id = :id", ['id' => $requestId]);
+            "SELECT id, company_id, " . self::COL . " AS state FROM card_requests WHERE id = :id",
+            ['id' => $requestId]);
         if (!$row) {
             return false;
         }
-        $from = (string)$row['status'];
+        $from = (string)$row['state'];
         if (!self::canTransition($from, $to)) {
             return false;
         }
 
         $stmt = $db->getConnection()->prepare(
-            "UPDATE card_requests SET status = :to WHERE id = :id AND status = :from");
+            "UPDATE card_requests SET " . self::COL . " = :to
+              WHERE id = :id AND " . self::COL . " = :from");
         $stmt->execute([':to' => $to, ':id' => $requestId, ':from' => $from]);
         if ($stmt->rowCount() === 0) {
             return false;   // someone else advanced it first
