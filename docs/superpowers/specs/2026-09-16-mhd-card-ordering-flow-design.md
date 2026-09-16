@@ -208,6 +208,7 @@ That is a new `viewer_scope` on the tenant user: `division` or `all`.
 ## Out of scope
 
 - Reprints and bulk orders for a whole division. One employee, one card, for now.
+- Non-standard stock: spot UV, FBB 400 GSM, foil, die cut, embossing. Quoted by hand.
 - Paying the invoice online. MHD settles on account.
 - Anything for Automotive.
 - Polycon, an MHD entity that buys cards and has no Cardify division. Flagged, not built.
