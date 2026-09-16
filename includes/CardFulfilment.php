@@ -98,9 +98,13 @@ class CardFulfilment
             // propagates the picture to the invoice, the sales order, the
             // delivery note and the manufacturing order on its own.
             try {
-                $qid   = (string)($quote['data']['quoteId'] ?? '');
-                $thumb = $qid !== '' ? CardThumb::forRequest(
-                    $request + ['employee_id' => $chain['employee_id'] ?? '']) : null;
+                $qid = (string)($quote['data']['quoteId'] ?? '');
+                // array_merge, not +: the request row already HAS an
+                // employee_id key holding NULL, and the union operator keeps
+                // the left side's key, so the picture silently fell back to
+                // nothing whenever the portal had not saved a preview.
+                $forThumb = array_merge($request, ['employee_id' => $chain['employee_id'] ?? '']);
+                $thumb = $qid !== '' ? CardThumb::forRequest($forThumb) : null;
                 if ($thumb) {
                     ERPSync::setQuoteItemImage($qid, $thumb);
                     @unlink($thumb);
