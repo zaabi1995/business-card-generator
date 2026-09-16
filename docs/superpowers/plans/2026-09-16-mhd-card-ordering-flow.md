@@ -10,6 +10,29 @@
 
 **Spec:** `docs/superpowers/specs/2026-09-16-mhd-card-ordering-flow-design.md`
 
+## Status, 16 September 2026, 22:40 GMT+4
+
+Tasks 1 to 7 and 9 to 11 are shipped and live-verified end to end on
+mhd.cardify.om: submit, one-click approve, ERP quotation with the card shown on
+the line, purchase order taken from an email reply, invoice and delivery note
+issued and attached, one-click signature, and the Card Jobs console.
+
+Proven on a live run (job MHD-C3E15A, since removed): QUO-06126/2026 at
+6.000 + 0.300 VAT = 6.300 on the IPD account, PO 4191000999 read off the reply,
+INV-06128/2026 raised, all three documents attached, the delivery note signed in
+its own signature box.
+
+Open, and only these:
+- Task 8's WhatsApp handoff. The print-ready artwork goes to the production
+  mailbox. Ali wants WhatsApp and Cardify can already reach the Cloud API, but
+  nobody has given the production number, and a phone number is never guessed.
+- Logistics has no named approver at MHD, so it still routes to
+  sales@bhdoman.com. MHD have to name the person.
+- The two Tech & Comm client accounts in the ERP are reported, not merged:
+  "(ITICS-Tech & Comm)" carries 62 invoices, "(Technology and Communication
+  Division)" carries 10 and is the one the portal quotes against. Merging live
+  client accounts is a finance decision.
+
 ## Global Constraints
 
 - **No em dashes** anywhere: files, commit messages, email copy, Arabic and English alike. Use commas, colons, periods or parentheses.
