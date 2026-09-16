@@ -56,18 +56,18 @@ $db->insert('card_requests', [
     'name_en' => 'PoInbox Self Test', 'status' => 'pending', 'job_ref' => $ref,
 ]);
 
-$r = PoInbox::ingest(['subject' => "RE: [{$ref}] Quotation", 'from' => 'selftest@bhd.om']);
+$r = PoInbox::ingest(['subject' => "RE: [{$ref}] Quotation", 'from' => 'Devanand V <devanand.v@mhd.co.om>']);
 t('a submitted job refuses a PO', ($r['reason'] ?? '') === 'job is submitted, not quoted');
 
 CardJob::transition($rid, 'approved', ['actor' => 'test']);
 CardJob::transition($rid, 'quoted',   ['actor' => 'test']);
-$r = PoInbox::ingest(['subject' => "RE: [{$ref}] Quotation", 'from' => 'selftest@bhd.om']);
+$r = PoInbox::ingest(['subject' => "RE: [{$ref}] Quotation", 'from' => 'Devanand V <devanand.v@mhd.co.om>']);
 t('a quoted job with no attachment is refused', ($r['reason'] ?? '') === 'no pdf attached');
 
 // With a PDF it files, takes the number off the document and moves the job on.
 $pdf = "%PDF-1.4\n purchase order 4191000258\n";
 $r = PoInbox::ingest([
-    'subject' => "RE: [{$ref}] Quotation", 'from' => 'selftest@bhd.om',
+    'subject' => "RE: [{$ref}] Quotation", 'from' => 'Devanand V <devanand.v@mhd.co.om>',
     'message_id' => '<selftest@mhd.co.om>', 'body' => 'PO attached',
     'attachments' => [['name' => 'PO 4191000258 - Business Cards.pdf', 'data' => $pdf]],
 ]);
