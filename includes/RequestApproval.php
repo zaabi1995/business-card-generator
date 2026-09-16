@@ -22,7 +22,7 @@
  * @param bool    $sendToPrint whether to also place a print order (later task)
  * @return array{success:bool,employee_id:?string,status_msg:string,quantity:int,error:?string,send_to_print:bool}
  */
-function approveRequestChain(array $request, array $company, string $companyId, ?string $reviewedBy, bool $sendToPrint = false): array
+function approveRequestChain(array $request, array $company, string $companyId, ?string $reviewedBy, bool $sendToPrint = false, bool $deferQuote = false): array
 {
     $db = Database::getInstance();
 
@@ -160,11 +160,18 @@ function approveRequestChain(array $request, array $company, string $companyId, 
                     // Open an ERP quote against the company's ERP client
                     // (Oman Housing Bank for OHB) the moment BHD is engaged.
                     // Non-fatal: a quote failure must not undo the approval.
-                    try {
-                        require_once INCLUDES_DIR . '/ERPSync.php';
-                        ERPSync::createQuote((int)$printOrderId);
-                    } catch (Throwable $e) {
-                        error_log('approveRequestChain ERP quote error: ' . $e->getMessage());
+                    //
+                    // $deferQuote is for a caller that prices the job itself.
+                    // MHD's flow does: it puts the division's own account and
+                    // rate on this same order and quotes it once. Without the
+                    // flag the order was quoted twice, at two different prices.
+                    if (!$deferQuote) {
+                        try {
+                            require_once INCLUDES_DIR . '/ERPSync.php';
+                            ERPSync::createQuote((int)$printOrderId);
+                        } catch (Throwable $e) {
+                            error_log('approveRequestChain ERP quote error: ' . $e->getMessage());
+                        }
                     }
                 } else {
                     error_log('approveRequestChain: print order not placed: ' . ($order['error'] ?? 'unknown'));

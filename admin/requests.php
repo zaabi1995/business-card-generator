@@ -47,7 +47,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($request) {
             switch ($action) {
                 case 'approve':
-                    $approval = approveRequestChain($request, $company, $companyId, $_SESSION['user_id'] ?? null, false);
+                    // A division with an approver runs the MHD flow, which
+                    // prices the job and raises the quotation itself, so the
+                    // chain must not quote as well.
+                    $approvingDept = !empty($request['department_id']) ? $db->fetchOne(
+                        "SELECT id, responsible_email FROM departments WHERE id = :did AND company_id = :cid",
+                        ['did' => $request['department_id'], 'cid' => $companyId]) : null;
+                    $mhdFlow = $approvingDept && !empty($approvingDept['responsible_email']);
+
+                    $approval = approveRequestChain($request, $company, $companyId, $_SESSION['user_id'] ?? null, $mhdFlow, $mhdFlow);
+
+                    // Approving here must reach the division with a quotation,
+                    // exactly as the one-tap link does. Without this the job
+                    // stopped at submitted and nobody was ever asked for a PO.
+                    if ($mhdFlow && $approval['success']) {
+                        try {
+                            require_once INCLUDES_DIR . '/CardFulfilment.php';
+                            CardFulfilment::afterApproval($request, $approval,
+                                (string)($_SESSION['user_email'] ?? $_SESSION['user_id'] ?? 'admin'));
+                        } catch (Throwable $e) {
+                            error_log('[mhd post-approve] ' . $e->getMessage());
+                        }
+                    }
 
                     if ($approval['success'] && $approval['employee_id']) {
                         $message = "Request approved! {$approval['status_msg']}. Redirecting to generate cards...";

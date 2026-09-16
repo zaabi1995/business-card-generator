@@ -193,85 +193,25 @@ if (!$request) {
 $company = findCompanyById($row['company_id']);
 $sendToPrint = (bool)($_POST['send_to_print'] ?? false);
 
-$r = approveRequestChain($request, $company, $row['company_id'], $row['admin_email'], $sendToPrint);
+// The division is needed before the chain runs, not after: a division that
+// carries an approver runs the MHD flow, which prices the job itself and
+// quotes it once. Letting the chain quote as well raised two ERP quotes for
+// one card, at two different prices.
+$db   = Database::getInstance();
+$dept = !empty($request['department_id']) ? $db->fetchOne(
+    "SELECT * FROM departments WHERE id = :did AND company_id = :cid",
+    ['did' => $request['department_id'], 'cid' => $row['company_id']]) : null;
+$mhdFlow = $dept && !empty($dept['responsible_email']);
+
+$r = approveRequestChain($request, $company, $row['company_id'], $row['admin_email'], $sendToPrint, $mhdFlow);
 
 if ($r['success'] && $r['employee_id']) {
     // Approval raises the quotation and asks for the purchase order. Wrapped
     // whole: the token is already consumed by this point, so a failure here must
-    // never cost the approval itself. It lands on the ERP retry queue instead.
+    // never cost the approval itself.
     try {
-        require_once INCLUDES_DIR . '/CardJob.php';
-        require_once INCLUDES_DIR . '/CardJobMailer.php';
-        require_once INCLUDES_DIR . '/CardPrice.php';
-        require_once INCLUDES_DIR . '/ERPSync.php';
-
-        // Nothing upstream loads the department, and it carries the approver,
-        // the head to copy, the ERP client and the rate.
-        $dept = !empty($request['department_id']) ? $db->fetchOne(
-            "SELECT * FROM departments WHERE id = :did AND company_id = :cid",
-            ['did' => $request['department_id'], 'cid' => $row['company_id']]) : null;
-
-        if ($dept && !empty($dept['responsible_email'])) {
-            CardJob::transition($request['id'], 'approved', [
-                'actor' => $row['admin_email'], 'employee' => $r['employee_id'],
-            ]);
-
-            $qty   = (int)($request['quantity_ordered'] ?? CardPrice::DEFAULT_QTY);
-            if (!CardPrice::isStandardQuantity($qty)) { $qty = CardPrice::DEFAULT_QTY; }
-            $price = CardPrice::quote($qty, (float)($dept['card_unit_price'] ?? CardPrice::UNIT_PRICE));
-
-            // The print order is what hands the job to the ERP methods that
-            // already exist. erp_client_name carries the DIVISION's account:
-            // ERPSync resolves the client by joining companies, so without this
-            // every division would quote against the parent.
-            $db->insert('print_orders', [
-                'company_id'      => $row['company_id'],
-                'department_id'   => $request['department_id'],
-                'order_number'    => $request['job_ref'] ?: ('MHD-' . substr($request['id'], 0, 6)),
-                'quantity'        => $price['qty'],
-                'paper_type'      => 'Art 300 GSM',
-                'finish'          => 'matte',
-                'total'           => $price['gross'],
-                'subtotal_excl_vat' => $price['net'],
-                'tax_rate'        => CardPrice::VAT_RATE,
-                'tax_amount'      => $price['vat'],
-                'erp_client_name' => $dept['erp_client_name'],
-                'status'          => 'pending',
-            ]);
-            $orderId = (int)$db->getConnection()->lastInsertId();
-            $db->query("UPDATE card_requests SET erp_order_id = ? WHERE id = ?", [$orderId, $request['id']]);
-
-            $quote = ERPSync::isEnabled() ? ERPSync::createQuote($orderId) : ['success' => false, 'message' => 'erp disabled'];
-            if (!empty($quote['success'])) {
-                // Ali, 16 Sep 2026: show the card on the quotation. The ERP
-                // propagates the picture to the invoice, the sales order, the
-                // delivery note and the manufacturing order on its own.
-                try {
-                    require_once INCLUDES_DIR . '/CardThumb.php';
-                    $qid   = (string)($quote['data']['quoteId'] ?? '');
-                    $thumb = $qid !== '' ? CardThumb::forRequest($request + ['employee_id' => $r['employee_id']]) : null;
-                    if ($thumb) {
-                        ERPSync::setQuoteItemImage($qid, $thumb);
-                        @unlink($thumb);
-                    }
-                } catch (Throwable $e) {
-                    error_log('[mhd quote image] ' . $e->getMessage());
-                }
-                CardJob::transition($request['id'], 'quoted', [
-                    'actor' => 'system', 'order' => $orderId,
-                    'quote' => $quote['data']['quoteId'] ?? null,
-                ]);
-            } else {
-                // Log and carry on. ERPSync::enqueueRetry is for PAYMENT retries and
-                // takes six arguments; calling it here threw and cost the division
-                // its quotation email. BHD picks the failure up from the log and the
-                // order stays on print_orders with no erp_quote_id.
-                error_log('[mhd quote] order ' . $orderId . ': ' . ($quote['message'] ?? 'unknown'));
-            }
-            // The division is asked for the purchase order either way. A quote
-            // that has not reached the ERP yet is a BHD problem, not theirs.
-            CardJobMailer::sendQuotation($request, $dept, $price, $quote['data'] ?? []);
-        }
+        require_once INCLUDES_DIR . '/CardFulfilment.php';
+        CardFulfilment::afterApproval($request, $r, (string)$row['admin_email']);
     } catch (Throwable $e) {
         error_log('[mhd post-approve] ' . $e->getMessage());
     }
