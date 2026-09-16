@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/MhdMailer.php';
 require_once __DIR__ . '/CardJob.php';
+require_once __DIR__ . '/ERPSync.php';
 
 /**
  * CardJobMailer, the emails of the MHD card flow.
@@ -108,9 +109,10 @@ class CardJobMailer
     /**
      * The quotation email, sent the moment a division approves.
      *
-     * ERPSync returns document ids, never PDF paths, so the figures are set out
-     * in the body and the ERP quote number is quoted for reference. Attaching
-     * the PDF needs a fetch from BHD-ERP, which is the next piece of work.
+     * Ali, 16 Sep 2026: the quotation belongs in the attachment, not in the
+     * body. The ERP's own PDF is fetched and attached, so what the division
+     * reads is the same document BHD files. If that fetch fails, the figures
+     * fall back into the body rather than sending a quotation with no price.
      *
      * The subject keeps the job ref so the purchase-order reply can be matched
      * back to this job without relying on threading headers.
@@ -126,13 +128,23 @@ class CardJobMailer
         $div  = (string)($dept['name'] ?? 'MHD');
         $ref  = (string)($req['job_ref'] ?? '');
         $num  = trim((string)($erp['quoteNumber'] ?? ''));
+        $id   = trim((string)($erp['quoteId'] ?? ''));
         $omr  = fn($v) => number_format((float)$v, 3);
 
-        $html = '<div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#222;line-height:1.6">'
-              . '<p>Thank you. The card for <strong>' . $e($name) . '</strong> is approved for <strong>'
-              . $e($div) . '</strong>, and our quotation is below.</p>'
-              . ($num !== '' ? '<p>Quotation <strong>' . $e($num) . '</strong></p>' : '')
-              . '<table style="border-collapse:collapse;margin:16px 0;font-size:14px">'
+        $files = [];
+        if ($id !== '') {
+            $fileName = $num !== '' ? str_replace('/', '-', $num) : ($ref !== '' ? $ref . '-quotation' : 'quotation');
+            $pdf = ERPSync::fetchDocumentPdf('quote', $id, $fileName);
+            if ($pdf !== null) {
+                $files[] = ['path' => $pdf, 'name' => $fileName . '.pdf'];
+            }
+        }
+
+        // Only when the PDF could not be fetched. Otherwise the attachment is
+        // the quotation and the body stays short.
+        $figures = '';
+        if (!$files) {
+            $figures = '<table style="border-collapse:collapse;margin:16px 0;font-size:14px">'
               . '<tr><td style="padding:6px 16px 6px 0;color:#6b7280">Item</td>'
               . '<td style="padding:6px 0"><strong>' . $e($price['description']) . '</strong></td></tr>'
               . '<tr><td style="padding:6px 16px 6px 0;color:#6b7280">Quantity</td>'
@@ -145,7 +157,17 @@ class CardJobMailer
               . '<td style="padding:6px 0">OMR ' . $omr($price['vat']) . '</td></tr>'
               . '<tr><td style="padding:8px 16px 6px 0;color:#111"><strong>Total</strong></td>'
               . '<td style="padding:8px 0"><strong>OMR ' . $omr($price['gross']) . '</strong></td></tr>'
-              . '</table>'
+              . '</table>';
+        }
+
+        $line = $files
+            ? 'Our quotation' . ($num !== '' ? ' <strong>' . $e($num) . '</strong>' : '') . ' is attached.'
+            : 'Our quotation' . ($num !== '' ? ' <strong>' . $e($num) . '</strong>' : '') . ' is below.';
+
+        $html = '<div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#222;line-height:1.6">'
+              . '<p>Thank you. The card for <strong>' . $e($name) . '</strong> is approved for <strong>'
+              . $e($div) . '</strong>. ' . $line . '</p>'
+              . $figures
               . '<p style="background:#f1f5f9;border-radius:8px;padding:14px 16px;margin:20px 0">'
               . '<strong>To go ahead, reply to this email with your purchase order attached.</strong><br>'
               . '<span style="color:#6b7280;font-size:13px">Keep the subject line as it is. That is how your '
@@ -158,7 +180,10 @@ class CardJobMailer
             self::BHD_OWNER,
         ]));
         $subject = ($ref !== '' ? "[{$ref}] " : '') . "Quotation for {$name}, {$div}";
-        return MhdMailer::sendRaw([$to], $cc, $subject, $html);
+        $sent = MhdMailer::sendRaw([$to], $cc, $subject, $html, $files);
+
+        foreach ($files as $f) { @unlink($f['path']); }
+        return $sent;
     }
 
 }

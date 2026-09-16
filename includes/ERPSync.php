@@ -353,6 +353,66 @@ class ERPSync {
      *
      * @return array { success, message, data?:{ quoteId, quoteNumber } }
      */
+    /**
+     * Download an ERP document as a PDF and return the local path.
+     *
+     * The ERP renders quotes, invoices and delivery notes at
+     * /download/<type>/<type>-<id>.pdf and accepts the same bearer token the
+     * Cardify integration already holds, so nothing new has to be issued.
+     * Live-verified against a real quote id.
+     *
+     * @param  string $type  quote | invoice | deliverynote
+     * @param  string $id    the ERP document id
+     * @param  string $name  file name to give the attachment, without .pdf
+     * @return string|null   path to the downloaded file, or null on any failure
+     */
+    public static function fetchDocumentPdf(string $type, string $id, string $name = ''): ?string
+    {
+        $type = strtolower($type);
+        if (!in_array($type, ['quote', 'invoice', 'deliverynote'], true)) {
+            return null;
+        }
+        if (!preg_match('/^[a-f0-9]{24}$/i', $id)) {
+            return null;   // the ERP ids are Mongo ObjectIds, nothing else
+        }
+        $settings = self::getSettings();
+        if (empty($settings['erp_api_url']) || empty($settings['erp_api_token'])) {
+            return null;
+        }
+
+        $safe = preg_replace('/[^A-Za-z0-9._-]+/', '-', $name !== '' ? $name : ($type . '-' . $id));
+        $path = sys_get_temp_dir() . '/cardify-' . $safe . '.pdf';
+        $fh   = fopen($path, 'wb');
+        if (!$fh) {
+            return null;
+        }
+
+        $url = rtrim($settings['erp_api_url'], '/') . "/download/{$type}/{$type}-{$id}.pdf";
+        $ch  = curl_init($url);
+        curl_setopt_array($ch, [
+            CURLOPT_FILE           => $fh,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_HTTPHEADER     => ['Authorization: Bearer ' . $settings['erp_api_token']],
+            CURLOPT_TIMEOUT        => 60,
+            CURLOPT_SSL_VERIFYPEER => true,
+        ]);
+        curl_exec($ch);
+        $httpCode = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curlErr  = curl_error($ch);
+        curl_close($ch);
+        fclose($fh);
+
+        // A failure here answers with a JSON error body, which would otherwise
+        // be attached to the email as a .pdf nobody can open.
+        $head = @file_get_contents($path, false, null, 0, 5);
+        if ($curlErr || $httpCode !== 200 || $head !== '%PDF-') {
+            @unlink($path);
+            error_log("ERPSync::fetchDocumentPdf {$type} {$id}: http {$httpCode} " . ($curlErr ?: ''));
+            return null;
+        }
+        return $path;
+    }
+
     public static function createQuote(int $orderId): array
     {
         if (!self::isEnabled()) {
