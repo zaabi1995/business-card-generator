@@ -94,7 +94,7 @@ class CardJobMailer
               . 'address. Nothing prints until you send the purchase order.</p>'
               . '<p style="color:#6b7280;font-size:13px">To decline instead, or to change anything first, '
               . 'open <a href="' . $e($review) . '" style="color:#0f4c81">the full request</a>.</p>'
-              . '<p style="margin-top:22px">Regards,<br>BHD Printing &amp; Designing</p></div>';
+              . '</div>';
 
         $cc = array_values(array_filter([
             trim((string)($dept['head_email'] ?? '')),
@@ -151,7 +151,7 @@ class CardJobMailer
               . '<span style="color:#6b7280;font-size:13px">Keep the subject line as it is. That is how your '
               . 'purchase order is matched to this job. We will send the invoice and the delivery note back '
               . 'as soon as it arrives, and the cards go to print.</span></p>'
-              . '<p style="margin-top:22px">Regards,<br>BHD Printing &amp; Designing</p></div>';
+              . '</div>';
 
         $cc = array_values(array_filter([
             trim((string)($dept['head_email'] ?? '')),

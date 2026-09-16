@@ -83,7 +83,6 @@ class MhdMailer
              . '<p>Your MHD business card for the <strong>' . $d . '</strong> division is attached as a print-ready PDF.</p>'
              . '<p>A copy has also gone to your division contact and to BHD Printing for processing. '
              . 'If any detail needs a change, reply to this email.</p>'
-             . '<p>Regards,<br>BHD Printing &amp; Designing</p>'
              . '</div>';
     }
 
