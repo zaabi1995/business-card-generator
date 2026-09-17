@@ -593,8 +593,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['portal_passcode'])) 
             }
             if ($sendDept && !empty($sendDept['responsible_email'])) {
                 try {
-                    require_once INCLUDES_DIR . '/CardPDFRenderer.php';
-                    require_once INCLUDES_DIR . '/MhdMailer.php';
                     require_once INCLUDES_DIR . '/CardifyConvention.php';
                     // Upsert an employee from the request so it renders on the
                     // department's card template. Match on this tenant's email
@@ -638,25 +636,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['portal_passcode'])) 
                     } else {
                         $db->insert('employees', ['id' => $empId] + $empData);
                     }
-                    $includeQr = !empty($_POST['include_qr']);
-                    $pdf = CardPDFRenderer::render($empId, 'print', [
-                        'include_qr'       => $includeQr,
-                        'qr_force_allowed' => $qrSlotEnabled || $qrDeptOptIn,
-                    ]);
-                    if (!empty($pdf['success']) && is_file($pdf['path'])) {
-                        $cc = array_values(array_filter(array_map('trim', explode(',', (string)($sendDept['cc_emails'] ?? '')))));
-                        MhdMailer::sendCard([
-                            'employee_email'    => $formData['email'],
-                            'employee_name'     => $employeeName ?? ($formData['name_en'] ?: $formData['name_ar']),
-                            'division_name'     => $sendDept['name'] ?? '',
-                            'responsible_email' => $sendDept['responsible_email'],
-                            'cc_emails'         => $cc,
-                            'pdf_path'          => $pdf['path'],
-                            'include_qr'        => $includeQr,
-                        ]);
-                    }
+                    // No email here. Ali, 17 Sep 2026: MHD get three emails and no
+                    // more (approval, quotation, invoice with delivery note). This
+                    // used to mail the unapproved print PDF to the employee and the
+                    // division mailbox as well, a fourth email before anyone approved.
                 } catch (Throwable $e) {
-                    error_log('[portal mhd-send] ' . $e->getMessage());
+                    error_log('[portal mhd-employee] ' . $e->getMessage());
                 }
             }
 
