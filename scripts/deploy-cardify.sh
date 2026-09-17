@@ -156,10 +156,12 @@ fi
 git diff --name-only --diff-filter=ACMR "$BEFORE" "$AFTER" | while read -r f; do
   [ -f "$f" ] || continue
   chown www:www "$f" 2>/dev/null || true
-  case "$f" in *.sh) chmod 755 "$f" 2>/dev/null || true ;; *) chmod 644 "$f" 2>/dev/null || true ;; esac
+  case "$f" in *.sh|.githooks/*) chmod 755 "$f" 2>/dev/null || true ;; *) chmod 644 "$f" 2>/dev/null || true ;; esac
 done
 find . -type f ! -user www -exec chown www:www {} + 2>/dev/null || true
-find . -type f ! -perm 644 ! -name .user.ini ! -name "*.sh" -exec chmod 644 {} + 2>/dev/null || true
+# Not .git or .githooks: flattening the post-merge hook to 644 is a mode change
+# git reports as dirty, so every deploy made the next one refuse to start.
+find . -type f ! -perm 644 ! -name .user.ini ! -name "*.sh" ! -path "./.git/*" ! -path "./.githooks/*" -exec chmod 644 {} + 2>/dev/null || true
 find . -type f -name "*.sh" ! -perm 755 -exec chmod 755 {} + 2>/dev/null || true
 find . -type d ! -perm 755 -exec chmod 755 {} + 2>/dev/null || true
 
