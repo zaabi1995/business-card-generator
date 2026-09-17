@@ -92,6 +92,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             "UPDATE card_requests SET status = 'rejected', admin_notes = :notes, reviewed_at = NOW(), reviewed_by = :uid WHERE id = :id",
                             ['id' => $requestId, 'notes' => $notes, 'uid' => $_SESSION['user_id'] ?? null]
                         );
+
+                        // The flow has its own state. Without this a declined
+                        // job stayed at submitted for ever: the console read it
+                        // as waiting for approval and everything downstream kept
+                        // treating it as live.
+                        require_once INCLUDES_DIR . '/CardJob.php';
+                        CardJob::transition((string)$requestId, 'rejected', [
+                            'actor'  => (string)($_SESSION['user_email'] ?? $_SESSION['user_id'] ?? 'admin'),
+                            'reason' => $notes,
+                        ]);
                         
                         // Send rejection email
                         $employeeName = $request['name_en'] ?: $request['name_ar'];

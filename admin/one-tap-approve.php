@@ -141,6 +141,14 @@ if ($action === 'reject') {
             ['notes' => $notes, 'uid' => $row['admin_email'], 'id' => $row['request_id']]
         );
 
+        // The flow has its own state. Without this a declined job stayed at
+        // submitted for ever: the console read it as waiting for approval and
+        // everything downstream kept treating it as live.
+        require_once INCLUDES_DIR . '/CardJob.php';
+        CardJob::transition((string)$row['request_id'], 'rejected', [
+            'actor' => (string)$row['admin_email'], 'reason' => $notes,
+        ]);
+
         $employeeName = $request['name_en'] ?: $request['name_ar'];
         Mailer::sendTemplate($request['email'], 'request_rejected', [
             'employee_name'    => $employeeName,
