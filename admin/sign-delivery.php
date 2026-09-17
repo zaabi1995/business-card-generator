@@ -130,15 +130,22 @@ try {
 }
 if (!empty($r['ok'])) {
     AdminApprovalToken::consumeApprove($token);
+    // The signed copy is no longer emailed to them, so give them a way to take
+    // it from here. The session this opens is scoped to their own division.
+    AdminApprovalToken::startAdminSession($row);
 }
 
 if ($r['ok']) {
+    $copy = getTenantUrl($job['company_slug'] ?? 'mhd',
+        '/admin/card-job-file?id=' . urlencode((string)$job['id']) . '&kind=signed');
     aat_message_page(
         'Signed - Cardify', "\xE2\x9C\x94",
         !empty($r['already']) ? 'This delivery note is already signed' : 'Delivery note signed',
-        'The signed copy has been emailed to you. There is nothing else to do.',
+        'There is nothing else to do. Your signed copy is here whenever you need it.',
         !empty($r['already']) ? 'تم توقيع إشعار التسليم بالفعل' : 'تم توقيع إشعار التسليم',
-        'تم إرسال النسخة الموقعة إليكم بالبريد، ولا حاجة لأي إجراء آخر'
+        'لا حاجة لأي إجراء آخر، ونسختكم الموقعة متاحة هنا في أي وقت',
+        $copy,
+        'Download the signed delivery note'
     );
     exit;
 }

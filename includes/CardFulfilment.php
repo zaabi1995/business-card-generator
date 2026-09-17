@@ -262,6 +262,33 @@ class CardFulfilment
         if (empty($pdf['success'])) {
             return ['ok' => false, 'error' => 'render: ' . ($pdf['error'] ?? 'unknown')];
         }
-        return CardJobMailer::sendToProduction($job, $dept, (string)$pdf['path']);
+
+        // Ali, 17 Sep 2026: production want it on A4. Both sides at exact size
+        // on one sheet with crop marks, so what is measured on the sheet is what
+        // prints. If the imposition fails, the press-size file still goes: a
+        // printable card beats no card.
+        $sheet = self::a4Sheet((string)$pdf['path'], $job, $dept);
+        $send  = CardJobMailer::sendToProduction($job, $dept, $sheet ?: (string)$pdf['path']);
+        if ($sheet) { @unlink($sheet); }
+        return $send;
+    }
+
+    /** Lay the card out on A4 for the press. Returns null if it cannot. */
+    private static function a4Sheet(string $cardPdf, array $job, array $dept): ?string
+    {
+        $script = BASE_DIR . '/scripts/mhd/impose-a4.py';
+        if (!is_file($script) || !is_file($cardPdf)) { return null; }
+
+        $ref     = (string)($job['job_ref'] ?? 'card');
+        $out     = sys_get_temp_dir() . '/a4-' . preg_replace('/[^A-Za-z0-9._-]/', '-', $ref) . '.pdf';
+        $caption = sprintf('%s  %s  %s  %d cards  Art 300 GSM matte, double sided',
+            $ref,
+            trim((string)($job['name_en'] ?? '')),
+            (string)($dept['name'] ?? ''),
+            (int)($job['quantity_ordered'] ?? 0));
+
+        shell_exec('python3 ' . escapeshellarg($script) . ' ' . escapeshellarg($cardPdf) . ' '
+                   . escapeshellarg($out) . ' ' . escapeshellarg($caption) . ' 2>/dev/null');
+        return is_file($out) ? $out : null;
     }
 }

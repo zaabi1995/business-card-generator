@@ -22,6 +22,30 @@ class CardJobMailer
     private const BHD_OWNER = 'sales@bhdoman.com';
 
     /**
+     * Who a flow email goes to.
+     *
+     * Ali, 17 Sep 2026: the head of the division decides, so the head is the
+     * recipient and BHD is copied. The division mailbox is copied too, because
+     * that is where the division keeps its own record and where a purchase
+     * order is replied from. A division with no named head keeps its mailbox as
+     * the recipient, which is every division that has not named one.
+     *
+     * @return array{0:array<int,string>,1:array<int,string>} [to, cc]
+     */
+    private static function recipients(array $dept): array
+    {
+        $head = strtolower(trim((string)($dept['head_email'] ?? '')));
+        $box  = strtolower(trim((string)($dept['responsible_email'] ?? '')));
+
+        $to = $head !== '' ? [$head] : ($box !== '' ? [$box] : []);
+        $cc = array_values(array_unique(array_filter([
+            $head !== '' && $box !== $head ? $box : '',
+            self::BHD_OWNER,
+        ])));
+        return [$to, $cc];
+    }
+
+    /**
      * The approval email. One link, to the prefetch-safe interstitial that
      * offers Approve and Reject, rather than two links: a plain reject link
      * would be followed by a scanner.
@@ -30,9 +54,9 @@ class CardJobMailer
      */
     public static function sendForApproval(array $req, array $dept, string $token, array $designs = []): array
     {
-        $to = trim((string)($dept['responsible_email'] ?? ''));
-        if ($to === '') {
-            return ['ok' => false, 'error' => 'department has no approver', 'recipients' => []];
+        [$to, $cc] = self::recipients($dept);
+        if (!$to) {
+            return ['ok' => false, 'error' => 'division has nobody to write to', 'recipients' => []];
         }
         $name = trim((string)($req['name_en'] ?? '')) ?: trim((string)($req['name_ar'] ?? '')) ?: 'An employee';
         $div  = (string)($dept['name'] ?? 'MHD');
@@ -110,13 +134,9 @@ class CardJobMailer
               . 'open <a href="' . $e($review) . '" style="color:#0f4c81">the full request</a>.</p>'
               . '</div>';
 
-        $cc = array_values(array_filter([
-            trim((string)($dept['head_email'] ?? '')),
-            self::BHD_OWNER,
-        ]));
 
         $subject = ($ref !== '' ? "[{$ref}] " : '') . "Business card approval: {$name}, {$div}";
-        return MhdMailer::sendRaw([$to], $cc, $subject, $html, $files);
+        return MhdMailer::sendRaw($to, $cc, $subject, $html, $files);
     }
 
     /**
@@ -132,9 +152,9 @@ class CardJobMailer
      */
     public static function sendQuotation(array $req, array $dept, array $price, array $erp = []): array
     {
-        $to = trim((string)($dept['responsible_email'] ?? ''));
-        if ($to === '') {
-            return ['ok' => false, 'error' => 'department has no approver', 'recipients' => []];
+        [$to, $cc] = self::recipients($dept);
+        if (!$to) {
+            return ['ok' => false, 'error' => 'division has nobody to write to', 'recipients' => []];
         }
         $e    = fn($v) => htmlspecialchars((string)$v, ENT_QUOTES);
         $name = trim((string)($req['name_en'] ?? '')) ?: trim((string)($req['name_ar'] ?? '')) ?: 'the employee';
@@ -188,12 +208,8 @@ class CardJobMailer
               . 'as soon as it arrives, and the cards go to print.</span></p>'
               . '</div>';
 
-        $cc = array_values(array_filter([
-            trim((string)($dept['head_email'] ?? '')),
-            self::BHD_OWNER,
-        ]));
         $subject = ($ref !== '' ? "[{$ref}] " : '') . "Quotation for {$name}, {$div}";
-        $sent = MhdMailer::sendRaw([$to], $cc, $subject, $html, $files);
+        $sent = MhdMailer::sendRaw($to, $cc, $subject, $html, $files);
 
         foreach ($files as $f) { @unlink($f['path']); }
         return $sent;
@@ -210,9 +226,9 @@ class CardJobMailer
      */
     public static function sendDocuments(array $req, array $dept, array $erp, ?string $signUrl = null): array
     {
-        $to = trim((string)($dept['responsible_email'] ?? ''));
-        if ($to === '') {
-            return ['ok' => false, 'error' => 'department has no approver', 'recipients' => []];
+        [$to, $cc] = self::recipients($dept);
+        if (!$to) {
+            return ['ok' => false, 'error' => 'division has nobody to write to', 'recipients' => []];
         }
         $e    = fn($v) => htmlspecialchars((string)$v, ENT_QUOTES);
         $name = trim((string)($req['name_en'] ?? '')) ?: trim((string)($req['name_ar'] ?? '')) ?: 'the employee';
@@ -257,12 +273,8 @@ class CardJobMailer
               . $sign
               . '</div>';
 
-        $cc = array_values(array_filter([
-            trim((string)($dept['head_email'] ?? '')),
-            self::BHD_OWNER,
-        ]));
         $subject = ($ref !== '' ? "[{$ref}] " : '') . "Invoice and delivery note: {$name}, {$div}";
-        $sent = MhdMailer::sendRaw([$to], $cc, $subject, $html, $files);
+        $sent = MhdMailer::sendRaw($to, $cc, $subject, $html, $files);
 
         foreach ($files as $f) { @unlink($f['path']); }
         return $sent;
@@ -301,12 +313,12 @@ class CardJobMailer
         }
 
         $html = '<div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#222;line-height:1.6">'
-              . '<p>Print ready. The artwork is attached, both sides, at press size.</p>'
+              . '<p>Print ready. The artwork is attached on A4, both sides at exact size, with crop marks.</p>'
               . '<table style="border-collapse:collapse;margin:14px 0">' . $rows . '</table>'
               . '</div>';
 
         $file = [['path' => $artworkPath,
-                  'name' => ($ref !== '' ? $ref : 'card') . '-print-ready.pdf']];
+                  'name' => ($ref !== '' ? $ref : 'card') . '-print-ready-A4.pdf']];
         $subject = ($ref !== '' ? "[{$ref}] " : '') . "Print ready: {$name}, {$div}"
                  . ($qty ? ", {$qty} cards" : '');
         return MhdMailer::sendRaw([self::productionMailbox()], [], $subject, $html, $file);
@@ -354,9 +366,9 @@ class CardJobMailer
      */
     public static function sendPoAcknowledgement(array $req, array $dept, string $po, string $reason): array
     {
-        $to = trim((string)($dept['responsible_email'] ?? ''));
-        if ($to === '') {
-            return ['ok' => false, 'error' => 'department has no approver', 'recipients' => []];
+        [$to, $cc] = self::recipients($dept);
+        if (!$to) {
+            return ['ok' => false, 'error' => 'division has nobody to write to', 'recipients' => []];
         }
         $e    = fn($v) => htmlspecialchars((string)$v, ENT_QUOTES);
         $name = trim((string)($req['name_en'] ?? '')) ?: trim((string)($req['name_ar'] ?? '')) ?: 'the employee';
@@ -368,8 +380,7 @@ class CardJobMailer
               . ' is received for <strong>' . $e($name) . '</strong> (' . $e($div) . ').</p>'
               . '<p>The invoice and the delivery note follow shortly.</p>'
               . '</div>';
-        $cc = array_values(array_filter([trim((string)($dept['head_email'] ?? '')), self::BHD_OWNER]));
-        $sent = MhdMailer::sendRaw([$to], $cc,
+        $sent = MhdMailer::sendRaw($to, $cc,
             ($ref !== '' ? "[{$ref}] " : '') . "Purchase order received: {$name}, {$div}", $html);
 
         // The internal one. Same job ref, so it threads with the rest.

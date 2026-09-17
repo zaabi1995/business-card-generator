@@ -104,27 +104,30 @@ class DeliverySignature
         return ['ok' => true, 'error' => null, 'path' => $dest, 'already' => false];
     }
 
-    /** Send the signed copy back to the division, with BHD copied. */
+    /**
+     * File the signed copy with BHD.
+     *
+     * Ali, 17 Sep 2026: MHD get three emails and no more. They already hold the
+     * delivery note, carrying BHD's signature, from the documents email; their
+     * acceptance is recorded, shown on the page and kept on the job, and BHD
+     * gets the countersigned copy for the file.
+     */
     private static function email(array $job, array $dept, string $path, string $signerEmail): void
     {
-        $to = trim((string)($dept['responsible_email'] ?? '')) ?: $signerEmail;
-        $e  = fn($v) => htmlspecialchars((string)$v, ENT_QUOTES);
-        $ref = (string)($job['job_ref'] ?? '');
+        $e    = fn($v) => htmlspecialchars((string)$v, ENT_QUOTES);
+        $ref  = (string)($job['job_ref'] ?? '');
         $name = trim((string)($job['name_en'] ?? '')) ?: 'the employee';
+        $div  = (string)($dept['name'] ?? 'MHD');
 
         $html = '<div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#222;line-height:1.6">'
-              . '<p>The delivery note for <strong>' . $e($name) . '</strong> is signed. '
-              . 'The signed copy is attached for your records.</p>'
-              . '<p style="color:#6b7280;font-size:13px">Signed by ' . $e($signerEmail)
+              . '<p><strong>' . $e($div) . '</strong> accepted the delivery note for <strong>'
+              . $e($name) . '</strong>. The countersigned copy is attached.</p>'
+              . '<p style="color:#6b7280;font-size:13px">Accepted by ' . $e($signerEmail)
               . ' on ' . $e(date('d/m/Y H:i')) . ' GMT+4.</p>'
               . '</div>';
 
-        $cc = array_values(array_filter([
-            trim((string)($dept['head_email'] ?? '')),
-            'sales@bhdoman.com',
-        ]));
-        MhdMailer::sendRaw([$to], $cc,
-            ($ref !== '' ? "[{$ref}] " : '') . "Signed delivery note: {$name}",
+        MhdMailer::sendRaw(['sales@bhdoman.com'], [],
+            ($ref !== '' ? "[{$ref}] " : '') . "Delivery note accepted: {$name}, {$div}",
             $html, [['path' => $path, 'name' => ($ref ?: 'delivery-note') . '-signed.pdf']]);
     }
 }

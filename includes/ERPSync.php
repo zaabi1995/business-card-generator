@@ -476,6 +476,54 @@ class ERPSync {
         return ['success' => true, 'message' => 'image set'];
     }
 
+    /**
+     * The ERP accounts a division can choose to be billed as.
+     *
+     * Used by the division settings page, so an approver picks a real account
+     * by name rather than typing one that the ERP would then auto-create as a
+     * duplicate. Returns [] when the ERP cannot be reached: the page then keeps
+     * the account it already has rather than offering an empty list.
+     *
+     * @return array<int,array{id:string,name:string,email:?string}>
+     */
+    public static function searchClients(string $query, int $limit = 25): array
+    {
+        $query = trim($query);
+        if ($query === '' || !self::isEnabled()) {
+            return [];
+        }
+        $settings = self::getSettings();
+        if (empty($settings['erp_api_url']) || empty($settings['erp_api_token'])) {
+            return [];
+        }
+        $url = rtrim($settings['erp_api_url'], '/') . '/api/client/search?q=' . rawurlencode($query);
+        $ch  = curl_init($url);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_HTTPHEADER     => ['Authorization: Bearer ' . $settings['erp_api_token']],
+            CURLOPT_TIMEOUT        => 15,
+            CURLOPT_SSL_VERIFYPEER => true,
+        ]);
+        $body = curl_exec($ch);
+        $code = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $err  = curl_error($ch);
+        curl_close($ch);
+        if ($err || $code !== 200) {
+            error_log("ERPSync::searchClients {$query}: http {$code} " . ($err ?: ''));
+            return [];
+        }
+        $data = json_decode((string)$body, true);
+        $out  = [];
+        foreach (($data['result'] ?? []) as $row) {
+            $id   = (string)($row['_id'] ?? '');
+            $name = trim((string)($row['name'] ?? ''));
+            if ($id === '' || $name === '') { continue; }
+            $out[] = ['id' => $id, 'name' => $name, 'email' => $row['email'] ?? null];
+            if (count($out) >= $limit) { break; }
+        }
+        return $out;
+    }
+
     public static function createQuote(int $orderId): array
     {
         if (!self::isEnabled()) {
