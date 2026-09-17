@@ -105,6 +105,7 @@ class Impersonation
         $_SESSION['company_slug'] = $company['slug'];
         $_SESSION['company_name'] = $company['name'];
         $_SESSION['user_role'] = 'company_admin';
+        if (class_exists('MagicLinkScope')) { MagicLinkScope::clear(); }
         $_SESSION['user_email'] = $company['admin_email'] ?? '';
         $_SESSION['user_name'] = $company['name'] ?? 'Admin';
         $_SESSION['impersonator'] = $stash;
@@ -184,6 +185,7 @@ class Impersonation
         $_SESSION['user_email'] = $admin['email'];
         $_SESSION['user_name'] = $admin['name'] ?? $admin['email'];
         $_SESSION['user_role'] = $admin['role'] ?? 'super_admin';
+        if (class_exists('MagicLinkScope')) { MagicLinkScope::clear(); }
         $_SESSION['user_company_id'] = $admin['company_id'] ?? null;
 
         $basePath = function_exists('getBasePath') ? getBasePath() : '/';

@@ -45,6 +45,12 @@ t('MHD is this customer',
   PoInbox::isCustomerSender('Devanand V <devanand.v@mhd.co.om>', ['department_id' => null]) === true);
 t('MHD Logistics is this customer',
   PoInbox::isCustomerSender('ops@mhdlogistics.com', ['department_id' => null]) === true);
+t('an MHD address in the display name does not make the sender MHD',
+  PoInbox::isCustomerSender('"ceo@mhd.co.om" <x@evil.example>', ['department_id' => null]) === false);
+t('a sender address in angle brackets is the one read',
+  PoInbox::senderAddress('Devanand V <Devanand.V@mhd.co.om>') === 'devanand.v@mhd.co.om');
+t('a header with no parsable address gives nothing',
+  PoInbox::senderAddress('"someone@mhd.co.om" junk') === null);
 t('a lookalike domain is not',
   PoInbox::isCustomerSender('po@mhd.co.om.evil.example', ['department_id' => null]) === false);
 
@@ -78,6 +84,15 @@ t('and that refusal is transient, so the reply is read again',
   ($r['transient'] ?? false) === true);
 
 CardJob::transition($rid, 'approved', ['actor' => 'test']);
+// An early PO, before the quotation reached the ERP, waits: approved cannot move
+// to po_received, and recording the reply as done used to lose the PO for good.
+$r = PoInbox::ingest([
+    'subject' => "RE: [{$ref}] Quotation", 'from' => 'Devanand V <devanand.v@mhd.co.om>',
+    'attachments' => [['name' => 'PO 4191000258.pdf', 'data' => "%PDF-1.4\n"]],
+]);
+t('an approved job leaves an early PO for the next run', ($r['transient'] ?? false) === true);
+$early = $db->fetchOne("SELECT po_number FROM card_requests WHERE id = ?", [$rid]);
+t('and writes nothing onto the job yet', empty($early['po_number']));
 CardJob::transition($rid, 'quoted',   ['actor' => 'test']);
 $r = PoInbox::ingest(['subject' => "RE: [{$ref}] Quotation", 'from' => 'Devanand V <devanand.v@mhd.co.om>']);
 t('a quoted job with no attachment is refused', ($r['reason'] ?? '') === 'no pdf attached');

@@ -94,6 +94,53 @@ class CardJob
      * Move a job forward. Returns false and writes nothing when the move is not
      * allowed, or when the row has already moved on because another worker won.
      */
+    /**
+     * Hold one job for the length of a slow step (an ERP call, a render, an
+     * email). The PO poller runs every two minutes and the heal cron every
+     * fifteen, and both could work the same job at once: two production emails,
+     * two quotations. A MariaDB named lock is released by the server if the
+     * process dies, so a crash never leaves a job held.
+     */
+    public static function lock(string $requestId): bool
+    {
+        $row = Database::getInstance()->fetchOne(
+            "SELECT GET_LOCK(:n, 0) AS l", ['n' => 'cardify-mhd-job-' . $requestId]);
+        return (int)($row['l'] ?? 0) === 1;
+    }
+
+    public static function unlock(string $requestId): void
+    {
+        Database::getInstance()->fetchOne(
+            "SELECT RELEASE_LOCK(:n) AS r", ['n' => 'cardify-mhd-job-' . $requestId]);
+    }
+
+    /**
+     * Put back the employee record a rejected request overwrote. The portal
+     * writes the requested details onto the employee before approval (the card
+     * is rendered from that row), so without this a rejected update left the
+     * person's card showing the rejected text, and offline.
+     */
+    public static function restoreEmployee(string $requestId): void
+    {
+        try {
+            $db  = Database::getInstance();
+            $req = $db->fetchOne("SELECT company_id, employee_snapshot FROM card_requests WHERE id = :id",
+                                 ['id' => $requestId]);
+            $snap = json_decode((string)($req['employee_snapshot'] ?? ''), true);
+            if (!is_array($snap) || empty($snap['id'])) {
+                return;
+            }
+            $id = (string)$snap['id'];
+            unset($snap['id'], $snap['company_id']);
+            if ($snap) {
+                $db->update('employees', $snap, 'id = :eid AND company_id = :ecid',
+                            ['eid' => $id, 'ecid' => $req['company_id']]);
+            }
+        } catch (Throwable $e) {
+            error_log('[CardJob restoreEmployee] ' . $e->getMessage());
+        }
+    }
+
     public static function transition(string $requestId, string $to, array $evidence = []): bool
     {
         if (!in_array($to, self::STATES, true)) {

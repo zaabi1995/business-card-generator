@@ -107,6 +107,7 @@ class Auth {
         $_SESSION['user_email'] = $employee['email'];
         $_SESSION['user_name'] = $employee['name_en'] ?? $employee['name'] ?? $employee['email'];
         $_SESSION['user_role'] = 'employee';
+        if (class_exists('MagicLinkScope')) { MagicLinkScope::clear(); }
         $_SESSION['user_company_id'] = $employee['company_id'];
         $_SESSION['company_id'] = $employee['company_id'];
         $_SESSION['company_slug'] = $employee['company_slug'];
@@ -194,6 +195,7 @@ class Auth {
         $_SESSION['user_email'] = $user['email'];
         $_SESSION['user_name'] = $user['name'];
         $_SESSION['user_role'] = $user['role'];
+        if (class_exists('MagicLinkScope')) { MagicLinkScope::clear(); }
         $_SESSION['user_company_id'] = $user['company_id'] ?? null;
         
         $companySlug = null;
@@ -246,6 +248,7 @@ class Auth {
         $_SESSION['company_slug'] = $company['slug'];
         $_SESSION['company_name'] = $company['name'];
         $_SESSION['user_role'] = 'company_admin';
+        if (class_exists('MagicLinkScope')) { MagicLinkScope::clear(); }
         $_SESSION['user_email'] = $company['admin_email'];
         $_SESSION['user_name'] = $company['name'] ?? 'Admin';
         

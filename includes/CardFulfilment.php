@@ -32,6 +32,20 @@ class CardFulfilment
      */
     public static function afterApproval(array $request, array $chain, string $actor): array
     {
+        $id = (string)($request['id'] ?? '');
+        if ($id === '' || !CardJob::lock($id)) {
+            return ['quoted' => false, 'order' => null, 'quote' => null,
+                    'error' => 'job is being worked on by another process'];
+        }
+        try {
+            return self::afterApprovalLocked($request, $chain, $actor);
+        } finally {
+            CardJob::unlock($id);
+        }
+    }
+
+    private static function afterApprovalLocked(array $request, array $chain, string $actor): array
+    {
         require_once __DIR__ . '/CardPrice.php';
         require_once __DIR__ . '/CardThumb.php';
 
@@ -161,6 +175,29 @@ class CardFulfilment
      * @return array ['invoice'=>?string,'documents'=>bool,'production'=>bool,'state'=>string,'errors'=>array]
      */
     public static function afterPo(array $job, bool $announce = true): array
+    {
+        $id = (string)($job['id'] ?? '');
+        if ($id === '' || !CardJob::lock($id)) {
+            return ['invoice' => null, 'documents' => false, 'production' => false,
+                    'state' => (string)($job['fulfilment_state'] ?? ''),
+                    'errors' => ['job is being worked on by another process']];
+        }
+        try {
+            // Re-read under the lock: the other worker may have finished it.
+            $fresh = Database::getInstance()->fetchOne(
+                "SELECT * FROM card_requests WHERE id = :id", ['id' => $id]);
+            if (!$fresh || ($fresh['fulfilment_state'] ?? '') !== 'po_received') {
+                return ['invoice' => null, 'documents' => false, 'production' => false,
+                        'state' => (string)($fresh['fulfilment_state'] ?? ''),
+                        'errors' => []];
+            }
+            return self::afterPoLocked($fresh, $announce);
+        } finally {
+            CardJob::unlock($id);
+        }
+    }
+
+    private static function afterPoLocked(array $job, bool $announce): array
     {
         $out = ['invoice' => null, 'documents' => false, 'production' => false,
                 'state' => (string)($job['fulfilment_state'] ?? ''), 'errors' => []];

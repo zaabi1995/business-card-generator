@@ -91,6 +91,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $qr   = !empty($_POST['include_qr_default']) ? 1 : 0;
 
         $bad = [];
+        // The mailbox is what keeps the division in the flow. Blank, its
+        // approvals fell back to the company address, the ITICS CEO office.
+        if ($box === '') { $bad[] = 'responsible_email'; }
         foreach (['head_email' => $head, 'responsible_email' => $box] as $field => $addr) {
             if ($addr !== '' && !filter_var($addr, FILTER_VALIDATE_EMAIL)) { $bad[] = $field; }
         }
@@ -100,7 +103,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         // Only an account the ERP actually has, so a typo cannot send the next
         // invoice to a client that does not exist.
-        if ($erp !== '' && $accountNames && !in_array($erp, $accountNames, true)) {
+        // If the ERP could not be reached the list is empty; a change cannot be
+        // checked then, so it is refused rather than trusted.
+        if ($erp !== '' && $erp !== (string)$dept['erp_client_name']
+            && (!$accounts || !in_array($erp, $accountNames, true))) {
             $bad[] = 'erp_client_name';
         }
 

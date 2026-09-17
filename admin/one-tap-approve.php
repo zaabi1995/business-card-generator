@@ -126,6 +126,24 @@ if (!$row) {
 $db = Database::getInstance();
 $action = $_POST['action'] ?? 'approve';
 
+// The request may already be decided elsewhere (BHD in admin/requests.php, or a
+// second link). A reject then left the job running on to an invoice, and an
+// approve could revive a rejected card. Only a request still waiting is acted on.
+$__current = $db->fetchOne(
+    "SELECT status, fulfilment_state FROM card_requests WHERE id = :id AND company_id = :cid",
+    ['id' => $row['request_id'], 'cid' => $row['company_id']]);
+if ($__current && (($__current['status'] ?? '') !== 'pending'
+        || !in_array((string)($__current['fulfilment_state'] ?? 'submitted'), ['', 'submitted'], true))) {
+    aat_message_page(
+        'Already actioned - Cardify', "\xE2\x9C\x94",
+        'This request was already actioned',
+        'No further action is needed.',
+        'تمت معالجة هذا الطلب بالفعل',
+        'لا حاجة لأي إجراء إضافي'
+    );
+    exit;
+}
+
 // ---- Reject branch -------------------------------------------------
 if ($action === 'reject') {
     if (!AdminApprovalToken::consumeApprove($token)) {
@@ -171,6 +189,7 @@ if ($action === 'reject') {
         CardJob::transition((string)$row['request_id'], 'rejected', [
             'actor' => (string)$row['admin_email'], 'reason' => $notes,
         ]);
+        CardJob::restoreEmployee((string)$row['request_id']);
 
         $employeeName = $request['name_en'] ?: $request['name_ar'];
         Mailer::sendTemplate($request['email'], 'request_rejected', [
@@ -239,6 +258,9 @@ $mhdFlow = $dept && !empty($dept['responsible_email']);
 $r = approveRequestChain($request, $company, $row['company_id'], $row['admin_email'], $sendToPrint, $mhdFlow);
 
 if ($r['success'] && $r['employee_id']) {
+    // The link session may generate and send only this employee's card.
+    $_SESSION['magic_link_employee'] = (string)$r['employee_id'];
+    $_SESSION['magic_link_employee_email'] = strtolower((string)($request['email'] ?? ''));
     // Approval raises the quotation and asks for the purchase order. Wrapped
     // whole: the token is already consumed by this point, so a failure here must
     // never cost the approval itself.

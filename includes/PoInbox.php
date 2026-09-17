@@ -72,17 +72,20 @@ class PoInbox
      */
     public static function isCustomerSender(string $from, array $job): bool
     {
-        if (!preg_match('/([A-Z0-9._%+-]+@[A-Z0-9.-]+)/i', $from, $m)) {
+        $addr = self::senderAddress($from);
+        if ($addr === null) {
             return false;
         }
-        $domain = strtolower(substr(strrchr($m[1], '@'), 1));
+        $domain = strtolower(substr(strrchr($addr, '@'), 1));
 
         $allowed = ['mhd.co.om', 'mhdlogistics.com'];
         try {
             $dept = !empty($job['department_id']) ? Database::getInstance()->fetchOne(
-                "SELECT responsible_email, head_email, cc_emails FROM departments WHERE id = :d",
+                "SELECT responsible_email, head_email FROM departments WHERE id = :d",
                 ['d' => $job['department_id']]) : null;
-            foreach (['responsible_email', 'head_email', 'cc_emails'] as $k) {
+            // Not cc_emails: a division that copies one Gmail address would
+            // otherwise let every Gmail user file a purchase order.
+            foreach (['responsible_email', 'head_email'] as $k) {
                 foreach (preg_split('/[,;\s]+/', (string)($dept[$k] ?? '')) as $addr) {
                     if (strpos($addr, '@') === false) { continue; }
                     $d = strtolower(substr(strrchr(trim($addr), '@'), 1));
@@ -98,14 +101,32 @@ class PoInbox
         return false;
     }
 
+    /**
+     * The address a From header actually names. The display name is free text,
+     * so '"ceo@mhd.co.om" <x@evil.com>' must read as x@evil.com, never as the
+     * first address-shaped string in the header.
+     */
+    public static function senderAddress(string $from): ?string
+    {
+        if (preg_match('/<\s*([A-Z0-9._%+-]+@[A-Z0-9.-]+)\s*>\s*$/i', trim($from), $m)) {
+            return strtolower($m[1]);
+        }
+        if (strpos($from, '<') === false
+            && preg_match('/^\s*([A-Z0-9._%+-]+@[A-Z0-9.-]+)\s*$/i', $from, $m)) {
+            return strtolower($m[1]);
+        }
+        return null;
+    }
+
     /** Our own domains. A purchase order never comes from one of these. */
     public static function isOwnSender(string $from): bool
     {
         $own = ['bhdoman.com', 'bhd.om', 'cardify.om'];
-        if (!preg_match('/([A-Z0-9._%+-]+@[A-Z0-9.-]+)/i', $from, $m)) {
+        $addr = self::senderAddress($from);
+        if ($addr === null) {
             return false;
         }
-        $domain = strtolower(substr(strrchr($m[1], '@'), 1));
+        $domain = strtolower(substr(strrchr($addr, '@'), 1));
         foreach ($own as $d) {
             if ($domain === $d || str_ends_with($domain, '.' . $d)) { return true; }
         }
@@ -143,10 +164,14 @@ class PoInbox
         // never be thrown away for being early. Anything further along, or
         // rejected, is genuinely not ours to act on.
         $state = (string)($job['fulfilment_state'] ?? '');
-        if (!in_array($state, ['quoted', 'approved'], true)) {
+        if ($state !== 'quoted') {
+            // 'approved' means the quotation has not reached the ERP yet. The
+            // state machine only moves quoted -> po_received, so filing now would
+            // fail the move and record the reply as done, losing the PO for good.
+            // Leave it for the next run, after the heal cron has quoted the job.
             return ['matched' => false, 'ref' => $ref,
                     'reason' => "job is {$state}, not awaiting a purchase order",
-                    'transient' => $state === 'submitted'];
+                    'transient' => in_array($state, ['submitted', 'approved'], true)];
         }
 
         // The sender must belong to the customer. Refusing only our own domains
@@ -195,8 +220,6 @@ class PoInbox
         }
 
         $db = Database::getInstance();
-        $db->query("UPDATE card_requests SET po_number = ?, po_file = ? WHERE id = ?",
-                   [$po, $path, $job['id']]);
         $moved = CardJob::transition($job['id'], 'po_received', [
             'actor'      => $message['from'] ?? null,
             'po'         => $po,
@@ -205,9 +228,12 @@ class PoInbox
         ]);
 
         if (!$moved) {
+            @unlink($path);
             return ['matched' => false, 'ref' => $ref, 'po' => $po,
                     'reason' => 'job moved on before this reply was filed'];
         }
+        $db->query("UPDATE card_requests SET po_number = ?, po_file = ? WHERE id = ?",
+                   [$po, $path, $job['id']]);
 
         // The purchase order is filed and the job has moved. Everything after
         // this point is best effort: a slow ERP must never cost us the PO.

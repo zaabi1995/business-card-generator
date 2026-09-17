@@ -1952,3 +1952,6 @@ if (!function_exists('cspNonceAttr')) {
     }
 }
 
+// A session opened from an approval link reaches only the approval flow.
+require_once __DIR__ . '/MagicLinkScope.php';
+MagicLinkScope::enforce();

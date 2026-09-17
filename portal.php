@@ -70,6 +70,7 @@ $companyId = $company['id'];
 $showPreview = ($company['portal_show_preview'] ?? 1) == 1;
 $companyName = $company['name_en'] ?? $company['name'] ?? $companySlug;
 $companyDomain = $company['email_domain'] ?? extractEmailDomain($company['admin_email'] ?? '');
+$companyOwnDomain = $companyDomain;
 
 // Get departments and validate department slug FIRST (before passcode check)
 $departments = [];
@@ -87,8 +88,9 @@ if ($db->isConnected()) {
         // company_themes table might not exist yet
     }
     
+    $deptDomainCol = $db->columnExists('departments', 'email_domain') ? ', email_domain' : '';
     $departments = $db->fetchAll(
-        "SELECT id, name, slug, template_pair_id, portal_passcode, access_code, responsible_email, cc_emails, include_qr_default, head_email, erp_client_name, card_unit_price FROM departments WHERE company_id = :id AND portal_enabled = 1 ORDER BY name",
+        "SELECT id, name, slug, template_pair_id, portal_passcode, access_code, responsible_email, cc_emails, include_qr_default, head_email, erp_client_name, card_unit_price{$deptDomainCol} FROM departments WHERE company_id = :id AND portal_enabled = 1 ORDER BY name",
         ['id' => $companyId]
     );
     
@@ -106,6 +108,11 @@ if ($db->isConnected()) {
             include __DIR__ . '/404.php';
             exit;
         }
+    }
+    // A division on its own domain (MHD Logistics is mhdlogistics.com) accepts
+    // that domain, on the page hint, the preview check and the submit check.
+    if (!empty($selectedDepartment['email_domain'])) {
+        $companyDomain = $selectedDepartment['email_domain'];
     }
 }
 
@@ -308,8 +315,21 @@ if ($frontBgProbe !== '' && function_exists('imageHasAlphaChannel')) {
 
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['portal_passcode'])) {
+    // The access code gated only the page view, so a direct POST skipped it.
+    // Check the page's code, and the code of the division actually posted.
+    $__codeOk = !$passcodeRequired || $passcodeVerified;
+    foreach ($departments as $__pd) {
+        if (($__pd['id'] ?? '') !== ($_POST['department_id'] ?? '')) continue;
+        $__pc = ($__pd['portal_passcode'] ?? '') !== '' ? $__pd['portal_passcode'] : ($__pd['access_code'] ?? '');
+        if ($__pc !== '' && $__pc !== null && empty($_SESSION['portal_passcode_dept_' . $__pd['id']])) {
+            $__codeOk = false;
+        }
+        break;
+    }
     if (!validateCSRFToken($_POST['csrf_token'] ?? '')) {
         $error = 'Invalid request. Please try again.';
+    } elseif (!$__codeOk) {
+        $error = 'Please enter the access code first.';
     } else {
     $formData = [
         'email' => trim(strtolower($_POST['email'] ?? '')),
@@ -344,10 +364,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['portal_passcode'])) 
     } elseif (!isValidEmail($formData['email'])) {
         $error = 'Please enter a valid email address.';
     } else {
-        // Check email domain matches company domain
+        // Check email domain matches the domain of the division being posted,
+        // or the company domain when that division has none of its own.
+        $allowedDomain = $companyOwnDomain;
+        foreach ($departments as $__pd) {
+            if (($__pd['id'] ?? '') === ($formData['department_id'] ?? '') && !empty($__pd['email_domain'])) {
+                $allowedDomain = $__pd['email_domain'];
+                break;
+            }
+        }
         $emailDomain = extractEmailDomain($formData['email']);
-        if ($companyDomain && strtolower($emailDomain) !== strtolower($companyDomain)) {
-            $error = "Only @{$companyDomain} email addresses are allowed.";
+        if ($allowedDomain && strtolower($emailDomain) !== strtolower($allowedDomain)) {
+            $error = "Only @{$allowedDomain} email addresses are allowed.";
         }
     }
     
@@ -397,7 +425,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['portal_passcode'])) 
     // Check if there's already a pending request
     if (!$error) {
         $existingRequest = $db->fetchOne(
-            "SELECT id FROM card_requests WHERE email = :email AND company_id = :cid AND status = 'pending'",
+            "SELECT id FROM card_requests WHERE email = :email AND company_id = :cid AND deleted_at IS NULL
+               AND (status = 'pending'
+                    OR (fulfilment_state IN ('approved', 'quoted', 'po_received')
+                        AND submitted_at > DATE_SUB(NOW(), INTERVAL 60 DAY)))",
             ['email' => $formData['email'], 'cid' => $companyId]
         );
         if ($existingRequest) {
@@ -564,10 +595,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['portal_passcode'])) 
                 try {
                     require_once INCLUDES_DIR . '/CardPDFRenderer.php';
                     require_once INCLUDES_DIR . '/MhdMailer.php';
+                    require_once INCLUDES_DIR . '/CardifyConvention.php';
                     // Upsert an employee from the request so it renders on the
-                    // department's card template. id = email localpart.
-                    $lp = strtolower(explode('@', $formData['email'])[0]);
-                    $empId = preg_replace('/[^a-z0-9._-]/', '', $lp) ?: substr(md5($formData['email']), 0, 12);
+                    // department's card template. Match on this tenant's email
+                    // first. employees.id is global across every tenant, so the
+                    // bare email localpart is NOT safe: "mohammed" already belongs
+                    // to another company, and updating by id alone moved that
+                    // person into MHD and took their live card offline.
+                    $empId = $existingEmployee['id']
+                        ?? CardifyConvention::employeeIdFromEmail($formData['email'], $companyId, $db);
                     // Mobile: the country prefix is baked on the card ("+968",
                     // or "+973" on the Bahrain Consumer card), so store digits only.
                     $mob = preg_replace('/^\+?9(68|73)[\s-]*/', '', trim($formData['mobile'] ?: $formData['phone']));
@@ -591,8 +627,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['portal_passcode'])) 
                         // approveRequestChain() flips this to 'active'.
                         'status' => empty($company['card_requires_approval']) ? 'active' : 'pending',
                     ];
-                    if ($db->fetchOne("SELECT id FROM employees WHERE id = :id", ['id' => $empId])) {
-                        $db->update('employees', $empData, 'id = :id', ['id' => $empId]);
+                    if ($existingEmployee) {
+                        if ($db->columnExists('card_requests', 'employee_snapshot')) {
+                            $snap = array_intersect_key($existingEmployee, $empData) + ['id' => $empId];
+                            $db->query("UPDATE card_requests SET employee_snapshot = ? WHERE id = ?",
+                                       [json_encode($snap, JSON_UNESCAPED_UNICODE), $requestId]);
+                        }
+                        $db->update('employees', $empData, 'id = :id AND company_id = :cid',
+                                    ['id' => $empId, 'cid' => $companyId]);
                     } else {
                         $db->insert('employees', ['id' => $empId] + $empData);
                     }

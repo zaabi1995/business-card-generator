@@ -54,7 +54,9 @@ class DivisionLoginToken
             'department_id' => $departmentId,
             'email'         => strtolower(trim($email)),
             'token_hash'    => hash('sha256', $plain),
-            'expires_at'    => date('Y-m-d H:i:s', time() + self::TTL_MINUTES * 60),
+            // gmdate, not date: PHP runs on Asia/Muscat and the database on UTC,
+            // and verify() compares against NOW(). date() gave 4.5 hours, not 30 min.
+            'expires_at'    => gmdate('Y-m-d H:i:s', time() + self::TTL_MINUTES * 60),
             'ip'            => $ip,
         ]);
         return $plain;

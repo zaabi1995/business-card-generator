@@ -37,6 +37,17 @@ $stuck = $db->fetchAll(
 foreach ($stuck as $job) {
     $dept = $db->fetchOne("SELECT * FROM departments WHERE id = :d", ['d' => $job['department_id']]);
     if (!$dept || empty($dept['responsible_email'])) { continue; }
+    // Approval may be quoting this job right now. Take the job, then check it
+    // still needs a quote, or both would raise one and send two quotations.
+    if (!CardJob::lock((string)$job['id'])) { continue; }
+    $still = $db->fetchOne(
+        "SELECT cr.fulfilment_state s, po.erp_quote_id q FROM card_requests cr
+           JOIN print_orders po ON po.id = cr.erp_order_id WHERE cr.id = :id",
+        ['id' => $job['id']]);
+    if (($still['s'] ?? '') !== 'approved' || !empty($still['q'])) {
+        CardJob::unlock((string)$job['id']);
+        continue;
+    }
     $orderId = (int)$job['erp_order_id'];
     $quote   = ERPSync::isEnabled() ? ERPSync::createQuote($orderId) : ['success' => false, 'message' => 'erp disabled'];
     $line    = ['ref' => $job['job_ref'], 'step' => 'quote'];
@@ -48,19 +59,23 @@ foreach ($stuck as $job) {
         } catch (Throwable $e) {
             error_log('[mhd heal image] ' . $e->getMessage());
         }
-        CardJob::transition((string)$job['id'], 'quoted', [
+        $moved = CardJob::transition((string)$job['id'], 'quoted', [
             'actor' => 'heal', 'order' => $orderId, 'quote' => $quote['data']['quoteId'] ?? null,
         ]);
-        $qty   = (int)($job['quantity_ordered'] ?? CardPrice::DEFAULT_QTY);
-        if (!CardPrice::isStandardQuantity($qty)) { $qty = CardPrice::DEFAULT_QTY; }
-        $price = CardPrice::quote($qty, (float)($dept['card_unit_price'] ?? CardPrice::UNIT_PRICE));
-        CardJobMailer::sendQuotation($job, $dept, $price, $quote['data'] ?? []);
-        $line['state'] = 'quoted';
+        // Only the worker that moved the job sends the quotation.
+        if ($moved) {
+            $qty   = (int)($job['quantity_ordered'] ?? CardPrice::DEFAULT_QTY);
+            if (!CardPrice::isStandardQuantity($qty)) { $qty = CardPrice::DEFAULT_QTY; }
+            $price = CardPrice::quote($qty, (float)($dept['card_unit_price'] ?? CardPrice::UNIT_PRICE));
+            CardJobMailer::sendQuotation($job, $dept, $price, $quote['data'] ?? []);
+        }
+        $line['state'] = $moved ? 'quoted' : 'not moved';
         $line['quote'] = $quote['data']['quoteNumber'] ?? null;
     } else {
         $line['state'] = 'approved';
         $line['error'] = $quote['message'] ?? 'unknown';
     }
+    CardJob::unlock((string)$job['id']);
     echo date('c') . ' ' . json_encode($line, JSON_UNESCAPED_UNICODE) . "\n";
 }
 

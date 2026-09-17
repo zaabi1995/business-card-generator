@@ -44,6 +44,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ['id' => $requestId, 'cid' => $companyId]
         );
         
+        // A job already past approval (quoted, in production) cannot be
+        // rejected, and a rejected request cannot be approved back into the
+        // flow: either used to fail the state move silently and carry on.
+        $__state = (string)($request['fulfilment_state'] ?? 'submitted');
+        $__decided = ($action === 'reject' && !in_array($__state, ['', 'submitted'], true))
+                  || ($action === 'approve' && (($request['status'] ?? '') === 'rejected'
+                                                || !in_array($__state, ['', 'submitted'], true)));
+        if ($request && $__decided) {
+            $message = 'This request was already actioned (' . ($__state ?: $request['status']) . ').';
+            $messageType = 'error';
+            $request = null;
+        }
         if ($request) {
             switch ($action) {
                 case 'approve':
@@ -102,6 +114,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             'actor'  => (string)($_SESSION['user_email'] ?? $_SESSION['user_id'] ?? 'admin'),
                             'reason' => $notes,
                         ]);
+                        CardJob::restoreEmployee((string)$requestId);
                         
                         // Send rejection email
                         $employeeName = $request['name_en'] ?: $request['name_ar'];

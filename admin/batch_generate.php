@@ -33,6 +33,13 @@ $companyName = $company['name_en'] ?? $company['name'] ?? 'Company';
 
 try {
     $employees = loadEmployees($companyId) ?: [];
+    // An approval-link session sees only the employee it approved, not the
+    // whole company's staff list.
+    if (!empty($_SESSION['magic_link'])) {
+        $__mine = (string)($_SESSION['magic_link_employee'] ?? '');
+        $employees = array_values(array_filter($employees,
+            fn($e) => is_array($e) && (string)($e['id'] ?? '') === $__mine));
+    }
     // Attach the canonical QR target per employee so the JS loop below never
     // rebuilds the URL itself. CardifyConvention owns the reserved-slug and
     // /card/<id> fallback rules; duplicating them in JS is how they drift.

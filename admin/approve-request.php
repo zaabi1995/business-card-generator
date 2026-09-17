@@ -27,8 +27,10 @@ if (!$row) {
     exit;
 }
 
-// Scope the session to this token's company before touching admin data.
-AdminApprovalToken::startAdminSession($row);
+// No session here. Opening the link is a GET that never spends the token, so a
+// session granted on it worked again for seven days and gave admin rights over
+// the whole tenant. The session starts only in one-tap-approve.php, after the
+// token is consumed. The forms below need only the CSRF token.
 
 $db = Database::getInstance();
 $request = $db->fetchOne(
