@@ -26,6 +26,8 @@ const MHD = 'a9ba4c5e-7b8e-4ccc-a3bd-08ab9af7b1d5';
 const RENAME = [
     'tel1' => 'phone',   'tel2' => 'phone_2',   'fax' => 'fax',
     'tel1_ar' => 'phone_ar', 'tel2_ar' => 'phone_2_ar', 'fax_ar' => 'fax_ar',
+    // Already converted: kept, so a re-run can still correct their geometry.
+    'phone' => 'phone', 'phone_2' => 'phone_2', 'phone_ar' => 'phone_ar', 'phone_2_ar' => 'phone_2_ar',
 ];
 
 $apply = in_array('--apply', $argv, true);
@@ -55,6 +57,13 @@ foreach ($depts as $d) {
             if ($key === 'tel1') { $defaults['office_tel1'] = $sample; }
             if ($key === 'tel2') { $defaults['office_tel2'] = $sample; }
             if ($key === 'fax')  { $defaults['office_fax']  = $sample; }
+            // Room to draw full size. A dynamic field is shrunk to fit its box in
+            // print; the static text never was, and the tel boxes (121px) were a
+            // hair narrower than eight digits. Left-aligned, so the extra width
+            // sits to the right of the digits: 200px on the English front, 150px
+            // on the Arabic back, which stops short of the Arabic label.
+            $minW = str_ends_with($newKey, '_ar') ? 150 : 200;
+            if ((float)($f['width'] ?? 0) < $minW) { $f['width'] = $minW; $changed = true; }
             if (empty($f['is_static']) && $newKey === $key) { $out[$key] = $f; continue; }
             $f['is_static']      = false;
             $f['render_in_bg']   = false;
