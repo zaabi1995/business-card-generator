@@ -136,8 +136,18 @@ try {
         ['email' => $employeeEmail, 'name' => $employeeInfo['name_en'], 'type' => 'employee']
     ];
     
-    // Add company admin if requested
-    if ($ccAdmin && !empty($company['admin_email'])) {
+    // Add company admin if requested.
+    //
+    // Not when the employee's own division has an approver. On MHD the company
+    // address is the ITICS CEO office, and copying it here sent that office a
+    // copy of every card of every division: 34 in one day of testing alone.
+    // A division that approves its own cards is already on the flow's emails.
+    $divisionRoutes = false;
+    if ($employeeData && !empty($employeeData['department_id'])) {
+        $__d = findDepartmentById($employeeData['department_id'], $companyId);
+        $divisionRoutes = $__d && !empty($__d['responsible_email']);
+    }
+    if ($ccAdmin && !$divisionRoutes && !empty($company['admin_email'])) {
         $recipients[] = [
             'email' => $company['admin_email'],
             'name' => $company['admin_name'] ?? 'Admin',

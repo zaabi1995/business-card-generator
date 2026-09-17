@@ -1997,8 +1997,14 @@ HTML
             ['email' => $to, 'name' => $employeeData['name_en'] ?? '', 'type' => 'employee']
         ];
         
-        // Add admin recipients if specified
-        if (!empty($options['cc_admin']) && !empty($companyData['admin_email'])) {
+        // Add admin recipients if specified.
+        //
+        // A division with its own approver is served by the flow's own emails,
+        // so the company address is not copied as well: on MHD that address is
+        // the ITICS CEO office, which was receiving a copy of every card of
+        // every division.
+        $__divisionRoutes = !empty($options['department_responsible_email']);
+        if (!empty($options['cc_admin']) && !$__divisionRoutes && !empty($companyData['admin_email'])) {
             $recipients[] = [
                 'email' => $companyData['admin_email'],
                 'name' => $companyData['admin_name'] ?? 'Admin',
