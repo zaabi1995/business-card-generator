@@ -144,6 +144,8 @@ function approveRequestChain(array $request, array $company, string $companyId, 
                     'card_front_url' => $abs($request['preview_front_path'] ?? $request['preview_front'] ?? ''),
                     'card_back_url'  => $abs($request['preview_back_path'] ?? $request['preview_back'] ?? ''),
                     'payment_status' => 'pending',
+                    // The MHD flow ($deferQuote) sends its own three emails.
+                    'notify_customer' => !$deferQuote,
                 ]);
                 if (!empty($order['success']) && !empty($order['order_id'])) {
                     $printOrderId = $order['order_id'];

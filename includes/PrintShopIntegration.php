@@ -312,8 +312,14 @@ class PrintShopIntegration {
                 self::sendOrderNotification($orderId, $settings);
             }
             
-            // Send confirmation email to customer
-            self::sendOrderConfirmationEmail($orderId, $orderData, $total, $currency ?? 'OMR');
+            // Send confirmation email to customer. notify_customer=false for a
+            // flow that writes to the customer itself (MHD): this went to the
+            // company admin address, the ITICS CEO office, on every division's
+            // approval, as an extra email carrying the order total.
+            $notifyCustomer = $orderData['notify_customer'] ?? true;
+            if ($notifyCustomer) {
+                self::sendOrderConfirmationEmail($orderId, $orderData, $total, $currency ?? 'OMR');
+            }
 
             // Send WhatsApp notifications (customer + print shop)
             if (class_exists('WhatsApp') && WhatsApp::isEnabled()) {
@@ -326,7 +332,9 @@ class PrintShopIntegration {
                         $company = $stmt->fetch(PDO::FETCH_ASSOC);
                     }
                     // Notify customer
-                    WhatsApp::sendPrintOrderConfirmation($order, $company ?? []);
+                    if ($notifyCustomer) {
+                        WhatsApp::sendPrintOrderConfirmation($order, $company ?? []);
+                    }
                     // Notify print shop
                     if ($printShopId) {
                         require_once INCLUDES_DIR . '/PrintShop.php';
