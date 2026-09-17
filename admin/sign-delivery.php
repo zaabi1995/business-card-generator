@@ -24,6 +24,16 @@ if (session_status() === PHP_SESSION_NONE) {
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     $token = $_GET['t'] ?? '';
     if (!AdminApprovalToken::verify($token, DeliverySignature::PURPOSE)) {
+        if (AdminApprovalToken::wasUsed($token)) {
+            aat_message_page(
+                'Already signed - Cardify', "\xE2\x9C\x94",
+                'This delivery note is already signed',
+                'The signed copy was emailed to you. There is nothing else to do.',
+                'تم توقيع إشعار التسليم بالفعل',
+                'تم إرسال النسخة الموقعة إليكم بالبريد'
+            );
+            exit;
+        }
         aat_expired_page();
         exit;
     }
@@ -75,6 +85,16 @@ if (!validateCSRFToken($_POST['csrf_token'] ?? '')) {
 $token = $_POST['t'] ?? '';
 $row   = AdminApprovalToken::verify($token, DeliverySignature::PURPOSE);
 if (!$row) {
+    if (AdminApprovalToken::wasUsed($token)) {
+        aat_message_page(
+            'Already signed - Cardify', "\xE2\x9C\x94",
+            'This delivery note is already signed',
+            'The signed copy was emailed to you. There is nothing else to do.',
+            'تم توقيع إشعار التسليم بالفعل',
+            'تم إرسال النسخة الموقعة إليكم بالبريد'
+        );
+        exit;
+    }
     aat_expired_page();
     exit;
 }
@@ -91,27 +111,25 @@ if (!$job) {
     exit;
 }
 
-// Consume before signing, so two clicks cannot file two signed copies. A
-// signature that is already on file answers the second click kindly.
-$fresh = AdminApprovalToken::consumeApprove($token);
-
-$ip = (string)($_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? '');
+// The signing work runs first and the token is spent only when it worked.
+// Consuming first burnt the link on any transient failure, an ERP timeout or a
+// stamper error, and the division had no way to get another one.
+//
+// Signing twice is prevented by the file itself: sign() returns the copy that
+// is already on disk rather than making a second one.
+$ip = (string)($_SERVER['HTTP_CF_CONNECTING_IP']
+    ?? $_SERVER['REMOTE_ADDR']
+    ?? '');
 if (strpos($ip, ',') !== false) { $ip = trim(explode(',', $ip)[0]); }
 
-$r = ['ok' => false, 'error' => 'already signed', 'already' => true];
-if ($fresh) {
-    try {
-        $r = DeliverySignature::sign($job, (string)$row['admin_email'], $ip);
-    } catch (Throwable $e) {
-        error_log('[mhd dn sign] ' . $e->getMessage());
-        $r = ['ok' => false, 'error' => 'something went wrong on our side', 'already' => false];
-    }
-} else {
-    $signed = $db->fetchOne(
-        "SELECT id FROM card_request_events
-          WHERE request_id = :r AND to_state = 'note:dn_signed' LIMIT 1",
-        ['r' => $job['id']]);
-    $r['ok'] = (bool)$signed;
+try {
+    $r = DeliverySignature::sign($job, (string)$row['admin_email'], $ip);
+} catch (Throwable $e) {
+    error_log('[mhd dn sign] ' . $e->getMessage());
+    $r = ['ok' => false, 'error' => 'something went wrong on our side', 'already' => false];
+}
+if (!empty($r['ok'])) {
+    AdminApprovalToken::consumeApprove($token);
 }
 
 if ($r['ok']) {
@@ -125,10 +143,28 @@ if ($r['ok']) {
     exit;
 }
 
+// The page used to promise that BHD had been notified while nothing notified
+// anyone. Now it is true before it is said, and the link still works, because
+// the token is only spent on success.
+try {
+    require_once INCLUDES_DIR . '/MhdMailer.php';
+    $e = fn($v) => htmlspecialchars((string)$v, ENT_QUOTES);
+    MhdMailer::sendRaw(['sales@bhdoman.com'], [],
+        '[' . ($job['job_ref'] ?? '?') . '] Delivery note could not be signed',
+        '<div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#222;line-height:1.6">'
+        . '<p>' . $e($row['admin_email']) . ' clicked the signing link and it failed.</p>'
+        . '<p>Job <strong>' . $e($job['job_ref'] ?? '') . '</strong><br>'
+        . 'Reason: <strong>' . $e($r['error'] ?? 'unknown') . '</strong></p>'
+        . '<p style="color:#6b7280;font-size:13px">Their link still works: it is only spent once a '
+        . 'signature is filed, so they can click it again once the cause is cleared.</p></div>');
+} catch (Throwable $e) {
+    error_log('[mhd dn sign alert] ' . $e->getMessage());
+}
+
 aat_message_page(
     'Not signed - Cardify', "\xE2\x9A\xA0",
     'The delivery note could not be signed',
-    ($r['error'] ?? 'Please try the link again') . '. BHD has been notified.',
+    ($r['error'] ?? 'Please try the link again') . '. BHD has been told, and this link still works.',
     'تعذر توقيع إشعار التسليم',
-    'يرجى المحاولة مرة أخرى، وقد تم إشعار BHD'
+    'تم إشعار BHD، والرابط ما زال صالحًا للمحاولة مرة أخرى'
 );

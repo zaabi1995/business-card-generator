@@ -88,7 +88,7 @@ if ($db->isConnected()) {
     }
     
     $departments = $db->fetchAll(
-        "SELECT id, name, slug, template_pair_id, portal_passcode, responsible_email, cc_emails, include_qr_default, head_email, erp_client_name, card_unit_price FROM departments WHERE company_id = :id AND portal_enabled = 1 ORDER BY name",
+        "SELECT id, name, slug, template_pair_id, portal_passcode, access_code, responsible_email, cc_emails, include_qr_default, head_email, erp_client_name, card_unit_price FROM departments WHERE company_id = :id AND portal_enabled = 1 ORDER BY name",
         ['id' => $companyId]
     );
     
@@ -125,8 +125,15 @@ $portalPasscode = null;
 $passcodeType = null; // 'department' or 'company'
 
 // If viewing a department portal, check department passcode first
-if ($selectedDepartment && !empty($selectedDepartment['portal_passcode'])) {
-    $portalPasscode = $selectedDepartment['portal_passcode'];
+// Either column: the admin screen writes access_code and this gate only ever
+// read portal_passcode, so an access code set in the UI showed a lock badge and
+// protected nothing.
+$__deptCode = $selectedDepartment['portal_passcode'] ?? '';
+if ($__deptCode === '' || $__deptCode === null) {
+    $__deptCode = $selectedDepartment['access_code'] ?? '';
+}
+if ($selectedDepartment && !empty($__deptCode)) {
+    $portalPasscode = $__deptCode;
     $passcodeType = 'department';
 }
 // Fall back to company passcode if no department passcode
@@ -454,7 +461,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['portal_passcode'])) 
         // URL/path is kept as-is. Returns '' on any problem (non-fatal).
         $resolvePreview = function (string $val, string $side) use ($companyId, $requestId) {
             if ($val === '') return '';
-            if (strpos($val, 'data:image/') !== 0) return $val; // already a path/URL
+            // Only ever a data URI the browser produced. This used to return
+            // anything else unchanged, "already a path/URL", and the approval
+            // email then attached that path from disk: a stranger could post
+            // preview_front=config.php and have the server mail out the
+            // database password and the ERP token. Nothing but an image the
+            // portal writes itself is accepted now.
             if (!preg_match('#^data:image/(png|jpeg);base64,#', $val)) return '';
             $bytes = base64_decode(substr($val, strpos($val, ',') + 1), true);
             if ($bytes === false || strlen($bytes) < 64 || strlen($bytes) > 3 * 1024 * 1024) return '';
@@ -515,6 +527,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['portal_passcode'])) 
             if (!empty($previewBack)) {
                 $insertData['preview_back'] = $previewBack;
                 $insertData['preview_back_path'] = $previewBack;
+            }
+            // The employee's own QR choice, kept so the card that prints is the
+            // card that was approved. Production re-renders weeks later and
+            // had nothing to read but a default.
+            if ($db->columnExists('card_requests', 'include_qr')) {
+                $insertData['include_qr'] = !empty($_POST['include_qr']) ? 1 : 0;
             }
             if (!empty($previewFront) || !empty($previewBack)) {
                 $insertData['preview_generated_at'] = date('Y-m-d H:i:s');
@@ -686,7 +704,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['portal_passcode'])) 
                         error_log('[portal approval] ' . $e->getMessage());
                     }
                 }
-                if (!$__routed) Mailer::sendTemplate($adminEmail, 'admin_new_request', [
+                // The fallback goes to BHD, never to the tenant's own admin
+                // address: on MHD that is the ITICS CEO office, who would then
+                // receive another division's card with a working approve link.
+                $fallbackTo = !empty($sendDept['responsible_email']) ? 'sales@bhdoman.com' : $adminEmail;
+                if (!$__routed) Mailer::sendTemplate($fallbackTo, 'admin_new_request', [
                     'employee_name' => $employeeName,
                     'company_name' => $companyName,
                     'design_preview_html' => $designPreviewHtml,

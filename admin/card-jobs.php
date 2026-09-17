@@ -25,14 +25,47 @@ $ext       = $isCompany ? '' : '.php';
 // divisions they are responsible for.
 $me    = strtolower(trim((string)($_SESSION['user_email'] ?? '')));
 $role  = Auth::getCurrentRole() ?? 'admin';
+
+// A session that came from a link in an approval email belongs to one
+// division's approver, whatever role it carries. It used to read as a tenant
+// admin, which handed every division's jobs, purchase orders and invoices to
+// anyone who clicked an approval link.
+$fromMagicLink = !empty($_SESSION['magic_link']);
+if ($fromMagicLink) {
+    $me = strtolower(trim((string)($_SESSION['magic_link_email'] ?? $me)));
+}
+
 $scope = 'division';
-if (in_array($role, ['super_admin', 'admin', 'company'], true)) {
+if (!$fromMagicLink && in_array($role, ['super_admin', 'admin', 'company'], true)) {
     $scope = 'all';
-} else {
+} elseif (!$fromMagicLink) {
     try {
         $u = $db->fetchOne("SELECT viewer_scope FROM users WHERE LOWER(email) = :e LIMIT 1", ['e' => $me]);
         if (($u['viewer_scope'] ?? '') === 'all') { $scope = 'all'; }
     } catch (Throwable $e) { /* column added by migration 159 */ }
+}
+
+// Closing the job. Printed cards are dispatched and then delivered, and until
+// now nothing wrote either state, so every finished job sat at in_production
+// for ever. Only a viewer who sees the whole tenant may close one.
+$notice = null;
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!validateCSRFToken($_POST['csrf_token'] ?? '')) {
+        http_response_code(400);
+        exit('Invalid request');
+    }
+    $moveId = (string)($_POST['job_id'] ?? '');
+    $moveTo = (string)($_POST['move_to'] ?? '');
+    $canClose = !$fromMagicLink && in_array($role, ['super_admin', 'admin', 'company'], true);
+    if ($canClose && in_array($moveTo, ['dispatched', 'delivered'], true)) {
+        $owned = $db->fetchOne("SELECT id FROM card_requests WHERE id = :i AND company_id = :c",
+                               ['i' => $moveId, 'c' => $companyId]);
+        if ($owned && CardJob::transition($moveId, $moveTo, ['actor' => $me ?: 'admin'])) {
+            $notice = t('cardjobs.moved_' . $moveTo);
+        } else {
+            $notice = t('cardjobs.move_refused');
+        }
+    }
 }
 
 $q      = trim((string)($_GET['q'] ?? ''));
@@ -87,6 +120,10 @@ adminHeader(t('cardjobs.title'), 'orders');
             &middot; <?= count($jobs) ?> <?= htmlspecialchars(t('cardjobs.total_jobs')) ?>
         </p>
     </header>
+
+    <?php if ($notice): ?>
+        <div class="mb-5 px-4 py-3 rounded-xl bg-blue-50 text-blue-800 text-sm"><?= htmlspecialchars($notice) ?></div>
+    <?php endif; ?>
 
     <form method="GET" class="mb-5">
         <?php if (!$isCompany): ?><input type="hidden" name="page" value="card-jobs"><?php endif; ?>
@@ -171,6 +208,19 @@ adminHeader(t('cardjobs.title'), 'orders');
                                     </ul>
                                     <?php if (!empty($j['responsible_email'])): ?>
                                         <p class="text-xs text-gray-400 mt-3"><?= htmlspecialchars((string)$j['responsible_email']) ?></p>
+                                    <?php endif; ?>
+                                    <?php
+                                    $canClose = !$fromMagicLink && in_array($role, ['super_admin', 'admin', 'company'], true);
+                                    $next = ['in_production' => 'dispatched', 'dispatched' => 'delivered'][$state] ?? null;
+                                    if ($canClose && $next): ?>
+                                        <form method="POST" class="mt-4">
+                                            <?= csrfField() ?>
+                                            <input type="hidden" name="job_id" value="<?= htmlspecialchars((string)$j['id'], ENT_QUOTES) ?>">
+                                            <input type="hidden" name="move_to" value="<?= $next ?>">
+                                            <button type="submit" class="px-3 py-1.5 rounded-lg bg-gray-900 text-white text-xs font-medium">
+                                                <?= htmlspecialchars(t('cardjobs.mark_' . $next)) ?>
+                                            </button>
+                                        </form>
                                     <?php endif; ?>
                                 </div>
                                 <div>

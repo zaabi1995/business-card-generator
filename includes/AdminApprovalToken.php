@@ -48,9 +48,11 @@ class AdminApprovalToken
 
     /**
      * Look up a plain token. Returns the row (company_id, request_id,
-     * admin_email, expires_at, used_at) on success, null if unknown or
-     * expired. Does not check used_at, callers decide what an already
-     * used token should show; consumeApprove() is the single-use gate.
+     * admin_email, expires_at, used_at) on success, null if unknown, expired
+     * or already used. A spent token is refused here rather than at the action,
+     * because verifying one also opens an admin session; to tell a person that
+     * their link was already used, call wasUsed() and say so without granting
+     * anything.
      */
     public static function verify(string $token, ?string $expectedPurpose = null): ?array
     {
@@ -65,6 +67,11 @@ class AdminApprovalToken
         );
 
         if (!$row) { return null; }
+        // A spent token is not a credential. verify() used to answer on
+        // expires_at alone, so a link that had already approved its card went
+        // on minting a company-wide admin session for the rest of its seven
+        // days: anyone the mail was forwarded to held an admin session.
+        if (!empty($row['used_at'])) { return null; }
         // A token minted to approve a card request must not be able to sign a
         // delivery note, and the reverse. Callers that care pass the purpose
         // they expect; callers that do not keep today's behaviour.
@@ -72,6 +79,15 @@ class AdminApprovalToken
             return null;
         }
         return $row;
+    }
+
+    /** True when this token exists but has already been used. Grants nothing. */
+    public static function wasUsed(string $token): bool
+    {
+        if (!preg_match('/^[a-f0-9]{40}$/i', $token)) { return false; }
+        $row = Database::getInstance()->fetchOne(
+            "SELECT used_at FROM admin_approval_tokens WHERE token = :t LIMIT 1", ['t' => $token]);
+        return (bool)($row['used_at'] ?? null);
     }
 
     /**
@@ -126,5 +142,14 @@ class AdminApprovalToken
 
         $_SESSION['company_slug'] = $row['company_slug'] ?? null;
         $_SESSION['company_name'] = $row['company_name'] ?? null;
+
+        // Mark it for what it is. This session came from a link in an email,
+        // not from a login, and the only person holding it is one division's
+        // approver. Pages that show more than one division read this and scope
+        // themselves; without it the console handed every division's jobs and
+        // documents to whoever clicked an approval link.
+        $_SESSION['magic_link'] = true;
+        $_SESSION['magic_link_email'] = $row['admin_email'] ?? null;
+        $_SESSION['magic_link_request'] = $row['request_id'] ?? null;
     }
 }

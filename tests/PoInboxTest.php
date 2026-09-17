@@ -39,6 +39,15 @@ t('an unlabelled odd number does not',
   PoInbox::extractPoNumber('invoice reference 480120014') === null);
 
 // ingest() refuses everything it cannot prove, and says why.
+t('a stranger is not this customer',
+  PoInbox::isCustomerSender('attacker@evil.example', ['department_id' => null]) === false);
+t('MHD is this customer',
+  PoInbox::isCustomerSender('Devanand V <devanand.v@mhd.co.om>', ['department_id' => null]) === true);
+t('MHD Logistics is this customer',
+  PoInbox::isCustomerSender('ops@mhdlogistics.com', ['department_id' => null]) === true);
+t('a lookalike domain is not',
+  PoInbox::isCustomerSender('po@mhd.co.om.evil.example', ['department_id' => null]) === false);
+
 t('our own outgoing copy is refused',
   (PoInbox::ingest(['subject' => '[MHD-A1B2C3] Quotation',
                     'from' => 'BHD Printing <sales@bhdoman.com>'])['reason'] ?? '') === 'sent by us');
@@ -63,7 +72,10 @@ $db->insert('card_requests', [
 ]);
 
 $r = PoInbox::ingest(['subject' => "RE: [{$ref}] Quotation", 'from' => 'Devanand V <devanand.v@mhd.co.om>']);
-t('a submitted job refuses a PO', ($r['reason'] ?? '') === 'job is submitted, not quoted');
+t('a submitted job refuses a PO',
+  ($r['reason'] ?? '') === 'job is submitted, not awaiting a purchase order');
+t('and that refusal is transient, so the reply is read again',
+  ($r['transient'] ?? false) === true);
 
 CardJob::transition($rid, 'approved', ['actor' => 'test']);
 CardJob::transition($rid, 'quoted',   ['actor' => 'test']);
@@ -78,6 +90,20 @@ $r = PoInbox::ingest([
     'attachments' => [['name' => 'PO 4191000258 - Business Cards.pdf', 'data' => $pdf]],
 ]);
 t('a PO with a PDF is filed',  ($r['matched'] ?? false) === true);
+t('a reply with no PO number anywhere is refused', (function () use ($ref) {
+    $r = PoInbox::ingest([
+        'subject' => "RE: [{$ref}] Quotation", 'from' => 'Devanand V <devanand.v@mhd.co.om>',
+        'body' => 'please proceed', 'attachments' => [['name' => 'scan.pdf', 'data' => '%PDF-1.4 nothing']],
+    ]);
+    return ($r['reason'] ?? '') === 'no purchase-order number in the reply or the pdf';
+})());
+t('a stranger who knows the job ref is refused', (function () use ($ref) {
+    $r = PoInbox::ingest([
+        'subject' => "RE: [{$ref}] Quotation", 'from' => 'attacker@evil.example',
+        'attachments' => [['name' => 'PO 4191000258.pdf', 'data' => '%PDF-1.4']],
+    ]);
+    return ($r['reason'] ?? '') === 'sender is not this customer';
+})());
 t('the PO number is read',     ($r['po'] ?? '') === '4191000258');
 $row = $db->fetchOne("SELECT fulfilment_state, po_number, po_file FROM card_requests WHERE id = ?", [$rid]);
 t('the job reached po_received', ($row['fulfilment_state'] ?? '') === 'po_received');

@@ -61,9 +61,21 @@ class CardJobMailer
                           . 'style="max-width:320px;width:100%;border-radius:8px;border:1px solid #e5e7eb"><br>'
                           . '<span style="font-size:12px;color:#6b7280">' . $e($label) . '</span></div>';
             }
+            // Belt and braces after the portal's own check: the only thing
+            // that may be attached here is an image inside uploads/. A path
+            // that resolves anywhere else, or a file that is not a picture, is
+            // dropped rather than mailed to the customer.
             if ($path !== '' && is_file($path)) {
-                $files[] = ['path' => $path,
-                            'name' => ($ref !== '' ? $ref . '-' : '') . $side . '.png'];
+                $real = realpath($path);
+                $root = realpath(BASE_DIR . '/uploads');
+                $type = $real ? @getimagesize($real) : false;
+                if ($real && $root && strpos($real, $root . DIRECTORY_SEPARATOR) === 0
+                    && $type && in_array($type[2], [IMAGETYPE_PNG, IMAGETYPE_JPEG], true)) {
+                    $files[] = ['path' => $real,
+                                'name' => ($ref !== '' ? $ref . '-' : '') . $side . '.png'];
+                } else {
+                    error_log('[mhd approval] refused to attach ' . $path);
+                }
             }
         }
         if ($preview !== '') {
@@ -75,7 +87,8 @@ class CardJobMailer
             'Name'     => $req['name_en'] ?? '',
             'Name (AR)'=> $req['name_ar'] ?? '',
             'Position' => $req['position_en'] ?? '',
-            'Mobile'   => ($req['mobile'] ?? '') !== '' ? '+968 ' . $req['mobile'] : '',
+            'Mobile'   => ($req['mobile'] ?? '') !== ''
+                          ? self::dialCode($dept) . ' ' . $req['mobile'] : '',
             'Email'    => $req['email'] ?? '',
             'Quantity' => (int)($req['quantity_ordered'] ?? 200) . ' cards',
         ] as $k => $v) {
@@ -220,7 +233,7 @@ class CardJobMailer
             $fileName = $ref !== '' ? $ref . '-' . $type : $type;
             $path = ERPSync::fetchDocumentPdf($type, $id, $fileName);
             if ($path === null) { $missing[] = $label; continue; }
-            $files[] = ['path' => $path, 'name' => $fileName . '.pdf'];
+            $files[] = ['path' => $path, 'name' => $fileName . '.pdf', 'label' => strtolower($label)];
         }
 
         $sign = $signUrl
@@ -235,9 +248,12 @@ class CardJobMailer
               . '<p>Your purchase order' . ($po !== '' ? ' <strong>' . $e($po) . '</strong>' : '')
               . ' is received' . ($inv !== '' ? ', and invoice <strong>' . $e($inv) . '</strong> is raised' : '')
               . '. The card for <strong>' . $e($name) . '</strong> (' . $e($div) . ') is now in production.</p>'
-              . '<p>The quotation, the invoice and the delivery note are attached.</p>'
+              . ($files
+                  ? '<p>' . $e(self::listOf(array_map(fn($f) => $f['label'], $files)))
+                    . (count($files) === 1 ? ' is attached.' : ' are attached.') . '</p>'
+                  : '')
               . ($missing ? '<p style="color:#6b7280;font-size:13px">Following separately: '
-                            . $e(implode(', ', $missing)) . '.</p>' : '')
+                            . $e(self::listOf($missing)) . '.</p>' : '')
               . $sign
               . '</div>';
 
@@ -296,6 +312,30 @@ class CardJobMailer
         return MhdMailer::sendRaw([self::productionMailbox()], [], $subject, $html, $file);
     }
 
+    /**
+     * The country code printed in front of a bare mobile number.
+     *
+     * The portal stores digits only, because the card art bakes the prefix.
+     * Consumer is the Bahrain entity and its card reads +973, so a hardcoded
+     * +968 showed the approver a number that is not on the card they are
+     * approving. Read it from the division's own entity name.
+     */
+    private static function dialCode(array $dept): string
+    {
+        $haystack = strtolower(($dept['name'] ?? '') . ' ' . ($dept['erp_client_name'] ?? ''));
+        return strpos($haystack, 'bahrain') !== false || strpos($haystack, 'w.l.l') !== false
+            ? '+973' : '+968';
+    }
+
+    /** "a, b and c", so the email names exactly what it carries. */
+    private static function listOf(array $items): string
+    {
+        $items = array_values(array_filter($items));
+        if (count($items) <= 1) { return ucfirst((string)($items[0] ?? '')); }
+        $last = array_pop($items);
+        return ucfirst(implode(', ', $items) . ' and ' . $last);
+    }
+
     private static function productionMailbox(): string
     {
         return defined('MHD_PRODUCTION_EMAIL') ? MHD_PRODUCTION_EMAIL : self::BHD_OWNER;
@@ -348,6 +388,35 @@ class CardJobMailer
             ($ref !== '' ? "[{$ref}] " : '') . "Invoice held: {$div}, {$reason}", $internal);
 
         return $sent;
+    }
+
+    /**
+     * Sent to BHD when a card is approved but the ERP would not raise the
+     * quotation. Nothing goes to the division: a quotation they cannot act on
+     * is worse than waiting, and the job heals itself every quarter of an hour.
+     */
+    public static function sendQuoteHeldAlert(array $req, array $dept, string $reason): array
+    {
+        $e    = fn($v) => htmlspecialchars((string)$v, ENT_QUOTES);
+        $name = trim((string)($req['name_en'] ?? '')) ?: trim((string)($req['name_ar'] ?? '')) ?: 'an employee';
+        $div  = (string)($dept['name'] ?? 'MHD');
+        $ref  = (string)($req['job_ref'] ?? '');
+
+        $html = '<div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#222;line-height:1.6">'
+              . '<p>A card was approved and the ERP would not raise the quotation, so the division has '
+              . 'not been asked for a purchase order.</p>'
+              . '<table style="border-collapse:collapse;margin:12px 0">'
+              . '<tr><td style="padding:3px 14px 3px 0;color:#6b7280">Job</td><td style="padding:3px 0"><strong>' . $e($ref) . '</strong></td></tr>'
+              . '<tr><td style="padding:3px 14px 3px 0;color:#6b7280">Employee</td><td style="padding:3px 0"><strong>' . $e($name) . '</strong></td></tr>'
+              . '<tr><td style="padding:3px 14px 3px 0;color:#6b7280">Division</td><td style="padding:3px 0"><strong>' . $e($div) . '</strong></td></tr>'
+              . '<tr><td style="padding:3px 14px 3px 0;color:#6b7280">Reason</td><td style="padding:3px 0"><strong>' . $e($reason) . '</strong></td></tr>'
+              . '</table>'
+              . '<p style="color:#6b7280;font-size:13px">The job is holding at approved and retries by itself '
+              . 'every quarter of an hour. The quotation goes out on its own as soon as the cause is cleared.</p>'
+              . '</div>';
+
+        return MhdMailer::sendRaw([self::BHD_OWNER], [],
+            ($ref !== '' ? "[{$ref}] " : '') . "Quotation held: {$div}, {$reason}", $html);
     }
 
 }

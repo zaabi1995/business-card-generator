@@ -45,9 +45,19 @@ class CardFulfilment
             return $out;   // not a division that runs this flow
         }
 
-        CardJob::transition((string)$request['id'], 'approved', [
-            'actor' => $actor, 'employee' => $chain['employee_id'] ?? null,
-        ]);
+        // If this job is not the one moving out of submitted, another caller is
+        // already doing this work: a double click, or a retry. Stop, rather than
+        // raise a second quote and send a second quotation.
+        if (!CardJob::transition((string)$request['id'], 'approved', [
+                'actor' => $actor, 'employee' => $chain['employee_id'] ?? null])) {
+            $state = (string)(Database::getInstance()->fetchOne(
+                "SELECT fulfilment_state s FROM card_requests WHERE id = :id",
+                ['id' => $request['id']])['s'] ?? '');
+            if ($state !== 'approved') {
+                $out['error'] = 'already past approval (' . $state . ')';
+                return $out;
+            }
+        }
 
         $qty = (int)($request['quantity_ordered'] ?? CardPrice::DEFAULT_QTY);
         if (!CardPrice::isStandardQuantity($qty)) { $qty = CardPrice::DEFAULT_QTY; }
@@ -60,17 +70,29 @@ class CardFulfilment
         // The approval chain has already placed a print order for BHD when the
         // approver chose "send to print". Correct that one rather than adding a
         // second: two orders meant two ERP quotes for one card, at two prices.
+        // Every money column on the order, not just the total: the approval
+        // chain fills subtotal, setup_fee and shipping_fee from BHD's own
+        // print-shop price list, and leaving those behind made the order read
+        // "subtotal 9.000 plus shipping 2.000 equals total 6.300".
         $fields = [
             'department_id'     => $request['department_id'],
             'quantity'          => $price['qty'],
             'paper_type'        => 'Art 300 GSM',
             'finish'            => 'matte',
+            'subtotal'          => $price['net'],
+            'setup_fee'         => 0,
+            'shipping_fee'      => 0,
             'total'             => $price['gross'],
             'subtotal_excl_vat' => $price['net'],
             'tax_rate'          => CardPrice::VAT_RATE,
             'tax_amount'        => $price['vat'],
             'erp_client_name'   => $dept['erp_client_name'],
         ];
+        // Only the columns this install actually has.
+        $db2 = Database::getInstance();
+        foreach (['subtotal', 'setup_fee', 'shipping_fee'] as $col) {
+            if (!$db2->columnExists('print_orders', $col)) { unset($fields[$col]); }
+        }
         $orderId = (int)($chain['print_order_id'] ?? 0) ?: (int)($request['print_order_id'] ?? 0);
         if ($orderId) {
             $set = [];
@@ -118,15 +140,19 @@ class CardFulfilment
             ]);
             $out['quoted'] = true;
             $out['quote']  = $quote['data']['quoteNumber'] ?? null;
+            CardJobMailer::sendQuotation($request, $dept, $price, $quote['data'] ?? []);
         } else {
-            // Log and carry on. The division is asked for the purchase order
-            // either way: a quote that has not reached the ERP is BHD's problem,
-            // not theirs, and the order stays on print_orders with no quote id.
+            // No quote, so no quotation. Asking for a purchase order against a
+            // quote that does not exist is worse than saying nothing: the reply
+            // would arrive, the intake would refuse it because the job never
+            // reached 'quoted', and MHD would be waiting on an order nobody
+            // holds. BHD is told instead, and cron/mhd-flow-heal.php raises the
+            // quote as soon as the cause is cleared.
             $out['error'] = $quote['message'] ?? 'unknown';
             error_log('[mhd quote] order ' . $orderId . ': ' . $out['error']);
+            CardJobMailer::sendQuoteHeldAlert($request, $dept, $out['error']);
         }
 
-        CardJobMailer::sendQuotation($request, $dept, $price, $quote['data'] ?? []);
         return $out;
     }
 
@@ -168,8 +194,23 @@ class CardFulfilment
                FROM print_orders WHERE id = :id", ['id' => $orderId]);
         $out['invoice'] = $order['erp_invoice_number'] ?? null;
 
-        // 2. MHD get the quotation, the invoice and the delivery note, as files,
-        //    with a link that signs the delivery note in one click.
+        // 2. Production get the print-ready artwork. Before the documents,
+        //    because the documents email tells MHD the card is in production
+        //    and that has to be true when they read it.
+        $prod = self::handToProduction($job, $dept ?: []);
+        $out['production'] = !empty($prod['ok']);
+        if (!$out['production']) { $out['errors'][] = 'production: ' . ($prod['error'] ?? 'unknown'); }
+
+        // in_production has to mean it: the job only moves when the artwork has
+        // actually reached production. It used to move either way, so a render
+        // that failed left a job reading "in production" with nothing printing
+        // and nothing retrying.
+        if (!$out['production']) {
+            error_log('[mhd afterPo] job ' . $job['id'] . ' held: ' . ($prod['error'] ?? 'unknown'));
+            return $out;
+        }
+        // 3. MHD get the quotation, the invoice and the delivery note, as
+        //    files, with a link that signs the delivery note in one click.
         $signUrl = null;
         if ($dept && !empty($dept['responsible_email'])) {
             require_once __DIR__ . '/DeliverySignature.php';
@@ -187,11 +228,6 @@ class CardFulfilment
         ], $signUrl);
         $out['documents'] = !empty($docs['ok']);
         if (!$out['documents']) { $out['errors'][] = 'documents: ' . ($docs['error'] ?? 'unknown'); }
-
-        // 3. Production get the print-ready artwork.
-        $prod = self::handToProduction($job, $dept ?: []);
-        $out['production'] = !empty($prod['ok']);
-        if (!$out['production']) { $out['errors'][] = 'production: ' . ($prod['error'] ?? 'unknown'); }
 
         if (CardJob::transition((string)$job['id'], 'in_production', [
             'actor' => 'system', 'invoice' => $out['invoice'], 'po' => $job['po_number'] ?? null,
@@ -213,7 +249,16 @@ class CardFulfilment
         if ($employeeId === '') {
             return ['ok' => false, 'error' => 'the job has no employee to render'];
         }
-        $pdf = CardPDFRenderer::render($employeeId, 'print', ['include_qr' => true]);
+        // The card that prints is the card that was approved: if the employee
+        // unticked the QR, production must not get one. include_qr is null on
+        // requests made before it was recorded, and those keep the old default.
+        $wantQr = array_key_exists('include_qr', $job) && $job['include_qr'] !== null
+                ? (bool)$job['include_qr']
+                : true;
+        $pdf = CardPDFRenderer::render($employeeId, 'print', [
+            'include_qr'       => $wantQr,
+            'qr_force_allowed' => $wantQr,
+        ]);
         if (empty($pdf['success'])) {
             return ['ok' => false, 'error' => 'render: ' . ($pdf['error'] ?? 'unknown')];
         }

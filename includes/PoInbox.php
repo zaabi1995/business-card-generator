@@ -63,6 +63,41 @@ class PoInbox
         return null;
     }
 
+    /**
+     * Does this sender belong to the customer whose job this is?
+     *
+     * Their own division mailbox and head address define the domain, with
+     * MHD's two domains as the floor, so a division that writes from a
+     * subsidiary address still gets through and a stranger does not.
+     */
+    public static function isCustomerSender(string $from, array $job): bool
+    {
+        if (!preg_match('/([A-Z0-9._%+-]+@[A-Z0-9.-]+)/i', $from, $m)) {
+            return false;
+        }
+        $domain = strtolower(substr(strrchr($m[1], '@'), 1));
+
+        $allowed = ['mhd.co.om', 'mhdlogistics.com'];
+        try {
+            $dept = !empty($job['department_id']) ? Database::getInstance()->fetchOne(
+                "SELECT responsible_email, head_email, cc_emails FROM departments WHERE id = :d",
+                ['d' => $job['department_id']]) : null;
+            foreach (['responsible_email', 'head_email', 'cc_emails'] as $k) {
+                foreach (preg_split('/[,;\s]+/', (string)($dept[$k] ?? '')) as $addr) {
+                    if (strpos($addr, '@') === false) { continue; }
+                    $d = strtolower(substr(strrchr(trim($addr), '@'), 1));
+                    if ($d !== '' && !self::isOwnSender('x@' . $d)) { $allowed[] = $d; }
+                }
+            }
+        } catch (Exception $e) {
+            error_log('PoInbox::isCustomerSender ' . $e->getMessage());
+        }
+        foreach (array_unique($allowed) as $d) {
+            if ($domain === $d || str_ends_with($domain, '.' . $d)) { return true; }
+        }
+        return false;
+    }
+
     /** Our own domains. A purchase order never comes from one of these. */
     public static function isOwnSender(string $from): bool
     {
@@ -103,9 +138,25 @@ class PoInbox
         }
         // The flow state, not card_requests.status, which only ever holds the
         // approval verdict.
+        // 'approved' is accepted as well as 'quoted': the quotation may not have
+        // reached the ERP yet, and a purchase order that is already in hand must
+        // never be thrown away for being early. Anything further along, or
+        // rejected, is genuinely not ours to act on.
         $state = (string)($job['fulfilment_state'] ?? '');
-        if ($state !== 'quoted') {
-            return ['matched' => false, 'ref' => $ref, 'reason' => "job is {$state}, not quoted"];
+        if (!in_array($state, ['quoted', 'approved'], true)) {
+            return ['matched' => false, 'ref' => $ref,
+                    'reason' => "job is {$state}, not awaiting a purchase order",
+                    'transient' => $state === 'submitted'];
+        }
+
+        // The sender must belong to the customer. Refusing only our own domains
+        // left the door open to anyone who learned a job ref, which is printed
+        // in the subject of every quotation we send: one email from any address
+        // would have raised a real invoice on MHD's account and released the
+        // artwork to production.
+        if (!self::isCustomerSender((string)($message['from'] ?? ''), $job)) {
+            return ['matched' => false, 'ref' => $ref,
+                    'reason' => 'sender is not this customer', 'transient' => false];
         }
 
         $pdf = null;
@@ -133,6 +184,14 @@ class PoInbox
                                     . ' ' . (string)($message['body'] ?? ''));
         if (!$po) {
             $po = self::extractPoNumber(self::pdfText($path));
+        }
+        // A PDF with no purchase-order number anywhere in it is not a purchase
+        // order. Filing one used to raise a real invoice off any attachment.
+        if (!$po) {
+            @unlink($path);
+            return ['matched' => false, 'ref' => $ref,
+                    'reason' => 'no purchase-order number in the reply or the pdf',
+                    'transient' => false];
         }
 
         $db = Database::getInstance();
@@ -204,9 +263,25 @@ class PoInbox
                 continue;
             }
             $msg['message_key'] = $key;
+            // Claim the message before the slow part. ingest() can run for a
+            // minute on a real purchase order (an ERP convert, three document
+            // fetches, a render and an SMTP send), and the poller fires every
+            // two minutes, so without the claim a second run could file the
+            // same reply again. INSERT IGNORE means exactly one run wins.
+            if (!self::claim($key, (string)$msg['subject'])) { continue; }
             $r = self::ingest($msg);
-            self::remember($key, (string)$msg['subject'], $r['ref'] ?? null,
-                           $r['matched'] ? 'filed' : ($r['reason'] ?? 'skipped'));
+            // A reply refused for a reason that can change, a job that has not
+            // been quoted yet, is left unrecorded so the next run looks at it
+            // again. Recording it was how a real purchase order could be
+            // discarded for ever on the strength of one early glance.
+            if (empty($r['transient'])) {
+                self::remember($key, (string)$msg['subject'], $r['ref'] ?? null,
+                               $r['matched'] ? 'filed' : ($r['reason'] ?? 'skipped'));
+            } else {
+                // Nothing durable happened and the reason can change, so let
+                // the next run look at this reply again.
+                self::forget($key);
+            }
             // Only the ones that concern a job are worth reporting.
             if (!empty($r['ref'])) {
                 $out[] = $r + ['subject' => $msg['subject']];
@@ -257,15 +332,53 @@ class PoInbox
     private static function alreadySeen(string $key): bool
     {
         return (bool)Database::getInstance()->fetchOne(
-            "SELECT message_key FROM mhd_po_seen WHERE message_key = :k", ['k' => $key]);
+            "SELECT message_key FROM mhd_po_seen
+              WHERE message_key = :k
+                AND NOT (outcome = 'reading' AND created_at < DATE_SUB(NOW(), INTERVAL 30 MINUTE))",
+            ['k' => $key]);
+    }
+
+    /** Take this message, if no other run has. */
+    private static function claim(string $key, string $subject): bool
+    {
+        try {
+            $db = Database::getInstance();
+            // A run that died mid message would otherwise hold its claim for
+            // ever and the purchase order would never be read again.
+            $db->query("DELETE FROM mhd_po_seen
+                         WHERE message_key = ? AND outcome = 'reading'
+                           AND created_at < DATE_SUB(NOW(), INTERVAL 30 MINUTE)", [$key]);
+            $stmt = $db->query(
+                "INSERT IGNORE INTO mhd_po_seen (message_key, subject, outcome)
+                 VALUES (?, ?, 'reading')",
+                [$key, mb_substr($subject, 0, 255)]);
+            // One row inserted means this run took the message; zero means
+            // another run already has it, or it was examined on an earlier run.
+            return $stmt->rowCount() === 1;
+        } catch (Exception $e) {
+            error_log('PoInbox::claim ' . $e->getMessage());
+            return true;   // never let bookkeeping stop a purchase order
+        }
+    }
+
+    /** Release a claim, so the next run reads the message again. */
+    private static function forget(string $key): void
+    {
+        try {
+            Database::getInstance()->query(
+                "DELETE FROM mhd_po_seen WHERE message_key = ? AND outcome IN ('reading','')", [$key]);
+        } catch (Exception $e) {
+            error_log('PoInbox::forget ' . $e->getMessage());
+        }
     }
 
     private static function remember(string $key, string $subject, ?string $ref, string $outcome): void
     {
         try {
             Database::getInstance()->query(
-                "INSERT IGNORE INTO mhd_po_seen (message_key, subject, job_ref, outcome)
-                 VALUES (?, ?, ?, ?)",
+                "INSERT INTO mhd_po_seen (message_key, subject, job_ref, outcome)
+                 VALUES (?, ?, ?, ?)
+                 ON DUPLICATE KEY UPDATE job_ref = VALUES(job_ref), outcome = VALUES(outcome)",
                 [$key, mb_substr($subject, 0, 255), $ref, mb_substr($outcome, 0, 190)]);
         } catch (Exception $e) {
             error_log('PoInbox::remember ' . $e->getMessage());

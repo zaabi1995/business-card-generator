@@ -21,12 +21,24 @@ $id   = (string)($_GET['id'] ?? '');
 $kind = (string)($_GET['kind'] ?? '');
 $db   = Database::getInstance();
 
+$where  = "cr.id = :id AND cr.company_id = :cid";
+$params = ['id' => $id, 'cid' => $companyId];
+
+// A session that came from an approval email is one division's approver, so it
+// reaches that division's documents and no others.
+if (!empty($_SESSION['magic_link'])) {
+    $where .= " AND (LOWER(d.responsible_email) = :me OR LOWER(d.head_email) = :me2)";
+    $me = strtolower(trim((string)($_SESSION['magic_link_email'] ?? '')));
+    $params['me']  = $me;
+    $params['me2'] = $me;
+}
+
 $job = $db->fetchOne(
     "SELECT cr.*, po.erp_quote_id, po.erp_invoice_id, po.delivery_note_external_id
        FROM card_requests cr
        LEFT JOIN print_orders po ON po.id = cr.erp_order_id
-      WHERE cr.id = :id AND cr.company_id = :cid",
-    ['id' => $id, 'cid' => $companyId]);
+       LEFT JOIN departments  d  ON d.id  = cr.department_id
+      WHERE {$where}", $params);
 if (!$job) { http_response_code(404); exit('Not found'); }
 
 $ref  = (string)($job['job_ref'] ?? 'card-job');
@@ -61,7 +73,13 @@ switch ($kind) {
     case 'artwork':
         $employeeId = (string)($job['employee_id'] ?? '');
         if ($employeeId !== '') {
-            $pdf = CardPDFRenderer::render($employeeId, 'print', ['include_qr' => true]);
+            // The same choice the employee made, so the console shows what
+            // production received rather than a different card.
+            $wantQr = $job['include_qr'] !== null ? (bool)$job['include_qr'] : true;
+            $pdf = CardPDFRenderer::render($employeeId, 'print', [
+                'include_qr'       => $wantQr,
+                'qr_force_allowed' => $wantQr,
+            ]);
             if (!empty($pdf['success'])) { $path = (string)$pdf['path']; }
         }
         $name = $ref . '-print-ready.pdf';

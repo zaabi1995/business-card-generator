@@ -19,7 +19,8 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 $token = $_GET['t'] ?? '';
-$row = AdminApprovalToken::verify($token);
+// With the purpose: a delivery-note token must not open a card request.
+$row = AdminApprovalToken::verify($token, 'card_request');
 
 if (!$row) {
     aat_expired_page();

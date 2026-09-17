@@ -26,8 +26,18 @@ $adminBase = defined('COMPANY_ADMIN_BASE') ? COMPANY_ADMIN_BASE : getBasePath() 
 // ---------------------------------------------------------------------
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     $token = $_GET['t'] ?? '';
-    $row = AdminApprovalToken::verify($token);
+    $row = AdminApprovalToken::verify($token, 'card_request');
     if (!$row) {
+        if (AdminApprovalToken::wasUsed($token)) {
+            aat_message_page(
+                'Already actioned - Cardify', "\xE2\x9C\x94",
+                'This request was already actioned',
+                'No further action is needed.',
+                'تمت معالجة هذا الطلب بالفعل',
+                'لا حاجة لأي إجراء إضافي'
+            );
+            exit;
+        }
         aat_expired_page();
         exit;
     }
@@ -95,13 +105,23 @@ if (!validateCSRFToken($_POST['csrf_token'] ?? '')) {
 }
 
 $token = $_POST['t'] ?? '';
-$row = AdminApprovalToken::verify($token);
+// With the purpose, so a delivery-note token cannot approve a card. Migration
+// 160 added the column for exactly this and only half of it was enforced.
+$row = AdminApprovalToken::verify($token, 'card_request');
 if (!$row) {
+    if (AdminApprovalToken::wasUsed($token)) {
+        aat_message_page(
+            'Already actioned - Cardify', "\xE2\x9C\x94",
+            'This request was already actioned',
+            'No further action is needed.',
+            'تمت معالجة هذا الطلب بالفعل',
+            'لا حاجة لأي إجراء إضافي'
+        );
+        exit;
+    }
     aat_expired_page();
     exit;
 }
-
-AdminApprovalToken::startAdminSession($row);
 
 $db = Database::getInstance();
 $action = $_POST['action'] ?? 'approve';
@@ -121,6 +141,9 @@ if ($action === 'reject') {
         );
         exit;
     }
+
+    // The consume is won, so this caller is the one acting: now a session.
+    AdminApprovalToken::startAdminSession($row);
 
     $request = $db->fetchOne(
         "SELECT * FROM card_requests WHERE id = :id AND company_id = :cid",
@@ -188,6 +211,8 @@ if (!AdminApprovalToken::consumeApprove($token)) {
     );
     exit;
 }
+
+AdminApprovalToken::startAdminSession($row);
 
 $request = $db->fetchOne(
     "SELECT * FROM card_requests WHERE id = :id AND company_id = :cid",
