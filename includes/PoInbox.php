@@ -258,6 +258,15 @@ class PoInbox
 
             $msg = self::parse($file);
             if ($msg === null) {
+                // Dovecot renames a message from new/ to cur/ the moment
+                // somebody opens the mailbox, so the file this run listed can
+                // be gone by the time it is read. That is not a bad message:
+                // release the claim and let the next run read it under its new
+                // name, which carries the same key.
+                if (!is_file($file)) {
+                    self::forget($key);
+                    continue;
+                }
                 self::remember($key, '', null, 'unparseable');
                 $out[] = ['matched' => false, 'reason' => 'unparseable', 'file' => basename($file)];
                 continue;
