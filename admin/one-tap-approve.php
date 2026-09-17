@@ -154,8 +154,8 @@ if ($action === 'reject') {
             'No further action is needed.',
             'تمت معالجة هذا الطلب بالفعل',
             'لا حاجة لأي إجراء إضافي',
-            getTenantUrl($_SESSION['company_slug'] ?? null, '/admin/requests'),
-            'Open requests'
+            getTenantUrl($_SESSION['company_slug'] ?? null, '/admin/card-jobs'),
+            'Open card jobs'
         );
         exit;
     }
@@ -208,8 +208,8 @@ if ($action === 'reject') {
         'The employee has been notified by email.',
         'تم رفض الطلب',
         'تم إشعار الموظف عبر البريد الإلكتروني',
-        getTenantUrl($_SESSION['company_slug'] ?? null, '/admin/requests'),
-        'Open requests'
+        getTenantUrl($_SESSION['company_slug'] ?? null, '/admin/card-jobs'),
+        'Open card jobs'
     );
     exit;
 }
@@ -225,8 +225,8 @@ if (!AdminApprovalToken::consumeApprove($token)) {
         'The card is being generated. No further action is needed.',
         'تمت الموافقة على هذا الطلب بالفعل',
         'جاري إنشاء البطاقة، لا حاجة لأي إجراء إضافي',
-        getTenantUrl($_SESSION['company_slug'] ?? null, '/admin/requests'),
-        'Open requests'
+        getTenantUrl($_SESSION['company_slug'] ?? null, '/admin/card-jobs'),
+        'Open card jobs'
     );
     exit;
 }
@@ -291,6 +291,6 @@ aat_message_page(
     'Please try again from the admin dashboard.',
     'تعذر إتمام الموافقة',
     'يرجى المحاولة مرة أخرى من لوحة التحكم',
-    getTenantUrl($_SESSION['company_slug'] ?? null, '/admin/requests'),
-    'Open requests'
+    getTenantUrl($_SESSION['company_slug'] ?? null, '/admin/card-jobs'),
+    'Open card jobs'
 );

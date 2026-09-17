@@ -20,6 +20,10 @@ class MagicLinkScope
         'logout',
     ];
 
+    /** API endpoints that act on the signed-in session. The rest of /api/ is
+     *  public (translate, lead, appointment) and the portal uses it. */
+    private const SESSION_APIS = ['print-ready', 'check-employee', 'onboarding', 'file-manager'];
+
     /** Pages that act on one employee: allowed only for the approved one. */
     private const EMPLOYEE_PAGES = [
         'batch_generate', 'auto_generate', 'send_card_email',
@@ -41,7 +45,8 @@ class MagicLinkScope
         }
         $path = strtolower((string)(parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: ''));
         $page = preg_replace('/\.php$/', '', basename($path));
-        $isAdmin = strpos($path, '/admin/') !== false || strpos($path, '/api/') !== false;
+        $isAdmin = strpos($path, '/admin/') !== false
+            || (strpos($path, '/api/') !== false && in_array($page, self::SESSION_APIS, true));
 
         if ($isAdmin && !in_array($page, self::FLOW_PAGES, true)
             && !in_array($page, self::EMPLOYEE_PAGES, true)) {
