@@ -645,9 +645,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['portal_passcode'])) 
                 }
             }
 
-            // Send confirmation email to employee
+            // Send confirmation email to employee. Not for a division in the MHD
+            // flow: MHD get three emails and no more, and the page itself already
+            // confirms the request.
             $employeeName = $formData['name_en'] ?: $formData['name_ar'];
-            Mailer::sendTemplate($formData['email'], 'request_submitted', [
+            if (empty($sendDept['responsible_email'])) Mailer::sendTemplate($formData['email'], 'request_submitted', [
                 'employee_name' => $employeeName,
                 'company_name' => $companyName,
                 'position' => $formData['position_en'] ?: $formData['position_ar'],

@@ -272,7 +272,7 @@ if ($r['success'] && $r['employee_id']) {
     }
 
     $target = $adminBase . 'batch_generate?employee_id=' . urlencode($r['employee_id'])
-        . '&auto_generate=1&send_email=1';
+        . '&auto_generate=1' . ($mhdFlow ? '' : '&send_email=1');   // MHD: three emails only
     if (!headers_sent()) {
         header('Location: ' . $target);
         exit;

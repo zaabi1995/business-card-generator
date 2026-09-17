@@ -88,7 +88,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                         // Redirect to batch generate with this employee pre-selected
                         $redirectBase = defined('COMPANY_ADMIN_BASE') ? COMPANY_ADMIN_BASE : getBasePath() . 'admin/';
-                        header('Location: ' . $redirectBase . 'batch_generate?employee_id=' . urlencode($approval['employee_id']) . '&auto_generate=1&send_email=1');
+                        header('Location: ' . $redirectBase . 'batch_generate?employee_id=' . urlencode($approval['employee_id']) . '&auto_generate=1' . ($mhdFlow ? '' : '&send_email=1'));
                         exit;
                     } else {
                         $message = 'Failed to process employee: ' . ($approval['error'] ?? 'Unknown error');
