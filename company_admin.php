@@ -135,6 +135,8 @@ try {
         // 6-tab IA consolidation (May 2026)
         'orders'              => 'admin/orders.php',
         'card-jobs'           => 'admin/card-jobs.php',
+        'division-login'      => 'admin/division-login.php',
+        'division-settings'   => 'admin/division-settings.php',
         'card-job-file'       => 'admin/card-job-file.php',
         'order-timeline'      => 'admin/order-timeline.php',
         'print-tracking'      => 'admin/print-tracking.php',

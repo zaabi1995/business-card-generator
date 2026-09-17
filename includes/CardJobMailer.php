@@ -68,6 +68,7 @@ class CardJobMailer
         // on the full review page. Saying otherwise sent people looking for a
         // button that is not there.
         $review = getTenantUrl($slug, '/admin/approve-request?t=' . urlencode($token));
+        $settings = getTenantUrl($slug, '/admin/division-login');
 
         $e = fn($v) => htmlspecialchars((string)$v, ENT_QUOTES);
 
@@ -132,6 +133,9 @@ class CardJobMailer
               . 'address. Nothing prints until you send the purchase order.</p>'
               . '<p style="color:#6b7280;font-size:13px">To decline instead, or to change anything first, '
               . 'open <a href="' . $e($review) . '" style="color:#0f4c81">the full request</a>.</p>'
+              . '<p style="color:#9ca3af;font-size:12px">To change who approves for ' . $e($div)
+              . ', or the account it is billed to, sign in at '
+              . '<a href="' . $e($settings) . '" style="color:#6b7280">division settings</a>.</p>'
               . '</div>';
 
 

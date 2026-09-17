@@ -1,0 +1,37 @@
+<?php
+/**
+ * Division sign-in and division settings (admin/division-login.php,
+ * admin/division-settings.php).
+ */
+return [
+    'login_title'      => 'Division sign in',
+    'login_lead'       => 'Enter the email your card approvals go to. We will send you a link that signs you in.',
+    'login_email'      => 'Your work email',
+    'login_button'     => 'Send me the link',
+    'login_sent_h'     => 'Check your email',
+    'login_sent_b'     => 'If that address approves cards for a division, a sign-in link is on its way. It works once and lasts 30 minutes.',
+    'login_bad_email'  => 'Please enter a valid email address.',
+
+    'title'            => 'Division settings',
+    'lead'             => 'Who approves cards for this division, and which account they are billed to.',
+    'division'         => 'Division',
+    'head'             => 'Head of division',
+    'head_hint'        => 'Approvals are sent here. This person clicks approve.',
+    'mailbox'          => 'Division mailbox',
+    'mailbox_hint'     => 'Copied on everything, and the address a purchase order is replied from.',
+    'cc'               => 'Also copy',
+    'cc_hint'          => 'Separate several addresses with commas.',
+    'erp_account'      => 'Billed as',
+    'erp_account_hint' => 'The account name on your quotation, invoice and delivery note.',
+    'qr_default'       => 'Offer a QR code on the card by default',
+    'save'             => 'Save',
+    'saved'            => 'Saved. The next card request follows the new details.',
+    'nothing_changed'  => 'Nothing changed.',
+    'history'          => 'Recent changes',
+    'changed_by'       => 'by',
+    'invalid_email'    => 'That email address does not look right.',
+    'no_erp_accounts'  => 'The account list is unavailable right now, so this keeps the account it has.',
+    'signed_in_as'     => 'Signed in as',
+    'expired_h'        => 'This link has expired',
+    'expired_b'        => 'Sign-in links work once and last 30 minutes. Ask for a new one.',
+];
