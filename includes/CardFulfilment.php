@@ -134,7 +134,7 @@ class CardFulfilment
      * @param  array $job a card_requests row already at po_received
      * @return array ['invoice'=>?string,'documents'=>bool,'production'=>bool,'state'=>string,'errors'=>array]
      */
-    public static function afterPo(array $job): array
+    public static function afterPo(array $job, bool $announce = true): array
     {
         $out = ['invoice' => null, 'documents' => false, 'production' => false,
                 'state' => (string)($job['fulfilment_state'] ?? ''), 'errors' => []];
@@ -151,9 +151,17 @@ class CardFulfilment
         // 1. The ERP raises the invoice, the sales order and the delivery note.
         $inv = ERPSync::convertQuoteToInvoice($orderId, 'po');
         if (empty($inv['success'])) {
-            $out['errors'][] = 'invoice: ' . ($inv['message'] ?? 'unknown');
-            error_log('[mhd afterPo] order ' . $orderId . ' invoice failed: ' . ($inv['message'] ?? ''));
-            return $out;   // no documents to send yet; the retry queue owns it now
+            $reason = (string)($inv['message'] ?? 'unknown');
+            $out['errors'][] = 'invoice: ' . $reason;
+            error_log('[mhd afterPo] order ' . $orderId . ' invoice failed: ' . $reason);
+            // Say so. Silence here is the one outcome nobody can act on: the
+            // division has sent a purchase order and hears nothing, and BHD
+            // never learns the invoice is held. cron/mhd-flow-heal.php picks
+            // the job up again every quarter of an hour.
+            if ($announce && $dept) {
+                CardJobMailer::sendPoAcknowledgement($job, $dept, (string)($job['po_number'] ?? ''), $reason);
+            }
+            return $out;
         }
         $order = $db->fetchOne(
             "SELECT erp_quote_id, erp_invoice_id, erp_invoice_number, delivery_note_external_id

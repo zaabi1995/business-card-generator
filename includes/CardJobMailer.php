@@ -301,4 +301,53 @@ class CardJobMailer
         return defined('MHD_PRODUCTION_EMAIL') ? MHD_PRODUCTION_EMAIL : self::BHD_OWNER;
     }
 
+    /**
+     * Sent when a purchase order lands but the invoice cannot be raised yet.
+     *
+     * Found on 17 Sep 2026: three MHD accounts are credit blocked in the ERP,
+     * and the ERP refuses to convert a quote for a blocked client. The purchase
+     * order was filed correctly and then nothing was said to anyone, which is
+     * the one outcome a person cannot act on.
+     *
+     * The division is told their purchase order arrived. BHD gets its own
+     * message with the reason, because the reason is ours, not theirs.
+     */
+    public static function sendPoAcknowledgement(array $req, array $dept, string $po, string $reason): array
+    {
+        $to = trim((string)($dept['responsible_email'] ?? ''));
+        if ($to === '') {
+            return ['ok' => false, 'error' => 'department has no approver', 'recipients' => []];
+        }
+        $e    = fn($v) => htmlspecialchars((string)$v, ENT_QUOTES);
+        $name = trim((string)($req['name_en'] ?? '')) ?: trim((string)($req['name_ar'] ?? '')) ?: 'the employee';
+        $div  = (string)($dept['name'] ?? 'MHD');
+        $ref  = (string)($req['job_ref'] ?? '');
+
+        $html = '<div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#222;line-height:1.6">'
+              . '<p>Thank you, your purchase order' . ($po !== '' ? ' <strong>' . $e($po) . '</strong>' : '')
+              . ' is received for <strong>' . $e($name) . '</strong> (' . $e($div) . ').</p>'
+              . '<p>The invoice and the delivery note follow shortly.</p>'
+              . '</div>';
+        $cc = array_values(array_filter([trim((string)($dept['head_email'] ?? '')), self::BHD_OWNER]));
+        $sent = MhdMailer::sendRaw([$to], $cc,
+            ($ref !== '' ? "[{$ref}] " : '') . "Purchase order received: {$name}, {$div}", $html);
+
+        // The internal one. Same job ref, so it threads with the rest.
+        $internal = '<div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#222;line-height:1.6">'
+                  . '<p>A purchase order arrived and the ERP would not raise the invoice.</p>'
+                  . '<table style="border-collapse:collapse;margin:12px 0">'
+                  . '<tr><td style="padding:3px 14px 3px 0;color:#6b7280">Job</td><td style="padding:3px 0"><strong>' . $e($ref) . '</strong></td></tr>'
+                  . '<tr><td style="padding:3px 14px 3px 0;color:#6b7280">Division</td><td style="padding:3px 0"><strong>' . $e($div) . '</strong></td></tr>'
+                  . '<tr><td style="padding:3px 14px 3px 0;color:#6b7280">Purchase order</td><td style="padding:3px 0"><strong>' . $e($po) . '</strong></td></tr>'
+                  . '<tr><td style="padding:3px 14px 3px 0;color:#6b7280">Reason</td><td style="padding:3px 0"><strong>' . $e($reason) . '</strong></td></tr>'
+                  . '</table>'
+                  . '<p style="color:#6b7280;font-size:13px">The job is holding at po_received. It retries by itself '
+                  . 'every quarter of an hour, so clearing the cause is all that is needed.</p>'
+                  . '</div>';
+        MhdMailer::sendRaw([self::BHD_OWNER], [],
+            ($ref !== '' ? "[{$ref}] " : '') . "Invoice held: {$div}, {$reason}", $internal);
+
+        return $sent;
+    }
+
 }
