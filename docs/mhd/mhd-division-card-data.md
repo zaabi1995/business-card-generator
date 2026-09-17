@@ -99,3 +99,24 @@ Full per-span field maps in tool-results/bmghxgp3j.txt. Buildable = Logistics, C
 - The NEW "Automotive & Heavy Equipment LLC" (CR 1429946, Tel 24732500/Fax 24793256) has ONLY a letterhead -> NEEDS-ARTWORK if that entity's card is wanted.
 
 **EEP** (eep@mhd.co.om, Muhammed Shaheer) = NEEDS-ARTWORK: only a flat "Confirmation mhd card.jpg" proof (200pcs, 90x55mm, 300gsm) + ITICS letterhead. Rebuild from JPG or reuse ITICS template w/ eep@ contact block.
+
+## Office tel / fax are per person since 17 Sep 2026
+The division cards no longer bake the office tel and fax. `scripts/mhd/tel-fax-editable.php`
+turned the static `tel1 / tel2 / fax` fields into dynamic `phone / phone_2 / fax` (+ `_ar`),
+and the numbers they baked became `departments.office_tel1 / office_tel2 / office_fax`.
+The portal prefills those, the person can change them (8 digits, "+968" is artwork), and a
+blank falls back to the division default. A division edits its defaults on
+`/admin/division-settings`. Print output with the defaults was pixel-identical to the
+static cards on all 11 templates (200 dpi diff, 0 pixels).
+
+Evidence gathered the same day, for choosing the defaults:
+
+| Division | Default today | MHD print files (`MHD Visiting Card/ITICS/All Cards - Print File`, 335 files, 2021-2026) | Signatures in BHD mail (400 days) |
+|---|---|---|---|
+| ITICS | 24732500 / 24732501 / fax 24793256 | general staff 24835500 / 24830946; HR 24732595 / 24793256 | 24835500 / 24830946 (57 mails, 10 people) |
+| Office Products | 24837752 / fax 24830946 | none found | 24835500 / 24830946 (43 mails) |
+| Infrastructure & BS | 24732300 / fax 24732505 (OCR, no other source) | 24794655 / 24792505 (16), 24732307, 24732318, Sohar 26880703-13 | 24835500 / 24830946 (ibs@ only) |
+| Healthcare | 24835500 / 24831599 / fax 24830946 | 24833500 / 24830946 (7), 24835500 (3) | 24835500 / 24830946 (head) |
+| IPD | 24835500 / 24837752 / fax 24830946 | 24788933 / 24798664 or 24798662 (11) | ipd@ 24788933 / 24792505 |
+| Tech & Comm | 24835500 / 24837752 / fax 24830946 | 24835500 / 24830946 (17), 24837752 (5) | 24835500 / 24830946 (14 mails, 7 people) |
+| Building Materials | 24794655 / fax 24792505 | 24794655 / 24792505 (22) | same |
