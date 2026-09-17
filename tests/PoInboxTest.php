@@ -82,14 +82,6 @@ CardJob::transition($rid, 'quoted',   ['actor' => 'test']);
 $r = PoInbox::ingest(['subject' => "RE: [{$ref}] Quotation", 'from' => 'Devanand V <devanand.v@mhd.co.om>']);
 t('a quoted job with no attachment is refused', ($r['reason'] ?? '') === 'no pdf attached');
 
-// With a PDF it files, takes the number off the document and moves the job on.
-$pdf = "%PDF-1.4\n purchase order 4191000258\n";
-$r = PoInbox::ingest([
-    'subject' => "RE: [{$ref}] Quotation", 'from' => 'Devanand V <devanand.v@mhd.co.om>',
-    'message_id' => '<selftest@mhd.co.om>', 'body' => 'PO attached',
-    'attachments' => [['name' => 'PO 4191000258 - Business Cards.pdf', 'data' => $pdf]],
-]);
-t('a PO with a PDF is filed',  ($r['matched'] ?? false) === true);
 t('a reply with no PO number anywhere is refused', (function () use ($ref) {
     $r = PoInbox::ingest([
         'subject' => "RE: [{$ref}] Quotation", 'from' => 'Devanand V <devanand.v@mhd.co.om>',
@@ -104,6 +96,15 @@ t('a stranger who knows the job ref is refused', (function () use ($ref) {
     ]);
     return ($r['reason'] ?? '') === 'sender is not this customer';
 })());
+
+// With a PDF it files, takes the number off the document and moves the job on.
+$pdf = "%PDF-1.4\n purchase order 4191000258\n";
+$r = PoInbox::ingest([
+    'subject' => "RE: [{$ref}] Quotation", 'from' => 'Devanand V <devanand.v@mhd.co.om>',
+    'message_id' => '<selftest@mhd.co.om>', 'body' => 'PO attached',
+    'attachments' => [['name' => 'PO 4191000258 - Business Cards.pdf', 'data' => $pdf]],
+]);
+t('a PO with a PDF is filed',  ($r['matched'] ?? false) === true);
 t('the PO number is read',     ($r['po'] ?? '') === '4191000258');
 $row = $db->fetchOne("SELECT fulfilment_state, po_number, po_file FROM card_requests WHERE id = ?", [$rid]);
 t('the job reached po_received', ($row['fulfilment_state'] ?? '') === 'po_received');
