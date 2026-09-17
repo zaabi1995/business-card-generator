@@ -89,6 +89,9 @@ if ($db->isConnected()) {
     }
     
     $deptDomainCol = $db->columnExists('departments', 'email_domain') ? ', email_domain' : '';
+    if ($db->columnExists('departments', 'office_tel1')) {
+        $deptDomainCol .= ', office_tel1, office_tel2, office_fax';
+    }
     $departments = $db->fetchAll(
         "SELECT id, name, slug, template_pair_id, portal_passcode, access_code, responsible_email, cc_emails, include_qr_default, head_email, erp_client_name, card_unit_price{$deptDomainCol} FROM departments WHERE company_id = :id AND portal_enabled = 1 ORDER BY name",
         ['id' => $companyId]
@@ -347,6 +350,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['portal_passcode'])) 
         'mobile_ar' => trim($_POST['mobile_ar'] ?? ''),
         'fax' => trim($_POST['fax'] ?? ''),
         'fax_ar' => trim($_POST['fax_ar'] ?? ''),
+        'phone_2' => trim($_POST['phone_2'] ?? ''),
+        'phone_2_ar' => trim($_POST['phone_2_ar'] ?? ''),
         'website' => trim($_POST['website'] ?? ''),
         'website_ar' => trim($_POST['website_ar'] ?? ''),
         'address_en' => trim($_POST['address_en'] ?? ''),
@@ -379,6 +384,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['portal_passcode'])) 
         }
     }
     
+    // Office tel / fax on a division card: the person's own line, prefilled with
+    // the division's. The artwork bakes "+968", so keep digits only; a blank
+    // takes the division default, since the card has a printed label for it.
+    $officeDept = null;
+    foreach ($departments as $__pd) {
+        if (($__pd['id'] ?? '') === ($formData['department_id'] ?? '')
+            && (!empty($__pd['office_tel1']) || !empty($__pd['office_tel2']) || !empty($__pd['office_fax']))) {
+            $officeDept = $__pd;
+            break;
+        }
+    }
+    if (!$error && $officeDept) {
+        $__toAr = fn($v) => strtr((string)$v, ['0'=>'٠','1'=>'١','2'=>'٢','3'=>'٣','4'=>'٤',
+                                               '5'=>'٥','6'=>'٦','7'=>'٧','8'=>'٨','9'=>'٩']);
+        foreach (['phone' => 'office_tel1', 'phone_2' => 'office_tel2', 'fax' => 'office_fax'] as $__col => $__def) {
+            $__v = preg_replace('/\D/', '', preg_replace('/^\s*(?:\+|00)?968[\s-]*/', '', $formData[$__col]));
+            if ($__v === '') { $__v = (string)($officeDept[$__def] ?? ''); }
+            if ($__v !== '' && !preg_match('/^\d{8}$/', $__v)) {
+                $error = t('portal.office_number_invalid');
+                break;
+            }
+            $formData[$__col] = $__v;
+            $formData[$__col . '_ar'] = $__toAr($__v);
+        }
+    }
+
     // Validate name only when the template exposes a name field. If the
     // imported card baked the name as a static decoration, no name_en input
     // is rendered, so requiring it here would reject every submission for a
@@ -625,6 +656,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['portal_passcode'])) 
                         // approveRequestChain() flips this to 'active'.
                         'status' => empty($company['card_requires_approval']) ? 'active' : 'pending',
                     ];
+                    if ($officeDept) {
+                        foreach (['phone', 'phone_ar', 'phone_2', 'phone_2_ar', 'fax', 'fax_ar'] as $__c) {
+                            $empData[$__c] = $formData[$__c] !== '' ? $formData[$__c] : null;
+                        }
+                    }
                     if ($existingEmployee) {
                         if ($db->columnExists('card_requests', 'employee_snapshot')) {
                             $snap = array_intersect_key($existingEmployee, $empData) + ['id' => $empId];
@@ -1869,13 +1905,33 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                     </div>
                     <?php endif; ?>
                     
-                    <!-- Phone -->
+                    <!-- Phone. On a division card this is the office line, prefilled
+                         with the division's and editable, digits only ("+968" is printed). -->
+                    <?php
+                    $__office = !empty($selectedDepartment['office_tel1']) || !empty($selectedDepartment['office_tel2'])
+                             || !empty($selectedDepartment['office_fax']);
+                    $__ov = fn($col, $def) => ($formData[$col] ?? '') !== '' ? $formData[$col] : (string)($selectedDepartment[$def] ?? '');
+                    ?>
                     <?php if (!empty($enabledFields['phone'])): ?>
                     <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-2"><?= htmlspecialchars(t('portal.phone_label')) ?></label>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2"><?= htmlspecialchars($__office ? t('portal.office_tel') : t('portal.phone_label')) ?></label>
                         <input type="tel" name="phone" id="phone"
-                               value="<?php echo htmlspecialchars($formData['phone'] ?? ''); ?>"
-                               placeholder="+968 1234 5678"
+                               value="<?php echo htmlspecialchars($__office ? $__ov('phone', 'office_tel1') : ($formData['phone'] ?? '')); ?>"
+                               placeholder="<?= $__office ? '24xxxxxx' : '+968 1234 5678' ?>"
+                               <?= $__office ? 'inputmode="numeric" maxlength="8" data-office="1"' : '' ?>
+                               class="form-input">
+                        <?php if ($__office): ?>
+                        <p class="text-xs text-gray-500 mt-1"><?= htmlspecialchars(t('portal.office_hint')) ?></p>
+                        <?php endif; ?>
+                    </div>
+                    <?php endif; ?>
+
+                    <?php if (!empty($enabledFields['phone_2'])): ?>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2"><?= htmlspecialchars(t('portal.office_tel_2')) ?></label>
+                        <input type="tel" name="phone_2" id="phone_2"
+                               value="<?php echo htmlspecialchars($__ov('phone_2', 'office_tel2')); ?>"
+                               placeholder="24xxxxxx" inputmode="numeric" maxlength="8" data-office="1"
                                class="form-input">
                     </div>
                     <?php endif; ?>
@@ -1965,14 +2021,24 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2"><?= htmlspecialchars(t('portal.fax_label')) ?></label>
                         <input type="tel" name="fax" id="fax"
-                               value="<?php echo htmlspecialchars($formData['fax'] ?? ''); ?>"
-                               placeholder="+968 1234 5679"
+                               value="<?php echo htmlspecialchars($__office ? $__ov('fax', 'office_fax') : ($formData['fax'] ?? '')); ?>"
+                               placeholder="<?= $__office ? '24xxxxxx' : '+968 1234 5679' ?>"
+                               <?= $__office ? 'inputmode="numeric" maxlength="8" data-office="1"' : '' ?>
                                class="form-input">
                     </div>
                     <?php endif; ?>
 
+                    <!-- Office numbers in Arabic digits: derived, never typed (see mobile_ar). -->
+                    <?php foreach (['phone_ar' => $__office, 'phone_2_ar' => true, 'fax_ar' => true] as $__k => $__derived):
+                        if (empty($enabledFields[$__k]) || !$__derived) continue; ?>
+                    <div style="display:none" aria-hidden="true">
+                        <input type="text" name="<?= $__k ?>" id="<?= $__k ?>" tabindex="-1"
+                               value="<?php echo htmlspecialchars($formData[$__k] ?? ''); ?>" class="form-input rtl-input">
+                    </div>
+                    <?php endforeach; ?>
+
                     <!-- Phone (Arabic) -->
-                    <?php if (!empty($enabledFields['phone_ar'])): ?>
+                    <?php if (!empty($enabledFields['phone_ar']) && !$__office): ?>
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2"><?= htmlspecialchars(t('portal.phone_ar_label')) ?></label>
                         <input type="text" name="phone_ar" id="phone_ar"
@@ -2034,7 +2100,7 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                     $handledKeys = [
                         'name_en','name_ar','position_en','position_ar','position_en_2','position_ar_2',
                         'position_en_3','position_ar_3',
-                        'phone','phone_ar','mobile','mobile_ar','fax','fax_ar',
+                        'phone','phone_ar','phone_2','phone_2_ar','mobile','mobile_ar','fax','fax_ar',
                         'email','website','website_ar',
                         'address','address_en','address_ar','address_2_ar',
                         'company_en','company_ar','department_id',
@@ -2362,6 +2428,8 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
             position_ar: document.getElementById('position_ar')?.value || '',
             email: email,
             phone: document.getElementById('phone')?.value || '',
+            phone_2: document.getElementById('phone_2')?.value || '',
+            phone_2_ar: document.getElementById('phone_2_ar')?.value || '',
             mobile: document.getElementById('mobile')?.value || '',
             website: document.getElementById('website')?.value || '',
             address_en: document.getElementById('address_en')?.value || '',
@@ -2460,6 +2528,8 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
             'position_ar': data.position_ar,
             'company_en': data.company_en,
             'phone': data.phone,
+            'phone_2': data.phone_2,
+            'phone_2_ar': data.phone_2_ar,
             'mobile': data.mobile,
             'email': data.email,
             'website': data.website,
@@ -2619,7 +2689,11 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                     textAlign: textAlign,
                     originX: originX,
                     originY: field.originY || 'top',
-                    matchPrintBaseline: true
+                    matchPrintBaseline: true,
+                    // Office tel/fax on MHD cards keep the nudge and full size they
+                    // had as static text beside the baked "+968".
+                    baselineFactor: (typeof field.baselineFactor === 'number') ? field.baselineFactor : undefined,
+                    autoShrink: field.autoShrink === false ? false : undefined
                 });
 
                 // Make fields non-selectable for preview
@@ -2770,6 +2844,21 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
         }
     }
 
+    // Office tel / fax on a division card: digits only, Arabic twin kept in step.
+    function wireOfficeNumbers() {
+        [['phone', 'phone_ar'], ['phone_2', 'phone_2_ar'], ['fax', 'fax_ar']].forEach(function (pair) {
+            const el = document.getElementById(pair[0]);
+            if (!el || el.dataset.office !== '1') return;
+            const apply = function () {
+                normaliseBakedMobile(el);
+                syncArabicPhone(pair[0], pair[1]);
+            };
+            el.addEventListener('input', apply);
+            el.addEventListener('blur', apply);
+            apply();
+        });
+    }
+
     function wireMobileAutoFormat() {
         const mob = document.getElementById('mobile');
         if (!mob) return;
@@ -2786,6 +2875,7 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
     document.addEventListener('DOMContentLoaded', function() {
         syncArabicPhone('phone', 'phone_ar');
         wireMobileAutoFormat();
+        wireOfficeNumbers();
         
         // Initialize request type toggle
         initRequestTypeToggle();
@@ -2880,7 +2970,7 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
     // Pre-fill form with existing employee data
     function prefillFormWithEmployeeData(employee) {
         const fields = ['name_en', 'name_ar', 'position_en', 'position_ar', 
-                       'phone', 'phone_ar', 'mobile', 'mobile_ar',
+                       'phone', 'phone_ar', 'phone_2', 'phone_2_ar', 'fax', 'fax_ar', 'mobile', 'mobile_ar',
                        'website', 'website_ar', 'address_en', 'address_ar'];
         
         fields.forEach(field => {

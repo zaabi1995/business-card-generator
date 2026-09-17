@@ -87,11 +87,13 @@ class CardPDFRenderer
         $profile = in_array($profile, ['web', 'print', 'sample', 'press', 'vector'], true) ? $profile : 'web';
 
         $db = Database::getInstance();
+        // Office tel / fax are per person on MHD's division cards (migration 166).
+        $extraCols = $db->columnExists('employees', 'phone_2') ? 'phone_2, phone_2_ar, ' : '';
         $employee = $db->fetchOne(
             'SELECT id, name_en, name_ar, position_en, position_ar,
                     position_en_2, position_ar_2,
                     position_en_3, position_ar_3,
-                    mobile, mobile_ar, phone, phone_ar, email, website,
+                    mobile, mobile_ar, phone, phone_ar, fax, fax_ar, ' . $extraCols . 'email, website,
                     address_en, address_ar, department_id,
                     company_id, updated_at
                FROM employees WHERE id = :id LIMIT 1',

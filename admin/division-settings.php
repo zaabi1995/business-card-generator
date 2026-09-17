@@ -89,11 +89,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $cc   = trim((string)($_POST['cc_emails'] ?? ''));
         $erp  = trim((string)($_POST['erp_client_name'] ?? ''));
         $qr   = !empty($_POST['include_qr_default']) ? 1 : 0;
+        // The office numbers staff see prefilled on the card form. Digits only;
+        // "+968" is printed on the card.
+        $office = [];
+        foreach (['office_tel1', 'office_tel2', 'office_fax'] as $oc) {
+            if (!array_key_exists($oc, $dept)) { continue; }
+            $office[$oc] = preg_replace('/\D/', '', preg_replace('/^\s*(?:\+|00)?968[\s-]*/', '', (string)($_POST[$oc] ?? '')));
+        }
 
         $bad = [];
         // The mailbox is what keeps the division in the flow. Blank, its
         // approvals fell back to the company address, the ITICS CEO office.
         if ($box === '') { $bad[] = 'responsible_email'; }
+        foreach ($office as $oc => $ov) {
+            if ($ov !== '' && !preg_match('/^\d{8}$/', $ov)) { $bad[] = $oc; }
+        }
         foreach (['head_email' => $head, 'responsible_email' => $box] as $field => $addr) {
             if ($addr !== '' && !filter_var($addr, FILTER_VALIDATE_EMAIL)) { $bad[] = $field; }
         }
@@ -111,7 +121,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         if ($bad) {
-            $error = t('divisionsettings.invalid_email');
+            $error = array_intersect($bad, ['office_tel1', 'office_tel2', 'office_fax'])
+                ? t('divisionsettings.invalid_office') : t('divisionsettings.invalid_email');
         } else {
             $changes = [];
             foreach ([
@@ -120,7 +131,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'cc_emails'          => $cc,
                 'erp_client_name'    => $erp !== '' ? $erp : $dept['erp_client_name'],
                 'include_qr_default' => $qr,
-            ] as $field => $value) {
+            ] + $office as $field => $value) {
                 if ((string)($dept[$field] ?? '') === (string)$value) { continue; }
                 $changes[$field] = [(string)($dept[$field] ?? ''), (string)$value];
             }
@@ -203,6 +214,20 @@ $e = fn($v) => htmlspecialchars((string)$v, ENT_QUOTES);
                    style="width:100%;padding:10px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:14px">
             <span style="display:block;font-size:12px;color:#9ca3af;margin-top:4px"><?= $e($hint) ?></span>
         <?php endforeach; ?>
+
+        <?php if (array_key_exists('office_tel1', $dept)): ?>
+            <p style="margin:18px 0 0;font-size:13px;color:#374151"><?= $e(t('divisionsettings.office_numbers')) ?></p>
+            <span style="display:block;font-size:12px;color:#9ca3af;margin-top:2px"><?= $e(t('divisionsettings.office_hint')) ?></span>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">
+            <?php foreach (['office_tel1' => t('divisionsettings.office_tel1'), 'office_tel2' => t('divisionsettings.office_tel2'),
+                            'office_fax' => t('divisionsettings.office_fax')] as $oc => $ol): ?>
+                <label style="flex:1 1 140px;font-size:12px;color:#6b7280"><?= $e($ol) ?>
+                    <input type="text" name="<?= $oc ?>" value="<?= $e($dept[$oc] ?? '') ?>" inputmode="numeric" maxlength="12"
+                           style="width:100%;padding:10px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:14px">
+                </label>
+            <?php endforeach; ?>
+            </div>
+        <?php endif; ?>
 
         <label style="display:block;margin-top:16px;font-size:13px;color:#374151"><?= $e(t('divisionsettings.erp_account')) ?></label>
         <?php if ($accountNames): ?>
