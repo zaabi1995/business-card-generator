@@ -177,8 +177,11 @@ class CardJobMailer
             }
         }
 
-        // Only when the PDF could not be fetched. Otherwise the attachment is
-        // the quotation and the body stays short.
+        // Only when the PDF could not be fetched. The body otherwise carries no
+        // figures at all: Ali, 17 Sep 2026, the rate is standard and settled,
+        // so there is nothing for a division to weigh up. A purchase order
+        // still cannot be raised against nothing, so if the document is missing
+        // the numbers appear here rather than nowhere.
         $figures = '';
         if (!$files) {
             $figures = '<table style="border-collapse:collapse;margin:16px 0;font-size:14px">'
@@ -198,12 +201,12 @@ class CardJobMailer
         }
 
         $line = $files
-            ? 'Our quotation' . ($num !== '' ? ' <strong>' . $e($num) . '</strong>' : '') . ' is attached.'
-            : 'Our quotation' . ($num !== '' ? ' <strong>' . $e($num) . '</strong>' : '') . ' is below.';
+            ? 'The quotation' . ($num !== '' ? ' <strong>' . $e($num) . '</strong>' : '') . ' is attached.'
+            : 'The quotation' . ($num !== '' ? ' <strong>' . $e($num) . '</strong>' : '') . ' is below.';
 
         $html = '<div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#222;line-height:1.6">'
-              . '<p>Thank you. The card for <strong>' . $e($name) . '</strong> is approved for <strong>'
-              . $e($div) . '</strong>. ' . $line . '</p>'
+              . '<p>The card for <strong>' . $e($name) . '</strong> is approved for <strong>'
+              . $e($div) . '</strong> and is on the standard rate. ' . $line . '</p>'
               . $figures
               . '<p style="background:#f1f5f9;border-radius:8px;padding:14px 16px;margin:20px 0">'
               . '<strong>To go ahead, reply to this email with your purchase order attached.</strong><br>'
@@ -212,7 +215,7 @@ class CardJobMailer
               . 'as soon as it arrives, and the cards go to print.</span></p>'
               . '</div>';
 
-        $subject = ($ref !== '' ? "[{$ref}] " : '') . "Quotation for {$name}, {$div}";
+        $subject = ($ref !== '' ? "[{$ref}] " : '') . "Purchase order needed: {$name}, {$div}";
         $sent = MhdMailer::sendRaw($to, $cc, $subject, $html, $files);
 
         foreach ($files as $f) { @unlink($f['path']); }
