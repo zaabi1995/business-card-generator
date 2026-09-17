@@ -92,6 +92,16 @@ foreach ($depts as $d) {
     $ar = fn($v) => strtr((string)$v, ['0'=>'٠','1'=>'١','2'=>'٢','3'=>'٣','4'=>'٤','5'=>'٥','6'=>'٦','7'=>'٧','8'=>'٨','9'=>'٩']);
     foreach ([['phone', 'phone_ar', 'office_tel1'], ['phone_2', 'phone_2_ar', 'office_tel2'], ['fax', 'fax_ar', 'office_fax']] as [$col, $colAr, $src]) {
         if (empty($def[$src])) { continue; }
+        // A number stored with its country code ("+968 2483 5500") would print
+        // after the "+968" the card already carries. Keep eight digits.
+        foreach ($db->fetchAll("SELECT id, `$col` v FROM employees WHERE department_id = ? AND `$col` <> ''", [$d['id']]) as $e) {
+            $clean = preg_replace('/\D/', '', preg_replace('/^\s*(?:\+|00)?968[\s-]*/', '', (string)$e['v']));
+            if ($clean === $e['v'] || !preg_match('/^\d{8}$/', $clean)) { continue; }
+            printf("%-20s normalise %s.%s %s -> %s\n", $d['slug'], $e['id'], $col, $e['v'], $clean);
+            if ($apply) {
+                $db->query("UPDATE employees SET `$col` = ?, `$colAr` = ? WHERE id = ?", [$clean, $ar($clean), $e['id']]);
+            }
+        }
         $n = (int)($db->fetchOne("SELECT COUNT(*) n FROM employees WHERE department_id = ? AND (`$col` IS NULL OR `$col` = '')",
                                  [$d['id']])['n'] ?? 0);
         if (!$n) { continue; }
