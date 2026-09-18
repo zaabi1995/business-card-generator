@@ -855,6 +855,7 @@ function importFromCSV($filepath, $skipDuplicates = true, $autoConvertArabic = t
         $header[0] = preg_replace('/^\xFF\xFE/', '', $header[0]); // UTF-16 LE BOM
     }
     
+    $rawHeader = $header; // before normalisation, for the Jev column mapper
     // Normalize headers: lowercase, trim, replace spaces/dashes with underscores
     $header = array_map(function($h) {
         $h = trim($h);
@@ -883,6 +884,15 @@ function importFromCSV($filepath, $skipDuplicates = true, $autoConvertArabic = t
         'department' => findColumn($header, ['department', 'dept', 'department_name'])
     ];
     
+    // Jev maps the columns the exact synonym lists missed (Arabic headers,
+    // "E-mail", "Mobile No."), reading three sample rows, then rewinds.
+    $samplePos = ftell($handle);
+    $sampleRows = [];
+    for ($s = 0; $s < 3 && ($sr = fgetcsv($handle)) !== false; $s++) $sampleRows[] = $sr;
+    fseek($handle, $samplePos);
+    require_once __DIR__ . '/../includes/JevColumnMapper.php';
+    $columnMap = JevColumnMapper::fill($rawHeader, $columnMap, $sampleRows);
+
     if ($columnMap['email'] === false) { fclose($handle); return ['success' => false, 'error' => 'Email column not found']; }
     
     $imported = 0;
@@ -950,6 +960,9 @@ function importFromXLSX($filepath, $skipDuplicates = true, $autoConvertArabic = 
             'department' => findColumn($header, ['department', 'dept', 'department_name'])
         ];
         
+        require_once __DIR__ . '/../includes/JevColumnMapper.php';
+        $columnMap = JevColumnMapper::fill($rows[0], $columnMap, array_slice($rows, 1, 3));
+
         if ($columnMap['email'] === false) return ['success' => false, 'error' => 'Email column not found'];
         
         $companyId = getCurrentCompanyId();

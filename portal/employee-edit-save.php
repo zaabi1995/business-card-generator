@@ -65,6 +65,48 @@ foreach ($allowed as $k) {
     $update[$k] = $v;
 }
 
+// Moderation (TypeSafe Jev): a changed name or title goes straight onto a
+// public card and into print, so an insult, a joke or a spam link is held
+// instead of saved. Real but unusual titles pass ("Chief Happiness Officer"
+// scored 0.34 in testing, held values 0.93-0.99). Only CHANGED name/title
+// fields of 3+ characters are asked, so autosave keystrokes stay cheap; Jev
+// down = saved as before.
+$held = [];
+$toCheck = [];
+foreach (['name_en', 'name_ar', 'position_en', 'position_ar'] as $k) {
+    if (!isset($update[$k]) || mb_strlen($update[$k]) < 3) continue;
+    if ((string) ($employee[$k] ?? '') === $update[$k]) continue;
+    $toCheck[$k] = $update[$k];
+}
+if ($toCheck) {
+    require_once INCLUDES_DIR . '/JevClient.php';
+    $qs = [];
+    foreach ($toCheck as $k => $v) {
+        $qs[$k] = ['type' => 'noul', 'instructions' => "`$k` is offensive, obscene or insulting, or is plainly not a real name or job title for a business card: a joke, an insult, a slogan, a web link or random characters. Unusual but real job titles are fine."];
+    }
+    $verdict = JevClient::ask($toCheck, $qs, 'jev:self-edit');
+    if (is_array($verdict)) {
+        foreach ($toCheck as $k => $v) {
+            if ((float) ($verdict[$k]['noul'] ?? 0) >= 0.9) {
+                $held[] = $k;
+                unset($update[$k]);
+            }
+        }
+    }
+    if ($held && class_exists('AuditLog')) {
+        try {
+            AuditLog::log('employee_edit_held', 'employee', $employee['id'], null,
+                ['fields' => $held, 'values' => array_intersect_key($toCheck, array_flip($held))],
+                $employee['company_id']);
+        } catch (Throwable $_) { /* best effort */ }
+    }
+}
+
+if ($held && empty($update) && !isset($body['socials']) && !isset($body['custom_fields'])) {
+    echo json_encode(['ok' => false, 'error' => 'value_not_allowed', 'held' => $held]);
+    exit;
+}
+
 if (empty($update) && !isset($body['socials']) && !isset($body['custom_fields'])) {
     echo json_encode(['ok' => true, 'noop' => true]);
     exit;
@@ -192,7 +234,9 @@ try {
         }
     }
 
-    echo json_encode(['ok' => true, 'updated' => array_keys($update)]);
+    echo json_encode($held
+        ? ['ok' => false, 'error' => 'value_not_allowed', 'held' => $held, 'updated' => array_keys($update)]
+        : ['ok' => true, 'updated' => array_keys($update)]);
 
     // Re-bake the printed card when a field that is ON the card changed. The
     // page has no canvas, so nothing else refreshes generated_cards, and the
