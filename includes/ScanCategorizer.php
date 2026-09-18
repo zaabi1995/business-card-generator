@@ -178,8 +178,71 @@ class ScanCategorizer
         return $out;
     }
 
+    /** One line per category, for Jev. Keys must equal CATEGORIES. */
+    private const JEV_CATEGORY_TEXT = [
+        'construction' => 'Construction, contracting, civil works, building materials',
+        'oil_gas' => 'Oil and gas, petroleum, drilling, oilfield services',
+        'energy_utilities' => 'Electricity, water, renewable energy, utilities',
+        'logistics' => 'Shipping, freight, ports, warehousing, courier',
+        'automotive' => 'Car dealers, garages, spare parts, vehicle services',
+        'technology' => 'Software, IT services, cloud, AI, cybersecurity',
+        'telecom' => 'Telecom operators, mobile networks, internet providers',
+        'finance' => 'Banks, insurance, investment, fintech, exchange houses',
+        'legal' => 'Law firms, advocates, legal consultancy',
+        'consulting' => 'Management, strategy or business consulting, audit and accounting firms',
+        'healthcare' => 'Hospitals, clinics, pharmacies, medical supplies',
+        'education' => 'Schools, universities, training institutes',
+        'government' => 'A ministry, authority, municipality, diwan, embassy or other government body, whatever sector it covers',
+        'hospitality' => 'Hotels, resorts, event venues',
+        'food' => 'Restaurants, cafes, catering, food production or trading',
+        'retail' => 'Shops, trading companies selling goods, e-commerce',
+        'real_estate' => 'Property development, brokerage, facility management',
+        'manufacturing' => 'Factories and industrial production',
+        'media_marketing' => 'Advertising, marketing, PR, media, design agencies',
+        'travel' => 'Travel agencies, airlines, tourism',
+        'security' => 'Security guarding, defence, safety equipment',
+        'agriculture' => 'Farming, fisheries, livestock',
+        'printing' => 'Printing presses and print services',
+        'other' => 'Cannot tell from the card',
+    ];
+
+    /** Jev per card, all in one call. Null when Jev is unavailable. */
+    public static function classifyWithJev(array $items, ?callable $ask = null): ?array
+    {
+        require_once __DIR__ . '/JevClient.php';
+        $ask = $ask ?? [JevClient::class, 'ask'];
+        $cards = [];
+        $questions = [];
+        foreach ($items as $item) {
+            $id = (int)$item['id'];
+            $cards[] = ['id' => $id, 'company' => $item['company'], 'title' => $item['title'], 'website' => $item['website']];
+            $questions['c' . $id] = [
+                'type' => 'choice',
+                'instructions' => "Which kind of business issued the card in `cards` whose id is $id? The company name decides; the job title only supports it.",
+                'criteria' => self::JEV_CATEGORY_TEXT,
+            ];
+        }
+        if (!$questions) return null;
+        $answers = $ask(['cards' => $cards], $questions, 'jev:scan-category');
+        if (!is_array($answers)) return null;
+        $labels = [];
+        foreach ($items as $item) {
+            $a = $answers['c' . (int)$item['id']] ?? null;
+            if (!is_array($a) || !isset(self::JEV_CATEGORY_TEXT[$a['choice'] ?? ''])) continue;
+            $conf = max(0, min(1, (float)($a['confidence'] ?? 0)));
+            if ($conf < 0.5) continue; // unsure: leave the device guess alone
+            $labels[(int)$item['id']] = ['category' => (string)$a['choice'], 'confidence' => round($conf, 3)];
+        }
+        return ['ok' => true, 'labels' => $labels];
+    }
+
     private static function classify(array $items): array
     {
+        // Jev first: real probabilities instead of a confidence number the
+        // model writes about itself. Qwen below runs only when Jev is down.
+        $jev = self::classifyWithJev($items);
+        if ($jev !== null) return $jev;
+
         $lines = [];
         foreach ($items as $item) {
             $lines[] = json_encode([

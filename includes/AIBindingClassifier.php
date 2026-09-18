@@ -57,6 +57,12 @@ class AIBindingClassifier
      */
     public static function classify(array $pages): array
     {
+        // Jev first: one call labels every block with a probability. Blocks it
+        // is unsure about are left out, so the parser's own suggestion stands
+        // for them. If Jev is down, the Qwen path below runs as before.
+        $jev = self::classifyWithJev($pages);
+        if ($jev !== null) return $jev;
+
         if (!self::isConfigured()) {
             return ['by_block_id' => [], 'used_ai' => false, 'error' => 'no_api_key'];
         }
@@ -103,6 +109,84 @@ class AIBindingClassifier
             }
         }
         return ['by_block_id' => $clean, 'used_ai' => true, 'error' => null];
+    }
+
+    /**
+     * Jev labels. Only fields that change per employee get a typed label;
+     * company name, website, address, fax, taglines and field labels are all
+     * 'static' (rule 1 of the Qwen prompt), so they are not offered at all.
+     */
+    private const JEV_LABELS = [
+        'name_en'     => "A person's name in Latin letters, e.g. Mohammed Al Adawi",
+        'name_ar'     => "A person's name in Arabic letters, e.g. محمد العدوي",
+        'position_en' => "A person's job title in Latin letters, e.g. CEO, Founding Partner, Senior Engineer",
+        'position_ar' => "A person's job title in Arabic letters, e.g. الرئيس التنفيذي, مهندس أول",
+        'mobile'      => 'A mobile number in Latin digits, e.g. +968 9214 4404',
+        'mobile_ar'   => 'A mobile number in Arabic-Indic digits, e.g. ٩٢١٤ ٤٤٠٤',
+        'phone'       => "This person's direct landline in Latin digits, often marked T or Tel",
+        'phone_ar'    => "This person's direct landline in Arabic-Indic digits",
+        'email'       => 'An email address; it contains @',
+        'static'      => 'Text every employee shares: company name, company website, office address, fax, slogan, social handle, or a field label such as PHONE, EMAIL or هاتف',
+        'skip'        => 'Visual noise with no meaning',
+    ];
+    public const JEV_MIN_CONFIDENCE = 0.6;
+
+    /** @return array|null same shape as classify(), or null when Jev is unavailable */
+    public static function classifyWithJev(array $pages, ?callable $ask = null): ?array
+    {
+        require_once __DIR__ . '/JevClient.php';
+        $ask = $ask ?? [JevClient::class, 'ask'];
+        $blocks = [];
+        foreach ($pages as $page) {
+            $side = ($page['side'] ?? 'front') === 'back' ? 'back' : 'front';
+            foreach (($page['blocks'] ?? []) as $b) {
+                $text = trim((string)($b['detected_text'] ?? ''));
+                if ($text === '' || !isset($b['id'])) continue;
+                $blocks[(string)$b['id']] = ['id' => (string)$b['id'], 'side' => $side, 'text' => mb_substr($text, 0, 140)];
+            }
+        }
+        if (empty($blocks) || count($blocks) > 60) return null;
+
+        $questions = [];
+        foreach ($blocks as $id => $b) {
+            $questions['b_' . preg_replace('/[^A-Za-z0-9_]/', '_', $id)] = [
+                'type' => 'choice',
+                'instructions' => "On this business card, what is the block in `card_blocks` whose id is \"$id\"?",
+                'criteria' => self::JEV_LABELS,
+            ];
+        }
+        $answers = $ask(['card_blocks' => array_values($blocks)], $questions, 'jev:binding');
+        if (!is_array($answers)) return null;
+
+        $out = [];
+        foreach ($blocks as $id => $b) {
+            $a = $answers['b_' . preg_replace('/[^A-Za-z0-9_]/', '_', $id)] ?? null;
+            $label = is_array($a) ? (string)($a['choice'] ?? '') : '';
+            $conf = is_array($a) ? (float)($a['confidence'] ?? 0) : 0.0;
+            $label = self::enforceRules($b['text'], $label);
+            if ($label === '' || !isset(self::JEV_LABELS[$label])) continue;
+            // Unsure and typed: leave it to the parser. Unsure and static: keep static.
+            if ($conf < self::JEV_MIN_CONFIDENCE && $label !== 'static') continue;
+            $out[$id] = $label;
+        }
+        return ['by_block_id' => $out, 'used_ai' => true, 'error' => null, 'engine' => 'jev'];
+    }
+
+    /** Hard rules code can check exactly: @ means email; script decides _en or _ar. */
+    public static function enforceRules(string $text, string $label): string
+    {
+        $isEmail = (bool) preg_match('/^[^\s@]+@[^\s@]+\.[^\s@]+$/u', $text);
+        if ($isEmail) return $label === 'static' ? 'static' : 'email';
+        if ($label === 'email') return 'static';
+        $arabic = (bool) preg_match('/\p{Arabic}/u', $text);
+        $latin = (bool) preg_match('/[A-Za-z]/', $text);
+        $swap = ['name_en' => 'name_ar', 'position_en' => 'position_ar'];
+        if ($arabic && !$latin && isset($swap[$label])) return $swap[$label];
+        if ($latin && !$arabic && in_array($label, $swap, true)) return array_search($label, $swap, true);
+        $arabicDigits = (bool) preg_match('/[\x{0660}-\x{0669}]/u', $text);
+        if ($arabicDigits && in_array($label, ['mobile', 'phone'], true)) return $label . '_ar';
+        if (!$arabicDigits && in_array($label, ['mobile_ar', 'phone_ar'], true)) return substr($label, 0, -3);
+        return $label;
     }
 
     public static function isConfigured(): bool
