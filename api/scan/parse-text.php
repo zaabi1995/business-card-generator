@@ -42,6 +42,16 @@ if (mb_strlen($text) > 4000) {
     $text = mb_substr($text, 0, 4000);
 }
 
+// Jev first (includes/ScanTextJev.php): it only picks lines of this card, so it
+// cannot invent a value, and it answers in about a second. Off, down, or no
+// name found: the model below runs exactly as before.
+require_once INCLUDES_DIR . '/ScanTextJev.php';
+$jevParsed = ScanTextJev::parse($text);
+if ($jevParsed !== null) {
+    echo json_encode(['success' => true, 'parsed' => $jevParsed, 'source' => 'jev']);
+    exit;
+}
+
 if (!defined('OPENROUTER_API_KEY') || !OPENROUTER_API_KEY) {
     http_response_code(503);
     echo json_encode(['success' => false, 'error' => 'refine_unavailable']);
