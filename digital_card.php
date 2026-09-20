@@ -404,6 +404,20 @@ require_once INCLUDES_DIR . '/JsonLd.php';
     if (($company['slug'] ?? '') === 'otech') $name = CardSections::displayShortName($name);
     $position = CardSections::tColumn($employee, 'position', $locale);
     if (trim((string)$position) === '') $position = $employee['position'] ?? $employee['job_title'] ?? '';
+    // Second title line. The printed card carries it (a sector or department
+    // under the job title) but the card page never read it, so an employee's
+    // own card showed LESS than the card in their pocket. The columns are
+    // position_{locale}_2, which does not fit tColumn's {base}_{locale} shape,
+    // so resolve it here with the same EN fallback. Appended to $position so
+    // all five render sites (meta description, og:description, fallback title,
+    // dcd-title, the name/company parts row) stay consistent with one change.
+    $position2 = $employee['position_' . $locale . '_2'] ?? '';
+    if (trim((string)$position2) === '') $position2 = $employee['position_en_2'] ?? '';
+    $position2 = trim((string)$position2);
+    $position = trim((string)$position);
+    if ($position2 !== '' && $position2 !== $position) {
+        $position = $position === '' ? $position2 : $position . ' · ' . $position2;
+    }
     $companyName = CardSections::tColumn($company, 'name', $locale);
     // Company name has no *_l3 column; use the employee's company_l3 for the 3rd language.
     if ($isThird && !empty($employee['company_l3'])) $companyName = $employee['company_l3'];
