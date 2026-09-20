@@ -6,15 +6,10 @@ on:
   pull_request:
     branches: [main]
   schedule:
-    # Nightly at 02:00 UTC (06:00 Muscat) — catches overnight regressions
+    # Nightly at 02:00 UTC (06:00 Muscat), using controlled staging fixtures.
     # before the team starts their day.
     - cron: '0 2 * * *'
   workflow_dispatch:
-    inputs:
-      base_url:
-        description: 'Target BASE_URL (defaults to prod)'
-        required: false
-        default: 'https://cardify.om'
 
 jobs:
   playwright:
@@ -22,9 +17,12 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
-      BASE_URL: ${{ github.event.inputs.base_url || 'https://cardify.om' }}
+      BASE_URL: ${{ vars.CARDIFY_E2E_BASE_URL }}
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Require approved staging before browser tests
+        run: python3 scripts/check-e2e-target.py
 
       - uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af # v4.1.0
         with:
