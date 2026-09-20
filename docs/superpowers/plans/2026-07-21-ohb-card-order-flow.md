@@ -44,13 +44,13 @@
 - [ ] **Step 1: Back up the two rows first**
 
 ```bash
-ssh root@147.93.20.54 "mysql -u bc -ppWewN3fwFmEHh32J bc -e \"SELECT id, erp_client_name FROM companies WHERE id='a0b10000-0000-0000-0000-00000000b001'; SELECT id, name, email FROM print_shops WHERE id=2;\""
+ssh root@147.93.20.54 "mysql -u bc -p[removed: use protected runtime credentials] bc -e \"SELECT id, erp_client_name FROM companies WHERE id='a0b10000-0000-0000-0000-00000000b001'; SELECT id, name, email FROM print_shops WHERE id=2;\""
 ```
 
 - [ ] **Step 2: Set OHB ERP customer name** (so an auto-quote books against Oman Housing Bank, not BHD)
 
 ```bash
-ssh root@147.93.20.54 "mysql -u bc -ppWewN3fwFmEHh32J bc -e \"UPDATE companies SET erp_client_name='Oman Housing Bank S.A.O.G.' WHERE id='a0b10000-0000-0000-0000-00000000b001';\""
+ssh root@147.93.20.54 "mysql -u bc -p[removed: use protected runtime credentials] bc -e \"UPDATE companies SET erp_client_name='Oman Housing Bank S.A.O.G.' WHERE id='a0b10000-0000-0000-0000-00000000b001';\""
 ```
 
 - [ ] **Step 3: Verify** `erp_client_name` now non-null. Expected: `Oman Housing Bank S.A.O.G.`

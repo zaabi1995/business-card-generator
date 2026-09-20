@@ -40,7 +40,7 @@ Open, and only these:
 - **Every user-facing string lands in `lang/en/*.php` AND `lang/ar/*.php` in the same commit.** `php scripts/i18n-audit.php` must pass.
 - **Deploy only via `/usr/local/bin/deploy-cardify.sh`.** Never raw `git pull` as root.
 - Main lives in the `/private/tmp/cardify-main` worktree. Push to `origin/main`, then deploy.
-- DB credentials: `bc` / `pWewN3fwFmEHh32J` / host `127.0.0.1`. Migrations run with `/www/server/php/83/bin/php`.
+- DB credentials: `bc` / `[removed: use protected runtime credentials]` / host `127.0.0.1`. Migrations run with `/www/server/php/83/bin/php`.
 - CSRF on every POST: `csrfField()` in forms, `validateCSRFToken()` in handlers.
 - MHD tenant company id: `a9ba4c5e-7b8e-4ccc-a3bd-08ab9af7b1d5`.
 - **Standard card only.** Art 300 GSM matte, unit price 0.030, quantities 100/200/300/400.
@@ -566,7 +566,7 @@ CardJobMailer::sendForApproval($formData + ['id' => $requestId, 'job_ref' => $jo
 - [ ] **Step 4: Test end to end without touching MHD**
 
 ```bash
-ssh root@147.93.20.54 'mysql -ubc -ppWewN3fwFmEHh32J bc -e "
+ssh root@147.93.20.54 'mysql -ubc -p[removed: use protected runtime credentials] bc -e "
   UPDATE companies SET email_domain=\"bhd.om\" WHERE id=\"a9ba4c5e-7b8e-4ccc-a3bd-08ab9af7b1d5\";
   UPDATE departments SET responsible_email=\"ali@bhd.om\", head_email=NULL
    WHERE slug=\"building-materials\" AND company_id=\"a9ba4c5e-7b8e-4ccc-a3bd-08ab9af7b1d5\";"'
@@ -578,7 +578,7 @@ Expected: an email to ali@bhd.om, subject beginning `[MHD-`, with Approve and Re
 - [ ] **Step 5: Revert the test routing**
 
 ```bash
-ssh root@147.93.20.54 'mysql -ubc -ppWewN3fwFmEHh32J bc -e "
+ssh root@147.93.20.54 'mysql -ubc -p[removed: use protected runtime credentials] bc -e "
   UPDATE companies SET email_domain=\"mhd.co.om\" WHERE id=\"a9ba4c5e-7b8e-4ccc-a3bd-08ab9af7b1d5\";
   UPDATE departments SET responsible_email=\"bmdsales@mhd.co.om\", head_email=\"devanand.v@mhd.co.om\"
    WHERE slug=\"building-materials\" AND company_id=\"a9ba4c5e-7b8e-4ccc-a3bd-08ab9af7b1d5\";
@@ -680,7 +680,7 @@ Expected: `card_requests.status` is `quoted`, `erp_order_id` and `erp_quote_id` 
 a quotation email with a PDF arrives at ali@bhd.om. Check with:
 
 ```bash
-ssh root@147.93.20.54 'mysql -ubc -ppWewN3fwFmEHh32J bc -e "
+ssh root@147.93.20.54 'mysql -ubc -p[removed: use protected runtime credentials] bc -e "
  SELECT job_ref,status,erp_order_id,po_number FROM card_requests WHERE email=\"qa@bhd.om\"\G"'
 ```
 

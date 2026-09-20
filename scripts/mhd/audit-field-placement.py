@@ -8,7 +8,7 @@ order; mobile_ar matches on its Arabic-Indic digits.
 import fitz, glob, os, json, subprocess
 
 PX = 4.16667
-DB = ['mysql','-ubc','-ppWewN3fwFmEHh32J','bc','-N','-B','-e']
+DB = ['mysql','--defaults-extra-file='+os.environ['CARDIFY_MYSQL_DEFAULTS_FILE'],'bc','-N','-B','-e']
 AR_DIGITS = set('٠١٢٣٤٥٦٧٨٩')
 EXP = {'name_en':'Madhu Pillai','position_en':'Deputy Manager',
        'position_en_2':'Mobile Device Sales','mobile':'71557240',

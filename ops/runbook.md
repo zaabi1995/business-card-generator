@@ -71,7 +71,7 @@ Monthly reconcile script `scripts/erp-reconcile.php` surfaces these.
 
 **Quick check**
 ```bash
-ssh root@147.93.20.54 "systemctl status mariadb && mysql -ubc -ppWewN3fwFmEHh32J -h127.0.0.1 -e 'SELECT 1'"
+ssh root@147.93.20.54 "systemctl status mariadb && mysql -ubc -p[removed: use protected runtime credentials] -h127.0.0.1 -e 'SELECT 1'"
 df -h /www /var         # disk full = MariaDB stops writing
 ```
 
@@ -97,7 +97,7 @@ because bc user can't `DROP DATABASE bc`).
 **Quick check**
 ```bash
 curl -sL https://oman.paymob.com/api/health 2>&1 | head    # upstream
-mysql -ubc -ppWewN3fwFmEHh32J bc -e \
+mysql -ubc -p[removed: use protected runtime credentials] bc -e \
   "SELECT COUNT(*), status FROM payments WHERE created_at > NOW() - INTERVAL 1 HOUR GROUP BY status"
 tail /var/log/cardify-payment-retry.log
 ```

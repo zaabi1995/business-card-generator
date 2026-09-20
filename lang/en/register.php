@@ -1,5 +1,13 @@
 <?php
 return [
+    'join_code_sent' => 'We sent a code to your email. Verify it before submitting a join request.',
+    'join_send_failed' => 'We could not send the verification code. Please try again later.',
+    'join_invalid_code' => 'That code is invalid or expired. Clear the code field to request another.',
+    'join_invalid_request' => 'We could not verify this join request. Please try again.',
+    'join_code_label' => 'Email verification code',
+    'join_code_help' => 'Enter the six-digit code and re-enter your password above. Leave the code empty to request another. Administrator approval is still required.',
+    'join_verify' => 'Verify email and request to join',
+
     'page_title'           => 'Create account',
     'bhd_badge_title'      => 'Exclusive for BHD Printing customers',
     'bhd_badge_body'       => 'Get BHD-branded templates pre-loaded for you',

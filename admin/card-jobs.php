@@ -178,7 +178,7 @@ adminHeader(t('cardjobs.title'), 'orders');
                         <td class="px-4 py-3 text-gray-700"><?= htmlspecialchars((string)($j['erp_invoice_number'] ?? '')) ?: '&mdash;' ?></td>
                         <td class="px-4 py-3 text-end">
                             <button type="button" class="text-blue-600 text-xs font-medium"
-                                    onclick="document.getElementById('<?= $rowId ?>').classList.toggle('hidden')">
+                                    data-card-job-target="<?= htmlspecialchars($rowId, ENT_QUOTES) ?>" aria-expanded="false">
                                 <?= htmlspecialchars(t('cardjobs.open')) ?>
                             </button>
                         </td>
@@ -248,4 +248,14 @@ adminHeader(t('cardjobs.title'), 'orders');
         </div>
     <?php endif; ?>
 </div>
+<script<?= cspNonceAttr() ?>>
+document.querySelectorAll('[data-card-job-target]').forEach(function (button) {
+    button.addEventListener('click', function () {
+        const row = document.getElementById(button.dataset.cardJobTarget);
+        if (!row) return;
+        const hidden = row.classList.toggle('hidden');
+        button.setAttribute('aria-expanded', String(!hidden));
+    });
+});
+</script>
 <?php adminFooter(); ?>

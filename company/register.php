@@ -25,6 +25,7 @@ $info = null;
 // which of the two things they meant, because the two outcomes are not
 // interchangeable and only they know which one they want.
 $needsDomainChoice = false;
+$needsJoinVerification = false;
 $claimTicket = trim((string) ($_POST['claim_ticket'] ?? $_GET['claim_ticket'] ?? ''));
 if ($claimTicket !== '') {
     header('Cache-Control: private, no-store');
@@ -263,6 +264,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
 
                 if ($existingCompany && !$needsDomainChoice) {
+                    // Domain knowledge and a client-selected intent are not
+                    // mailbox proof. Do not create any employee row until the
+                    // server consumes a code bound to this email and tenant.
+                    require_once INCLUDES_DIR . '/OtpService.php';
+                    require_once INCLUDES_DIR . '/CompanyJoinVerification.php';
+                    try {
+                        // OTP issuance must not be rolled back with a scan
+                        // claim transaction after its email was delivered.
+                        if ($claimDb instanceof Database) {
+                            ScanClaimTicket::rollBackClaimTransaction($claimDb);
+                        }
+                        $joinProof = CompanyJoinVerification::check(
+                            $email,
+                            (string) $existingCompany['id'],
+                            (string) ($_POST['join_code'] ?? '')
+                        );
+                        if (!empty($joinProof['ok']) && $claimDb instanceof Database) {
+                            $claimRegistration = ScanClaimTicket::lockForRegistration($claimDb, $claimTicket);
+                            if (!$claimRegistration) {
+                                $joinProof = ['ok' => false, 'error' => 'invalid_request'];
+                            }
+                        }
+                    } catch (Throwable $e) {
+                        $joinProof = ['ok' => false, 'error' => 'send_failed'];
+                        error_log('[register] mailbox verification unavailable');
+                    }
+                    if (empty($joinProof['ok'])) {
+                        $needsJoinVerification = true;
+                        $error = t('register.join_' . $joinProof['error']);
+                        if ($claimDb instanceof Database) {
+                            ScanClaimTicket::rollBackClaimTransaction($claimDb);
+                        }
+                    } else {
                     // Company exists - add user as employee instead
                     $employeeData = [
                         'id' => generateUUID(),
@@ -288,10 +322,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     !empty($empResult['id']) ? (string) $empResult['id'] : null
                                 );
                             }
-                            // No company name here. The submitter has not
-                            // proved control of the mailbox, so naming the
-                            // organisation would confirm its existence to
-                            // anyone who can guess an email domain.
+                             // Keep the generic acknowledgement. Mailbox
+                             // verification creates a pending request only;
+                             // an administrator still decides membership.
                             $info = t('register.info_join_submitted');
                             // Don't redirect - show message
                         } else {
@@ -306,6 +339,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         }
                         error_log('[register] claimed employee creation failed: ' . $e->getMessage());
                         $error = t('register.err_join_failed');
+                    }
                     }
                 }
             }
@@ -756,7 +790,14 @@ require_once INCLUDES_DIR . '/ui-header.php';
                         <span><?= htmlspecialchars(t('register.pdpl_notice')) ?></span>
                     </p>
 
-                    <?php if ($needsDomainChoice): ?>
+                    <?php if ($needsJoinVerification): ?>
+                    <div class="rounded-xl border border-blue-200 bg-blue-50 p-4">
+                        <label for="join_code" class="block text-sm font-medium text-gray-900"><?= htmlspecialchars(t('register.join_code_label')) ?></label>
+                        <input id="join_code" name="join_code" type="text" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" class="form-input mt-2">
+                        <p class="mt-2 text-sm text-gray-600"><?= htmlspecialchars(t('register.join_code_help')) ?></p>
+                        <button type="submit" data-domain-choice="join" class="mt-4 w-full rounded-lg bg-blue-600 px-4 py-3 text-sm font-semibold text-white"><?= htmlspecialchars(t('register.join_verify')) ?></button>
+                    </div>
+                    <?php elseif ($needsDomainChoice): ?>
                     <?php
                     // The domain is already claimed. Both outcomes are legitimate
                     // and only the person filling the form knows which they mean,

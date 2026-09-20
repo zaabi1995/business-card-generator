@@ -1,8 +1,8 @@
 <?php
 /**
  * Print partners operate only the client companies they created or were
- * attached to. BHD's internal-provider shop keeps its existing
- * cross-tenant browse. Regular shops never see another shop's roster.
+ * attached to. Internal fulfillment status does not grant company
+ * administration. Shops never see an unrelated tenant's roster.
  *
  * Run: php tests/php/print_shop_clients_access_test.php
  */
@@ -75,9 +75,19 @@ partnerCheck(
     false
 );
 partnerCheck(
-    'internal provider can open any existing company in company admin',
+    'internal fulfillment status cannot grant unrelated company administration',
     PrintShopClients::canAccessCompanyAdmin($omanShop, $clientB, []),
+    false
+);
+partnerCheck(
+    'internal provider can administer an explicitly attached client',
+    PrintShopClients::canAccessCompanyAdmin($omanShop, $clientA, [$clientA]),
     true
+);
+partnerCheck(
+    'internal provider attachment to A cannot authorize B',
+    PrintShopClients::canAccessCompanyAdmin($omanShop, $clientB, [$clientA]),
+    false
 );
 partnerCheck(
     'pending shop can still operate an attached client',
@@ -95,9 +105,9 @@ partnerCheck(
     false
 );
 partnerCheck(
-    'internal provider keeps listing every Cardify company',
+    'internal provider cannot browse all tenant administration records',
     PrintShopClients::listsAllCompanies($omanShop),
-    true
+    false
 );
 partnerCheck(
     'active shop may create client companies',

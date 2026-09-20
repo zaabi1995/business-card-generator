@@ -21,7 +21,7 @@ try {
     $settings = [
         'whatsapp_enabled'   => ['1',                                                          'Enable WhatsApp order notifications via Dardasha'],
         'whatsapp_api_url'   => ['http://127.0.0.1:3000/api/messages/api/send',               'Dardasha API endpoint (local port 3000)'],
-        'whatsapp_api_token' => ['eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1aWQiOiJzVHgwdGRxOXR2cmMyN3B6SDU3RmVoZkd0RjBscFNtcSIsInJvbGUiOiJ1c2VyIiwiaWF0IjoxNzcxOTcwNTMzLCJleHAiOjE3NzQ1NjI1MzN9.Xw6K_Lso75lA8p2yDhpH3EVZEkxkHQ8ziYS48dEMdR4', 'Anna line API token (Dardasha X-API-Key)'],
+        'whatsapp_api_token' => [defined('DARDASHA_TOKEN') ? DARDASHA_TOKEN : '', 'Anna line API token (Dardasha X-API-Key)'],
         'whatsapp_session_id'=> ['96898899100',                                                'Anna line phone number (from field in Dardasha)'],
     ];
 

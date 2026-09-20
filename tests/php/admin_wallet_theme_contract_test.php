@@ -37,9 +37,10 @@ adminWalletCheck('preview requires admin and tenant scope',
 adminWalletCheck('preview emits safe svg',
     strpos($preview, 'image/svg+xml') !== false
     && strpos($preview, 'htmlspecialchars') !== false);
-adminWalletCheck('backfill supports dry run and fixed global ids',
-    strpos($backfill, '--dry-run') !== false
-    && substr_count($backfill, '00000000-0000-4000-8000-') >= 3);
+// The deployed backfill now seeds tenant-owned defaults. Report-only and
+// explicit apply behavior are exercised in test_wallet_backfill_boundary.py.
+adminWalletCheck('backfill seeds tenant-owned defaults through the shared adapter',
+    strpos($backfill, 'DatabaseAdapter::seedDefaultWalletTheme') !== false);
 adminWalletCheck('backfill creates company defaults from company themes',
     strpos($backfill, 'company_themes') !== false
     && strpos($backfill, 'is_default') !== false);

@@ -99,7 +99,7 @@ Expected: `Migration 095: templates.has_vector_source + fonts_dir added`
 - [ ] **Step 3: Verify schema**
 
 ```bash
-ssh root@147.93.20.54 "mysql -u bc -ppWewN3fwFmEHh32J -h 127.0.0.1 bc -e 'DESCRIBE templates;' | grep -E 'has_vector|fonts_dir'"
+ssh root@147.93.20.54 "mysql -u bc -p[removed: use protected runtime credentials] -h 127.0.0.1 bc -e 'DESCRIBE templates;' | grep -E 'has_vector|fonts_dir'"
 ```
 Expected: two rows showing `has_vector_source tinyint(1)` and `fonts_dir varchar(500)`.
 
@@ -212,7 +212,7 @@ Expected: same output.
 - [ ] **Step 4: Update Otech templates row**
 
 ```bash
-ssh root@147.93.20.54 "mysql -u bc -ppWewN3fwFmEHh32J -h 127.0.0.1 bc -e \"UPDATE templates SET has_vector_source=1, fonts_dir='/uploads/templates/imports/d0d6a6ce343e6635/fonts' WHERE company_id='otech7010-rfq-2026-odp-omandatapark';\""
+ssh root@147.93.20.54 "mysql -u bc -p[removed: use protected runtime credentials] -h 127.0.0.1 bc -e \"UPDATE templates SET has_vector_source=1, fonts_dir='/uploads/templates/imports/d0d6a6ce343e6635/fonts' WHERE company_id='otech7010-rfq-2026-odp-omandatapark';\""
 ```
 
 - [ ] **Step 5: Commit**
@@ -1504,7 +1504,7 @@ ssh root@147.93.20.54 "cd /www/wwwroot/cardify.om && /www/server/php/83/bin/php 
 - [ ] **Step 3: Verify**
 
 ```bash
-ssh root@147.93.20.54 "mysql -u bc -ppWewN3fwFmEHh32J -h 127.0.0.1 bc -e 'SELECT COUNT(*) AS total, SUM(has_vector_source) AS vector FROM templates;'"
+ssh root@147.93.20.54 "mysql -u bc -p[removed: use protected runtime credentials] -h 127.0.0.1 bc -e 'SELECT COUNT(*) AS total, SUM(has_vector_source) AS vector FROM templates;'"
 ```
 Expected: `vector` close to `total`.
 

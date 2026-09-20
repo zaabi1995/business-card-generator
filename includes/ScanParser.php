@@ -180,14 +180,15 @@ class ScanParser {
         curl_close($ch);
 
         if ($resp === false || $code !== 200) {
-            error_log('[ScanParser] API error http=' . $code . ' body=' . substr((string)$resp, 0, 300));
+            // Provider errors may echo the submitted contact or image metadata.
+            error_log('[ScanParser] API error http=' . (int)$code);
             return ['success' => false, 'parsed' => null, 'error' => 'api_error_' . $code];
         }
         $data = json_decode($resp, true);
         $text = $data['choices'][0]['message']['content'] ?? '';
         $json = self::extractJson($text);
         if (!$json) {
-            error_log('[ScanParser] unparseable model output: ' . substr($text, 0, 300));
+            error_log('[ScanParser] unparseable model output');
             return ['success' => false, 'parsed' => null, 'error' => 'unparseable'];
         }
         return ['success' => true, 'parsed' => self::sanitizeDraft($json), 'error' => null];

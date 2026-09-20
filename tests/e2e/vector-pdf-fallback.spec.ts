@@ -23,7 +23,7 @@ const CARD_PDF_URL = `/card-pdf.php?i=${EMPLOYEE_ID}`;
 const SSH_PREFIX   = 'ssh root@147.93.20.54';
 const PHP_BIN      = '/www/server/php/83/bin/php';
 const CARDIFY_ROOT = '/www/wwwroot/cardify.om';
-const MYSQL_CMD    = 'mysql -u bc -ppWewN3fwFmEHh32J -h 127.0.0.1 bc';
+const MYSQL_CMD    = 'mysql --defaults-extra-file=/root/.config/cardify/mysql-client.cnf bc';
 
 function sshExec(cmd: string): string {
   return execSync(`${SSH_PREFIX} "${cmd.replace(/"/g, '\\"')}"`, {

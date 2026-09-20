@@ -32,7 +32,7 @@ PROD_ROOT="/www/wwwroot/cardify.om"
 DB_ROOT_REQUIRED="bc_stage grant requires root MySQL credentials"
 DB_NAME="bc_stage"
 DB_USER="bc"
-DB_PASS="pWewN3fwFmEHh32J"
+DB_PASS="${CARDIFY_DB_PASS:?Provide the approved staging database credential}"
 BRANCH="${STAGE_BRANCH:-stage}"
 
 log() { echo "[$(date -Iseconds)] $*"; }

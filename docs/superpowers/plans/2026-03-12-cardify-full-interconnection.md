@@ -157,7 +157,7 @@ return [
 - [ ] **Step 2: Run migration on VPS**
 
 ```bash
-ssh root@147.93.20.54 "mysql -u bc -ppWewN3fwFmEHh32J bc -e \"
+ssh root@147.93.20.54 "mysql -u bc -p[removed: use protected runtime credentials] bc -e \"
 ALTER TABLE generated_cards
     ADD COLUMN IF NOT EXISTS front_web_path VARCHAR(500) DEFAULT NULL AFTER back_file_path,
     ADD COLUMN IF NOT EXISTS back_web_path VARCHAR(500) DEFAULT NULL AFTER front_web_path,
@@ -498,7 +498,7 @@ Navigate to `https://cardify.om/admin/super/email_settings.php` and use the buil
 - [ ] **Step 3: If SMTP is not configured, set it via system_settings**
 
 ```bash
-ssh root@147.93.20.54 "mysql -u bc -ppWewN3fwFmEHh32J bc -e \"
+ssh root@147.93.20.54 "mysql -u bc -p[removed: use protected runtime credentials] bc -e \"
 INSERT INTO system_settings (id, setting_key, setting_value, setting_type) VALUES
 (UUID(), 'mail_host', 'your-smtp-host', 'string'),
 (UUID(), 'mail_port', '587', 'string'),
@@ -516,7 +516,7 @@ Adjust values based on what's available on the VPS.
 - [ ] **Step 4: Verify email_logs table captures sends**
 
 ```bash
-ssh root@147.93.20.54 "mysql -u bc -ppWewN3fwFmEHh32J bc -e 'SELECT id, to_email, subject, status, error_message FROM email_logs ORDER BY id DESC LIMIT 5'"
+ssh root@147.93.20.54 "mysql -u bc -p[removed: use protected runtime credentials] bc -e 'SELECT id, to_email, subject, status, error_message FROM email_logs ORDER BY id DESC LIMIT 5'"
 ```
 
 ---

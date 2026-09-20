@@ -56,6 +56,7 @@ jobs:
           # 8.2 matches i18n.yml. The syntax job above stays on 7.4 because that
           # is the floor the product supports; these suites use 8.x syntax.
           php-version: '8.2'
+          extensions: pdo_sqlite, curl, fileinfo, mbstring
           coverage: none
 
       # tests/php/card_detected_text_test.php imports scripts/render-card-images.py
@@ -140,6 +141,12 @@ jobs:
         with:
           python-version: '3.11'
 
+      - name: PHP for isolated registration POST tests
+        uses: shivammathur/setup-php@383a511d0ed762f8bdb060ec71ff6cbefc41f73a # v2.37.0
+        with:
+          php-version: '8.3'
+          coverage: none
+
       - name: Install deps
         # pymupdf: render-card-pdf assertions. opencv + pillow: render-card-images.
         # qrcode: a top-level import in render-card-images, so without it the
@@ -155,3 +162,23 @@ jobs:
         # test_invalidation.py already self-skips when it cannot SSH to the VPS,
         # and no GitHub runner can, so those stay skipped here by design.
         run: python3 -m pytest tests/python -v -p no:warnings
+
+  secret-check:
+    name: Redacted secret checks
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Install verified Gitleaks release
+        run: |
+          curl --fail --silent --show-error --location https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_linux_x64.tar.gz -o /tmp/gitleaks.tar.gz
+          echo '551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb  /tmp/gitleaks.tar.gz' | sha256sum --check
+          tar -xzf /tmp/gitleaks.tar.gz -C /tmp gitleaks
+      - name: Verify secret detection and output redaction
+        run: python3 scripts/check-secret-rules.py --gitleaks /tmp/gitleaks
+      - name: Scan tracked release content without exposing matches
+        run: |
+          mkdir /tmp/cardify-secret-scan
+          git archive HEAD | tar -x -C /tmp/cardify-secret-scan
+          /tmp/gitleaks dir /tmp/cardify-secret-scan --config .gitleaks.toml --redact=100 --no-banner

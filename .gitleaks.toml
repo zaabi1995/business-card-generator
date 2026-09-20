@@ -1,0 +1,20 @@
+title = "Cardify secret prevention"
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "LinkedIn client IDs are public application identifiers, not credentials"
+targetRules = ["linkedin-client-id"]
+paths = ['''docs/superpowers/plans/2026-04-17-cardify-linkedin-carousel\.md$''']
+
+[[rules]]
+id = "literal-database-password"
+description = "Literal database passwords in code or command examples"
+regex = '''(?i)(?:DB_PASS\s*=\s*["']|CARDIFY_DB_PASS:-|mysql[^\r\n]{0,100}\s-p)([A-Za-z0-9_!@#%&+=.-]{10,})'''
+secretGroup = 1
+
+[[rules]]
+id = "documented-password"
+description = "Passwords must not appear as inline documentation values"
+regex = '''(?i)password\s*:\s*`([A-Za-z0-9_!@#%&+=.-]{10,})`'''
+secretGroup = 1

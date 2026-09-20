@@ -29,7 +29,8 @@ function logMsg($msg) {
 }
 
 try {
-    $pdo = new PDO('mysql:unix_socket=/tmp/mysql.sock;dbname=bc;charset=utf8mb4', 'bc', 'pWewN3fwFmEHh32J');
+    require_once dirname(__DIR__) . '/includes/RuntimeDatabaseConfig.php';
+    $pdo = RuntimeDatabaseConfig::connect();
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 } catch (Exception $e) {
     logMsg("DB ERROR: " . $e->getMessage());

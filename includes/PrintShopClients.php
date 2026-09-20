@@ -2,10 +2,9 @@
 /**
  * Print partner <-> client company attachment.
  *
- * Regular print shops operate only the company tenants they created
- * or were attached to. They do not browse every Cardify tenant.
- * The BHD internal-provider shop keeps its existing cross-tenant
- * list for marketplace fulfillment.
+ * Print shops administer only company tenants they created or were
+ * explicitly attached to. Internal fulfillment status is a separate
+ * operational permission and does not grant tenant administration.
  *
  * Policy methods are pure (no Database) so tests can load this file
  * without config.php.
@@ -27,15 +26,12 @@ class PrintShopClients
         if (!self::canOperateClientTenants($shop)) {
             return false;
         }
-        if (!empty($shop['is_internal_provider'])) {
-            return true;
-        }
         return in_array($companyId, $attachedCompanyIds, true);
     }
 
     public static function listsAllCompanies(array $shop): bool
     {
-        return !empty($shop['is_internal_provider']);
+        return false;
     }
 
     public static function canOperateClientTenants(array $shop): bool
@@ -160,9 +156,6 @@ class PrintShopClients
         $shop = self::currentShop();
         if (!$shop) {
             return false;
-        }
-        if (!empty($shop['is_internal_provider'])) {
-            return self::canOperateClientTenants($shop);
         }
         return self::canAccessCompanyAdmin($shop, $companyId, self::listAttachedCompanyIds((int) $shop['id']));
     }

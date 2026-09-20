@@ -25,7 +25,7 @@
 set -uo pipefail
 
 DB_USER="${CARDIFY_DB_USER:-bc}"
-DB_PASS="${CARDIFY_DB_PASS:-pWewN3fwFmEHh32J}"
+source "$(dirname "${BASH_SOURCE[0]}")/mysql-runtime-config.sh"
 DB_HOST="${CARDIFY_DB_HOST:-127.0.0.1}"
 SCRATCH_DB="${CARDIFY_RESTORE_DB:-bc_restore_test}"
 DB_BACKUP_DIR="${CARDIFY_BACKUP_DIR:-/var/backups/cardify}"
@@ -67,23 +67,23 @@ else
     # The runtime `bc` user does not have CREATE DATABASE on arbitrary
     # names, so the scratch DB must already exist with bc-user grants.
     # Ops step (action 820) creates it once. If missing, emit WARN and
-    # let the cron pass without failing — the run is inconclusive, not
+    # let the cron pass without failing , the run is inconclusive, not
     # proven-broken.
     if [ "$STATUS" = "PASS" ]; then
-        if ! mysql -u"$DB_USER" -p"$DB_PASS" -h"$DB_HOST" -e "USE \`$SCRATCH_DB\`; SELECT 1;" 2>/dev/null; then
+        if ! mysql --defaults-extra-file="$CARDIFY_MYSQL_OPTIONS" -e "USE \`$SCRATCH_DB\`; SELECT 1;" 2>/dev/null; then
             echo "WARN: scratch DB $SCRATCH_DB not accessible to $DB_USER, skipping DB restore (see action 820)" | tee -a "$REPORT"
             STATUS="SKIP"
             FAIL_CODE=0
         else
             # Wipe scratch tables to avoid clash with the import.
-            mysql -u"$DB_USER" -p"$DB_PASS" -h"$DB_HOST" -NBe "
+            mysql --defaults-extra-file="$CARDIFY_MYSQL_OPTIONS" -NBe "
                 SET FOREIGN_KEY_CHECKS = 0;
                 SELECT CONCAT('DROP TABLE IF EXISTS \`', table_name, '\`;')
                   FROM information_schema.tables
                  WHERE table_schema = '$SCRATCH_DB';" 2>/dev/null \
-                | mysql -u"$DB_USER" -p"$DB_PASS" -h"$DB_HOST" "$SCRATCH_DB" 2>/dev/null || true
+                | mysql --defaults-extra-file="$CARDIFY_MYSQL_OPTIONS" "$SCRATCH_DB" 2>/dev/null || true
 
-            if ! mysql -u"$DB_USER" -p"$DB_PASS" -h"$DB_HOST" "$SCRATCH_DB" < "$TMPSQL" 2>/dev/null; then
+            if ! mysql --defaults-extra-file="$CARDIFY_MYSQL_OPTIONS" "$SCRATCH_DB" < "$TMPSQL" 2>/dev/null; then
                 echo "FAIL: mysql load into $SCRATCH_DB" | tee -a "$REPORT"
                 STATUS="FAIL"; FAIL_CODE=2
             fi
@@ -92,12 +92,12 @@ else
 
     # --- 4. Sanity checks (only when DB restore ran) ---
     if [ "$STATUS" = "PASS" ]; then
-        read_count() { mysql -u"$DB_USER" -p"$DB_PASS" -h"$DB_HOST" -NBe "$1" "$SCRATCH_DB" 2>/dev/null; }
+        read_count() { mysql --defaults-extra-file="$CARDIFY_MYSQL_OPTIONS" -NBe "$1" "$SCRATCH_DB" 2>/dev/null; }
         TABLES=$(read_count "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE()")
         EMP=$(read_count "SELECT COUNT(*) FROM employees" || echo 0)
         COMP=$(read_count "SELECT COUNT(*) FROM companies" || echo 0)
         TPL=$(read_count "SELECT COUNT(*) FROM templates" || echo 0)
-        NEWEST=$(read_count "SELECT MAX(created_at) FROM payments" || echo '—')
+        NEWEST=$(read_count "SELECT MAX(created_at) FROM payments" || echo ',')
         echo "Sanity: tables=$TABLES employees=$EMP companies=$COMP templates=$TPL newest_payment=$NEWEST" | tee -a "$REPORT"
         if [ "${TABLES:-0}" -lt 20 ]; then
             echo "FAIL: schema looks incomplete (<20 tables)" | tee -a "$REPORT"
@@ -108,12 +108,12 @@ else
     # --- 5. Clean up: keep the scratch DB itself (bc has no DROP
     #     DATABASE rights) but drop its tables so the next run starts
     #     fresh.
-    mysql -u"$DB_USER" -p"$DB_PASS" -h"$DB_HOST" -NBe "
+    mysql --defaults-extra-file="$CARDIFY_MYSQL_OPTIONS" -NBe "
         SET FOREIGN_KEY_CHECKS = 0;
         SELECT CONCAT('DROP TABLE IF EXISTS \`', table_name, '\`;')
           FROM information_schema.tables
          WHERE table_schema = '$SCRATCH_DB';" 2>/dev/null \
-        | mysql -u"$DB_USER" -p"$DB_PASS" -h"$DB_HOST" "$SCRATCH_DB" 2>/dev/null || true
+        | mysql --defaults-extra-file="$CARDIFY_MYSQL_OPTIONS" "$SCRATCH_DB" 2>/dev/null || true
     rm -f "$TMPSQL"
 fi
 

@@ -1,8 +1,7 @@
 <?php
 /**
- * Internal-provider mode: paginated list of every Cardify company,
- * with employee count and last-order date. Each row links to
- * client.php for the per-company employee picker.
+ * Paginated list of explicitly attached client companies, with employee
+ * count and last-order date. Each row links to the employee picker.
  */
 require_once __DIR__ . '/../config.php';
 require_once INCLUDES_DIR . '/PrintShopAuth.php';

@@ -7,7 +7,7 @@
 # 4. Write to /var/backups/cardify/ with an ISO date stamp.
 # 5. Rotate: keep 30 newest files, delete older.
 # 6. If rclone + CARDIFY_BACKUP_REMOTE are set, upload to that remote
-#    (Backblaze B2 / S3 / Wasabi — rclone covers all three).
+#    (Backblaze B2 / S3 / Wasabi , rclone covers all three).
 #
 # Cron (VPS, already installed by this action):
 #   25 2 * * * /www/wwwroot/cardify.om/scripts/backup-db.sh >> /var/log/cardify-backup.log 2>&1
@@ -20,17 +20,7 @@ DB_NAME="${CARDIFY_DB:-bc}"
 DB_USER="${CARDIFY_DB_USER:-bc}"
 DB_HOST="${CARDIFY_DB_HOST:-127.0.0.1}"
 
-# Prefer the CARDIFY_DB_PASS env var (set in the cron entry or
-# /etc/profile.d/cardify-env.sh). Falls back to the literal default below
-# so the nightly cron keeps working even when the env isn't set. The
-# literal is acceptable here because:
-#   1. The repo is private (only Ali + collaborators have access).
-#   2. /scripts/ is now blocked at the nginx layer (iter 30) so the script
-#      body is not web-readable.
-# When Ali rotates the live MySQL grant, set CARDIFY_DB_PASS in
-# /etc/profile.d/cardify-env.sh + source it from the cron entry; the env
-# value will take precedence over the literal below.
-DB_PASS="${CARDIFY_DB_PASS:-pWewN3fwFmEHh32J}"
+source "$(dirname "${BASH_SOURCE[0]}")/mysql-runtime-config.sh"
 
 BACKUP_DIR="${CARDIFY_BACKUP_DIR:-/var/backups/cardify}"
 RETENTION_COUNT="${CARDIFY_BACKUP_KEEP:-30}"
@@ -51,12 +41,12 @@ echo "[$(date -Is)] starting backup → $OUT"
 # mysqldump piped straight into gzip. --single-transaction keeps InnoDB
 # consistent without locking the tables.
 if [ -n "$PASSPHRASE" ]; then
-    mysqldump -u"$DB_USER" -p"$DB_PASS" -h"$DB_HOST" --single-transaction --quick --triggers --routines "$DB_NAME" \
+    mysqldump --defaults-extra-file="$CARDIFY_MYSQL_OPTIONS" --single-transaction --quick --triggers --routines "$DB_NAME" \
         | gzip -9 \
         | gpg --batch --yes --symmetric --cipher-algo AES256 --passphrase "$PASSPHRASE" \
               -o "$OUT"
 else
-    mysqldump -u"$DB_USER" -p"$DB_PASS" -h"$DB_HOST" --single-transaction --quick --triggers --routines "$DB_NAME" \
+    mysqldump --defaults-extra-file="$CARDIFY_MYSQL_OPTIONS" --single-transaction --quick --triggers --routines "$DB_NAME" \
         | gzip -9 \
         > "$OUT"
 fi
@@ -77,7 +67,7 @@ if [ -n "$REMOTE" ] && command -v rclone >/dev/null 2>&1; then
     if rclone copy "$OUT" "$REMOTE/" --transfers=1 --retries=3 >> /var/log/cardify-backup.log 2>&1; then
         echo "[$(date -Is)] uploaded to $REMOTE/$(basename "$OUT")"
     else
-        echo "[$(date -Is)] WARN offsite upload to $REMOTE failed — local copy kept" >&2
+        echo "[$(date -Is)] WARN offsite upload to $REMOTE failed , local copy kept" >&2
     fi
 elif [ -n "$REMOTE" ]; then
     echo "[$(date -Is)] WARN CARDIFY_BACKUP_REMOTE set but rclone not installed" >&2

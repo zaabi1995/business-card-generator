@@ -1774,7 +1774,7 @@ ssh root@147.93.20.54 "cd /www/wwwroot/cardify.om && php database/migrations/030
 - [ ] **Step 4: Verify tables created**
 
 ```bash
-ssh root@147.93.20.54 "mysql -u bc -ppWewN3fwFmEHh32J bc -e 'SHOW TABLES LIKE \"%credit%\"; SHOW TABLES LIKE \"payments\"; DESCRIBE print_orders' | grep -E 'payment_method|payment_id|credit|payments'"
+ssh root@147.93.20.54 "mysql -u bc -p[removed: use protected runtime credentials] bc -e 'SHOW TABLES LIKE \"%credit%\"; SHOW TABLES LIKE \"payments\"; DESCRIBE print_orders' | grep -E 'payment_method|payment_id|credit|payments'"
 ```
 
 - [ ] **Step 5: Test subscription flow still works**

@@ -81,9 +81,8 @@ Paymob Oman for payments, BHD-ERP for accounting.
   Numbers increment strictly. Run them with the aaPanel PHP 8.3
   binary: `/www/server/php/83/bin/php` (system `/usr/bin/php` fails
   silently on MySQL socket).
-- DB credentials: `bc` / `pWewN3fwFmEHh32J` / host `127.0.0.1` (NOT
-  `localhost` — socket mismatch). See memory
-  `cardify-db-host-127001.md`.
+- Database connection settings belong in the untracked runtime config.php.
+  Use the local TCP endpoint configured there; never put credentials in instructions.
 
 ### Payments
 - **Never skip Paymob HMAC verification** on callbacks. See

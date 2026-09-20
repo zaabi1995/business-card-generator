@@ -9,10 +9,8 @@ ini_set('display_errors', 1);
 
 $out = ['steps' => []];
 try {
-    $pdo = new PDO('mysql:host=127.0.0.1;dbname=bc;charset=utf8mb4', 'bc', 'pWewN3fwFmEHh32J', [
-        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-    ]);
+    require_once dirname(__DIR__) . '/includes/RuntimeDatabaseConfig.php';
+    $pdo = RuntimeDatabaseConfig::connect();
 
     $uuid = function () {
         return sprintf('%04x%04x-%04x-%04x-%04x-%04x%04x%04x',

@@ -21,14 +21,10 @@ The application now supports automatic WhatsApp confirmation messages when print
 5. Enable notifications using the toggle switch
 6. Click **"Save Token"**
 
-### 2. Default Token
+### 2. Deployment credentials
 
-The default token provided during setup:
-```
-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1aWQiOiJENEVFdTRmZGdJZncyMTFqeERVVFJ0VHFkZVcyU1RMTCIsInJvbGUiOiJ1c2VyIiwiaWF0IjoxNzY3NjAzMDUwfQ.atbDJ8y1bXTKiq6xZ7KUX5TzYkTWbrvjMrK4SCmDCUY
-```
-
-**⚠️ Important:** Replace this with your actual production token from your WhatsApp API provider.
+Obtain a scoped token from the deployment secret store. There is no shared
+default token. Never put a live token in source code or documentation.
 
 ### 3. API Endpoint Configuration
 

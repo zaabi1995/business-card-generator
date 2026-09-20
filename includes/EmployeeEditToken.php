@@ -73,6 +73,12 @@ class EmployeeEditToken
      */
     public static function verify(string $plain): ?array
     {
+        // Every surface accepting an edit capability must stay out of caches
+        // and must not forward the capability URL as a referrer.
+        if (!headers_sent()) {
+            header('Cache-Control: private, no-store');
+            header('Referrer-Policy: no-referrer');
+        }
         if (!preg_match('/^[a-f0-9]{40}$/i', $plain)) return null;
         $hash = hash('sha256', $plain);
 
@@ -88,7 +94,12 @@ class EmployeeEditToken
                     e.*
              FROM employee_edit_tokens t
              JOIN employees e ON e.id = t.employee_id
-             WHERE t.token_hash = :h LIMIT 1",
+             JOIN companies c ON c.id = e.company_id
+             WHERE t.token_hash = :h
+               AND e.status IN ('active', 'pending')
+               AND e.deleted_at IS NULL
+               AND c.status = 'active'
+             LIMIT 1",
             ['h' => $hash]
         );
         if (!$row) return null;

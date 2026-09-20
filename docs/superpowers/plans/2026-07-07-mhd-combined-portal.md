@@ -56,7 +56,7 @@ Expected: on `feature/mhd-combined-portal`, clean tree.
 - [ ] **Step 2: Confirm parent tenant + current departments**
 
 ```bash
-ssh root@147.93.20.54 "mysql -u bc -ppWewN3fwFmEHh32J bc -e \"
+ssh root@147.93.20.54 "mysql -u bc -p[removed: use protected runtime credentials] bc -e \"
 SELECT id,slug FROM companies WHERE slug='mhd';
 SELECT company_id,name,slug FROM departments WHERE company_id='a9ba4c5e-7b8e-4ccc-a3bd-08ab9af7b1d5' AND deleted_at IS NULL;\""
 ```
@@ -112,7 +112,7 @@ Expected: `ok:` lines then `done`.
 
 - [ ] **Step 4: Verify columns exist**
 
-Run: `ssh root@147.93.20.54 "mysql -u bc -ppWewN3fwFmEHh32J bc -e 'SHOW COLUMNS FROM departments LIKE \"responsible_email\"; SHOW COLUMNS FROM departments LIKE \"include_qr_default\";'"`
+Run: `ssh root@147.93.20.54 "mysql -u bc -p[removed: use protected runtime credentials] bc -e 'SHOW COLUMNS FROM departments LIKE \"responsible_email\"; SHOW COLUMNS FROM departments LIKE \"include_qr_default\";'"`
 Expected: both columns listed.
 
 ---
@@ -191,7 +191,7 @@ Expected: JSON with `pair_id` + template ids.
 - [ ] **Step 4: Verify the template renders (mocked-session admin render, rule 34)**
 
 ```bash
-ssh root@147.93.20.54 "mysql -u bc -ppWewN3fwFmEHh32J bc -e \"SELECT id,name,pair_id,has_vector_source,side FROM templates WHERE company_id='a9ba4c5e-7b8e-4ccc-a3bd-08ab9af7b1d5' AND deleted_at IS NULL;\""
+ssh root@147.93.20.54 "mysql -u bc -p[removed: use protected runtime credentials] bc -e \"SELECT id,name,pair_id,has_vector_source,side FROM templates WHERE company_id='a9ba4c5e-7b8e-4ccc-a3bd-08ab9af7b1d5' AND deleted_at IS NULL;\""
 ```
 Expected: front + back rows sharing a pair_id, `has_vector_source=1`.
 
@@ -260,7 +260,7 @@ Expected: inserted/updated lines for all 11.
 - [ ] **Step 3: Verify + confirm portal lists them**
 
 ```bash
-ssh root@147.93.20.54 "mysql -u bc -ppWewN3fwFmEHh32J bc -e \"SELECT name,slug,responsible_email,portal_enabled,template_pair_id FROM departments WHERE company_id='a9ba4c5e-7b8e-4ccc-a3bd-08ab9af7b1d5' AND deleted_at IS NULL ORDER BY name;\""
+ssh root@147.93.20.54 "mysql -u bc -p[removed: use protected runtime credentials] bc -e \"SELECT name,slug,responsible_email,portal_enabled,template_pair_id FROM departments WHERE company_id='a9ba4c5e-7b8e-4ccc-a3bd-08ab9af7b1d5' AND deleted_at IS NULL ORDER BY name;\""
 curl -s "https://mhd.cardify.om/portal?cb=$RANDOM" | grep -ciE "itics|healthcare|automotive"
 ```
 Expected: 11 rows; portal HTML mentions division names.
@@ -290,7 +290,7 @@ Edit `scripts/mhd/seed-departments.php` filling the `$pair` column per division 
 
 - [ ] **Step 4: Verify every enabled department has a template_pair_id**
 
-Run: `ssh root@147.93.20.54 "mysql -u bc -ppWewN3fwFmEHh32J bc -e \"SELECT name, template_pair_id IS NOT NULL AS has_design FROM departments WHERE company_id='a9ba4c5e-7b8e-4ccc-a3bd-08ab9af7b1d5' AND deleted_at IS NULL AND portal_enabled=1;\""`
+Run: `ssh root@147.93.20.54 "mysql -u bc -p[removed: use protected runtime credentials] bc -e \"SELECT name, template_pair_id IS NOT NULL AS has_design FROM departments WHERE company_id='a9ba4c5e-7b8e-4ccc-a3bd-08ab9af7b1d5' AND deleted_at IS NULL AND portal_enabled=1;\""`
 Expected: `has_design=1` for all enabled rows.
 
 ---
@@ -441,7 +441,7 @@ Run `php scripts/i18n-audit.php`.
 Temporarily set the parent-tenant departments' `responsible_email` to a test address (e.g. ali@bhd.om) via SQL so the sweep does NOT hit real MHD inboxes:
 
 ```bash
-ssh root@147.93.20.54 "mysql -u bc -ppWewN3fwFmEHh32J bc -e \"UPDATE departments SET responsible_email='ali@bhd.om' WHERE company_id='a9ba4c5e-7b8e-4ccc-a3bd-08ab9af7b1d5';\""
+ssh root@147.93.20.54 "mysql -u bc -p[removed: use protected runtime credentials] bc -e \"UPDATE departments SET responsible_email='ali@bhd.om' WHERE company_id='a9ba4c5e-7b8e-4ccc-a3bd-08ab9af7b1d5';\""
 php -l includes/MhdMailer.php portal.php
 git add -A && git commit -m "feat: email MHD card on send with CC routing"
 git push origin feature/mhd-combined-portal && ssh root@147.93.20.54 "/usr/local/bin/deploy-cardify.sh"
@@ -453,7 +453,7 @@ Drive the portal end-to-end for ITICS with a real email = ali@bhd.om, Send. Then
 
 ```bash
 ssh bhd-vps "grep -iE 'MHD Business Card|ali@bhd.om' /var/log/mail.log | tail -20"
-ssh root@147.93.20.54 "mysql -u bc -ppWewN3fwFmEHh32J bc -e \"SELECT status,COUNT(*) FROM email_logs WHERE created_at>NOW()-INTERVAL 15 MINUTE GROUP BY status;\""
+ssh root@147.93.20.54 "mysql -u bc -p[removed: use protected runtime credentials] bc -e \"SELECT status,COUNT(*) FROM email_logs WHERE created_at>NOW()-INTERVAL 15 MINUTE GROUP BY status;\""
 ```
 Expected: `status=sent`, email in ali@bhd.om Maildir with a PDF attachment, CC = ali@bhd.om + sales@bhdoman.com. Confirm the M365 smarthost accepted (`sender_relay` for @bhdoman.com).
 
@@ -521,7 +521,7 @@ Expected: all divisions pass. Investigate any render/route failure (missing pair
 - [ ] **Step 3: Server-side email assertion per division**
 
 ```bash
-ssh root@147.93.20.54 "mysql -u bc -ppWewN3fwFmEHh32J bc -e \"SELECT status,COUNT(*) FROM email_logs WHERE created_at>NOW()-INTERVAL 1 HOUR GROUP BY status;\""
+ssh root@147.93.20.54 "mysql -u bc -p[removed: use protected runtime credentials] bc -e \"SELECT status,COUNT(*) FROM email_logs WHERE created_at>NOW()-INTERVAL 1 HOUR GROUP BY status;\""
 ```
 Expected: one `sent` per division test, zero failures.
 
