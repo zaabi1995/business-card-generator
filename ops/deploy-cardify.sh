@@ -13,11 +13,26 @@
 set -euo pipefail
 cd /www/wwwroot/cardify.om
 
+RELEASE_MODE="${CARDIFY_RELEASE_MODE:-standard}"
+case "$RELEASE_MODE" in standard|code-only) ;; *) echo "Invalid release mode"; exit 1 ;; esac
+if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
+  echo "Tracked production changes require review before deployment."
+  exit 1
+fi
+
 BEFORE=$(git rev-parse HEAD)
 git pull --ff-only origin main
 AFTER=$(git rev-parse HEAD)
 PHP_BIN="/www/server/php/83/bin/php"
 [ -x "$PHP_BIN" ] || PHP_BIN="$(command -v php || echo /usr/bin/php)"
+
+reload_fpm() {
+  if [ -x /etc/init.d/php-fpm-83 ]; then
+    /etc/init.d/php-fpm-83 reload
+  else
+    systemctl reload php8.3-fpm 2>/dev/null || systemctl reload php-fpm
+  fi
+}
 
 # r330: `git reset --hard` runs as root and rewrites every file it restores as
 # root:root. php-fpm runs as www, so a rollback that does not hand ownership
@@ -52,6 +67,10 @@ discard_scan_account_cleanup_cron_backup() {
   scan_cleanup_cron_backup=""
 }
 install_scan_account_cleanup_cron() {
+  if [ "$RELEASE_MODE" = code-only ]; then
+    echo "Code-only release: existing cleanup schedule preserved; worker not invoked."
+    return 0
+  fi
   cron_source="$PWD/ops/cardify-scan-account-cleanup.cron"
   cron_target="/etc/cron.d/cardify-scan-account-cleanup"
   worker="$PWD/scripts/process-scan-account-deletions.php"
@@ -99,6 +118,13 @@ install_scan_account_cleanup_cron() {
     || true
   echo "Account cleanup schedule installed and worker verified."
 }
+check_or_run_migrations() {
+  if [ "$RELEASE_MODE" = code-only ]; then
+    "$PHP_BIN" ops/check-release-migrations.php
+  else
+    "$PHP_BIN" ops/run-pending-migrations.php
+  fi
+}
 # --- Forbidden strings in the served tree (r330) ---
 # Deliberately ABOVE the no-change early exit and ABOVE the changed-file lint.
 # This gate asks "is the bad string in the tree", not "did this deploy add
@@ -113,7 +139,7 @@ if ! bash ops/check-forbidden-strings.sh; then
 fi
 
 if [ "$BEFORE" = "$AFTER" ]; then
-  if ! "$PHP_BIN" ops/run-pending-migrations.php; then
+  if ! check_or_run_migrations; then
     echo "Pre-flight: database migration check failed."
     exit 4
   fi
@@ -151,7 +177,7 @@ fi
 echo "Pre-flight OK (no lint errors)"
 
 # --- Schema-first: apply every pending migration before activating new code ---
-if ! "$PHP_BIN" ops/run-pending-migrations.php; then
+if ! check_or_run_migrations; then
   echo "Pre-flight: database migration failed. Rolling back code to $BEFORE."
   rollback_to_before
   echo "Deploy aborted. Review the migration error before retrying."
@@ -164,10 +190,14 @@ git diff --name-only --diff-filter=ACMR "$BEFORE" "$AFTER" | while read -r f; do
   chown www:www "$f" 2>/dev/null || true
   case "$f" in *.sh) chmod 755 "$f" 2>/dev/null || true ;; *) chmod 644 "$f" 2>/dev/null || true ;; esac
 done
-find . -type f ! -user www -exec chown www:www {} + 2>/dev/null || true
-find . -type f ! -perm 644 ! -name .user.ini ! -name "*.sh" -exec chmod 644 {} + 2>/dev/null || true
-find . -type f -name "*.sh" ! -perm 755 -exec chmod 755 {} + 2>/dev/null || true
-find . -type d ! -perm 755 -exec chmod 755 {} + 2>/dev/null || true
+# Repair tracked source only. Runtime configuration, uploads, logs, backups,
+# signing material and Git metadata must retain their own access restrictions.
+bash ops/repair-source-permissions.sh
+if [ -f config.php ]; then
+  chown www:www config.php
+  chmod 600 config.php
+fi
+bash ops/arm-git-hooks.sh
 
 # Ensure cache dirs exist with correct ownership; some are created on
 # demand by PHP and end up root-owned if they're written from a CLI
@@ -187,7 +217,12 @@ if [ -d data/wallet ]; then
 fi
 echo "Perms OK"
 
-systemctl reload php8.3-fpm 2>/dev/null || systemctl reload php-fpm 2>/dev/null || true
+if ! reload_fpm; then
+  rollback_to_before
+  reload_fpm || true
+  echo "FPM reload failed; release aborted."
+  exit 7
+fi
 echo "FPM reloaded"
 
 # Give the first request after reload ~2s to wake a worker (otherwise
@@ -205,6 +240,21 @@ smoke_urls=(
   "GET|https://cardify.om/api/health|200|\"status\":\"up\""
   "GET|https://cardify.om/pricing|200|OMR"
   "GET|https://cardify.om/status|200|Cardify"
+  "GET|https://cardify.om/company/register.php|200|<form"
+  "GET|https://cardify.om/blog|200|<html"
+  "GET|https://cardify.om/press|200|<html"
+  "GET|https://cardify.om/solutions|200|<html"
+  "GET|https://cardify.om/companies|200|<html"
+  "GET|https://cardify.om/oman-business-index|200|<html"
+  "GET|https://cardify.om/gcc-business-index|200|<html"
+  "GET|https://cardify.om/logos|200|<html"
+  "GET|https://cardify.om/tools|200|<html"
+  "GET|https://cardify.om/tools/vcard-qr-generator|200|<html"
+  "GET|https://cardify.om/industries/oil-gas|200|<html"
+  "GET|https://cardify.om/nfc-business-card|200|<html"
+  "GET|https://cardify.om/case-studies|200|<html"
+  "GET|https://cardify.om/ar/|200|<html"
+  "GET|https://cardify.om/ar/pricing|200|OMR"
   "GET|https://cardify.om/login.php|200|<form"
 )
 probe() {
@@ -242,18 +292,16 @@ done
 if [ "$smoke_fail" -gt 0 ]; then
   echo "Post-flight: $smoke_fail URL(s) failed smoke test. Rolling back to $BEFORE."
   rollback_to_before
-  systemctl reload php8.3-fpm 2>/dev/null || systemctl reload php-fpm 2>/dev/null || true
+  reload_fpm || true
   echo "Deploy aborted. Rolled back + FPM reloaded on previous tree."
   exit 3
 fi
-echo "Post-flight OK (5/5 URLs healthy)"
+echo "Post-flight OK (${#smoke_urls[@]}/${#smoke_urls[@]} URLs healthy)"
 if ! install_scan_account_cleanup_cron; then
   restore_scan_account_cleanup_cron || true
   echo "Account cleanup schedule installation failed. Rolling back."
   rollback_to_before
-  systemctl reload php8.3-fpm 2>/dev/null \
-    || systemctl reload php-fpm 2>/dev/null \
-    || true
+  reload_fpm || true
   exit 5
 fi
 discard_scan_account_cleanup_cron_backup

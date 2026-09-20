@@ -16,12 +16,4 @@
 ROOT=$(git rev-parse --show-toplevel 2>/dev/null || true)
 [ -n "$ROOT" ] || exit 0
 
-find "$ROOT" -type f \( \
-    -name "*.php" -o -name "*.html" -o -name "*.htm" \
-    -o -name "*.css" -o -name "*.js" -o -name "*.json" \
-    -o -name "*.txt" -o -name "*.xml" -o -name "*.svg" \
-    -o -name "*.ico" -o -name "*.md" \
-\) -perm 640 -exec chmod 644 {} \;
-# Ensure directories are traversable
-find "$ROOT" -type d -perm 750 -exec chmod 755 {} \;
-exit 0
+bash "$ROOT/ops/repair-source-permissions.sh"
