@@ -38,10 +38,14 @@ class CardJobMailer
         $box  = strtolower(trim((string)($dept['responsible_email'] ?? '')));
 
         $to = $head !== '' ? [$head] : ($box !== '' ? [$box] : []);
-        $cc = array_values(array_unique(array_filter([
+        // cc_emails: extra client addresses, comma separated (OHB: invoices@ohb.co.om,
+        // their instruction in the OHB Cards group, 24 Sep 2026).
+        $extra = array_map(fn($a) => strtolower(trim($a)), explode(',', (string)($dept['cc_emails'] ?? '')));
+        $extra = array_filter($extra, fn($a) => filter_var($a, FILTER_VALIDATE_EMAIL));
+        $cc = array_values(array_unique(array_filter(array_merge([
             $head !== '' && $box !== $head ? $box : '',
             self::BHD_OWNER,
-        ])));
+        ], $extra))));
         return [$to, $cc];
     }
 

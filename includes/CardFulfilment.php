@@ -187,6 +187,24 @@ class CardFulfilment
             $out['quote']  = $quote['data']['quoteNumber'] ?? null;
             CardJobMailer::sendQuotation($request, $dept, $price, $quote['data'] ?? []);
 
+            // Ali, 24 Sep 2026: the client group gets the print-ready A4 file
+            // (front and back) with the quotation, not the quotation alone.
+            if (!empty($dept['whatsapp_group'])) {
+                require_once __DIR__ . '/ProductionWhatsApp.php';
+                $job   = array_merge($request, ['employee_id' => $chain['employee_id'] ?? $request['employee_id'] ?? null,
+                                               'quantity_ordered' => $price['qty']]);
+                $built = self::printSheet($job, $dept);
+                if (!empty($built['path'])) {
+                    $slug = preg_replace('/[^A-Za-z0-9]+/', '-', trim((string)($request['name_en'] ?? 'card')));
+                    $out['print_file'] = ProductionWhatsApp::post($job, $dept, $built['path'],
+                        ProductionWhatsApp::caption($job, $dept, $built['sheets']),
+                        $slug . '-BusinessCard-A4-front-back.pdf');
+                    if (!empty($built['temp'])) { @unlink($built['path']); }
+                } else {
+                    $out['print_file'] = ['ok' => false, 'error' => $built['error']];
+                }
+            }
+
             // A division that is invoiced on approval (OHB) sends no purchase
             // order, so there is nothing to wait for: go straight on to the
             // invoice, the documents email and production. The Cardify order
@@ -342,40 +360,62 @@ class CardFulfilment
         $wantQr = array_key_exists('include_qr', $job) && $job['include_qr'] !== null
                 ? (bool)$job['include_qr']
                 : true;
+        $built = self::printSheet($job, $dept, $wantQr);
+        if (empty($built['path'])) {
+            return ['ok' => false, 'error' => $built['error'] ?? 'no print file'];
+        }
+        $send = CardJobMailer::sendToProduction($job, $dept, $built['path']);
+
+        // Ali, 24 Sep 2026: and post it to the production WhatsApp group. A
+        // division with its own client group already got the print file with
+        // the quotation (afterApproval), so it is not posted twice.
+        if (empty($dept['whatsapp_group'])) {
+            require_once __DIR__ . '/ProductionWhatsApp.php';
+            $wa = ProductionWhatsApp::post($job, $dept, $built['path'],
+                ProductionWhatsApp::caption($job, $dept, $built['sheets']));
+            $send['whatsapp'] = $wa;
+            // The group post counts as reaching production when the email did not.
+            if (empty($send['ok']) && !empty($wa['ok'])) { $send['ok'] = true; }
+        }
+
+        if (!empty($built['temp'])) { @unlink($built['path']); }
+        return $send;
+    }
+
+    /**
+     * The print-ready A4 file for a job: the vector card imposed by a4Sheet(),
+     * else the 10-up raster sheet (templates imported from an image, e.g. OHB,
+     * have no vector source). ['path','sheets','temp','error'].
+     */
+    public static function printSheet(array $job, array $dept, ?bool $wantQr = null): array
+    {
+        $employeeId = trim((string)($job['employee_id'] ?? ''));
+        if ($employeeId === '') {
+            return ['path' => null, 'sheets' => 0, 'temp' => false, 'error' => 'the job has no employee to render'];
+        }
+        if ($wantQr === null) {
+            $wantQr = array_key_exists('include_qr', $job) && $job['include_qr'] !== null
+                    ? (bool)$job['include_qr'] : true;
+        }
         $pdf = CardPDFRenderer::render($employeeId, 'print', [
             'include_qr'       => $wantQr,
             'qr_force_allowed' => $wantQr,
         ]);
-        $sheets = 0;
         if (!empty($pdf['success'])) {
             // Ali, 17 Sep 2026: production want it on A4. Both sides at exact size
             // on one sheet with crop marks, so what is measured on the sheet is what
             // prints. If the imposition fails, the press-size file still goes: a
             // printable card beats no card.
             $sheet = self::a4Sheet((string)$pdf['path'], $job, $dept);
-            $file  = $sheet ?: (string)$pdf['path'];
-        } else {
-            // A template imported from an image (OHB) has no vector source, so
-            // the print render fails. Impose the saved card render 10-up on A4
-            // instead, the same sheet card-sheet.php gives the admin.
-            $sheet = self::rasterSheet($employeeId, (string)($job['company_id'] ?? ''));
-            if (!$sheet) {
-                return ['ok' => false, 'error' => 'render: ' . ($pdf['error'] ?? 'unknown') . '; no raster card either'];
-            }
-            $file   = $sheet;
-            $sheets = (int)ceil(max(1, (int)($job['quantity_ordered'] ?? 0)) / 10);
+            return ['path' => $sheet ?: (string)$pdf['path'], 'sheets' => 0, 'temp' => (bool)$sheet, 'error' => null];
         }
-        $send = CardJobMailer::sendToProduction($job, $dept, $file);
-
-        // Ali, 24 Sep 2026: and post it to the production WhatsApp group.
-        require_once __DIR__ . '/ProductionWhatsApp.php';
-        $wa = ProductionWhatsApp::post($job, $dept, $file, ProductionWhatsApp::caption($job, $dept, $sheets));
-        $send['whatsapp'] = $wa;
-        // The group post counts as reaching production when the email did not.
-        if (empty($send['ok']) && !empty($wa['ok'])) { $send['ok'] = true; }
-
-        if ($sheet) { @unlink($sheet); }
-        return $send;
+        $sheet = self::rasterSheet($employeeId, (string)($job['company_id'] ?? ''));
+        if (!$sheet) {
+            return ['path' => null, 'sheets' => 0, 'temp' => false,
+                    'error' => 'render: ' . ($pdf['error'] ?? 'unknown') . '; no raster card either'];
+        }
+        return ['path' => $sheet, 'sheets' => (int)ceil(max(1, (int)($job['quantity_ordered'] ?? 0)) / 10),
+                'temp' => true, 'error' => null];
     }
 
     /**
