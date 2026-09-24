@@ -635,6 +635,19 @@ class ERPSync {
         $data = json_decode($body, true);
 
         // 200 (created) and 409 (already exists) both carry quoteId/quoteNumber.
+        // A 409 is "already converted" only when it names the invoice. The ERP
+        // also answers 409 for refusals, and treating those as success sent an
+        // OHB job to production and emailed "invoice raised" with no invoice
+        // (24 Sep 2026).
+        if ($httpCode === 409 && empty($data['invoiceId'])) {
+            $errMsg = $data['message'] ?? 'HTTP 409';
+            error_log("ERPSync::convertQuoteToInvoice refused for order $orderId: $errMsg");
+            $db->query(
+                "UPDATE print_orders SET erp_sync_status = 'invoice_failed', erp_sync_error = :e WHERE id = :id",
+                ['e' => $errMsg, 'id' => $orderId]
+            );
+            return ['success' => false, 'message' => "ERP convert failed: $errMsg"];
+        }
         if ($httpCode === 200 || $httpCode === 409) {
             $quoteId = $data['quoteId'] ?? null;
             $quoteNumber = $data['quoteNumber'] ?? null;

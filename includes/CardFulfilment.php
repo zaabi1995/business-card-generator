@@ -298,6 +298,13 @@ class CardFulfilment
             "SELECT erp_quote_id, erp_invoice_id, erp_invoice_number, delivery_note_external_id
                FROM print_orders WHERE id = :id", ['id' => $orderId]);
         $out['invoice'] = $order['erp_invoice_number'] ?? null;
+        if (empty($order['erp_invoice_id'])) {
+            // "Converted" with no invoice on the order is not converted. Hold at
+            // po_received so nothing goes to production or the client.
+            $out['errors'][] = 'invoice: the ERP returned no invoice';
+            error_log('[mhd afterPo] order ' . $orderId . ' converted with no invoice id, held');
+            return $out;
+        }
 
         // 2. Production get the print-ready artwork. Before the documents,
         //    because the documents email tells MHD the card is in production

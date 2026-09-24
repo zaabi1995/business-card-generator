@@ -285,10 +285,16 @@ class CardJobMailer
               . 'scan or send back.</p>'
             : '';
 
-        $html = '<div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#222;line-height:1.6">'
-              . '<p>Your purchase order' . ($po !== '' ? ' <strong>' . $e($po) . '</strong>' : '')
+        // A division invoiced without a PO (OHB) never sent one, so the email
+        // must not thank them for it.
+        $opening = !empty($dept['invoice_without_po'])
+            ? ($inv !== '' ? 'Invoice <strong>' . $e($inv) . '</strong> is raised. ' : '')
+              . 'The card for <strong>' . $e($name) . '</strong> (' . $e($div) . ') is now in production.'
+            : 'Your purchase order' . ($po !== '' ? ' <strong>' . $e($po) . '</strong>' : '')
               . ' is received' . ($inv !== '' ? ', and invoice <strong>' . $e($inv) . '</strong> is raised' : '')
-              . '. The card for <strong>' . $e($name) . '</strong> (' . $e($div) . ') is now in production.</p>'
+              . '. The card for <strong>' . $e($name) . '</strong> (' . $e($div) . ') is now in production.';
+        $html = '<div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#222;line-height:1.6">'
+              . '<p>' . $opening . '</p>'
               . ($files
                   ? '<p>' . $e(self::listOf(array_map(fn($f) => $f['label'], $files)))
                     . (count($files) === 1 ? ' is attached.' : ' are attached.') . '</p>'
