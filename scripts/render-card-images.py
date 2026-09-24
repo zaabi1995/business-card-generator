@@ -139,6 +139,27 @@ def _font_candidates(field: dict, bold: bool, arabic: bool) -> list[Path]:
         Path("/System/Library/Fonts"),
         Path("/System/Library/Fonts/Supplemental"),
     ]
+    # The field's own family first, at its own weight (OHB, 24 Sep 2026: Myriad
+    # Pro name, Tahoma Bold contacts and Cairo SemiBold Arabic all rendered as
+    # Inter / Noto because this list never looked at the family, and Inter is
+    # always installed). The generic lists below are only the fallback.
+    heavy = bold
+    semi = str(field.get("fontWeight", field.get("font_weight", ""))).strip() in {"500", "600"}
+    fonts = ROOT / "assets" / "fonts"
+    family_files = {
+        "myriad": [fonts / "myriad-pro" / n for n in (
+            ["MyriadPro-Bold.otf", "MyriadPro-SemiBold.otf"] if heavy else
+            ["MyriadPro-SemiBold.otf"] if semi else ["MyriadPro-Regular.otf"])],
+        "tahoma": [fonts / "tahoma" / n for n in (
+            ["Tahoma-Bold.ttf"] if heavy or semi else ["Tahoma-Regular.ttf"])],
+        "cairo": [fonts / "cairo" / n for n in (
+            ["Cairo-SemiBold.ttf", "Cairo-Bold.ttf"] if str(field.get("fontWeight", "")).strip() == "600" else
+            ["Cairo-Bold.ttf"] if heavy else ["Cairo-Medium.ttf"] if semi else ["Cairo-Regular.ttf"])],
+        "inter": [fonts / ("Inter-Bold.ttf" if heavy else "Inter-Regular.ttf")],
+    }
+    for key, files in family_files.items():
+        if key in family:
+            candidates.extend(files)
     names = []
     if arabic or "arab" in family or "cairo" in family:
         names += [
