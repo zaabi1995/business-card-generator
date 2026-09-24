@@ -605,7 +605,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['portal_passcode'])) 
             // The job ref is the tag that lets a purchase-order reply be matched
             // back to this job later. Derived from the request id, so it is stable
             // and a retry mints the same one rather than a duplicate.
-            $jobRef = CardJob::mintRef($requestId);
+            $jobRef = CardJob::mintRef($requestId, (string)($company['slug'] ?? 'MHD'));
             try {
                 $db->query("UPDATE card_requests SET job_ref = ?, quantity_ordered = ? WHERE id = ?",
                            [$jobRef, $quantityRequested, $requestId]);

@@ -267,7 +267,11 @@ class CardFulfilment
             // division has sent a purchase order and hears nothing, and BHD
             // never learns the invoice is held. cron/mhd-flow-heal.php picks
             // the job up again every quarter of an hour.
-            if ($announce && $dept) {
+            if ($announce && $dept && !empty($dept['invoice_without_po'])) {
+                // No PO was ever sent (OHB), so there is nothing to thank the
+                // client for. Only BHD hears that the invoice is held.
+                CardJobMailer::sendInvoiceHeldInternal($job, $dept, $reason);
+            } elseif ($announce && $dept) {
                 CardJobMailer::sendPoAcknowledgement($job, $dept, (string)($job['po_number'] ?? ''), $reason);
             }
             return $out;

@@ -44,9 +44,13 @@ class CardJob
      * id, so the same job always produces the same ref and a reply can be matched
      * back to it without relying on threading headers, which Outlook rewrites.
      */
-    public static function mintRef(string $requestId): string
+    public static function mintRef(string $requestId, string $prefix = 'MHD'): string
     {
-        return 'MHD-' . strtoupper(substr(hash('sha256', $requestId), 0, 6));
+        // The tenant's own prefix (OHB-...), so a client never reads another
+        // client's name in its email subjects. Letters only, 2 to 6 of them.
+        $prefix = strtoupper(preg_replace('/[^A-Za-z]/', '', $prefix));
+        if (strlen($prefix) < 2 || strlen($prefix) > 6) { $prefix = 'MHD'; }
+        return $prefix . '-' . strtoupper(substr(hash('sha256', $requestId), 0, 6));
     }
 
     public static function findByRef(string $ref): ?array

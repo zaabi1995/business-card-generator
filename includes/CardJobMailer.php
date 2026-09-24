@@ -404,9 +404,20 @@ class CardJobMailer
         $sent = MhdMailer::sendRaw($to, $cc,
             ($ref !== '' ? "[{$ref}] " : '') . "Purchase order received: {$name}, {$div}", $html);
 
-        // The internal one. Same job ref, so it threads with the rest.
+        self::sendInvoiceHeldInternal($req, $dept, $reason, $po);
+        return $sent;
+    }
+
+    /** BHD only: the ERP would not raise the invoice for this job. */
+    public static function sendInvoiceHeldInternal(array $req, array $dept, string $reason, string $po = ''): void
+    {
+        $e    = fn($v) => htmlspecialchars((string)$v, ENT_QUOTES);
+        $div  = (string)($dept['name'] ?? 'MHD');
+        $ref  = (string)($req['job_ref'] ?? '');
+        $po   = $po !== '' ? $po : (string)($req['po_number'] ?? '');
+        // Same job ref, so it threads with the rest.
         $internal = '<div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#222;line-height:1.6">'
-                  . '<p>A purchase order arrived and the ERP would not raise the invoice.</p>'
+                  . '<p>The ERP would not raise the invoice for this job.</p>'
                   . '<table style="border-collapse:collapse;margin:12px 0">'
                   . '<tr><td style="padding:3px 14px 3px 0;color:#6b7280">Job</td><td style="padding:3px 0"><strong>' . $e($ref) . '</strong></td></tr>'
                   . '<tr><td style="padding:3px 14px 3px 0;color:#6b7280">Division</td><td style="padding:3px 0"><strong>' . $e($div) . '</strong></td></tr>'
@@ -418,8 +429,6 @@ class CardJobMailer
                   . '</div>';
         MhdMailer::sendRaw([self::BHD_OWNER], [],
             ($ref !== '' ? "[{$ref}] " : '') . "Invoice held: {$div}, {$reason}", $internal);
-
-        return $sent;
     }
 
     /**

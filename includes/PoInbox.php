@@ -20,7 +20,7 @@ require_once __DIR__ . '/CardJob.php';
  */
 class PoInbox
 {
-    private const REF_RE = '/\[(MHD-[A-Z0-9]{6})\]/i';
+    private const REF_RE = '/\[([A-Z]{2,6}-[A-Z0-9]{6})\]/i';
 
     /**
      * The purchase-order formats MHD actually use, strictest first.
