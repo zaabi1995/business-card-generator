@@ -21,9 +21,12 @@ class ProductionWhatsApp
     private const DEFAULT_URL = 'http://127.0.0.1:3000/api/qr/rest/send_message';
 
     /** @return array ['ok'=>bool, 'skipped'=>bool, 'error'=>?string, 'messageId'=>?string] */
-    public static function post(array $job, array $dept, string $pdfPath, string $caption): array
+    public static function post(array $job, array $dept, string $pdfPath, string $caption, ?string $fileName = null): array
     {
-        $group = defined('PRODUCTION_WA_GROUP') ? (string)PRODUCTION_WA_GROUP : '';
+        // The division's own client group when it has one (OHB: "OHB Cards",
+        // where BHD production staff sit with the client), else BHD - Production.
+        $group = trim((string)($dept['whatsapp_group'] ?? ''));
+        if ($group === '') { $group = defined('PRODUCTION_WA_GROUP') ? (string)PRODUCTION_WA_GROUP : ''; }
         $token = defined('PRODUCTION_WA_TOKEN') ? (string)PRODUCTION_WA_TOKEN : '';
         $from  = defined('PRODUCTION_WA_FROM')  ? (string)PRODUCTION_WA_FROM  : '';
         $url   = defined('PRODUCTION_WA_URL')   ? (string)PRODUCTION_WA_URL   : self::DEFAULT_URL;
@@ -35,7 +38,7 @@ class ProductionWhatsApp
         }
 
         $ref  = preg_replace('/[^A-Za-z0-9._-]/', '-', (string)($job['job_ref'] ?? 'card'));
-        $name = $ref . '-print-ready-A4.pdf';
+        $name = $fileName ?: $ref . '-print-ready-A4.pdf';
         $body = [
             'messageType'  => 'document',
             'requestType'  => 'POST',
@@ -68,6 +71,19 @@ class ProductionWhatsApp
         }
         return ['ok' => true, 'skipped' => false, 'error' => null,
                 'messageId' => (string)($res['data']['messageId'] ?? '')];
+    }
+
+    /** The quotation caption for the client group. */
+    public static function quoteCaption(array $job, array $dept, array $price, string $quoteNumber): string
+    {
+        $name = trim((string)($job['name_en'] ?? '')) ?: trim((string)($job['name_ar'] ?? ''));
+        $line = 'Request received: business cards, ' . $name . '.';
+        $line .= "\n" . (int)$price['qty'] . ' cards, OMR ' . number_format((float)$price['gross'], 3) . ' incl. VAT.';
+        if ($quoteNumber !== '') { $line .= ' Quotation ' . $quoteNumber . ' attached.'; }
+        $line .= !empty($dept['invoice_without_po'])
+            ? "\nNo PO needed."
+            : "\nPlease reply to the quotation email with the PO.";
+        return $line;
     }
 
     /** The group caption: short, what to print and how many. */

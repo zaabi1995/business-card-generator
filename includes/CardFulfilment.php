@@ -106,7 +106,7 @@ class CardFulfilment
 
         $qty = (int)($request['quantity_ordered'] ?? CardPrice::DEFAULT_QTY);
         if (!CardPrice::isStandardQuantity($qty)) { $qty = CardPrice::DEFAULT_QTY; }
-        $price = CardPrice::quote($qty, (float)($dept['card_unit_price'] ?? CardPrice::UNIT_PRICE));
+        $price = CardPrice::quote($qty, CardPrice::unitFor($dept, $qty));
 
         // erp_client_name carries the DIVISION's account: ERPSync resolves the
         // client from the order, and without it every division would quote

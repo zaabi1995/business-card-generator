@@ -66,7 +66,7 @@ foreach ($stuck as $job) {
         if ($moved) {
             $qty   = (int)($job['quantity_ordered'] ?? CardPrice::DEFAULT_QTY);
             if (!CardPrice::isStandardQuantity($qty)) { $qty = CardPrice::DEFAULT_QTY; }
-            $price = CardPrice::quote($qty, (float)($dept['card_unit_price'] ?? CardPrice::UNIT_PRICE));
+            $price = CardPrice::quote($qty, CardPrice::unitFor($dept, $qty));
             CardJobMailer::sendQuotation($job, $dept, $price, $quote['data'] ?? []);
         }
         $line['state'] = $moved ? 'quoted' : 'not moved';

@@ -19,6 +19,27 @@ class CardPrice
     public const VAT_RATE    = 0.05;
     public const DESCRIPTION = 'Business Card (Art 300 GSM, Matte)';
 
+    /**
+     * The per-card rate a division pays for a lot. departments.card_price_tiers
+     * (JSON {"100":0.040,"200":0.030}) wins: the exact lot, else the largest tier
+     * at or below it. Otherwise the division's flat card_unit_price, else 0.030.
+     * OHB (Ali, OHB Cards group, 21 Sep 2026): 100 pcs 0.040, 200 pcs 0.030.
+     */
+    public static function unitFor(array $dept, int $qty): float
+    {
+        $tiers = json_decode((string)($dept['card_price_tiers'] ?? ''), true);
+        if (is_array($tiers) && $tiers) {
+            $best = null;
+            foreach ($tiers as $lot => $rate) {
+                $lot = (int)$lot;
+                if ($lot <= $qty && ($best === null || $lot > $best[0])) { $best = [$lot, (float)$rate]; }
+            }
+            if ($best !== null && $best[1] > 0) { return $best[1]; }
+        }
+        $flat = (float)($dept['card_unit_price'] ?? 0);
+        return $flat > 0 ? $flat : self::UNIT_PRICE;
+    }
+
     public static function isStandardQuantity(int $qty): bool
     {
         return in_array($qty, self::QUANTITIES, true);

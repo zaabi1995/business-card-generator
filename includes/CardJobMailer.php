@@ -208,15 +208,29 @@ class CardJobMailer
               . '<p>The card for <strong>' . $e($name) . '</strong> is approved for <strong>'
               . $e($div) . '</strong> and is on the standard rate. ' . $line . '</p>'
               . $figures
-              . '<p style="background:#f1f5f9;border-radius:8px;padding:14px 16px;margin:20px 0">'
-              . '<strong>To go ahead, reply to this email with your purchase order attached.</strong><br>'
-              . '<span style="color:#6b7280;font-size:13px">Keep the subject line as it is. That is how your '
-              . 'purchase order is matched to this job. We will send the invoice and the delivery note back '
-              . 'as soon as it arrives, and the cards go to print.</span></p>'
+              . (!empty($dept['invoice_without_po'])
+                  // A division invoiced on approval (OHB) is never asked for a PO.
+                  ? '<p style="background:#f1f5f9;border-radius:8px;padding:14px 16px;margin:20px 0">'
+                    . '<strong>No purchase order is needed.</strong> The invoice and the delivery '
+                    . 'note follow with the cards.</p>'
+                  : '<p style="background:#f1f5f9;border-radius:8px;padding:14px 16px;margin:20px 0">'
+                    . '<strong>To go ahead, reply to this email with your purchase order attached.</strong><br>'
+                    . '<span style="color:#6b7280;font-size:13px">Keep the subject line as it is. That is how your '
+                    . 'purchase order is matched to this job. We will send the invoice and the delivery note back '
+                    . 'as soon as it arrives, and the cards go to print.</span></p>')
               . '</div>';
 
-        $subject = ($ref !== '' ? "[{$ref}] " : '') . "Purchase order needed: {$name}, {$div}";
+        $subject = ($ref !== '' ? "[{$ref}] " : '')
+                 . (!empty($dept['invoice_without_po']) ? 'Quotation' : 'Purchase order needed')
+                 . ": {$name}, {$div}";
         $sent = MhdMailer::sendRaw($to, $cc, $subject, $html, $files);
+
+        // And the division's own WhatsApp group, when it has one (OHB Cards).
+        if (!empty($dept['whatsapp_group']) && $files) {
+            require_once __DIR__ . '/ProductionWhatsApp.php';
+            $sent['whatsapp'] = ProductionWhatsApp::post($req, $dept, $files[0]['path'],
+                ProductionWhatsApp::quoteCaption($req, $dept, $price, $num), $files[0]['name']);
+        }
 
         foreach ($files as $f) { @unlink($f['path']); }
         return $sent;
