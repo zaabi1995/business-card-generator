@@ -44,6 +44,32 @@ class CardFulfilment
         }
     }
 
+    /**
+     * The division whose approver runs this flow for a request: the request's
+     * own division, else the tenant's only division when exactly one has an
+     * approver (OHB). MHD has many divisions, so a request without one is never
+     * guessed onto one. Null when the flow does not apply.
+     */
+    public static function approvalDepartment(array $request): ?array
+    {
+        $db  = Database::getInstance();
+        $cid = (string)($request['company_id'] ?? '');
+        if (!empty($request['department_id'])) {
+            $dept = $db->fetchOne(
+                "SELECT * FROM departments WHERE id = :did AND company_id = :cid",
+                ['did' => $request['department_id'], 'cid' => $cid]);
+            return ($dept && !empty($dept['responsible_email'])) ? $dept : null;
+        }
+        $rows = $db->fetchAll(
+            "SELECT * FROM departments WHERE company_id = :cid AND deleted_at IS NULL
+                AND responsible_email IS NOT NULL AND responsible_email <> ''",
+            ['cid' => $cid]);
+        $all = (int)($db->fetchOne(
+            "SELECT COUNT(*) n FROM departments WHERE company_id = :cid AND deleted_at IS NULL",
+            ['cid' => $cid])['n'] ?? 0);
+        return (count($rows) === 1 && $all === 1) ? $rows[0] : null;
+    }
+
     private static function afterApprovalLocked(array $request, array $chain, string $actor): array
     {
         require_once __DIR__ . '/CardPrice.php';
@@ -52,11 +78,16 @@ class CardFulfilment
         $db  = Database::getInstance();
         $out = ['quoted' => false, 'order' => null, 'quote' => null, 'error' => null];
 
-        $dept = !empty($request['department_id']) ? $db->fetchOne(
-            "SELECT * FROM departments WHERE id = :did AND company_id = :cid",
-            ['did' => $request['department_id'], 'cid' => $request['company_id']]) : null;
-        if (!$dept || empty($dept['responsible_email'])) {
+        $dept = self::approvalDepartment($request);
+        if (!$dept) {
             return $out;   // not a division that runs this flow
+        }
+        if (empty($request['department_id'])) {
+            // Single-division tenant (OHB): its portal has no division picker,
+            // so the request arrives without one. Record the division it ran on.
+            $db->query("UPDATE card_requests SET department_id = ? WHERE id = ?",
+                       [$dept['id'], $request['id']]);
+            $request['department_id'] = $dept['id'];
         }
 
         // If this job is not the one moving out of submitted, another caller is
@@ -155,6 +186,21 @@ class CardFulfilment
             $out['quoted'] = true;
             $out['quote']  = $quote['data']['quoteNumber'] ?? null;
             CardJobMailer::sendQuotation($request, $dept, $price, $quote['data'] ?? []);
+
+            // A division that is invoiced on approval (OHB) sends no purchase
+            // order, so there is nothing to wait for: go straight on to the
+            // invoice, the documents email and production. The Cardify order
+            // number stands in for the PO reference.
+            if (!empty($dept['invoice_without_po'])) {
+                $ref = (string)($request['job_ref'] ?: $orderId);
+                if (CardJob::transition((string)$request['id'], 'po_received', [
+                        'actor' => 'invoice_without_po', 'po' => $ref])) {
+                    $db->query("UPDATE card_requests SET po_number = ? WHERE id = ?", [$ref, $request['id']]);
+                    $job = $db->fetchOne("SELECT * FROM card_requests WHERE id = :id", ['id' => $request['id']]);
+                    CardJob::unlock((string)$request['id']);
+                    $out['invoiced'] = self::afterPo($job ?: $request, true);
+                }
+            }
         } else {
             // No quote, so no quotation. Asking for a purchase order against a
             // quote that does not exist is worse than saying nothing: the reply

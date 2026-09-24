@@ -62,10 +62,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     // A division with an approver runs the MHD flow, which
                     // prices the job and raises the quotation itself, so the
                     // chain must not quote as well.
-                    $approvingDept = !empty($request['department_id']) ? $db->fetchOne(
-                        "SELECT id, responsible_email FROM departments WHERE id = :did AND company_id = :cid",
-                        ['did' => $request['department_id'], 'cid' => $companyId]) : null;
-                    $mhdFlow = $approvingDept && !empty($approvingDept['responsible_email']);
+                    // Includes a single-division tenant (OHB) whose requests
+                    // carry no division: CardFulfilment picks its only one.
+                    require_once INCLUDES_DIR . '/CardFulfilment.php';
+                    $mhdFlow = CardFulfilment::approvalDepartment($request + ['company_id' => $companyId]) !== null;
 
                     $approval = approveRequestChain($request, $company, $companyId, $_SESSION['user_id'] ?? null, $mhdFlow, $mhdFlow);
 
