@@ -15,6 +15,7 @@ Usage:
       --width-mm 92 --height-mm 57 --out <card.pdf>
 """
 import argparse
+import io
 import sys
 import fitz  # PyMuPDF
 
@@ -39,7 +40,14 @@ def main() -> int:
             continue
         page = doc.new_page(width=w, height=h)
         try:
-            page.insert_image(fitz.Rect(0, 0, w, h), filename=img, keep_proportion=False)
+            if img.lower().endswith('.webp'):
+                # The card renderer saves WebP, which PyMuPDF cannot read.
+                from PIL import Image
+                buf = io.BytesIO()
+                Image.open(img).convert('RGB').save(buf, 'PNG')
+                page.insert_image(fitz.Rect(0, 0, w, h), stream=buf.getvalue(), keep_proportion=False)
+            else:
+                page.insert_image(fitz.Rect(0, 0, w, h), filename=img, keep_proportion=False)
         except Exception as e:  # noqa: BLE001
             sys.stderr.write('raster-card-pdf: insert_image failed for %s: %s\n' % (img, e))
             return 2

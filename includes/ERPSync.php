@@ -847,7 +847,10 @@ class ERPSync {
             'unitCost'      => (float)($args['unitCost'] ?? 0),
             'printReadyUrl' => (string)($args['printReadyUrl'] ?? ''),
             'poNumber'      => (string)($args['poNumber'] ?? ''),
-            'productName'   => (string)($args['productName'] ?? ''),
+            // The ERP links the line by ID only (see ERP_PRODUCT_ID); without it
+            // every Send to Print fails "not linked to a canonical ERP product".
+            'productId'     => (string)($args['productId'] ?? self::ERP_PRODUCT_ID),
+            'productName'   => (string)($args['productName'] ?? self::ERP_PRODUCT_NAME),
             'notes'         => (string)($args['notes'] ?? ''),
         ];
 
