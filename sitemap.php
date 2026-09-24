@@ -141,6 +141,7 @@ function smRouteDate($path) {
         'glossary/digital-business-card'        => 'glossary/term.php',
         'glossary/apple-wallet-pass'            => 'glossary/term.php',
         'glossary/contactless-business-card'    => 'glossary/term.php',
+        'print-shops/register'                  => 'printshop/register.php',
     ];
     $roots = [];
     if (isset($RENDERER[$rel])) $roots[] = __DIR__ . '/' . $RENDERER[$rel];
@@ -448,6 +449,13 @@ if ($part === 'static') {
         ['/compare/cardify-vs-blinq',                   'monthly', '0.85'],
         ['/compare/cardify-vs-hihello',                 'monthly', '0.85'],
         ['/compare/best-digital-business-card-gcc',     'monthly', '0.85'],
+        ['/compare/cardify-vs-linktree',                'monthly', '0.85'],
+        // r26 (24 Sep 2026): high-intent landing pages, each with a
+        // body-translated /ar/ twin declared in ArTwins::PATHS, so smUrl()
+        // emits the reciprocal pair on its own.
+        ['/apple-wallet-business-card',                 'monthly', '0.85'],
+        ['/qr-code-business-card',                      'monthly', '0.85'],
+        ['/business-cards-for-companies',               'monthly', '0.9'],
         // r328: glossary. Definition pages are what win a featured snippet
         // and what an AI overview cites, which is where "what is a digital
         // business card" actually resolves.
@@ -648,6 +656,9 @@ if ($part === 'static') {
     // public profile URLs yet; adding the listing hub + per-shop
     // slug pages whenever they ship is tracked in action 788.
     smUrlBilingual('/print-shops', smRouteDate('/print-shops'), 'weekly', '0.8');
+    // r26: the print-shop sign-up page is public, self-canonical, has an
+    // /ar/ twin in ArTwins::PATHS, and was listed in no sitemap at all.
+    smUrlBilingual('/print-shops/register', smRouteDate('/print-shops/register'), 'monthly', '0.6');
     // Per-shop detail URLs (/print-shops/{slug}) are not yet built; the
     // /print-shops index page is the only public surface. Skip emitting
     // detail URLs so Google doesn't crawl them as 404s.

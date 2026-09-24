@@ -51,6 +51,7 @@ elseif (!empty($minimalFooter)):
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex flex-col sm:flex-row justify-between items-center gap-2 text-sm text-gray-500">
             <p><?= htmlspecialchars(t('footer.minimal_copyright', ['year' => date('Y'), 'brand' => $bn])) ?><?php if ($freshIso): ?> <span class="text-gray-400"><?= htmlspecialchars(t('footer.last_updated', ['date' => $freshDisplay])) ?></span><?php endif; ?></p>
             <div class="flex items-center gap-5">
+                <a href="https://bhd.om/" class="hover:text-gray-700"><?= htmlspecialchars(t('footer.part_of_group')) ?></a>
                 <a href="<?= $footLink('privacy') ?>" class="hover:text-gray-700"><?= htmlspecialchars(t('footer.minimal_privacy')) ?></a>
                 <a href="<?= $footLink('terms') ?>" class="hover:text-gray-700"><?= htmlspecialchars(t('footer.minimal_terms')) ?></a>
                 <a href="<?= $footLink('contact') ?>" class="hover:text-gray-700"><?= htmlspecialchars(t('footer.minimal_contact')) ?></a>
@@ -82,6 +83,9 @@ elseif (!empty($minimalFooter)):
                         <li><a href="<?= $footLink('digital-business-card') ?>" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_digital_card')) ?></a></li>
                         <li><a href="<?= $footLink('nfc-business-card') ?>" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_nfc_card')) ?></a></li>
                         <li><a href="<?= $footLink('virtual-business-card') ?>" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_virtual_card')) ?></a></li>
+                        <li><a href="<?= $footLink('apple-wallet-business-card') ?>" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_apple_wallet')) ?></a></li>
+                        <li><a href="<?= $footLink('qr-code-business-card') ?>" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_qr_card')) ?></a></li>
+                        <li><a href="<?= $footLink('business-cards-for-companies') ?>" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_companies')) ?></a></li>
                         <li><a href="<?= $footLink('compare') ?>" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_compare')) ?></a></li>
                         <li><a href="<?= $footLink('glossary') ?>" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_glossary')) ?></a></li>
                     </ul>
@@ -143,6 +147,7 @@ elseif (!empty($minimalFooter)):
             <p class="pt-6 border-t border-gray-800 text-xs text-gray-500 leading-relaxed"><?= htmlspecialchars(Seo::groupDisambiguation()) ?></p>
             <div class="pt-6 flex flex-col sm:flex-row justify-between items-center gap-4 text-sm text-gray-500">
                 <p><?= htmlspecialchars(t('footer.copyright', ['year' => date('Y'), 'brand' => $bn])) ?></p>
+                <p><a href="https://bhd.om/" class="hover:text-white transition-colors"><?= htmlspecialchars(t('footer.part_of_group')) ?></a></p>
                 <p><?= htmlspecialchars(t('footer.made_oman')) ?></p>
                 <?php if ($freshIso): ?>
                 <p><time datetime="<?= htmlspecialchars($freshIso) ?>"><?= htmlspecialchars(t('footer.last_updated', ['date' => $freshDisplay])) ?></time></p>

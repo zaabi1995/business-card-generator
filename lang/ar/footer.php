@@ -36,6 +36,10 @@ return [
     'link_nfc_card'    => 'بطاقات NFC',
     'link_virtual_card' => 'البطاقات الافتراضية',
     'link_compare'     => 'مقارنة المنصات',
+    'link_apple_wallet' => 'بطاقة أعمال في Apple Wallet',
+    'link_qr_card'     => 'بطاقة أعمال برمز QR',
+    'link_companies'   => 'بطاقات للشركات',
+    'part_of_group'    => 'جزء من مجموعة BHD',
     'link_glossary'    => 'المصطلحات',
 
     // للقطاعات

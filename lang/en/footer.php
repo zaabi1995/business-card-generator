@@ -36,6 +36,10 @@ return [
     'link_nfc_card'    => 'NFC business card',
     'link_virtual_card' => 'Virtual business card',
     'link_compare'     => 'Compare platforms',
+    'link_apple_wallet' => 'Apple Wallet business card',
+    'link_qr_card'     => 'QR code business card',
+    'link_companies'   => 'Cards for companies',
+    'part_of_group'    => 'Part of BHD Group',
     'link_glossary'    => 'Glossary',
 
     // Industries

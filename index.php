@@ -1373,6 +1373,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 <p class="text-gray-500 text-sm">
                     <?= htmlspecialchars(t('footer.copyright', ['year' => date('Y'), 'brand' => $brandName])) ?>
                 </p>
+                <p class="text-gray-500 text-sm"><a href="https://bhd.om/" class="hover:text-white transition-colors"><?= htmlspecialchars(t('footer.part_of_group')) ?></a></p>
                 <div class="flex items-center gap-6 text-sm text-gray-500">
                     <span class="flex items-center gap-2">
                         <i class="fa-solid fa-globe"></i>

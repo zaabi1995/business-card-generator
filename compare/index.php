@@ -13,7 +13,7 @@ require_once INCLUDES_DIR . '/Seo.php';
 $brandName = defined('SITE_NAME') ? SITE_NAME : 'Cardify';
 
 $pageTitle       = 'Compare Digital Business Card Platforms';
-$pageDescription = 'Honest, sourced comparisons of Cardify against Popl, Blinq and HiHello, plus a roundup of the best digital business card for a team in Oman and the GCC. Every competitor fact is dated and linked to its source.';
+$pageDescription = 'Honest, sourced comparisons of Cardify against Popl, Blinq, HiHello and Linktree, plus a roundup of the best digital business card for a team in Oman and the GCC. Every competitor fact is dated and linked to its source.';
 $canonicalUrl    = 'https://cardify.om/compare';
 
 $showNavigation = true;
@@ -25,6 +25,8 @@ $pages = [
      'Blinq charges per user per month with a five-card minimum on teams, and advertises SSO and SOC 2 Type II that Cardify has no answer to.'],
     ['cardify-vs-hihello', 'Cardify vs HiHello',
      'HiHello bands its Business plan at 5 to 100 users and pushes larger teams to a custom quote. Strong on enrichment and SSO.'],
+    ['cardify-vs-linktree', 'Cardify vs Linktree',
+     'Linktree is a link-in-bio page for creators, with paid selling and social tools. Cardify is a company business card that saves as a contact. Also in Arabic.'],
     ['best-digital-business-card-gcc', 'Best digital business card in Oman and the GCC',
      'All four platforms, organised by the question you are actually asking, including the cases where you should buy a competitor.'],
 ];
