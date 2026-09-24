@@ -117,7 +117,7 @@ class DeliverySignature
         $e    = fn($v) => htmlspecialchars((string)$v, ENT_QUOTES);
         $ref  = (string)($job['job_ref'] ?? '');
         $name = trim((string)($job['name_en'] ?? '')) ?: 'the employee';
-        $div  = (string)($dept['name'] ?? 'MHD');
+        $div  = (string)($dept['name'] ?? 'your team');
 
         $html = '<div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#222;line-height:1.6">'
               . '<p><strong>' . $e($div) . '</strong> accepted the delivery note for <strong>'

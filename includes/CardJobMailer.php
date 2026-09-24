@@ -63,7 +63,7 @@ class CardJobMailer
             return ['ok' => false, 'error' => 'division has nobody to write to', 'recipients' => []];
         }
         $name = trim((string)($req['name_en'] ?? '')) ?: trim((string)($req['name_ar'] ?? '')) ?: 'An employee';
-        $div  = (string)($dept['name'] ?? 'MHD');
+        $div  = (string)($dept['name'] ?? 'your team');
         $ref  = (string)($req['job_ref'] ?? '');
 
         $slug   = (string)($req['company_slug'] ?? 'mhd');
@@ -166,7 +166,7 @@ class CardJobMailer
         }
         $e    = fn($v) => htmlspecialchars((string)$v, ENT_QUOTES);
         $name = trim((string)($req['name_en'] ?? '')) ?: trim((string)($req['name_ar'] ?? '')) ?: 'the employee';
-        $div  = (string)($dept['name'] ?? 'MHD');
+        $div  = (string)($dept['name'] ?? 'your team');
         $ref  = (string)($req['job_ref'] ?? '');
         $num  = trim((string)($erp['quoteNumber'] ?? ''));
         $id   = trim((string)($erp['quoteId'] ?? ''));
@@ -257,7 +257,7 @@ class CardJobMailer
         }
         $e    = fn($v) => htmlspecialchars((string)$v, ENT_QUOTES);
         $name = trim((string)($req['name_en'] ?? '')) ?: trim((string)($req['name_ar'] ?? '')) ?: 'the employee';
-        $div  = (string)($dept['name'] ?? 'MHD');
+        $div  = (string)($dept['name'] ?? 'your team');
         $ref  = (string)($req['job_ref'] ?? '');
         $po   = trim((string)($erp['po'] ?? ''));
         $inv  = trim((string)($erp['invoiceNumber'] ?? ''));
@@ -325,7 +325,7 @@ class CardJobMailer
         }
         $e    = fn($v) => htmlspecialchars((string)$v, ENT_QUOTES);
         $name = trim((string)($req['name_en'] ?? '')) ?: trim((string)($req['name_ar'] ?? '')) ?: 'employee';
-        $div  = (string)($dept['name'] ?? 'MHD');
+        $div  = (string)($dept['name'] ?? 'your team');
         $ref  = (string)($req['job_ref'] ?? '');
         $qty  = (int)($req['quantity_ordered'] ?? 0);
         $po   = trim((string)($req['po_number'] ?? ''));
@@ -403,7 +403,7 @@ class CardJobMailer
         }
         $e    = fn($v) => htmlspecialchars((string)$v, ENT_QUOTES);
         $name = trim((string)($req['name_en'] ?? '')) ?: trim((string)($req['name_ar'] ?? '')) ?: 'the employee';
-        $div  = (string)($dept['name'] ?? 'MHD');
+        $div  = (string)($dept['name'] ?? 'your team');
         $ref  = (string)($req['job_ref'] ?? '');
 
         $html = '<div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#222;line-height:1.6">'
@@ -422,7 +422,7 @@ class CardJobMailer
     public static function sendInvoiceHeldInternal(array $req, array $dept, string $reason, string $po = ''): void
     {
         $e    = fn($v) => htmlspecialchars((string)$v, ENT_QUOTES);
-        $div  = (string)($dept['name'] ?? 'MHD');
+        $div  = (string)($dept['name'] ?? 'your team');
         $ref  = (string)($req['job_ref'] ?? '');
         $po   = $po !== '' ? $po : (string)($req['po_number'] ?? '');
         // Same job ref, so it threads with the rest.
@@ -450,7 +450,7 @@ class CardJobMailer
     {
         $e    = fn($v) => htmlspecialchars((string)$v, ENT_QUOTES);
         $name = trim((string)($req['name_en'] ?? '')) ?: trim((string)($req['name_ar'] ?? '')) ?: 'an employee';
-        $div  = (string)($dept['name'] ?? 'MHD');
+        $div  = (string)($dept['name'] ?? 'your team');
         $ref  = (string)($req['job_ref'] ?? '');
 
         $html = '<div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#222;line-height:1.6">'

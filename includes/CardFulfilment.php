@@ -148,7 +148,10 @@ class CardFulfilment
         } else {
             $db->insert('print_orders', $fields + [
                 'company_id'   => $request['company_id'],
-                'order_number' => $request['job_ref'] ?: ('MHD-' . substr((string)$request['id'], 0, 6)),
+                // The tenant's own ref (OHB-..., MHD-...), never another client's name.
+                'order_number' => $request['job_ref'] ?: CardJob::mintRef((string)$request['id'],
+                    (string)($db->fetchOne("SELECT slug FROM companies WHERE id = :c",
+                        ['c' => $request['company_id']])['slug'] ?? 'MHD')),
                 'status'       => 'pending',
             ]);
             $orderId = (int)$db->getConnection()->lastInsertId();
