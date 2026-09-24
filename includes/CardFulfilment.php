@@ -342,18 +342,88 @@ class CardFulfilment
             'include_qr'       => $wantQr,
             'qr_force_allowed' => $wantQr,
         ]);
-        if (empty($pdf['success'])) {
-            return ['ok' => false, 'error' => 'render: ' . ($pdf['error'] ?? 'unknown')];
+        $sheets = 0;
+        if (!empty($pdf['success'])) {
+            // Ali, 17 Sep 2026: production want it on A4. Both sides at exact size
+            // on one sheet with crop marks, so what is measured on the sheet is what
+            // prints. If the imposition fails, the press-size file still goes: a
+            // printable card beats no card.
+            $sheet = self::a4Sheet((string)$pdf['path'], $job, $dept);
+            $file  = $sheet ?: (string)$pdf['path'];
+        } else {
+            // A template imported from an image (OHB) has no vector source, so
+            // the print render fails. Impose the saved card render 10-up on A4
+            // instead, the same sheet card-sheet.php gives the admin.
+            $sheet = self::rasterSheet($employeeId, (string)($job['company_id'] ?? ''));
+            if (!$sheet) {
+                return ['ok' => false, 'error' => 'render: ' . ($pdf['error'] ?? 'unknown') . '; no raster card either'];
+            }
+            $file   = $sheet;
+            $sheets = (int)ceil(max(1, (int)($job['quantity_ordered'] ?? 0)) / 10);
         }
+        $send = CardJobMailer::sendToProduction($job, $dept, $file);
 
-        // Ali, 17 Sep 2026: production want it on A4. Both sides at exact size
-        // on one sheet with crop marks, so what is measured on the sheet is what
-        // prints. If the imposition fails, the press-size file still goes: a
-        // printable card beats no card.
-        $sheet = self::a4Sheet((string)$pdf['path'], $job, $dept);
-        $send  = CardJobMailer::sendToProduction($job, $dept, $sheet ?: (string)$pdf['path']);
+        // Ali, 24 Sep 2026: and post it to the production WhatsApp group.
+        require_once __DIR__ . '/ProductionWhatsApp.php';
+        $wa = ProductionWhatsApp::post($job, $dept, $file, ProductionWhatsApp::caption($job, $dept, $sheets));
+        $send['whatsapp'] = $wa;
+        // The group post counts as reaching production when the email did not.
+        if (empty($send['ok']) && !empty($wa['ok'])) { $send['ok'] = true; }
+
         if ($sheet) { @unlink($sheet); }
         return $send;
+    }
+
+    /**
+     * 10-up A4 cutting sheet (front page, back page) from the employee's saved
+     * card render. Null if there is no render or the imposition fails.
+     */
+    public static function rasterSheet(string $employeeId, string $companyId): ?string
+    {
+        $db  = Database::getInstance();
+        $row = $db->fetchOne(
+            "SELECT front_file_path, back_file_path FROM generated_cards
+              WHERE employee_id = :e AND front_file_path IS NOT NULL AND front_file_path <> ''
+              ORDER BY generated_at DESC LIMIT 1", ['e' => $employeeId]);
+        if (!$row) { return null; }
+        $dir   = function_exists('getCompanyCardsDir') ? getCompanyCardsDir($companyId)
+                                                        : BASE_DIR . '/uploads/companies/' . $companyId . '/cards';
+        $front = $dir . '/' . basename((string)$row['front_file_path']);
+        $back  = !empty($row['back_file_path']) ? $dir . '/' . basename((string)$row['back_file_path']) : '';
+        if (!is_file($front)) { return null; }
+
+        $wMm = 85.0; $hMm = 55.0;
+        $tpl = $db->fetchOne(
+            "SELECT settings_json FROM templates WHERE company_id = :c AND deleted_at IS NULL AND side = 'front'
+              ORDER BY has_vector_source DESC, created_at DESC LIMIT 1", ['c' => $companyId]);
+        $set = $tpl ? (json_decode((string)($tpl['settings_json'] ?? ''), true) ?: []) : [];
+        if ((float)($set['customWidth'] ?? 0) > 0 && (float)($set['customHeight'] ?? 0) > 0) {
+            $unit = strtolower((string)($set['customUnit'] ?? 'mm'));
+            $k    = $unit === 'pt' ? 25.4 / 72.0 : ($unit === 'in' ? 25.4 : 1.0);
+            $wMm  = (float)$set['customWidth'] * $k;
+            $hMm  = (float)$set['customHeight'] * $k;
+        }
+
+        $tmp  = sys_get_temp_dir() . '/rastersheet-' . bin2hex(random_bytes(6));
+        $card = $tmp . '-card.pdf';
+        $out  = $tmp . '-A4.pdf';
+        $py   = trim((string)@shell_exec('command -v python3 2>/dev/null')) ?: 'python3';
+        exec(escapeshellarg($py) . ' ' . escapeshellarg(BASE_DIR . '/scripts/raster-card-pdf.py')
+             . ' --front ' . escapeshellarg($front) . ($back !== '' ? ' --back ' . escapeshellarg($back) : '')
+             . ' --width-mm ' . escapeshellarg((string)round($wMm, 3))
+             . ' --height-mm ' . escapeshellarg((string)round($hMm, 3))
+             . ' --out ' . escapeshellarg($card) . ' 2>&1', $o1, $rc1);
+        if ($rc1 !== 0 || !is_file($card)) { error_log('[raster sheet] card: ' . implode(' ', $o1)); return null; }
+        exec('timeout 60 ' . escapeshellarg($py) . ' ' . escapeshellarg(BASE_DIR . '/scripts/imposition-vector.py')
+             . ' --card ' . escapeshellarg($card) . ' --paper A4 --rows 5 --cols 2 --margin-mm 5'
+             . ' --all-pages --reg-marks --sheet-bg auto --trim-inset-mm 1.0'
+             . ' --out ' . escapeshellarg($out) . ' 2>&1', $o2, $rc2);
+        @unlink($card);
+        if ($rc2 !== 0 || !is_file($out) || filesize($out) < 1024) {
+            error_log('[raster sheet] impose: ' . implode(' ', $o2));
+            return null;
+        }
+        return $out;
     }
 
     /** Lay the card out on A4 for the press. Returns null if it cannot. */
