@@ -176,9 +176,13 @@ if ($view === 'company' && $slug) {
     $where = ['1=1'];
     $params = [];
     if ($q !== '' && mb_strlen($q) >= 2) {
-        $where[] = '(name_en LIKE ? OR name_ar LIKE ?)';
-        $params[] = '%' . $q . '%';
-        $params[] = '%' . $q . '%';
+        $like = '%' . $q . '%';
+        $crClause = ($db->columnExists('om_companies', 'cr_number')) ? ' OR cr_number = ?' : '';
+        $where[] = '(name_en LIKE ? OR name_ar LIKE ? OR summary_en LIKE ? OR summary_ar LIKE ?' . $crClause . ')';
+        array_push($params, $like, $like, $like, $like);
+        if ($crClause !== '') {
+            $params[] = preg_replace('/\D+/', '', $q) ?: $q;
+        }
     }
     if ($filterSector !== '' && isset($SECTORS[$filterSector])) {
         $where[] = 'sector = ?';
@@ -597,6 +601,12 @@ function escq($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
                         <?= escq(t('companies.profile_correction')) ?>
                     </a>
                 </p>
+                <?php if (!empty($company['cr_number'])): ?>
+                    <p class="mt-3 text-sm text-gray-800">
+                        <?= $isAr ? 'رقم السجل التجاري' : 'Commercial registration' ?>:
+                        <span class="font-mono"><?= escq($company['cr_number']) ?></span>
+                    </p>
+                <?php endif; ?>
                 <?php if (!empty($company['website'])): ?>
                     <p class="mt-3">
                         <a href="<?= escq($company['website']) ?>" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 text-blue-700 hover:text-blue-800 font-medium">
