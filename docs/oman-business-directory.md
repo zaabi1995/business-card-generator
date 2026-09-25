@@ -29,7 +29,7 @@ FU-884 quoted OMR 500.000 for the field set:
 
 | Source | Result |
 |---|---|
-| business.gov.om | `robots.txt` is `User-agent: *` / `Disallow: /`. Homepage is a redirect shell. No public API was found. Not crawled. |
+| business.gov.om | Public establishment search is `/portal/searchEstablishments`. A BotDetect CAPTCHA sits in front of it. `execution=e1s1` is a live session key, not a stable API. Admins use `/admin/business-gov-lookup.php` and type the CAPTCHA themselves. No bulk crawl. |
 | tejarah.gov.om | Public ministry site. No company-registry dump or documented lookup API on the public pages. Not used as a registry. |
 | Cardify `om_companies` | Usable as the existing company-level index. It is not an official commercial register. |
 
