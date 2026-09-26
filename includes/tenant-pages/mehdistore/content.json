@@ -1,0 +1,171 @@
+{
+  "_about": "Data for https://mehdistore.cardify.om/main (Mehdi Store bag QR). Edit values here, then commit + deploy-cardify.sh. Links copied verbatim from Mehdi Store's own QR Tiger pages (qr1.be/AXAA), verified 27 Sep 2026. Every url must start with https://.",
+  "brand": {
+    "name_ar": "مخزن مهدي",
+    "name_en": "Mehdi Store",
+    "legal_en": "Mehdi Store LLC",
+    "founded": 1948
+  },
+  "whatsapp": {
+    "number": "96899093315",
+    "url": "https://api.whatsapp.com/send?phone=96899093315"
+  },
+  "socials": [
+    {
+      "type": "instagram",
+      "label_ar": "إنستغرام",
+      "label_en": "Instagram",
+      "handle": "@mehdistore.om",
+      "url": "https://www.instagram.com/mehdistore.om/"
+    },
+    {
+      "type": "x",
+      "label_ar": "إكس",
+      "label_en": "X",
+      "handle": "@Mehdistore_om",
+      "url": "https://x.com/Mehdistore_om"
+    }
+  ],
+  "branch_groups": [
+    {
+      "title_ar": "مسقط",
+      "title_en": "Muscat",
+      "branches": [
+        {
+          "name_ar": "مطرح",
+          "name_en": "Muttrah",
+          "map": "https://www.google.com/maps/place/Mehdi+Store+%D9%85%D8%AE%D8%B2%D9%86+%D9%85%D9%87%D8%AF%D9%8A+%D9%84%D8%A8%D9%8A%D8%B9+%D8%A7%D9%84%D8%A7%D9%82%D9%85%D8%B4%D8%A9%E2%80%AD/@23.6199776,58.5639959,18z/data=!4m5!3m4!1s0x0:0x57be530bb7262810!8m2!3d23.6202694!4d58.5638653"
+        },
+        {
+          "name_ar": "روي",
+          "name_en": "Ruwi",
+          "map": "https://www.google.com/maps/place/Mehdi+Store+Ruwi/@23.593432,58.5425577,18z/data=!4m5!3m4!1s0x3e91f9dae14f4013:0xc511fff3343d7373!8m2!3d23.5934751!4d58.5446526"
+        },
+        {
+          "name_ar": "القرم",
+          "name_en": "Qurum",
+          "map": "https://www.google.com/maps/place/Mehdi+Store+Qurum+%D9%85%D8%AE%D8%B2%D9%86+%D9%85%D9%87%D8%AF%D9%8A+%D9%84%D9%84%D8%A7%D9%82%D9%85%D8%B4%D8%A9%E2%80%AD/@23.611576,58.4948153,18z/data=!4m5!3m4!1s0x3e91f8eddb038f39:0xbfcf2353269ec7d!8m2!3d23.6124363!4d58.4958487"
+        },
+        {
+          "name_ar": "بوشر",
+          "name_en": "Bausher",
+          "venue_ar": "مول عُمان",
+          "venue_en": "Mall of Oman",
+          "map": "https://www.google.com.om/maps/place/Mall+of+Oman/@23.571984,58.403092,17z/data=!3m1!4b1!4m5!3m4!1s0x3e91ff327b1f7805:0x3bd6e5d4ee9a798a!8m2!3d23.571984!4d58.4052807?hl=en"
+        },
+        {
+          "name_ar": "الغبرة",
+          "name_en": "Ghubrah",
+          "map": "https://www.google.com/maps/place/Mehdi+Store+Gubrah/@23.5891559,58.4020965,14z/data=!4m5!3m4!1s0x0:0xe96e57fe2f6cf915!8m2!3d23.5924058!4d58.4036162"
+        },
+        {
+          "name_ar": "الخوض",
+          "name_en": "Al Khoud",
+          "map": "https://www.google.com/maps/place/Mehdi+Al+Khoud+Store+%D9%85%D8%AE%D8%B2%D9%86+%D9%85%D9%87%D8%AF%D9%8A+-+%D8%A7%D9%84%D8%AE%D9%88%D8%B6%E2%80%AD/@23.634199,58.1744348,12z/data=!4m5!3m4!1s0x0:0x7e86edec31633edf!8m2!3d23.6300458!4d58.1977386"
+        },
+        {
+          "name_ar": "المعبيلة",
+          "name_en": "Al Mabelah",
+          "venue_ar": "مول مسقط",
+          "venue_en": "Mall of Muscat",
+          "map": "https://www.google.com/maps/place/Mall+of+Muscat/@23.6453963,58.1461423,17z/data=!3m1!4b1!4m5!3m4!1s0x3e8de481eb8502c1:0xd612a71cacb86461!8m2!3d23.6453963!4d58.148331"
+        },
+        {
+          "name_ar": "السيب",
+          "name_en": "Seeb",
+          "map": "https://www.google.com/maps/place/Mehdi+Seeb+Store/@23.6651267,58.1953857,13z/data=!4m5!3m4!1s0x0:0xc41cb45bebba91fd!8m2!3d23.6777596!4d58.1895442"
+        },
+        {
+          "name_ar": "العامرات",
+          "name_en": "Al Amerat",
+          "map": "https://www.google.com.om/maps/place/MEHDI+STORES/@23.5249908,58.5081788,17z/data=!4m5!3m4!1s0x3e91fbb2f706c1dd:0xca4ec738175a1c35!8m2!3d23.5251959!4d58.5060204?hl=en"
+        }
+      ]
+    },
+    {
+      "title_ar": "خارج مسقط",
+      "title_en": "Outside Muscat",
+      "branches": [
+        {
+          "name_ar": "بركاء",
+          "name_en": "Barka",
+          "map": "https://goo.gl/maps/uuvJJMcxVBprhnnA6"
+        },
+        {
+          "name_ar": "نزوى",
+          "name_en": "Nizwa",
+          "venue_ar": "نزوى جراند مول",
+          "venue_en": "Nizwa Grand Mall",
+          "map": "https://www.google.com.om/maps/place/%D9%86%D8%B2%D9%88%D9%89+%D8%AC%D8%B1%D8%A7%D9%86%D8%AF+%D9%85%D9%88%D9%84%E2%80%AD/@22.8712675,57.535446,17z/data=!3m1!4b1!4m5!3m4!1s0x3e8efa336b5b98ab:0x76db27ae6ef07f20!8m2!3d22.8712675!4d57.5376347?hl=en"
+        },
+        {
+          "name_ar": "صحار",
+          "name_en": "Sohar",
+          "venue_ar": "سفير مول",
+          "venue_en": "Safeer Mall",
+          "map": "https://www.google.com.om/maps/place/%D8%B3%D9%81%D9%8A%D8%B1+%D9%85%D9%88%D9%84+Safeer+Mall+Sohar%E2%80%AD/@24.1946715,56.831807,10z/data=!4m5!3m4!1s0x3e8b451c6ee63069:0x22d8d722272d6452!8m2!3d24.3615776!4d56.7105051?hl=en"
+        }
+      ]
+    }
+  ],
+  "brands": [
+    {
+      "name_ar": "زي يونيفورم",
+      "name_en": "ZY Uniform",
+      "kind_ar": "الأزياء الموحدة",
+      "kind_en": "Uniforms",
+      "icon": "shirt",
+      "links": [
+        {
+          "type": "instagram",
+          "handle": "@zyuniform",
+          "url": "https://www.instagram.com/zyuniform/"
+        }
+      ],
+      "branches": [
+        {
+          "name_ar": "بوليفارد بوتيك مول",
+          "name_en": "Boulevard Boutique Mall",
+          "area_ar": "القرم",
+          "area_en": "Qurum",
+          "map": "https://www.google.com/maps/place/Boulevard+Boutique+Mall/@23.6124218,58.4645024,15z/data=!4m5!3m4!1s0x0:0x2f493ec7f0182487!8m2!3d23.6124218!4d58.4645024?hl=en"
+        }
+      ]
+    },
+    {
+      "name_ar": "قماش من مهدي",
+      "name_en": "Qumash by Mehdi",
+      "kind_ar": "الأقمشة",
+      "kind_en": "Fabrics",
+      "icon": "scissors",
+      "links": [
+        {
+          "type": "whatsapp",
+          "number": "96892081409",
+          "url": "https://api.whatsapp.com/send?phone=96892081409"
+        },
+        {
+          "type": "instagram",
+          "handle": "@qumashbymehdi",
+          "url": "https://www.instagram.com/qumashbymehdi/"
+        }
+      ],
+      "branches": [
+        {
+          "name_ar": "بوليفارد بوتيك مول",
+          "name_en": "Boulevard Boutique Mall",
+          "area_ar": "القرم",
+          "area_en": "Qurum",
+          "map": "https://www.google.com/maps/place/Boulevard+Boutique+Mall/@23.6124218,58.4645024,15z/data=!4m5!3m4!1s0x0:0x2f493ec7f0182487!8m2!3d23.6124218!4d58.4645024?hl=en"
+        },
+        {
+          "name_ar": "مول عُمان",
+          "name_en": "Mall of Oman",
+          "area_ar": "بوشر",
+          "area_en": "Bausher",
+          "map": "https://www.google.com/maps/place/Mall+of+Oman/@23.5719987,58.403092,17z"
+        }
+      ]
+    }
+  ]
+}

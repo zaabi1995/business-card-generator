@@ -65,6 +65,15 @@ if (!file_exists($configFile)) {
 
 require_once $configFile;
 
+// Hand-built tenant pages (includes/tenant-pages/<slug>/<page>.php), e.g. the
+// Mehdi Store bag QR at mehdistore.cardify.om/main. Checked before the tenant
+// DB lookup so a printed URL survives a suspended company row. A subdomain with
+// no page directory returns straight away, which is every other tenant.
+if (file_exists(__DIR__ . '/includes/TenantPages.php')) {
+    require_once __DIR__ . '/includes/TenantPages.php';
+    TenantPages::dispatch();
+}
+
 // Tenant subdomain check (e.g. ohb.cardify.om).
 // Convention across all tenants:
 //   <slug>.cardify.om/        -> portal.php  (employee Self-Service request form)
