@@ -416,7 +416,13 @@ require_once INCLUDES_DIR . '/JsonLd.php';
     $position2 = trim((string)$position2);
     $position = trim((string)$position);
     if ($position2 !== '' && $position2 !== $position) {
-        $position = $position === '' ? $position2 : $position . ' · ' . $position2;
+        // A second line that CONTINUES the title (the print card wraps a long
+        // title, e.g. "Head of Government Relations" / "& External Affairs")
+        // joins with a space; a true subtitle (sector, division) keeps the dot.
+        // Decided on the English line so the Arabic follows the same choice.
+        $en2 = ltrim((string)($employee['position_en_2'] ?? ''));
+        $continues = (bool) preg_match('/^(&|and\b)/i', $en2);
+        $position = $position === '' ? $position2 : $position . ($continues ? ' ' : ' · ') . $position2;
     }
     $companyName = CardSections::tColumn($company, 'name', $locale);
     // Company name has no *_l3 column; use the employee's company_l3 for the 3rd language.
