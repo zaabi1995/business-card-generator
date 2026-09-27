@@ -870,7 +870,11 @@ def _draw_arabic_htmlbox(page, text, font_name, font_buf, x_pt, y_pt, w_pt,
         except Exception:
             meas = font_size * len(text) * 0.55
     line_h = font_size * 1.7
-    top = by - font_size * 0.16   # nudge so glyph-top lands at the em-square top
+    # Headroom: insert_htmlbox CLIPS glyphs above its rect, which cut the top of
+    # the hamza on أ/إ (read as a madda). Raise the rect by `pad` and push the
+    # text back down with the same padding-top, so the baseline does not move.
+    pad = font_size * 0.6
+    top = by - font_size * 0.16 - pad   # nudge so glyph-top lands at the em-square top
     css = ("@font-face{font-family:CF;src:url('%s');}"
            "*{font-family:CF;margin:0;padding:0;line-height:1.05;}" % (safe + '.ttf'))
     # insert_htmlbox right-aligns RTL text to the box's RIGHT edge (it ignores
@@ -890,8 +894,9 @@ def _draw_arabic_htmlbox(page, text, font_name, font_buf, x_pt, y_pt, w_pt,
     box_right = text_right + font_size * 0.50   # +0.44fs corrects rightmost-glyph side bearing (HB advance vs MuPDF ink edge); 0.06 keeps last glyph from clipping
     left = box_right - (meas + font_size * 0.6)  # extra room is empty space on the left
     div = ('<div dir="rtl" style="font-size:%.2fpt;color:%s;text-align:right;'
-           'white-space:nowrap;">%s</div>' % (font_size, color_hex, _html.escape(text)))
-    rect = fitz.Rect(left, top, box_right, top + line_h)
+           'white-space:nowrap;padding-top:%.2fpt;">%s</div>'
+           % (font_size, color_hex, pad, _html.escape(text)))
+    rect = fitz.Rect(left, top, box_right, top + line_h + pad)
     try:
         page.insert_htmlbox(rect, div, css=css, archive=arch, scale_low=1.0)
     except Exception:

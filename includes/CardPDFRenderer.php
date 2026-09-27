@@ -16,6 +16,8 @@ class CardPDFRenderer
      * v2 (20 May 2026): Arabic reshaper + bidi visual-order shaping.
      * v3 (20 May 2026): isolated Arabic forms drawn via nominal glyph
      *   (fixes decorative-tail isolated heh, matches HarfBuzz/browser).
+     * v28 (27 Sep 2026): Arabic htmlbox gets headroom (padding-top) so the
+     *   hamza on أ/إ is no longer clipped by the box top.
      * v15 (10 Jun 2026): Latin right/center alignment anchors from the
      *   field right edge (x_pt + w_pt), matching Fabric + Arabic htmlbox
      *   (rule 47 convention: x = bbox LEFT edge).
@@ -24,7 +26,7 @@ class CardPDFRenderer
      *   matches Fabric to 0.02% of the card) but a static's stored `width` is
      *   not reliably its ink width, and Fabric zeroes it for statics anyway.
      */
-    const RENDERER_VERSION = 27;
+    const RENDERER_VERSION = 28;
 
     /**
      * Render or fetch a cached vector PDF for one employee.
