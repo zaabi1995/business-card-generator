@@ -76,6 +76,16 @@ class VCF {
             $employee['position_en'] ?? null, $employee['position'] ?? null, $employee['title'] ?? null
         );
         $titleAr = self::firstNonEmpty($employee['position_ar'] ?? null);
+        // A long title the print card wraps onto a second line ("Head of
+        // Government Relations" / "& External Affairs") is ONE title: rejoin it.
+        // Only a continuation line (starts with & or and) is joined; a real
+        // subtitle (division, sector) stays off TITLE. English decides for both.
+        $title2 = trim((string)($employee['position_en_2'] ?? ''));
+        if ($title !== '' && $title2 !== '' && preg_match('/^(&|and\b)/i', $title2)) {
+            $title .= ' ' . $title2;
+            $titleAr2 = trim((string)($employee['position_ar_2'] ?? ''));
+            if ($titleAr !== '' && $titleAr2 !== '') $titleAr .= ' ' . $titleAr2;
+        }
         $titlePrimary = $title !== '' ? $title : $titleAr;
         if ($titlePrimary !== '') {
             $lines[] = 'TITLE:' . self::escape($titlePrimary);
@@ -105,6 +115,12 @@ class VCF {
         $__samePhoneMobile = ($__pDig !== '' && $__pDig === $__mDig);
         if ($phone !== '' && !$__samePhoneMobile) {
             $lines[] = 'TEL;TYPE=WORK,VOICE:' . self::escape($phone);
+        }
+        // Second office line (MHD cards carry two office numbers).
+        $phone2 = self::firstNonEmpty($employee['phone_2'] ?? null);
+        $__p2Dig = preg_replace('/\D+/', '', $phone2);
+        if ($phone2 !== '' && $__p2Dig !== $__pDig && $__p2Dig !== $__mDig) {
+            $lines[] = 'TEL;TYPE=WORK,VOICE:' . self::escape($phone2);
         }
         if ($mobile !== '') {
             $lines[] = 'TEL;TYPE=CELL,VOICE:' . self::escape($mobile);
