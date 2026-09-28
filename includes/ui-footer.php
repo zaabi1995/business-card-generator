@@ -43,11 +43,25 @@ $freshDateTime = StructuredDataDate::fromUnixTimestamp(Freshness::timestamp());
 
 // Pages that own their footer entirely (e.g. branded company portals) can
 // set $skipFooter = true; before including this file. Scripts below still run.
+if (empty($skipFooter)): ?>
+    <style>
+    /* Footer links were 19 to 20px tall. Give each a 44px tap target, and on
+       phones lay the link columns out two across so the taller rows do not
+       double the footer's length. !important: the prebuilt Tailwind file
+       marks utilities important. */
+    .cardify-site-footer a { display: inline-flex; align-items: center; min-height: 44px; }
+    .cardify-site-footer li + li { margin-top: 0 !important; }
+    @media (max-width: 767px) {
+        .cardify-site-footer > div > .grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; column-gap: 1rem !important; }
+        .cardify-site-footer > div > .grid > div:first-child { grid-column: 1 / -1; }
+    }
+    </style>
+<?php endif;
 if (!empty($skipFooter)):
     // intentionally render nothing here
 elseif (!empty($minimalFooter)):
 ?>
-    <footer class="border-t border-gray-200 bg-white mt-auto">
+    <footer class="cardify-site-footer border-t border-gray-200 bg-white mt-auto">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex flex-col sm:flex-row justify-between items-center gap-2 text-sm text-gray-500">
             <p><?= htmlspecialchars(t('footer.minimal_copyright', ['year' => date('Y'), 'brand' => $bn])) ?><?php if ($freshIso): ?> <span class="text-gray-400"><?= htmlspecialchars(t('footer.last_updated', ['date' => $freshDisplay])) ?></span><?php endif; ?></p>
             <div class="flex items-center gap-5">
@@ -59,7 +73,7 @@ elseif (!empty($minimalFooter)):
         </div>
     </footer>
 <?php else: /* every page that does not own its footer ($skipFooter) or opt into $minimalFooter gets the full footer, including sub-directory index.php pages like /industries */ ?>
-    <footer class="bg-gray-900 text-white mt-auto">
+    <footer class="cardify-site-footer bg-gray-900 text-white mt-auto">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
             <div class="grid md:grid-cols-2 lg:grid-cols-6 gap-8 mb-8">
                 <div class="lg:col-span-1">

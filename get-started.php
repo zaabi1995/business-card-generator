@@ -73,11 +73,11 @@ $gs = static fn(string $k): string => htmlspecialchars(t('getstarted.' . $k));
             </a>
             <div class="flex items-center gap-4 text-sm">
                 <a href="<?= htmlspecialchars(($isAr ? '/get-started' : '/ar/get-started') . $campaignQs) ?>"
-                   class="font-semibold text-gray-600 hover:text-gray-900" hreflang="<?= $isAr ? 'en' : 'ar' ?>">
+                   class="inline-flex items-center font-semibold text-gray-600 hover:text-gray-900" style="min-height:44px" hreflang="<?= $isAr ? 'en' : 'ar' ?>">
                     <?= $isAr ? 'English' : 'العربية' ?>
                 </a>
                 <span class="hidden sm:inline text-gray-400"><?= $gs('hero_signin') ?></span>
-                <a href="<?= $base ?>login.php" class="font-semibold text-blue-700 hover:text-blue-800"><?= $gs('hero_signin_cta') ?></a>
+                <a href="<?= $base ?>login.php" class="inline-flex items-center font-semibold text-blue-700 hover:text-blue-800" style="min-height:44px"><?= $gs('hero_signin_cta') ?></a>
             </div>
         </div>
     </div>

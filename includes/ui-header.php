@@ -613,7 +613,9 @@ if (!function_exists('renderNavigation')) {
 
                     <!-- CTA Buttons -->
                     <div class="flex items-center gap-3">
-                        <?php include __DIR__ . '/currency-selector.php'; ?>
+                        <?php /* Phones: the currency picker lives in the menu, so the bar
+                                 holds only logo, language and menu. */ ?>
+                        <div class="hidden sm:block"><?php include __DIR__ . '/currency-selector.php'; ?></div>
                         <?php if ($isLoggedIn): ?>
                             <!-- Logged In State -->
                             <span class="hidden sm:inline-flex items-center gap-2 px-4 py-2 text-gray-700 font-medium">
@@ -655,6 +657,10 @@ if (!function_exists('renderNavigation')) {
                     <?php foreach ($navLinks as $link): ?>
                     <a href="<?php echo htmlspecialchars($link['href']); ?>" class="block py-2 text-gray-600 hover:text-blue-600 font-medium"><?php echo htmlspecialchars($link['label']); ?></a>
                     <?php endforeach; ?>
+                    <div class="sm:hidden flex items-center justify-between gap-3 py-1">
+                        <span class="text-gray-600 font-medium"><?= htmlspecialchars(t('currency.aria_select') !== 'currency.aria_select' ? t('currency.aria_select') : 'Currency') ?></span>
+                        <?php include __DIR__ . '/currency-selector.php'; ?>
+                    </div>
                     <hr class="border-gray-200">
                     <?php if ($isLoggedIn): ?>
                         <div class="py-2 text-gray-700 font-medium flex items-center gap-2">
