@@ -259,14 +259,14 @@ require_once INCLUDES_DIR . '/ui-header.php';
                            class="w-full px-4 py-3 text-base rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                     <p id="otp_company_hint" class="text-xs text-gray-500 mt-1"><?= htmlspecialchars(t('register_otp.company_hint')) ?></p>
                 </div>
-                <button type="submit" class="w-full min-h-[48px] py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg">
+                <button type="submit" class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg" style="min-height:48px">
                     <?= htmlspecialchars(t('register_otp.send_code')) ?>
                 </button>
                 <p class="text-sm text-center text-gray-500 mt-2">
-                    <a href="<?= htmlspecialchars(getBasePath()) ?>login.php" class="inline-flex items-center min-h-[44px] text-blue-600 hover:underline"><?= htmlspecialchars(t('register_otp.have_account')) ?></a>
+                    <a href="<?= htmlspecialchars(getBasePath()) ?>login.php" class="inline-flex items-center text-blue-600 hover:underline" style="min-height:44px"><?= htmlspecialchars(t('register_otp.have_account')) ?></a>
                 </p>
                 <p class="text-xs text-center text-gray-500">
-                    <a href="<?= htmlspecialchars(getBasePath()) ?>company/register.php" class="inline-flex items-center min-h-[44px] text-gray-600 underline hover:text-gray-900"><?= htmlspecialchars(t('register_otp.full_form_link')) ?></a>
+                    <a href="<?= htmlspecialchars(getBasePath()) ?>company/register.php" class="inline-flex items-center text-gray-600 underline hover:text-gray-900" style="min-height:44px"><?= htmlspecialchars(t('register_otp.full_form_link')) ?></a>
                 </p>
             </form>
         <?php else: /* verify */ ?>
@@ -286,7 +286,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                            class="w-full tracking-widest text-center text-2xl font-mono px-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                     <p class="text-xs text-gray-500 mt-2 text-center"><?= htmlspecialchars(t('register_otp.delay_note')) ?></p>
                 </div>
-                <button type="submit" class="w-full min-h-[48px] py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg">
+                <button type="submit" class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg" style="min-height:48px">
                     <?= htmlspecialchars(t('register_otp.verify_cta')) ?>
                 </button>
             </form>
@@ -294,10 +294,10 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 <form method="POST">
                     <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
                     <input type="hidden" name="action" value="resend">
-                    <p id="otp_resend_wait" class="text-sm text-gray-500 min-h-[44px] flex items-center justify-center"<?= $resendIn > 0 ? '' : ' hidden' ?>>
+                    <p id="otp_resend_wait" class="text-sm text-gray-500 text-center" style="min-height:44px;line-height:44px;margin:0"<?= $resendIn > 0 ? '' : ' hidden' ?>>
                         <span><?= htmlspecialchars(t('register_otp.resend_in')) ?> <span dir="ltr"><span id="otp_resend_seconds"><?= (int) $resendIn ?></span><?= htmlspecialchars(t('register_otp.seconds_suffix')) ?></span></span>
                     </p>
-                    <button type="submit" id="otp_resend_btn" class="w-full min-h-[48px] py-3 border border-gray-300 text-gray-900 font-semibold rounded-lg hover:bg-gray-50"<?= $resendIn > 0 ? ' hidden' : '' ?>>
+                    <button type="submit" id="otp_resend_btn" class="w-full py-3 border border-gray-300 text-gray-900 font-semibold rounded-lg hover:bg-gray-50" style="min-height:48px"<?= $resendIn > 0 ? ' hidden' : '' ?>>
                         <?= htmlspecialchars(t('register_otp.resend')) ?>
                     </button>
                 </form>
@@ -305,13 +305,13 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 <form method="POST" id="otp_email_form"<?= $resendIn > 0 ? ' hidden' : '' ?>>
                     <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
                     <input type="hidden" name="action" value="resend_email">
-                    <button type="submit" class="min-h-[44px] text-sm text-blue-600 hover:underline"><?= htmlspecialchars(t('register_otp.send_by_email')) ?></button>
+                    <button type="submit" class="text-sm text-blue-600 hover:underline" style="min-height:44px"><?= htmlspecialchars(t('register_otp.send_by_email')) ?></button>
                 </form>
                 <?php endif; ?>
                 <form method="POST">
                     <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
                     <input type="hidden" name="action" value="change">
-                    <button type="submit" class="min-h-[44px] text-sm text-gray-600 underline hover:text-gray-900"><?= htmlspecialchars(t('register_otp.change_identifier')) ?></button>
+                    <button type="submit" class="text-sm text-gray-600 underline hover:text-gray-900" style="min-height:44px"><?= htmlspecialchars(t('register_otp.change_identifier')) ?></button>
                 </form>
             </div>
             <script<?= cspNonceAttr() ?>>
