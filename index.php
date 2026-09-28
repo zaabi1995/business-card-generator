@@ -1223,24 +1223,28 @@ require_once INCLUDES_DIR . '/ui-header.php';
              would not exist. */ ?>
     <style>
     @media (max-width: 1023px) {
-        #landing-hero { padding-top: 5.5rem; padding-bottom: 2.5rem; }
-        #landing-hero .hero-grid { display: flex; flex-direction: column; align-items: stretch; gap: 0; }
+        /* !important because the prebuilt Tailwind file marks every utility
+           important, so plain overrides of gap-8, mb-6, text-4xl lose. */
+        #landing-hero { padding-top: 5.25rem !important; padding-bottom: 2rem !important; }
+        #landing-hero .hero-grid { display: flex; flex-direction: column; align-items: stretch; gap: 0 !important; }
         #landing-hero .hero-reserve { display: contents; }
-        #landing-hero .hero-badge { order: 1; align-self: center; margin-bottom: 1rem; }
-        #landing-hero .hero-h1 { order: 2; font-size: 2rem; line-height: 1.15; margin-bottom: 1.25rem; }
+        #landing-hero .hero-badge { order: 1; align-self: center; margin-bottom: 0.75rem !important; }
+        #landing-hero .hero-h1 { order: 2; font-size: 1.75rem !important; line-height: 1.15 !important; margin-bottom: 0.875rem !important; }
         #landing-hero .hero-h1-line3 { display: none; }
-        #landing-hero .hero-product { order: 3; margin-top: 0; margin-bottom: 1.25rem; }
-        #landing-hero .hero-product > div { gap: 0.75rem; }
-        #landing-hero .hero-sub { order: 4; font-size: 1rem; margin-bottom: 1.25rem; }
-        #landing-hero .hero-ctas { order: 5; gap: 0.75rem; margin-bottom: 1.5rem; }
-        #landing-hero .hero-ctas a { padding-top: 0.875rem; padding-bottom: 0.875rem; font-size: 1.0625rem; }
+        #landing-hero .hero-product { order: 3; width: 100%; margin-top: 0 !important; margin-bottom: 0.875rem !important; }
+        #landing-hero .hero-product > div { gap: 0.5rem !important; }
+        #landing-hero #cardify-hero-card { max-width: 290px; }
+        #landing-hero #cardify-hero-flip { padding-top: 0.375rem !important; padding-bottom: 0.375rem !important; }
+        #landing-hero .hero-sub { order: 4; font-size: 0.975rem !important; line-height: 1.5 !important; margin-bottom: 1rem !important; }
+        #landing-hero .hero-ctas { order: 5; gap: 0.75rem !important; margin-bottom: 1.5rem !important; }
+        #landing-hero .hero-ctas a { padding-top: 0.875rem !important; padding-bottom: 0.875rem !important; font-size: 1.0625rem !important; }
         #landing-hero .hero-trust { order: 6; }
-        .landing-features-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem; }
-        .landing-features-grid > div { padding: 1rem; border-radius: 1rem; }
-        .landing-features-grid > div > div:first-child { width: 2.5rem; height: 2.5rem; margin-bottom: 0.75rem; }
-        .landing-features-grid > div > div:first-child i { font-size: 1.125rem; }
-        .landing-features-grid h3 { font-size: 0.9375rem; line-height: 1.3; margin-bottom: 0.375rem; }
-        .landing-features-grid p { font-size: 0.8125rem; line-height: 1.45; }
+        .landing-features-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 0.75rem !important; }
+        .landing-features-grid > div { padding: 1rem !important; border-radius: 1rem !important; }
+        .landing-features-grid > div > div.rounded-xl { width: 2.5rem !important; height: 2.5rem !important; margin-bottom: 0.75rem !important; }
+        .landing-features-grid > div > div.rounded-xl i { font-size: 1.125rem !important; }
+        .landing-features-grid h3 { font-size: 0.9375rem !important; line-height: 1.3 !important; margin-bottom: 0.375rem !important; }
+        .landing-features-grid p { font-size: 0.8125rem !important; line-height: 1.45 !important; }
     }
     .landing-sticky-cta { display: none; }
     @media (max-width: 767px) {
