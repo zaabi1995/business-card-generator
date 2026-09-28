@@ -12,8 +12,9 @@ return [
     // r6-66: the first 40 words must contain one sentence that says what this
     // is. Without it a model reading the hero learns the pitch and never the
     // category, the maker or the country.
-    'hero_subhead'     => 'Cardify is a bilingual digital and printed business card platform built by BHD Group (Bin Haider Darwish L.L.C.) in Muscat, Oman. Upload your roster, approve one template, and every employee gets a bilingual digital and printed card, delivered across Oman. ',
+    'hero_subhead'     => 'Upload your roster and approve one design. Every employee gets a bilingual digital and printed card. ',
     'hero_price_tag'   => 'From OMR :standard_price per 100 cards. Free to design and preview.',
+    'about_entity' => 'Cardify is a bilingual digital and printed business card platform built by BHD Group (Bin Haider Darwish L.L.C.) in Muscat, Oman.',
     'cta_start_free'   => 'Start free',
     'cta_request_demo' => 'Book a demo on WhatsApp',
 

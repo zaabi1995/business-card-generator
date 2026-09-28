@@ -469,21 +469,18 @@ $navLinks = [
 // Include Auth for navigation state
 require_once INCLUDES_DIR . '/Auth.php';
 
-// Hint the browser to start downloading the hero screenshot before the
-// stylesheet parse completes. Biggest measurable LCP win on /.
-$lcpImage = assetUrl('images/landing/light-dash.png');
 
 require_once INCLUDES_DIR . '/ui-header.php';
 ?>
 
     <!-- ========== HERO SECTION (Flowbite Style) ========== -->
-    <section class="hero-gradient pt-28 lg:pt-36 pb-16 lg:pb-24 overflow-hidden">
+    <section id="landing-hero" class="hero-gradient pt-28 lg:pt-36 pb-16 lg:pb-24 overflow-hidden">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="grid lg:grid-cols-12 gap-8 lg:gap-12 items-center hero-grid">
                 <!-- Left Content -->
                 <div class="lg:col-span-6 text-center lg:text-left hero-reserve">
                     <!-- Badge -->
-                    <div class="inline-flex items-center gap-2 py-1 pl-1 pr-4 mb-6 text-sm bg-white border border-gray-200 rounded-full shadow-sm">
+                    <div class="hero-badge inline-flex items-center gap-2 py-1 pl-1 pr-4 mb-6 text-sm bg-white border border-gray-200 rounded-full shadow-sm">
                         <span class="inline-flex items-center gap-1 bg-blue-50 text-blue-700 font-semibold text-xs px-3 py-1 rounded-full"><span>🇴🇲</span> <?= htmlspecialchars(t('landing.hero_badge_loc')) ?></span>
                         <span class="font-medium text-gray-700"><?= htmlspecialchars(t('landing.hero_badge_copy')) ?></span>
                     </div>
@@ -492,7 +489,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     <h1 class="hero-h1 text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-tight text-gray-900 mb-6">
                         <?= htmlspecialchars(t('landing.hero_h1_line1')) ?>
                         <span class="text-blue-600 block"><?= htmlspecialchars(t('landing.hero_h1_line2')) ?></span>
-                        <span class="text-gray-500 text-3xl sm:text-4xl lg:text-5xl"><?= htmlspecialchars(t('landing.hero_h1_line3')) ?></span>
+                        <span class="hero-h1-line3 text-gray-500 text-3xl sm:text-4xl lg:text-5xl"><?= htmlspecialchars(t('landing.hero_h1_line3')) ?></span>
                     </h1>
 
                     <!-- Subheadline -->
@@ -502,7 +499,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     </p>
 
                     <!-- CTA Buttons -->
-                    <div class="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start mb-10">
+                    <div class="hero-ctas flex flex-col sm:flex-row gap-4 justify-center lg:justify-start mb-10">
                         <a href="<?php echo getBasePath(); ?>company/register-otp.php" class="inline-flex items-center justify-center gap-2 px-7 py-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl shadow-lg shadow-blue-600/30 transition-all hover:shadow-xl hover:-translate-y-0.5 text-lg">
                             <?= htmlspecialchars(t('landing.cta_start_free')) ?>
                             <i class="fa-solid fa-arrow-right"></i>
@@ -563,7 +560,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                  * it is complete on its own. It is no longer hidden on mobile.
                  */
                 ?>
-                <div class="lg:col-span-6 relative mt-12 lg:mt-0">
+                <div class="hero-product lg:col-span-6 relative mt-12 lg:mt-0">
                     <div class="relative mx-auto w-full max-w-sm lg:max-w-md lg:h-[500px] flex flex-col items-center justify-center gap-5">
 
                         <div id="cardify-hero-card" class="cf-card w-full" role="img"
@@ -639,31 +636,66 @@ require_once INCLUDES_DIR . '/ui-header.php';
 
     <?php @include __DIR__ . '/views/partials/trust_logo_strip.php'; ?>
 
-    <!-- ========== VALUE PROPOSITION BANNER ========== -->
-    <section class="py-12 bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 text-white">
+    <!-- ========== HOW IT WORKS (Techwind Style) ========== -->
+    <section id="how-it-works" class="py-16 lg:py-24 bg-white">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="grid md:grid-cols-3 gap-8 text-center">
-                <div class="flex flex-col items-center">
-                    <div class="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center mb-4">
-                        <i class="fa-solid fa-palette text-2xl"></i>
+            <!-- Section Header -->
+            <div class="max-w-2xl mx-auto text-center mb-16">
+                <p class="text-sm font-semibold uppercase tracking-wider text-green-600 mb-3"><?= htmlspecialchars(t('landing.how_kicker')) ?></p>
+                <h2 class="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-gray-900 mb-4">
+                    <?= htmlspecialchars(t('landing.how_headline')) ?>
+                </h2>
+                <p class="text-lg text-gray-600">
+                    <?= htmlspecialchars(t('landing.how_subhead')) ?>
+                </p>
+            </div>
+
+            <!-- Steps -->
+            <div class="grid md:grid-cols-3 gap-8 lg:gap-12">
+                <!-- Step 1 -->
+                <div class="relative text-center group">
+                    <div class="w-20 h-20 rounded-full bg-blue-600 text-white text-3xl font-bold flex items-center justify-center mx-auto mb-6 shadow-xl shadow-blue-600/30 group-hover:scale-110 transition-transform">
+                        1
                     </div>
-                    <h2 class="text-lg font-bold mb-2"><?= htmlspecialchars(t('landing.vp_design_title')) ?></h2>
-                    <p class="text-blue-100 text-sm"><?= htmlspecialchars(t('landing.vp_design_body')) ?></p>
-                </div>
-                <div class="flex flex-col items-center">
-                    <div class="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center mb-4">
-                        <i class="fa-solid fa-print text-2xl"></i>
+                    <h3 class="text-xl font-bold text-gray-900 mb-3"><?= htmlspecialchars(t('landing.how_step1_title')) ?></h3>
+                    <p class="text-gray-600"><?= htmlspecialchars(t('landing.how_step1_body')) ?></p>
+
+                    <!-- Arrow (hidden on mobile) -->
+                    <div class="hidden md:block absolute top-10 left-full w-full h-0.5 bg-gray-200 -translate-x-1/2">
+                        <i class="fa-solid fa-chevron-right absolute right-0 -top-2 text-gray-300"></i>
                     </div>
-                    <h2 class="text-lg font-bold mb-2"><?= htmlspecialchars(t('landing.vp_print_title')) ?></h2>
-                    <p class="text-blue-100 text-sm"><?= htmlspecialchars(t('landing.vp_print_body')) ?></p>
                 </div>
-                <div class="flex flex-col items-center">
-                    <div class="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center mb-4">
-                        <i class="fa-solid fa-gift text-2xl"></i>
+
+                <!-- Step 2 -->
+                <div class="relative text-center group">
+                    <div class="w-20 h-20 rounded-full bg-amber-500 text-white text-3xl font-bold flex items-center justify-center mx-auto mb-6 shadow-xl shadow-amber-500/30 group-hover:scale-110 transition-transform">
+                        2
                     </div>
-                    <h2 class="text-lg font-bold mb-2"><?= htmlspecialchars(t('landing.vp_free_title')) ?></h2>
-                    <p class="text-blue-100 text-sm"><?= htmlspecialchars(t('landing.vp_free_body')) ?></p>
+                    <h3 class="text-xl font-bold text-gray-900 mb-3"><?= htmlspecialchars(t('landing.how_step2_title')) ?></h3>
+                    <p class="text-gray-600"><?= htmlspecialchars(t('landing.how_step2_body')) ?></p>
+
+                    <!-- Arrow (hidden on mobile) -->
+                    <div class="hidden md:block absolute top-10 left-full w-full h-0.5 bg-gray-200 -translate-x-1/2">
+                        <i class="fa-solid fa-chevron-right absolute right-0 -top-2 text-gray-300"></i>
+                    </div>
                 </div>
+
+                <!-- Step 3 -->
+                <div class="text-center group">
+                    <div class="w-20 h-20 rounded-full bg-green-500 text-white text-3xl font-bold flex items-center justify-center mx-auto mb-6 shadow-xl shadow-green-500/30 group-hover:scale-110 transition-transform">
+                        3
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-3"><?= htmlspecialchars(t('landing.how_step3_title')) ?></h3>
+                    <p class="text-gray-600"><?= htmlspecialchars(t('landing.how_step3_body')) ?></p>
+                </div>
+            </div>
+
+            <!-- CTA -->
+            <div class="text-center mt-16">
+                <a href="<?php echo getBasePath(); ?>company/register-otp.php" class="inline-flex items-center gap-2 px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl shadow-lg shadow-blue-600/30 transition-all text-lg">
+                    <?= htmlspecialchars(t('landing.how_cta')) ?>
+                    <i class="fa-solid fa-arrow-right"></i>
+                </a>
             </div>
         </div>
     </section>
@@ -683,7 +715,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
             </div>
 
             <!-- Features Grid -->
-            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div class="landing-features-grid grid md:grid-cols-2 lg:grid-cols-3 gap-8">
                 <!-- Feature 1 - Design Once -->
                 <div class="relative bg-white rounded-2xl p-8 shadow-lg shadow-gray-200/60 border border-gray-100 hover:shadow-xl transition-shadow group">
                     <div class="w-14 h-14 rounded-xl bg-blue-100 flex items-center justify-center mb-6 group-hover:bg-blue-600 transition-colors">
@@ -749,127 +781,6 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     <p class="text-gray-600 leading-relaxed">
                         <?= htmlspecialchars(t('landing.feat_portal_body')) ?>
                     </p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- ========== HOW IT WORKS (Techwind Style) ========== -->
-    <section id="how-it-works" class="py-16 lg:py-24 bg-white">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <!-- Section Header -->
-            <div class="max-w-2xl mx-auto text-center mb-16">
-                <p class="text-sm font-semibold uppercase tracking-wider text-green-600 mb-3"><?= htmlspecialchars(t('landing.how_kicker')) ?></p>
-                <h2 class="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-gray-900 mb-4">
-                    <?= htmlspecialchars(t('landing.how_headline')) ?>
-                </h2>
-                <p class="text-lg text-gray-600">
-                    <?= htmlspecialchars(t('landing.how_subhead')) ?>
-                </p>
-            </div>
-
-            <!-- Steps -->
-            <div class="grid md:grid-cols-3 gap-8 lg:gap-12">
-                <!-- Step 1 -->
-                <div class="relative text-center group">
-                    <div class="w-20 h-20 rounded-full bg-blue-600 text-white text-3xl font-bold flex items-center justify-center mx-auto mb-6 shadow-xl shadow-blue-600/30 group-hover:scale-110 transition-transform">
-                        1
-                    </div>
-                    <h3 class="text-xl font-bold text-gray-900 mb-3"><?= htmlspecialchars(t('landing.how_step1_title')) ?></h3>
-                    <p class="text-gray-600"><?= htmlspecialchars(t('landing.how_step1_body')) ?></p>
-
-                    <!-- Arrow (hidden on mobile) -->
-                    <div class="hidden md:block absolute top-10 left-full w-full h-0.5 bg-gray-200 -translate-x-1/2">
-                        <i class="fa-solid fa-chevron-right absolute right-0 -top-2 text-gray-300"></i>
-                    </div>
-                </div>
-
-                <!-- Step 2 -->
-                <div class="relative text-center group">
-                    <div class="w-20 h-20 rounded-full bg-amber-500 text-white text-3xl font-bold flex items-center justify-center mx-auto mb-6 shadow-xl shadow-amber-500/30 group-hover:scale-110 transition-transform">
-                        2
-                    </div>
-                    <h3 class="text-xl font-bold text-gray-900 mb-3"><?= htmlspecialchars(t('landing.how_step2_title')) ?></h3>
-                    <p class="text-gray-600"><?= htmlspecialchars(t('landing.how_step2_body')) ?></p>
-
-                    <!-- Arrow (hidden on mobile) -->
-                    <div class="hidden md:block absolute top-10 left-full w-full h-0.5 bg-gray-200 -translate-x-1/2">
-                        <i class="fa-solid fa-chevron-right absolute right-0 -top-2 text-gray-300"></i>
-                    </div>
-                </div>
-
-                <!-- Step 3 -->
-                <div class="text-center group">
-                    <div class="w-20 h-20 rounded-full bg-green-500 text-white text-3xl font-bold flex items-center justify-center mx-auto mb-6 shadow-xl shadow-green-500/30 group-hover:scale-110 transition-transform">
-                        3
-                    </div>
-                    <h3 class="text-xl font-bold text-gray-900 mb-3"><?= htmlspecialchars(t('landing.how_step3_title')) ?></h3>
-                    <p class="text-gray-600"><?= htmlspecialchars(t('landing.how_step3_body')) ?></p>
-                </div>
-            </div>
-
-            <!-- CTA -->
-            <div class="text-center mt-16">
-                <a href="<?php echo getBasePath(); ?>company/register-otp.php" class="inline-flex items-center gap-2 px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl shadow-lg shadow-blue-600/30 transition-all text-lg">
-                    <?= htmlspecialchars(t('landing.how_cta')) ?>
-                    <i class="fa-solid fa-arrow-right"></i>
-                </a>
-            </div>
-        </div>
-    </section>
-
-    <!-- ========== SCREENSHOT SECTION (Techwind Style) ========== -->
-    <section class="py-16 lg:py-24 bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 overflow-hidden">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="grid lg:grid-cols-2 gap-12 items-center">
-                <!-- Content -->
-                <div class="text-white">
-                    <!-- r28: white/80 on white/10 over this gradient measures 3.35:1 at the
-                         blue-600 end. Same shape as 27-54: dimmed white on a saturated ground. -->
-                    <span class="inline-flex items-center gap-2 py-1 px-3 mb-4 text-xs font-semibold text-white bg-white/20 rounded-full uppercase tracking-wide">
-                        <i class="fa-solid fa-desktop"></i>
-                        <?= htmlspecialchars(t('landing.dash_kicker')) ?>
-                    </span>
-                    <h2 class="text-3xl sm:text-4xl font-extrabold mb-6">
-                        <?= htmlspecialchars(t('landing.dash_headline')) ?>
-                    </h2>
-                    <p class="text-lg text-blue-100 mb-8 leading-relaxed">
-                        <?= htmlspecialchars(t('landing.dash_body')) ?>
-                    </p>
-                    
-                    <ul class="space-y-4 mb-8">
-                        <li class="flex items-start gap-3">
-                            <i class="fa-solid fa-circle-check text-green-400 mt-1"></i>
-                            <span class="text-blue-100"><?= htmlspecialchars(t('landing.dash_b1')) ?></span>
-                        </li>
-                        <li class="flex items-start gap-3">
-                            <i class="fa-solid fa-circle-check text-green-400 mt-1"></i>
-                            <span class="text-blue-100"><?= htmlspecialchars(t('landing.dash_b2')) ?></span>
-                        </li>
-                        <li class="flex items-start gap-3">
-                            <i class="fa-solid fa-circle-check text-green-400 mt-1"></i>
-                            <span class="text-blue-100"><?= htmlspecialchars(t('landing.dash_b3')) ?></span>
-                        </li>
-                        <li class="flex items-start gap-3">
-                            <i class="fa-solid fa-circle-check text-green-400 mt-1"></i>
-                            <span class="text-blue-100"><?= htmlspecialchars(t('landing.dash_b4')) ?></span>
-                        </li>
-                    </ul>
-
-                    <a href="<?php echo getBasePath(); ?>company/register-otp.php" class="inline-flex items-center gap-2 px-6 py-3 bg-white text-blue-600 font-semibold rounded-lg hover:bg-blue-50 transition-colors">
-                        <?= htmlspecialchars(t('landing.dash_cta')) ?>
-                        <i class="fa-solid fa-arrow-right"></i>
-                    </a>
-                </div>
-
-                <!-- Screenshot -->
-                <div class="relative">
-                    <div class="relative rounded-xl overflow-hidden shadow-2xl border-8 border-white/10">
-                        <img src="<?php echo assetUrl('images/landing/light-dash.png'); ?>" alt="Cardify Dashboard" class="w-full h-auto" width="1175" height="605" fetchpriority="high" decoding="async">
-                    </div>
-                    <!-- Decorative elements -->
-                    <div class="absolute -top-4 -right-4 w-24 h-24 bg-amber-400 rounded-full opacity-20 blur-xl"></div>
-                    <div class="absolute -bottom-8 -left-8 w-32 h-32 bg-green-400 rounded-full opacity-20 blur-xl"></div>
                 </div>
             </div>
         </div>
@@ -976,6 +887,9 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 </h2>
                 <p class="text-lg text-gray-600">
                     <?= htmlspecialchars(t('testimonials.subhead')) ?>
+                </p>
+                <p class="text-sm text-gray-500 mt-3">
+                    <?= htmlspecialchars(t('landing.about_entity')) ?>
                 </p>
             </div>
 
@@ -1259,7 +1173,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
     <?php endif; ?>
 
     <!-- ========== CTA SECTION (Flowbite Style) ========== -->
-    <section class="py-16 lg:py-24 bg-gradient-to-br from-blue-600 to-indigo-700">
+    <section id="landing-final-cta" class="py-16 lg:py-24 bg-gradient-to-br from-blue-600 to-indigo-700">
         <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <div class="inline-flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full text-white text-sm font-medium mb-6">
                 <span>🇴🇲</span>
@@ -1302,96 +1216,72 @@ require_once INCLUDES_DIR . '/ui-header.php';
         </div>
     </section>
 
-    <!-- ========== FOOTER ========== -->
-    <footer id="contact" class="bg-gray-900 text-white">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-            <div class="grid md:grid-cols-2 lg:grid-cols-5 gap-10 mb-12">
-                <!-- Brand -->
-                <div class="lg:col-span-1">
-                    <div class="flex items-center gap-3 mb-6">
-                        <img src="<?php echo assetUrl('images/logo-light.svg'); ?>" alt="<?php echo $brandName; ?>" class="h-10 w-auto">
-                    </div>
-                    <?php /* llm75-1: this blurb was hardcoded English and shipped inside a
-                             document whose html lang was ar, alone among its siblings, which
-                             all read from t('footer.*'). It now reads the SAME key
-                             includes/ui-footer.php renders on every other page, so the brand
-                             line has one source in both languages instead of a translated
-                             copy and an English one. */ ?>
-                    <p class="text-gray-400 mb-4 leading-relaxed text-sm">
-                        <?= htmlspecialchars(t('footer.tagline')) ?>
-                    </p>
-                    <div class="flex gap-3 mb-6">
-                        <a href="https://instagram.com/cardifyom" target="_blank" rel="noopener noreferrer" class="w-10 h-10 rounded-lg bg-gray-800 hover:bg-pink-600 flex items-center justify-center transition-colors" aria-label="Instagram">
-                            <i class="fa-brands fa-instagram"></i>
-                        </a>
-                    </div>
-                </div>
-
-                <!-- Product Links -->
-                <div>
-                    <h3 class="font-bold text-lg mb-6"><?= htmlspecialchars(t('footer.col_product')) ?></h3>
-                    <ul class="space-y-3">
-                        <li><a href="#features" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_features')) ?></a></li>
-                        <li><a href="#pricing" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_pricing')) ?></a></li>
-                        <li><a href="#resources" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_all_tools')) ?></a></li>
-                        <li><a href="<?= ArTwins::navLink('company/register-otp.php', getBasePath(), $_homeIsAr) ?>" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('header.get_started_free')) ?></a></li>
-                    </ul>
-                </div>
-
-                <!-- Free Tools -->
-                <div>
-                    <h3 class="font-bold text-lg mb-6"><?= htmlspecialchars(t('footer.col_free_tools')) ?></h3>
-                    <ul class="space-y-3">
-                        <li><a href="<?= ArTwins::navLink('tools/vcard-qr-generator', getBasePath(), $_homeIsAr) ?>" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_vcard_qr')) ?></a></li>
-                        <li><a href="<?= ArTwins::navLink('tools/email-signature-generator', getBasePath(), $_homeIsAr) ?>" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_email_sig')) ?></a></li>
-                        <li><a href="<?= ArTwins::navLink('tools/whatsapp-qr-generator', getBasePath(), $_homeIsAr) ?>" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_whatsapp_qr')) ?></a></li>
-                        <li><a href="<?= ArTwins::navLink('tools/nfc-business-card-guide', getBasePath(), $_homeIsAr) ?>" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_nfc_guide')) ?></a></li>
-                        <li><a href="<?= ArTwins::navLink('tools', getBasePath(), $_homeIsAr) ?>" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_all_tools')) ?></a></li>
-                    </ul>
-                </div>
-
-                <!-- Directory & Solutions -->
-                <div>
-                    <h3 class="font-bold text-lg mb-6"><?= htmlspecialchars(t('footer.col_directory')) ?></h3>
-                    <ul class="space-y-3">
-                        <li><a href="<?= ArTwins::navLink('oman-business-index', getBasePath(), $_homeIsAr) ?>" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_oman_index')) ?></a></li>
-                        <li><a href="<?= ArTwins::navLink('companies', getBasePath(), $_homeIsAr) ?>" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_browse_companies')) ?></a></li>
-                        <li><a href="<?= ArTwins::navLink('companies/sector/oil-gas', getBasePath(), $_homeIsAr) ?>" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_ind_oil')) ?></a></li>
-                        <li><a href="<?= ArTwins::navLink('companies/sector/construction', getBasePath(), $_homeIsAr) ?>" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_ind_construction')) ?></a></li>
-                        <li><a href="<?= ArTwins::navLink('companies/wilayat/muscat', getBasePath(), $_homeIsAr) ?>" class="text-gray-400 hover:text-white transition-colors">Muscat Companies</a></li>
-                        <li><a href="<?= ArTwins::navLink('solutions', getBasePath(), $_homeIsAr) ?>" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_solutions')) ?></a></li>
-                    </ul>
-                </div>
-
-                <!-- Company + Legal -->
-                <div>
-                    <h3 class="font-bold text-lg mb-6"><?= htmlspecialchars(t('footer.col_company')) ?></h3>
-                    <ul class="space-y-3">
-                        <li><a href="<?= ArTwins::navLink('about', getBasePath(), $_homeIsAr) ?>" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_about')) ?></a></li>
-                        <li><a href="<?= ArTwins::navLink('blog', getBasePath(), $_homeIsAr) ?>" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_blog')) ?></a></li>
-                        <li><a href="<?= ArTwins::navLink('careers', getBasePath(), $_homeIsAr) ?>" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_careers')) ?></a></li>
-                        <li><a href="<?= ArTwins::navLink('contact', getBasePath(), $_homeIsAr) ?>" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_contact')) ?></a></li>
-                        <li><a href="<?= ArTwins::navLink('privacy', getBasePath(), $_homeIsAr) ?>" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_privacy')) ?></a></li>
-                        <li><a href="<?= ArTwins::navLink('terms', getBasePath(), $_homeIsAr) ?>" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_terms')) ?></a></li>
-                    </ul>
-                </div>
-            </div>
-
-            <!-- Bottom Bar -->
-            <div class="pt-8 border-t border-gray-800 flex flex-col md:flex-row justify-between items-center gap-4">
-                <p class="text-gray-500 text-sm">
-                    <?= htmlspecialchars(t('footer.copyright', ['year' => date('Y'), 'brand' => $brandName])) ?>
-                </p>
-                <p class="text-gray-500 text-sm"><a href="https://bhd.om/" class="hover:text-white transition-colors"><?= htmlspecialchars(t('footer.part_of_group')) ?></a></p>
-                <div class="flex items-center gap-6 text-sm text-gray-500">
-                    <span class="flex items-center gap-2">
-                        <i class="fa-solid fa-globe"></i>
-                        <?= (function_exists('currentLocale') && currentLocale() === 'ar') ? 'العربية' : 'English (US)' ?>
-                    </span>
-                </div>
-            </div>
-        </div>
-    </footer>
+    <?php /* Mobile landing: product before prose, the Start free button
+             inside the first 812px, and a Start free bar that follows the
+             reader once the hero is gone. Plain CSS because the site ships a
+             prebuilt Tailwind file with no build step, so new utility classes
+             would not exist. */ ?>
+    <style>
+    @media (max-width: 1023px) {
+        #landing-hero { padding-top: 5.5rem; padding-bottom: 2.5rem; }
+        #landing-hero .hero-grid { display: flex; flex-direction: column; align-items: stretch; gap: 0; }
+        #landing-hero .hero-reserve { display: contents; }
+        #landing-hero .hero-badge { order: 1; align-self: center; margin-bottom: 1rem; }
+        #landing-hero .hero-h1 { order: 2; font-size: 2rem; line-height: 1.15; margin-bottom: 1.25rem; }
+        #landing-hero .hero-h1-line3 { display: none; }
+        #landing-hero .hero-product { order: 3; margin-top: 0; margin-bottom: 1.25rem; }
+        #landing-hero .hero-product > div { gap: 0.75rem; }
+        #landing-hero .hero-sub { order: 4; font-size: 1rem; margin-bottom: 1.25rem; }
+        #landing-hero .hero-ctas { order: 5; gap: 0.75rem; margin-bottom: 1.5rem; }
+        #landing-hero .hero-ctas a { padding-top: 0.875rem; padding-bottom: 0.875rem; font-size: 1.0625rem; }
+        #landing-hero .hero-trust { order: 6; }
+        .landing-features-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem; }
+        .landing-features-grid > div { padding: 1rem; border-radius: 1rem; }
+        .landing-features-grid > div > div:first-child { width: 2.5rem; height: 2.5rem; margin-bottom: 0.75rem; }
+        .landing-features-grid > div > div:first-child i { font-size: 1.125rem; }
+        .landing-features-grid h3 { font-size: 0.9375rem; line-height: 1.3; margin-bottom: 0.375rem; }
+        .landing-features-grid p { font-size: 0.8125rem; line-height: 1.45; }
+    }
+    .landing-sticky-cta { display: none; }
+    @media (max-width: 767px) {
+        .landing-sticky-cta {
+            display: block; position: fixed; left: 0; right: 0; bottom: 0; z-index: 40;
+            padding: 0.625rem 1rem calc(0.625rem + env(safe-area-inset-bottom));
+            background: rgba(255,255,255,0.96); border-top: 1px solid #e5e7eb;
+            box-shadow: 0 -6px 20px rgba(15,23,42,0.08);
+            transform: translateY(110%); transition: transform 0.25s cubic-bezier(0.23,1,0.32,1);
+        }
+        .landing-sticky-cta.is-visible { transform: translateY(0); }
+        .landing-sticky-cta a {
+            display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+            min-height: 48px; border-radius: 0.75rem;
+            font-weight: 600; font-size: 1rem; text-decoration: none;
+        }
+    }
+    @media (prefers-reduced-motion: reduce) { .landing-sticky-cta { transition: none; } }
+    </style>
+    <div class="landing-sticky-cta" id="landing-sticky-cta" aria-hidden="true">
+        <a href="<?php echo getBasePath(); ?>company/register-otp.php" tabindex="-1" class="bg-blue-600 hover:bg-blue-700 text-white"><?= htmlspecialchars(t('landing.cta_start_free')) ?> <i class="fa-solid fa-arrow-right rtl:fa-rotate-180" aria-hidden="true"></i></a>
+    </div>
+    <script<?= function_exists('cspNonceAttr') ? cspNonceAttr() : '' ?>>
+    (function () {
+        // Show the bar once the hero is off screen, hide it again over the
+        // final call to action (which carries the same button).
+        var bar = document.getElementById('landing-sticky-cta');
+        var hero = document.getElementById('landing-hero');
+        var fin = document.getElementById('landing-final-cta');
+        if (!bar || !hero || !('IntersectionObserver' in window)) return;
+        var heroOut = false, finIn = false;
+        function sync() {
+            var on = heroOut && !finIn;
+            bar.classList.toggle('is-visible', on);
+            bar.setAttribute('aria-hidden', on ? 'false' : 'true');
+            var a = bar.querySelector('a'); if (a) a.tabIndex = on ? 0 : -1;
+        }
+        new IntersectionObserver(function (e) { heroOut = !e[0].isIntersecting; sync(); }).observe(hero);
+        if (fin) new IntersectionObserver(function (e) { finIn = e[0].isIntersecting; sync(); }).observe(fin);
+    })();
+    </script>
 
     <!-- ========== SCRIPTS ========== -->
     <?php
