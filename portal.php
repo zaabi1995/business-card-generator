@@ -1391,7 +1391,7 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                         <?php endif; ?>
                         <div class="min-w-0">
                             <h1 class="text-lg font-bold text-gray-900 truncate"><?php echo htmlspecialchars($companyName); ?></h1>
-                            <p class="text-xs text-gray-500 leading-snug">
+                            <p class="text-xs text-gray-500" style="line-height:1.35">
                                 <?php if ($selectedDepartment): ?>
                                     <?php echo htmlspecialchars($selectedDepartment['name']); ?> - <?= htmlspecialchars(t('portal.business_card_portal')) ?>
                                 <?php else: ?>
