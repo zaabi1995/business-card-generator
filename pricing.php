@@ -80,6 +80,25 @@ $products = [
     .pr-feat { display: flex; align-items: flex-start; gap: .625rem; color: #374151; font-size: .95rem; padding: .375rem 0; }
     .pr-feat i { color: #15803d; margin-top: .25rem; flex-shrink: 0; }
     .pr-highlight { box-shadow: 0 20px 40px -12px rgba(124, 58, 237, .25); }
+    /* Segmented control + radio rows (invideo / Wolt pattern). With no JS
+       every panel shows, so nothing is ever unreachable. */
+    .pr-seg { display: flex; gap: 4px; padding: 4px; background: #e5e7eb; border-radius: 999px; max-width: 30rem; margin: 0 auto 2rem; }
+    .pr-seg button { flex: 1; min-height: 44px; border-radius: 999px; font-weight: 600; font-size: .9375rem; color: #374151; background: transparent; border: 0; cursor: pointer; padding: 0 .75rem; }
+    .pr-seg button[aria-selected="true"] { background: #fff; color: #111827; box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+    .pr-seg button:focus-visible { outline: 2px solid #009bc1; outline-offset: 2px; }
+    .pr-rows { max-width: 40rem; margin: 0 auto; display: grid; gap: .75rem; }
+    .pr-row { display: flex; align-items: center; gap: .875rem; background: #fff; border-radius: 1rem; padding: 1rem 1.125rem; box-shadow: inset 0 0 0 1px #e5e7eb; cursor: pointer; }
+    .pr-row:has(input:checked) { box-shadow: inset 0 0 0 2px #2563eb; }
+    .pr-row input { width: 1.25rem; height: 1.25rem; flex-shrink: 0; accent-color: #2563eb; }
+    .pr-row__text { flex: 1; min-width: 0; }
+    .pr-row__name { display: block; font-weight: 700; color: #111827; }
+    .pr-row__spec { display: block; font-size: .8125rem; color: #6b7280; line-height: 1.4; margin-top: 2px; }
+    .pr-row__price { text-align: end; flex-shrink: 0; }
+    .pr-row__price b { display: block; font-size: 1.125rem; color: #111827; font-weight: 800; white-space: nowrap; }
+    .pr-row__price small { font-size: .75rem; color: #6b7280; white-space: nowrap; }
+    .pr-orderbar { position: sticky; bottom: 0; z-index: 20; max-width: 40rem; margin: 1rem auto 0; padding: .75rem 0 calc(.75rem + env(safe-area-inset-bottom)); background: linear-gradient(to top, #f9fafb 70%, rgba(249,250,251,0)); }
+    .pr-orderbar a { display: flex; align-items: center; justify-content: space-between; gap: .75rem; min-height: 52px; padding: 0 1.25rem; border-radius: .875rem; font-weight: 700; text-decoration: none; }
+    [hidden] { display: none !important; }
 </style>
 
 <main class="bg-gray-50 pt-24 pb-16">
@@ -89,11 +108,17 @@ $products = [
         <header class="text-center mb-12">
             <p class="text-sm font-semibold uppercase tracking-wider text-blue-600 mb-3"><?= htmlspecialchars(t('pricing.hero_eyebrow')) ?></p>
             <h1 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-gray-900 mb-4"><?= htmlspecialchars(t('pricing.hero_heading')) ?></h1>
-            <p class="text-lg text-gray-600 max-w-2xl mx-auto"><?= htmlspecialchars(t('pricing.hero_sub')) ?></p>
+            <p class="text-base text-gray-600 max-w-2xl mx-auto"><?= htmlspecialchars(t('pricing.hero_sub')) ?></p>
         </header>
 
+        <div class="pr-seg" role="tablist" aria-label="<?= htmlspecialchars(t('pricing.tabs_label')) ?>" id="pr-seg">
+            <button type="button" role="tab" id="pr-tab-platform" aria-controls="pr-panel-platform" aria-selected="false"><?= htmlspecialchars(t('pricing.tab_platform')) ?></button>
+            <button type="button" role="tab" id="pr-tab-prints" aria-controls="pr-panel-prints" aria-selected="true"><?= htmlspecialchars(t('pricing.tab_prints')) ?></button>
+            <button type="button" role="tab" id="pr-tab-nfc" aria-controls="pr-panel-nfc" aria-selected="false"><?= htmlspecialchars(t('pricing.tab_nfc')) ?></button>
+        </div>
+
         <!-- Platform (free forever) -->
-        <section class="mb-16">
+        <section class="mb-16" id="pr-panel-platform" role="tabpanel" aria-labelledby="pr-tab-platform">
             <article class="relative bg-white rounded-3xl px-8 pt-12 pb-8 lg:px-10 lg:pt-14 lg:pb-10 ring-1 ring-gray-200/70 shadow-xl" style="padding-top:3.5rem">
                 <!-- Inline top/<side> styles defend against Tailwind JIT not
                      having -top-3 / left-8 / pt-12 in the pre-built CSS. Without
@@ -125,42 +150,88 @@ $products = [
             </article>
         </section>
 
-        <!-- Print products catalogue -->
-        <section class="mb-16">
-            <header class="text-center mb-10">
-                <p class="text-sm font-semibold uppercase tracking-wider text-blue-600 mb-3"><?= htmlspecialchars(t('pricing.products_eyebrow')) ?></p>
-                <h2 class="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-3"><?= htmlspecialchars(t('pricing.products_h')) ?></h2>
-                <p class="text-lg text-gray-600 max-w-2xl mx-auto"><?= htmlspecialchars(t('pricing.products_b')) ?></p>
+        <!-- Printed cards: one radio row per card type, price on the right -->
+        <?php
+        $printKeys = ['standard', 'premium', 'luxury'];
+        $row = static function (string $key, string $group, bool $checked): void {
+            $name  = t('pricing.product_' . $key . '_name');
+            $price = t('pricing.product_' . $key . '_price');
+            $unit  = t('pricing.product_' . $key . '_unit'); ?>
+            <label class="pr-row">
+                <input type="radio" name="<?= htmlspecialchars($group) ?>" value="<?= htmlspecialchars($key) ?>"<?= $checked ? ' checked' : '' ?>
+                       data-name="<?= htmlspecialchars($name) ?>" data-price="<?= htmlspecialchars($price) ?>" data-unit="<?= htmlspecialchars($unit) ?>">
+                <span class="pr-row__text">
+                    <span class="pr-row__name"><?= htmlspecialchars($name) ?></span>
+                    <span class="pr-row__spec"><?= htmlspecialchars(t('pricing.product_' . $key . '_spec')) ?></span>
+                </span>
+                <span class="pr-row__price"><b><?= htmlspecialchars($price) ?></b><small><?= htmlspecialchars($unit) ?></small></span>
+            </label>
+        <?php }; ?>
+        <section class="mb-16" id="pr-panel-prints" role="tabpanel" aria-labelledby="pr-tab-prints">
+            <header class="text-center mb-6">
+                <h2 class="text-2xl sm:text-3xl font-extrabold text-gray-900 mb-2"><?= htmlspecialchars(t('pricing.products_h')) ?></h2>
+                <p class="text-sm text-gray-600 max-w-2xl mx-auto"><?= htmlspecialchars(t('pricing.products_b')) ?></p>
             </header>
-
-            <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <?php foreach ($products as $key => $meta):
-                    $accent = $meta['accent'];
-                    $ring   = $meta['highlight'] ? 'ring-2 ring-purple-500' : 'ring-1 ring-gray-200/70';
-                    $cardClass = 'pr-card bg-white rounded-2xl p-7 ' . $ring . ($meta['highlight'] ? ' pr-highlight' : '');
-                ?>
-                    <article class="<?= $cardClass ?>">
-                        <div class="w-12 h-12 rounded-xl flex items-center justify-center mb-4 bg-<?= $accent ?>-100">
-                            <i class="fa-solid <?= $meta['icon'] ?> text-xl text-<?= $accent ?>-600"></i>
-                        </div>
-                        <h3 class="text-lg font-bold text-gray-900 mb-1"><?= htmlspecialchars(t('pricing.product_' . $key . '_name')) ?></h3>
-                        <p class="text-sm text-gray-500 mb-5 leading-relaxed"><?= htmlspecialchars(t('pricing.product_' . $key . '_spec')) ?></p>
-                        <div class="mb-5">
-                            <div class="flex items-baseline gap-2">
-                                <span class="text-3xl font-extrabold text-gray-900"><?= htmlspecialchars(t('pricing.product_' . $key . '_price')) ?></span>
-                            </div>
-                            <p class="text-xs text-gray-500 mt-1"><?= htmlspecialchars(t('pricing.product_' . $key . '_unit')) ?></p>
-                        </div>
-                        <a href="<?= htmlspecialchars($regUrl) ?>" class="mt-auto inline-flex items-center justify-center gap-2 w-full px-5 py-3 rounded-xl font-semibold transition bg-gray-900 hover:bg-gray-800 text-white">
-                            <?= htmlspecialchars(t('pricing.product_cta')) ?>
-                            <i class="fa-solid fa-arrow-<?= $arrow ?> text-xs"></i>
-                        </a>
-                    </article>
-                <?php endforeach; ?>
+            <fieldset class="pr-rows">
+                <legend class="sr-only"><?= htmlspecialchars(t('pricing.tab_prints')) ?></legend>
+                <?php foreach ($printKeys as $idx => $key) { $row($key, 'pr_print', $key === 'premium'); } ?>
+            </fieldset>
+            <div class="pr-orderbar">
+                <a href="<?= htmlspecialchars($regUrl) ?>" class="bg-blue-600 hover:bg-blue-700 text-white" data-orderbar="pr_print">
+                    <span><?= htmlspecialchars(t('pricing.product_cta')) ?></span>
+                    <span class="pr-orderbar__sum"><?= htmlspecialchars(t('pricing.product_premium_price')) ?></span>
+                </a>
             </div>
-
-            <p class="text-center text-sm text-gray-500 mt-6"><?= htmlspecialchars(t('pricing.products_note')) ?></p>
+            <p class="text-center text-sm text-gray-500 mt-4"><?= htmlspecialchars(t('pricing.products_note')) ?></p>
         </section>
+
+        <!-- NFC cards -->
+        <section class="mb-16" id="pr-panel-nfc" role="tabpanel" aria-labelledby="pr-tab-nfc">
+            <fieldset class="pr-rows">
+                <legend class="sr-only"><?= htmlspecialchars(t('pricing.tab_nfc')) ?></legend>
+                <?php $row('nfc', 'pr_nfc', true); ?>
+            </fieldset>
+            <div class="pr-orderbar">
+                <a href="<?= htmlspecialchars($regUrl) ?>" class="bg-blue-600 hover:bg-blue-700 text-white" data-orderbar="pr_nfc">
+                    <span><?= htmlspecialchars(t('pricing.product_cta')) ?></span>
+                    <span class="pr-orderbar__sum"><?= htmlspecialchars(t('pricing.product_nfc_price')) ?></span>
+                </a>
+            </div>
+        </section>
+
+        <script<?= function_exists('cspNonceAttr') ? cspNonceAttr() : '' ?>>
+        (function () {
+            var tabs = document.querySelectorAll('#pr-seg [role="tab"]');
+            function show(id) {
+                tabs.forEach(function (t) {
+                    var on = t.id === id;
+                    t.setAttribute('aria-selected', on ? 'true' : 'false');
+                    t.tabIndex = on ? 0 : -1;
+                    var panel = document.getElementById(t.getAttribute('aria-controls'));
+                    if (panel) panel.hidden = !on;
+                });
+            }
+            tabs.forEach(function (t, i) {
+                t.addEventListener('click', function () { show(t.id); });
+                t.addEventListener('keydown', function (e) {
+                    var d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
+                    if (document.documentElement.dir === 'rtl') d = -d;
+                    if (!d) return;
+                    var n = tabs[(i + d + tabs.length) % tabs.length];
+                    show(n.id); n.focus(); e.preventDefault();
+                });
+            });
+            var start = (location.hash === '#platform' || location.hash === '#nfc') ? 'pr-tab-' + location.hash.slice(1) : 'pr-tab-prints';
+            show(start);
+            // Keep the order bar's price in step with the chosen row.
+            document.querySelectorAll('.pr-row input').forEach(function (r) {
+                r.addEventListener('change', function () {
+                    var bar = document.querySelector('[data-orderbar="' + r.name + '"] .pr-orderbar__sum');
+                    if (bar) bar.textContent = r.dataset.price;
+                });
+            });
+        })();
+        </script>
 
         <!-- FAQ -->
         <section class="mb-16 max-w-3xl mx-auto">

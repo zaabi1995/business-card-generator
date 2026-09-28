@@ -5,7 +5,11 @@ return [
 
     'hero_eyebrow' => 'Simple pricing',
     'hero_heading' => 'Free platform, pay only for prints.',
-    'hero_sub'     => 'No subscription is required for the web platform. Unlimited employees, templates, digital cards, and QR shares stay free. Physical prints are pay per order, while optional Cardify Pro mobile features are billed separately through the App Store.',
+    'hero_sub'     => 'The web platform is free. You pay per print order. Cardify Pro in the app is billed by the App Store.',
+    'tab_nfc' => 'NFC',
+    'tab_prints' => 'Printed cards',
+    'tab_platform' => 'Platform',
+    'tabs_label' => 'Choose what to price',
 
     // Platform (free forever) block
     'platform_badge'  => 'Free Forever',
