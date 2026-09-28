@@ -1408,7 +1408,7 @@ background: transparent;
             <?php echo $isRtl ? 'left' : 'right'; ?>: 12px;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;           /* kept narrow so the pill clears a centred 96px logo at 375px */
             z-index: 50;
         }
         .lang-switcher {
@@ -1425,7 +1425,7 @@ background: transparent;
         .theme-toggle::after {
             content: '';
             position: absolute;
-            inset: 0;
+            inset: -6px;
         }
         /* ~20px tall. Grow the hit area vertically to 44px without moving
            anything; kept inside the link's own width so two adjacent language
@@ -1445,7 +1445,7 @@ background: transparent;
             align-items: center;
             min-height: 36px;            /* + the 4px pill padding = a 44px control */
             text-decoration: none;
-            padding: 0 12px;
+            padding: 0 8px;
             border-radius: 999px;
             /* Class-driven, which also covers the optimistic pre-reload frame.
                CORRECTION to an earlier comment here: the theme toggle DOES
@@ -1474,8 +1474,8 @@ background: transparent;
                area with a pseudo-element instead: 32 + 6 on every side = 44,
                with no visual change at all. */
             position: relative;
-            width: 44px;
-            height: 44px;
+            width: 32px;
+            height: 32px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
