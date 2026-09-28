@@ -977,7 +977,7 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
             background-color: #f9fafb;
             border: 1px solid #d1d5db;
             padding: 0.625rem 0.875rem;
-            font-size: 0.875rem;
+            font-size: 16px; /* 16px or more stops iOS Safari zooming the page on focus */
             color: #111827;
             outline: none;
             transition: all 0.15s ease;
@@ -1267,7 +1267,7 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
     .q-fields > div{margin:0}
 
     /* restyle the existing inputs to the Cardify system, without changing markup/ids/names */
-    .issuance .form-input{background:var(--surface);border:1.5px solid var(--line);border-radius:11px;font-size:15px;
+    .issuance .form-input{background:var(--surface);border:1.5px solid var(--line);border-radius:11px;font-size:16px;
         color:var(--ink);padding:12px 14px;transition:border-color .15s,box-shadow .15s}
     .issuance .form-input:focus{border-color:var(--brand);box-shadow:0 0 0 4px rgba(0,155,193,.14)}
     .issuance textarea.form-input{min-height:78px}

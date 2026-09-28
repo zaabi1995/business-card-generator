@@ -97,7 +97,7 @@ $extraHead = <<<HTML
             background-color: #f9fafb;
             border: 1px solid #d1d5db;
             padding: 0.625rem 0.875rem;
-            font-size: 0.875rem;
+            font-size: 16px; /* 16px or more stops iOS Safari zooming the page on focus */
             color: #111827;
             outline: none;
             transition: all 0.15s ease;
