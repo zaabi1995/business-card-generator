@@ -632,10 +632,22 @@ $switchThirdUrl = ($thirdCode !== '' && $thirdLabel !== '')
        is not a risk any more. */ ?>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="robots" content="noindex, nofollow">
-    <title><?php echo htmlspecialchars($name); ?> - <?php echo htmlspecialchars($companyName); ?></title>
-    <meta name="description" content="<?php echo htmlspecialchars($name . ' - ' . $position . ' at ' . $companyName); ?>">
-    <meta property="og:title" content="<?php echo htmlspecialchars($name . ' - ' . $companyName); ?>">
-    <meta property="og:description" content="<?php echo htmlspecialchars($position . ' at ' . $companyName); ?>">
+    <?php
+    // A company or title that is empty, or just repeats the person's name
+    // (a sole trader whose company is their own name), reads as "X - X".
+    // Drop it from the title and the share text instead.
+    $__sameAsName = static function ($v) use ($name): bool {
+        $v = trim((string) $v);
+        return $v === '' || mb_strtolower($v) === mb_strtolower(trim((string) $name));
+    };
+    $__headCompany  = $__sameAsName($companyName) ? '' : (string) $companyName;
+    $__headPosition = $__sameAsName($position) ? '' : (string) $position;
+    $__headRole     = trim($__headPosition . ($__headPosition !== '' && $__headCompany !== '' ? ' at ' : '') . $__headCompany);
+    ?>
+    <title><?php echo htmlspecialchars($name . ($__headCompany !== '' ? ' - ' . $__headCompany : '')); ?></title>
+    <meta name="description" content="<?php echo htmlspecialchars($name . ($__headRole !== '' ? ' - ' . $__headRole : '')); ?>">
+    <meta property="og:title" content="<?php echo htmlspecialchars($name . ($__headCompany !== '' ? ' - ' . $__headCompany : '')); ?>">
+    <meta property="og:description" content="<?php echo htmlspecialchars($__headRole !== '' ? $__headRole : $name); ?>">
     <meta property="og:type" content="profile">
     <?php
         // OG scrapers (WhatsApp/Facebook) drop RELATIVE og:image URLs, so the
@@ -736,7 +748,7 @@ $switchThirdUrl = ($thirdCode !== '' && $thirdLabel !== '')
         }
         /* Clearance for the absolutely positioned top controls (12px top plus a
            ~30px control, plus a little air) when no logo row is there to do it. */
-        .page-container.has-top-controls { padding-top: 50px; }
+        .page-container.has-top-controls { padding-top: 62px; } /* 12px offset + 44px controls + 6px air */
 
         /* Company Logo */
         .company-logo {
@@ -1206,33 +1218,28 @@ $switchThirdUrl = ($thirdCode !== '' && $thirdLabel !== '')
             max-width: 400px;
             margin: 10px auto 0;
         }
+        .app-open-row { text-align: center; }
+        /* A text link, not a third full-width button: the visitor's one job
+           is Save Contact, and opening the app is mostly for the card owner. */
         .app-open-btn {
-            display: flex;
+            display: inline-flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
-            width: 100%;
+            gap: 6px;
             min-height: 44px;            /* Apple's touch minimum */
-            padding: 11px 16px;
-            border-radius: 10px;
-            font-size: 14px;
+            padding: 0 12px;
+            font-size: 13px;
             font-weight: 600;
             font-family: inherit;
             text-decoration: none;
             cursor: pointer;
             white-space: nowrap;         /* never wrap the label again */
             transition: transform 0.16s var(--ease-out), opacity 0.16s var(--ease-out);
-<?php if ($isDarkPage): ?>
-            background: color-mix(in srgb, <?php echo htmlspecialchars($accentColor); ?> 22%, transparent);
-            color: #fff;
-            border: 1px solid color-mix(in srgb, <?php echo htmlspecialchars($accentColor); ?> 45%, transparent);
-<?php else: ?>
-            /* Tinted from the tenant accent, so it is on-brand on every card
-               without hardcoding a colour. */
-            background: color-mix(in srgb, <?php echo htmlspecialchars($accentColor); ?> 8%, #fff);
-            color: <?php echo htmlspecialchars($accentColor); ?>;
-            border: 1px solid color-mix(in srgb, <?php echo htmlspecialchars($accentColor); ?> 28%, #fff);
-<?php endif; ?>
+background: transparent;
+            border: 0;
+            color: <?php echo $isDarkPage ? '#e8e8e8' : htmlspecialchars($accentColor); ?>;
+            text-decoration: underline;
+            text-underline-offset: 3px;
         }
         .app-open-btn:active { opacity: 0.85; transform: scale(0.97); }
         @media (prefers-reduced-motion: reduce) {
@@ -1244,16 +1251,18 @@ $switchThirdUrl = ($thirdCode !== '' && $thirdLabel !== '')
         /* Wallet buttons */
         .wallet-buttons {
             display: flex;
+            justify-content: center;
             gap: 10px;
             max-width: 400px;
             margin: 9px auto 0;
             flex-direction: row;
         }
+        /* A compact pill, second in weight to Save Contact. */
         .wallet-buttons .wallet-btn {
             min-height: 44px;
-            flex: 1;
-            padding: 10px 14px;
-            border-radius: 10px;
+            flex: 0 0 auto;
+            padding: 10px 20px;
+            border-radius: 999px;
             text-align: center;
             font-size: 13px;
             font-weight: 600;
@@ -1404,18 +1413,19 @@ $switchThirdUrl = ($thirdCode !== '' && $thirdLabel !== '')
         }
         .lang-switcher {
             display: flex;
+            align-items: center;
             gap: 4px;
-            font-size: 12px;
+            font-size: 13px;
             font-weight: 600;
             background: rgba(0,0,0,0.06);
-            padding: 4px 6px;
+            padding: 4px;
             border-radius: 999px;
             backdrop-filter: blur(8px);
         }
         .theme-toggle::after {
             content: '';
             position: absolute;
-            inset: -6px;
+            inset: 0;
         }
         /* ~20px tall. Grow the hit area vertically to 44px without moving
            anything; kept inside the link's own width so two adjacent language
@@ -1431,8 +1441,11 @@ $switchThirdUrl = ($thirdCode !== '' && $thirdLabel !== '')
         }
         .lang-switcher a {
             position: relative;
+            display: inline-flex;
+            align-items: center;
+            min-height: 36px;            /* + the 4px pill padding = a 44px control */
             text-decoration: none;
-            padding: 2px 8px;
+            padding: 0 12px;
             border-radius: 999px;
             /* Class-driven, which also covers the optimistic pre-reload frame.
                CORRECTION to an earlier comment here: the theme toggle DOES
@@ -1461,8 +1474,8 @@ $switchThirdUrl = ($thirdCode !== '' && $thirdLabel !== '')
                area with a pseudo-element instead: 32 + 6 on every side = 44,
                with no visual change at all. */
             position: relative;
-            width: 32px;
-            height: 32px;
+            width: 44px;
+            height: 44px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
@@ -1750,14 +1763,19 @@ $switchThirdUrl = ($thirdCode !== '' && $thirdLabel !== '')
             // by an earlier derivation of $companyName.
             if (!empty($demoMeta) && !empty($employee['company_en'])) { $companyName = $employee['company_en']; }
             ?>
-            <?php if ($position || $companyName): ?>
+            <?php
+            // Skip a title or company that only repeats the name above it.
+            $parts = [];
+            $__nameKey = mb_strtolower(trim((string) $name));
+            foreach ([$position, $companyName] as $__part) {
+                $__part = trim((string) $__part);
+                if ($__part === '' || mb_strtolower($__part) === $__nameKey) continue;
+                $parts[] = htmlspecialchars($__part);
+            }
+            ?>
+            <?php if ($parts): ?>
             <div class="employee-title">
-                <?php
-                $parts = [];
-                if ($position) $parts[] = htmlspecialchars($position);
-                if ($companyName) $parts[] = htmlspecialchars($companyName);
-                echo implode(' &middot; ', $parts);
-                ?>
+                <?php echo implode(' &middot; ', $parts); ?>
             </div>
             <?php endif; ?>
         </div>
