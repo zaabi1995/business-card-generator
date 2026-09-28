@@ -83,7 +83,7 @@ $products = [
     /* Segmented control + radio rows (invideo / Wolt pattern). With no JS
        every panel shows, so nothing is ever unreachable. */
     .pr-seg { display: flex; gap: 4px; padding: 4px; background: #e5e7eb; border-radius: 999px; max-width: 30rem; margin: 0 auto 2rem; }
-    .pr-seg button { flex: 1; min-height: 44px; border-radius: 999px; font-weight: 600; font-size: .9375rem; color: #374151; background: transparent; border: 0; cursor: pointer; padding: 0 .75rem; }
+    .pr-seg button { flex: 1; min-height: 44px; border-radius: 999px; font-weight: 600; font-size: .875rem; white-space: nowrap; color: #374151; background: transparent; border: 0; cursor: pointer; padding: 0 .75rem; }
     .pr-seg button[aria-selected="true"] { background: #fff; color: #111827; box-shadow: 0 1px 3px rgba(0,0,0,.12); }
     .pr-seg button:focus-visible { outline: 2px solid #009bc1; outline-offset: 2px; }
     .pr-rows { max-width: 40rem; margin: 0 auto; display: grid; gap: .75rem; }
