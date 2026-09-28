@@ -1787,6 +1787,26 @@ $switchThirdUrl = ($thirdCode !== '' && $thirdLabel !== '')
             // regardless of paragraph direction. Address span stays without
             // dir so Arabic addresses render correctly.
             ?>
+            <?php if ($mobile && $mobile !== $phone): ?>
+            <a href="<?php echo htmlspecialchars($cardClickUrl('click_mobile', 'tel:' . $mobile)); ?>" class="contact-row">
+                <span class="contact-icon"><i class="fa-solid fa-mobile-screen-button" aria-hidden="true"></i></span>
+                <span class="contact-value" dir="ltr"><?php echo htmlspecialchars($mobile); ?></span>
+            </a>
+            <?php endif; ?>
+
+            <?php
+            // Second mobile and second office line (MHD cards carry both).
+            // Mobiles lead: they are the numbers people actually call.
+            $__mobile2 = trim((string)($employee['mobile_2'] ?? ''));
+            $__phone2  = trim((string)($employee['phone_2'] ?? ''));
+            ?>
+            <?php if ($__mobile2 !== '' && $__mobile2 !== $mobile): ?>
+            <a href="<?php echo htmlspecialchars($cardClickUrl('click_mobile', 'tel:' . $__mobile2)); ?>" class="contact-row">
+                <span class="contact-icon"><i class="fa-solid fa-mobile-screen-button" aria-hidden="true"></i></span>
+                <span class="contact-value" dir="ltr"><?php echo htmlspecialchars($__mobile2); ?></span>
+            </a>
+            <?php endif; ?>
+
             <?php if ($phone): ?>
             <a href="<?php echo htmlspecialchars($cardClickUrl('click_phone', 'tel:' . $phone)); ?>" class="contact-row">
                 <span class="contact-icon"><i class="fa-solid fa-phone" aria-hidden="true"></i></span>
@@ -1794,10 +1814,10 @@ $switchThirdUrl = ($thirdCode !== '' && $thirdLabel !== '')
             </a>
             <?php endif; ?>
 
-            <?php if ($mobile && $mobile !== $phone): ?>
-            <a href="<?php echo htmlspecialchars($cardClickUrl('click_mobile', 'tel:' . $mobile)); ?>" class="contact-row">
-                <span class="contact-icon"><i class="fa-solid fa-mobile-screen-button" aria-hidden="true"></i></span>
-                <span class="contact-value" dir="ltr"><?php echo htmlspecialchars($mobile); ?></span>
+            <?php if ($__phone2 !== '' && $__phone2 !== $phone): ?>
+            <a href="<?php echo htmlspecialchars($cardClickUrl('click_phone', 'tel:' . $__phone2)); ?>" class="contact-row">
+                <span class="contact-icon"><i class="fa-solid fa-phone" aria-hidden="true"></i></span>
+                <span class="contact-value" dir="ltr"><?php echo htmlspecialchars($__phone2); ?></span>
             </a>
             <?php endif; ?>
 

@@ -91,6 +91,7 @@ class CardPDFRenderer
         $db = Database::getInstance();
         // Office tel / fax are per person on MHD's division cards (migration 166).
         $extraCols = $db->columnExists('employees', 'phone_2') ? 'phone_2, phone_2_ar, ' : '';
+        if ($db->columnExists('employees', 'mobile_2')) { $extraCols .= 'mobile_2, mobile_2_ar, '; }
         $employee = $db->fetchOne(
             'SELECT id, name_en, name_ar, position_en, position_ar,
                     position_en_2, position_ar_2,

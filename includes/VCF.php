@@ -125,6 +125,10 @@ class VCF {
         if ($mobile !== '') {
             $lines[] = 'TEL;TYPE=CELL,VOICE:' . self::escape($mobile);
         }
+        $mobile2 = self::firstNonEmpty($employee['mobile_2'] ?? null);
+        if ($mobile2 !== '' && preg_replace('/\D+/', '', $mobile2) !== $__mDig) {
+            $lines[] = 'TEL;TYPE=CELL,VOICE:' . self::escape($mobile2);
+        }
         if ($fax !== '') {
             $lines[] = 'TEL;TYPE=FAX:' . self::escape($fax);
         }
