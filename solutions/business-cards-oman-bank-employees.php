@@ -72,7 +72,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
             We integrate with Active Directory / Entra ID for single sign-on, so a Bank Muscat RM logs into Cardify with her bank credentials, the card reflects her current role from HR, and when HR updates her title or branch, her card updates overnight. No stale cards in circulation, no "the number on the card doesn't work" customer complaints.
         </p>
 
-        <p><strong>Create digital business cards for your team, free with <?php echo $brandName; ?>.</strong> Pilot with a branch; roll out to the whole bank via central admin. No seat caps, no subscription. <a href="<?php echo getBasePath(); ?>company/register.php" class="text-blue-600 font-semibold">Start a pilot &rarr;</a></p>
+        <p><strong>Create digital business cards for your team, free with <?php echo $brandName; ?>.</strong> Pilot with a branch; roll out to the whole bank via central admin. No seat caps, no subscription. <a href="<?php echo getBasePath(); ?>company/register-otp.php" class="text-blue-600 font-semibold">Start a pilot &rarr;</a></p>
 
         <h2>Phishing-Proof Design</h2>
         <p>
@@ -98,7 +98,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
         <div class="not-prose bg-blue-50 border-l-4 border-blue-500 rounded-lg p-6 my-8">
             <p class="text-blue-900 font-semibold mb-2">A compliant card for every RM</p>
             <p class="text-blue-800 mb-4">Create digital business cards for your team, free with <?php echo $brandName; ?>. Unlimited employees with central admin, SSO, and signed vCards, pay only for printed orders.</p>
-            <a href="<?php echo getBasePath(); ?>company/register.php" class="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors">
+            <a href="<?php echo getBasePath(); ?>company/register-otp.php" class="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors">
                 Start Your Bank Pilot
                 <i class="fa-solid fa-arrow-right"></i>
             </a>

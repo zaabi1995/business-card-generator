@@ -72,7 +72,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
             Inside the chip, we encode an intrinsically-safe compatible NDEF record, which means when scanned in an ATEX/IECEx Zone 1 environment (with your phone of course on airplane mode as per site rules), the card is fully passive, no RF emission beyond the read event itself.
         </p>
 
-        <p><strong>Create digital business cards for your team, free to start with <?php echo $brandName; ?>.</strong> Order ruggedised NFC cards for field crews. <a href="<?php echo getBasePath(); ?>company/register.php" class="text-blue-600 font-semibold">Start free &rarr;</a></p>
+        <p><strong>Create digital business cards for your team, free to start with <?php echo $brandName; ?>.</strong> Order ruggedised NFC cards for field crews. <a href="<?php echo getBasePath(); ?>company/register-otp.php" class="text-blue-600 font-semibold">Start free &rarr;</a></p>
 
         <h2>Tender Submission & Vendor Pre-Qualification Workflow</h2>
         <p>
@@ -101,7 +101,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
         <div class="not-prose bg-blue-50 border-l-4 border-blue-500 rounded-lg p-6 my-8">
             <p class="text-blue-900 font-semibold mb-2">Tender-ready contact identity</p>
             <p class="text-blue-800 mb-4">Create digital business cards for your team, free to start with <?php echo $brandName; ?>. Add CR, VAT, ICV band, ISO certifications and HSE contact as structured fields that recipients can verify.</p>
-            <a href="<?php echo getBasePath(); ?>company/register.php" class="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors">
+            <a href="<?php echo getBasePath(); ?>company/register-otp.php" class="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors">
                 Start Your Team's Free Account
                 <i class="fa-solid fa-arrow-right"></i>
             </a>

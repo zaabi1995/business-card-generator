@@ -15,6 +15,7 @@ Allow: /storage/logos/indexed/
 Allow: /storage/logos/verified/
 Allow: /storage/og/logos/
 Allow: /company/register.php
+Allow: /company/register-otp.php
 Disallow: /tools/carousel-render
 Disallow: /tools/i18n_placeholder_gate.php
 Disallow: /tools/verify-ar-body.php
@@ -47,6 +48,7 @@ Allow: /storage/logos/indexed/
 Allow: /storage/logos/verified/
 Allow: /storage/og/logos/
 Allow: /company/register.php
+Allow: /company/register-otp.php
 Disallow: /tools/carousel-render
 Disallow: /tools/i18n_placeholder_gate.php
 Disallow: /tools/verify-ar-body.php
@@ -77,6 +79,7 @@ Allow: /storage/logos/indexed/
 Allow: /storage/logos/verified/
 Allow: /storage/og/logos/
 Allow: /company/register.php
+Allow: /company/register-otp.php
 Disallow: /tools/carousel-render
 Disallow: /tools/i18n_placeholder_gate.php
 Disallow: /tools/verify-ar-body.php
@@ -107,6 +110,7 @@ Allow: /storage/logos/indexed/
 Allow: /storage/logos/verified/
 Allow: /storage/og/logos/
 Allow: /company/register.php
+Allow: /company/register-otp.php
 Disallow: /tools/carousel-render
 Disallow: /tools/i18n_placeholder_gate.php
 Disallow: /tools/verify-ar-body.php
@@ -137,6 +141,7 @@ Allow: /storage/logos/indexed/
 Allow: /storage/logos/verified/
 Allow: /storage/og/logos/
 Allow: /company/register.php
+Allow: /company/register-otp.php
 Disallow: /tools/carousel-render
 Disallow: /tools/i18n_placeholder_gate.php
 Disallow: /tools/verify-ar-body.php
@@ -167,6 +172,7 @@ Allow: /storage/logos/indexed/
 Allow: /storage/logos/verified/
 Allow: /storage/og/logos/
 Allow: /company/register.php
+Allow: /company/register-otp.php
 Disallow: /tools/carousel-render
 Disallow: /tools/i18n_placeholder_gate.php
 Disallow: /tools/verify-ar-body.php
@@ -197,6 +203,7 @@ Allow: /storage/logos/indexed/
 Allow: /storage/logos/verified/
 Allow: /storage/og/logos/
 Allow: /company/register.php
+Allow: /company/register-otp.php
 Disallow: /tools/carousel-render
 Disallow: /tools/i18n_placeholder_gate.php
 Disallow: /tools/verify-ar-body.php
@@ -227,6 +234,7 @@ Allow: /storage/logos/indexed/
 Allow: /storage/logos/verified/
 Allow: /storage/og/logos/
 Allow: /company/register.php
+Allow: /company/register-otp.php
 Disallow: /tools/carousel-render
 Disallow: /tools/i18n_placeholder_gate.php
 Disallow: /tools/verify-ar-body.php
@@ -257,6 +265,7 @@ Allow: /storage/logos/indexed/
 Allow: /storage/logos/verified/
 Allow: /storage/og/logos/
 Allow: /company/register.php
+Allow: /company/register-otp.php
 Disallow: /tools/carousel-render
 Disallow: /tools/i18n_placeholder_gate.php
 Disallow: /tools/verify-ar-body.php
@@ -287,6 +296,7 @@ Allow: /storage/logos/indexed/
 Allow: /storage/logos/verified/
 Allow: /storage/og/logos/
 Allow: /company/register.php
+Allow: /company/register-otp.php
 Disallow: /tools/carousel-render
 Disallow: /tools/i18n_placeholder_gate.php
 Disallow: /tools/verify-ar-body.php
@@ -317,6 +327,7 @@ Allow: /storage/logos/indexed/
 Allow: /storage/logos/verified/
 Allow: /storage/og/logos/
 Allow: /company/register.php
+Allow: /company/register-otp.php
 Disallow: /tools/carousel-render
 Disallow: /tools/i18n_placeholder_gate.php
 Disallow: /tools/verify-ar-body.php
@@ -347,6 +358,7 @@ Allow: /storage/logos/indexed/
 Allow: /storage/logos/verified/
 Allow: /storage/og/logos/
 Allow: /company/register.php
+Allow: /company/register-otp.php
 Disallow: /tools/carousel-render
 Disallow: /tools/i18n_placeholder_gate.php
 Disallow: /tools/verify-ar-body.php
@@ -377,6 +389,7 @@ Allow: /storage/logos/indexed/
 Allow: /storage/logos/verified/
 Allow: /storage/og/logos/
 Allow: /company/register.php
+Allow: /company/register-otp.php
 Disallow: /tools/carousel-render
 Disallow: /tools/i18n_placeholder_gate.php
 Disallow: /tools/verify-ar-body.php
@@ -407,6 +420,7 @@ Allow: /storage/logos/indexed/
 Allow: /storage/logos/verified/
 Allow: /storage/og/logos/
 Allow: /company/register.php
+Allow: /company/register-otp.php
 Disallow: /tools/carousel-render
 Disallow: /tools/i18n_placeholder_gate.php
 Disallow: /tools/verify-ar-body.php
@@ -437,6 +451,7 @@ Allow: /storage/logos/indexed/
 Allow: /storage/logos/verified/
 Allow: /storage/og/logos/
 Allow: /company/register.php
+Allow: /company/register-otp.php
 Disallow: /tools/carousel-render
 Disallow: /tools/i18n_placeholder_gate.php
 Disallow: /tools/verify-ar-body.php
@@ -467,6 +482,7 @@ Allow: /storage/logos/indexed/
 Allow: /storage/logos/verified/
 Allow: /storage/og/logos/
 Allow: /company/register.php
+Allow: /company/register-otp.php
 Disallow: /tools/carousel-render
 Disallow: /tools/i18n_placeholder_gate.php
 Disallow: /tools/verify-ar-body.php
@@ -497,6 +513,7 @@ Allow: /storage/logos/indexed/
 Allow: /storage/logos/verified/
 Allow: /storage/og/logos/
 Allow: /company/register.php
+Allow: /company/register-otp.php
 Disallow: /tools/carousel-render
 Disallow: /tools/i18n_placeholder_gate.php
 Disallow: /tools/verify-ar-body.php
@@ -527,6 +544,7 @@ Allow: /storage/logos/indexed/
 Allow: /storage/logos/verified/
 Allow: /storage/og/logos/
 Allow: /company/register.php
+Allow: /company/register-otp.php
 Disallow: /tools/carousel-render
 Disallow: /tools/i18n_placeholder_gate.php
 Disallow: /tools/verify-ar-body.php
@@ -557,6 +575,7 @@ Allow: /storage/logos/indexed/
 Allow: /storage/logos/verified/
 Allow: /storage/og/logos/
 Allow: /company/register.php
+Allow: /company/register-otp.php
 Disallow: /tools/carousel-render
 Disallow: /tools/i18n_placeholder_gate.php
 Disallow: /tools/verify-ar-body.php
@@ -587,6 +606,7 @@ Allow: /storage/logos/indexed/
 Allow: /storage/logos/verified/
 Allow: /storage/og/logos/
 Allow: /company/register.php
+Allow: /company/register-otp.php
 Disallow: /tools/carousel-render
 Disallow: /tools/i18n_placeholder_gate.php
 Disallow: /tools/verify-ar-body.php
@@ -617,6 +637,7 @@ Allow: /storage/logos/indexed/
 Allow: /storage/logos/verified/
 Allow: /storage/og/logos/
 Allow: /company/register.php
+Allow: /company/register-otp.php
 Disallow: /tools/carousel-render
 Disallow: /tools/i18n_placeholder_gate.php
 Disallow: /tools/verify-ar-body.php
@@ -647,6 +668,7 @@ Allow: /storage/logos/indexed/
 Allow: /storage/logos/verified/
 Allow: /storage/og/logos/
 Allow: /company/register.php
+Allow: /company/register-otp.php
 Disallow: /tools/carousel-render
 Disallow: /tools/i18n_placeholder_gate.php
 Disallow: /tools/verify-ar-body.php
@@ -677,6 +699,7 @@ Allow: /storage/logos/indexed/
 Allow: /storage/logos/verified/
 Allow: /storage/og/logos/
 Allow: /company/register.php
+Allow: /company/register-otp.php
 Disallow: /tools/carousel-render
 Disallow: /tools/i18n_placeholder_gate.php
 Disallow: /tools/verify-ar-body.php

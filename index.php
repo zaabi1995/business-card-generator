@@ -503,7 +503,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
 
                     <!-- CTA Buttons -->
                     <div class="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start mb-10">
-                        <a href="<?php echo getBasePath(); ?>company/register.php" class="inline-flex items-center justify-center gap-2 px-7 py-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl shadow-lg shadow-blue-600/30 transition-all hover:shadow-xl hover:-translate-y-0.5 text-lg">
+                        <a href="<?php echo getBasePath(); ?>company/register-otp.php" class="inline-flex items-center justify-center gap-2 px-7 py-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl shadow-lg shadow-blue-600/30 transition-all hover:shadow-xl hover:-translate-y-0.5 text-lg">
                             <?= htmlspecialchars(t('landing.cta_start_free')) ?>
                             <i class="fa-solid fa-arrow-right"></i>
                         </a>
@@ -810,7 +810,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
 
             <!-- CTA -->
             <div class="text-center mt-16">
-                <a href="<?php echo getBasePath(); ?>company/register.php" class="inline-flex items-center gap-2 px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl shadow-lg shadow-blue-600/30 transition-all text-lg">
+                <a href="<?php echo getBasePath(); ?>company/register-otp.php" class="inline-flex items-center gap-2 px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl shadow-lg shadow-blue-600/30 transition-all text-lg">
                     <?= htmlspecialchars(t('landing.how_cta')) ?>
                     <i class="fa-solid fa-arrow-right"></i>
                 </a>
@@ -856,7 +856,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                         </li>
                     </ul>
 
-                    <a href="<?php echo getBasePath(); ?>company/register.php" class="inline-flex items-center gap-2 px-6 py-3 bg-white text-blue-600 font-semibold rounded-lg hover:bg-blue-50 transition-colors">
+                    <a href="<?php echo getBasePath(); ?>company/register-otp.php" class="inline-flex items-center gap-2 px-6 py-3 bg-white text-blue-600 font-semibold rounded-lg hover:bg-blue-50 transition-colors">
                         <?= htmlspecialchars(t('landing.dash_cta')) ?>
                         <i class="fa-solid fa-arrow-right"></i>
                     </a>
@@ -900,7 +900,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                             <span class="text-5xl lg:text-6xl font-extrabold text-gray-900"><?= htmlspecialchars(t('pricing.platform_price')) ?></span>
                         </div>
                         <p class="text-gray-500 mb-6"><?= htmlspecialchars(t('pricing.platform_sub')) ?></p>
-                        <a href="<?= getBasePath() ?>company/register.php" class="inline-flex items-center justify-center gap-2 px-7 py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl shadow-lg shadow-blue-500/30 transition hover:-translate-y-0.5">
+                        <a href="<?= getBasePath() ?>company/register-otp.php" class="inline-flex items-center justify-center gap-2 px-7 py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl shadow-lg shadow-blue-500/30 transition hover:-translate-y-0.5">
                             <?= htmlspecialchars(t('pricing.platform_cta')) ?>
                             <i class="fa-solid fa-arrow-right"></i>
                         </a>
@@ -943,7 +943,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                             <span class="text-2xl font-extrabold text-gray-900"><?= htmlspecialchars(t('pricing.product_' . $key . '_price')) ?></span>
                             <p class="text-xs text-gray-500 mt-0.5"><?= htmlspecialchars(t('pricing.product_' . $key . '_unit')) ?></p>
                         </div>
-                        <a href="<?= getBasePath() ?>company/register.php" class="text-blue-600 hover:text-blue-700 font-semibold text-sm inline-flex items-center gap-1">
+                        <a href="<?= getBasePath() ?>company/register-otp.php" class="text-blue-600 hover:text-blue-700 font-semibold text-sm inline-flex items-center gap-1">
                             <?= htmlspecialchars(t('pricing.product_cta')) ?>
                             <i class="fa-solid fa-arrow-right text-xs"></i>
                         </a>
@@ -1274,7 +1274,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
             </p>
 
             <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                <a href="<?php echo getBasePath(); ?>company/register.php" class="inline-flex items-center justify-center gap-2 px-8 py-4 bg-white hover:bg-gray-100 text-blue-600 font-bold rounded-xl shadow-xl transition-all hover:-translate-y-0.5 text-lg">
+                <a href="<?php echo getBasePath(); ?>company/register-otp.php" class="inline-flex items-center justify-center gap-2 px-8 py-4 bg-white hover:bg-gray-100 text-blue-600 font-bold rounded-xl shadow-xl transition-all hover:-translate-y-0.5 text-lg">
                     <i class="fa-solid fa-rocket"></i>
                     <?= htmlspecialchars(t('landing.cta_start_trial')) ?>
                 </a>
@@ -1334,7 +1334,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                         <li><a href="#features" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_features')) ?></a></li>
                         <li><a href="#pricing" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_pricing')) ?></a></li>
                         <li><a href="#resources" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_all_tools')) ?></a></li>
-                        <li><a href="<?= ArTwins::navLink('company/register.php', getBasePath(), $_homeIsAr) ?>" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('header.get_started_free')) ?></a></li>
+                        <li><a href="<?= ArTwins::navLink('company/register-otp.php', getBasePath(), $_homeIsAr) ?>" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('header.get_started_free')) ?></a></li>
                     </ul>
                 </div>
 

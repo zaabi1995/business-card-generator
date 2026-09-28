@@ -44,7 +44,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
             <p class="text-gray-500 text-lg max-w-2xl mx-auto mb-6">
                 Build your personal brand in Oman's real estate market. Share listings, connect at viewings, and stay top-of-mind with stunning digital business cards.
             </p>
-            <a href="<?php echo getBasePath(); ?>company/register.php"
+            <a href="<?php echo getBasePath(); ?>company/register-otp.php"
                class="inline-flex items-center gap-2 px-8 py-4 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition-colors text-lg">
                 Build Your Real Estate Brand with Cardify
                 <i class="fa-solid fa-arrow-right"></i>
@@ -220,7 +220,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 Stand out in Oman's competitive real estate market. Create a professional digital card that turns every meeting into a lasting connection.
             </p>
             <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                <a href="<?php echo getBasePath(); ?>company/register.php"
+                <a href="<?php echo getBasePath(); ?>company/register-otp.php"
                    class="inline-flex items-center justify-center gap-2 px-8 py-4 bg-white text-indigo-600 font-semibold rounded-xl hover:bg-indigo-50 transition-colors">
                     Get Started Free
                     <i class="fa-solid fa-arrow-right"></i>

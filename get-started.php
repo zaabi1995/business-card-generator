@@ -45,7 +45,11 @@ foreach ($campaignKeys as $k) {
     if (is_string($v) && $v !== '') $campaign[$k] = substr($v, 0, 96);
 }
 $campaignQs  = $campaign ? ('?' . http_build_query($campaign)) : '';
-$registerUrl = $base . 'company/register.php' . $campaignQs;
+// Plain visits go to the passwordless sign-up. Campaign and referral links
+// keep the full form, because it is the page that records their attribution.
+$registerUrl = $campaignQs !== ''
+    ? $base . 'company/register.php' . $campaignQs
+    : $base . 'company/register-otp.php';
 
 $waMsg = $isAr ? 'مرحباً، أرغب بعرض توضيحي لكارديفاي لشركتي' : 'Hi, I would like a demo of Cardify for my company';
 $waUrl = 'https://api.whatsapp.com/send?phone=96898899100&text=' . rawurlencode($waMsg);
@@ -244,7 +248,7 @@ $gs = static fn(string $k): string => htmlspecialchars(t('getstarted.' . $k));
                        class="bg-blue-700 text-white font-bold px-8 py-3 rounded-xl hover:bg-blue-800 transition-all">
                         <?= htmlspecialchars(t('getstarted.demo_view')) ?>
                     </a>
-                    <a href="<?= getBasePath() ?>company/register.php"
+                    <a href="<?= getBasePath() ?>company/register-otp.php"
                        class="border-2 border-gray-300 text-gray-700 font-semibold px-8 py-3 rounded-xl hover:bg-gray-50 transition-all">
                         <?= htmlspecialchars(t('getstarted.demo_signup')) ?>
                     </a>

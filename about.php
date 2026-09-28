@@ -166,7 +166,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
             <p class="text-blue-100 mb-8 max-w-2xl mx-auto">
                 <?= htmlspecialchars(t('about.cta_body')) ?>
             </p>
-            <a href="<?php echo getBasePath(); ?>company/register.php"
+            <a href="<?php echo getBasePath(); ?>company/register-otp.php"
                class="inline-flex items-center gap-2 px-8 py-4 bg-white text-blue-600 font-semibold rounded-xl hover:bg-blue-50 transition-colors">
                 <?= htmlspecialchars(t('about.cta_button')) ?>
                 <i class="fa-solid fa-arrow-right"></i>

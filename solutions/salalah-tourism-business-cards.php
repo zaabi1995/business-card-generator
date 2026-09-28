@@ -72,7 +72,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
             This solves a real problem Salalah operators face: tourists booking in March see January photos and think Dhofar is brown; tourists booking in July see February photos and think the operator doesn't understand Khareef. A seasonal card respects the tourist's mental model.
         </p>
 
-        <p><strong>Create digital business cards for your team, free to start with <?php echo $brandName; ?>.</strong> Great for Salalah tour operators, 4x4 rentals, and Dhofar boutique hotels. <a href="<?php echo getBasePath(); ?>company/register.php" class="text-blue-600 font-semibold">Start free before next Khareef &rarr;</a></p>
+        <p><strong>Create digital business cards for your team, free to start with <?php echo $brandName; ?>.</strong> Great for Salalah tour operators, 4x4 rentals, and Dhofar boutique hotels. <a href="<?php echo getBasePath(); ?>company/register-otp.php" class="text-blue-600 font-semibold">Start free before next Khareef &rarr;</a></p>
 
         <h2>Live Booking & WhatsApp Conversion</h2>
         <p>
@@ -92,7 +92,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
         <div class="not-prose bg-blue-50 border-l-4 border-blue-500 rounded-lg p-6 my-8">
             <p class="text-blue-900 font-semibold mb-2">Convert every Khareef enquiry</p>
             <p class="text-blue-800 mb-4">Create digital business cards for your team, free to start with <?php echo $brandName; ?>. Seasonal card mode, live OMR pricing, WhatsApp instant-book, designed for Salalah tourism.</p>
-            <a href="<?php echo getBasePath(); ?>company/register.php" class="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors">
+            <a href="<?php echo getBasePath(); ?>company/register-otp.php" class="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors">
                 Start Your Tourism Card
                 <i class="fa-solid fa-arrow-right"></i>
             </a>

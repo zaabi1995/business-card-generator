@@ -150,7 +150,7 @@ $metaRobots   = 'noindex,follow';
                     </h1>
                     <p class="mt-2 text-sm text-gray-600">
                         <?= htmlspecialchars(t('auth.not_member')) ?>
-                        <a href="<?php echo getBasePath(); ?>company/register.php" class="font-semibold text-blue-600 hover:text-blue-500"><?= htmlspecialchars(t('auth.as_company')) ?></a>
+                        <a href="<?php echo getBasePath(); ?>company/register-otp.php" class="font-semibold text-blue-600 hover:text-blue-500"><?= htmlspecialchars(t('auth.as_company')) ?></a>
                         <?= htmlspecialchars(t('auth.or')) ?>
                         <a href="<?php echo getBasePath(); ?>print-shops/register" class="font-semibold text-purple-600 hover:text-purple-500"><?= htmlspecialchars(t('auth.as_printshop')) ?></a>
                     </p>

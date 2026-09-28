@@ -44,7 +44,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
             <p class="text-gray-500 text-lg max-w-2xl mx-auto mb-6">
                 Professional digital business cards for doctors, dentists, specialists, and clinics. Share your credentials, book appointments via QR, and manage multi-location practices, all from one platform.
             </p>
-            <a href="<?php echo getBasePath(); ?>company/register.php"
+            <a href="<?php echo getBasePath(); ?>company/register-otp.php"
                class="inline-flex items-center gap-2 px-8 py-4 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition-colors text-lg">
                 Create Professional Medical Business Cards
                 <i class="fa-solid fa-arrow-right"></i>
@@ -220,7 +220,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 Join doctors, dentists, and clinics across Oman who use <?php echo $brandName; ?> to share their credentials and connect with patients professionally.
             </p>
             <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                <a href="<?php echo getBasePath(); ?>company/register.php"
+                <a href="<?php echo getBasePath(); ?>company/register-otp.php"
                    class="inline-flex items-center justify-center gap-2 px-8 py-4 bg-white text-teal-600 font-semibold rounded-xl hover:bg-teal-50 transition-colors">
                     Get Started Free
                     <i class="fa-solid fa-arrow-right"></i>

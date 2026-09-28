@@ -19,6 +19,17 @@ require_once INCLUDES_DIR . '/Recaptcha.php';
 
 if (session_status() === PHP_SESSION_NONE) session_start();
 
+// Seconds before the code screen offers "Resend code". The countdown on the
+// page and the server check below read the same value.
+const OTP_SIGNUP_RESEND_SECONDS = 30;
+
+// t()'s third argument is a locale, not a fallback string, so look the
+// specific message up and fall back to the generic one by hand.
+$otpMsg = static function (string $key, string $fallbackKey): string {
+    $msg = t($key);
+    return ($msg === '' || $msg === $key) ? t($fallbackKey) : $msg;
+};
+
 $stage = 'request';      // request | verify
 $error = null;
 $info  = null;
@@ -65,7 +76,40 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
                     $stage = 'verify';
                     $info  = t('register_otp.info_sent_' . $channel);
                 } else {
-                    $error = t('register_otp.err_send_' . ($res['error'] ?? 'failed'), [], t('register_otp.err_send_failed'));
+                    $error = $otpMsg('register_otp.err_send_' . ($res['error'] ?? 'failed'), 'register_otp.err_send_failed');
+                }
+            }
+        } elseif ($action === 'change') {
+            // "Change email or number": drop the pending code and go back to
+            // the first screen with the fields still filled in.
+            $prev = $_SESSION['otp_signup'] ?? [];
+            unset($_SESSION['otp_signup']);
+            $companyName = (string) ($prev['company_name'] ?? $companyName);
+            $adminName   = (string) ($prev['admin_name'] ?? $adminName);
+            $email       = (string) ($prev['email'] ?? $email);
+            $phone       = (string) ($prev['phone'] ?? $phone);
+            $stage = 'request';
+        } elseif ($action === 'resend' || $action === 'resend_email') {
+            $state = $_SESSION['otp_signup'] ?? null;
+            if (!$state) {
+                $error = t('register_otp.err_expired');
+            } else {
+                $stage = 'verify';
+                $wait  = OTP_SIGNUP_RESEND_SECONDS - (time() - (int) ($state['sent_at'] ?? 0));
+                if ($wait > 0) {
+                    $error = t('register_otp.err_resend_wait', ['seconds' => $wait]);
+                } else {
+                    $channel    = ($action === 'resend_email' || ($state['phone'] ?? '') === '') ? 'email' : ($state['channel'] ?? 'email');
+                    $identifier = $channel === 'whatsapp' ? $state['phone'] : $state['email'];
+                    $res = OtpService::send($identifier, $channel, 'signup');
+                    if (!empty($res['ok'])) {
+                        $_SESSION['otp_signup']['channel']    = $channel;
+                        $_SESSION['otp_signup']['identifier'] = $identifier;
+                        $_SESSION['otp_signup']['sent_at']    = time();
+                        $info = t('register_otp.info_sent_' . $channel);
+                    } else {
+                        $error = $otpMsg('register_otp.err_send_' . ($res['error'] ?? 'failed'), 'register_otp.err_send_failed');
+                    }
                 }
             }
         } elseif ($action === 'verify') {
@@ -76,7 +120,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
                 $code = preg_replace('/\D+/', '', (string) ($_POST['code'] ?? ''));
                 $ver  = OtpService::verify($state['identifier'], $code, 'signup');
                 if (empty($ver['ok'])) {
-                    $error = t('register_otp.err_' . ($ver['error'] ?? 'wrong_code'), [], t('register_otp.err_wrong_code'));
+                    $error = $otpMsg('register_otp.err_' . ($ver['error'] ?? 'wrong_code'), 'register_otp.err_wrong_code');
                     $stage = 'verify';
                 } else {
                     $randomPw = bin2hex(random_bytes(16));
@@ -155,6 +199,14 @@ if (isset($_SESSION['otp_signup']) && $stage === 'request' && !$error) {
     $stage = 'verify';
 }
 
+$resendIn = 0;
+if ($stage === 'verify' && isset($_SESSION['otp_signup'])) {
+    $resendIn = max(0, OTP_SIGNUP_RESEND_SECONDS - (time() - (int) ($_SESSION['otp_signup']['sent_at'] ?? 0)));
+}
+$otpChannel    = (string) ($_SESSION['otp_signup']['channel'] ?? 'email');
+$otpIdentifier = (string) ($_SESSION['otp_signup']['identifier'] ?? '');
+$otpHasEmail   = !empty($_SESSION['otp_signup']['email']);
+
 $pageTitle = t('register_otp.page_title');
 $csrfToken = generateCSRFToken();
 $dir       = currentDir();
@@ -186,52 +238,118 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 <input type="hidden" name="action" value="request">
                 <input type="hidden" name="recaptcha_token" id="recaptcha_token" value="">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1"><?= htmlspecialchars(t('register_otp.company_name')) ?></label>
-                    <input type="text" name="company_name" required maxlength="150" value="<?= htmlspecialchars($companyName) ?>"
-                           class="w-full px-4 py-2.5 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    <label for="otp_email" class="block text-sm font-medium text-gray-700 mb-1"><?= htmlspecialchars(t('register_otp.admin_email')) ?></label>
+                    <input type="email" id="otp_email" name="email" required autocomplete="email" autocapitalize="off" spellcheck="false" value="<?= htmlspecialchars($email) ?>" dir="ltr"
+                           class="w-full px-4 py-3 text-base rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1"><?= htmlspecialchars(t('register_otp.admin_name')) ?></label>
-                    <input type="text" name="admin_name" maxlength="120" value="<?= htmlspecialchars($adminName) ?>"
-                           class="w-full px-4 py-2.5 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    <label for="otp_phone" class="block text-sm font-medium text-gray-700 mb-1"><?= htmlspecialchars(t('register_otp.admin_phone')) ?> <span class="text-gray-400 font-normal"><?= htmlspecialchars(t('register_otp.optional')) ?></span></label>
+                    <input type="tel" id="otp_phone" name="phone" autocomplete="tel" inputmode="tel" value="<?= htmlspecialchars($phone) ?>" dir="ltr" placeholder="+968 90000000" aria-describedby="otp_phone_hint"
+                           class="w-full px-4 py-3 text-base rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    <p id="otp_phone_hint" class="text-xs text-gray-500 mt-1"><?= htmlspecialchars(t('register_otp.phone_hint')) ?></p>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1"><?= htmlspecialchars(t('register_otp.admin_email')) ?></label>
-                    <input type="email" name="email" required value="<?= htmlspecialchars($email) ?>" dir="ltr"
-                           class="w-full px-4 py-2.5 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    <label for="otp_admin_name" class="block text-sm font-medium text-gray-700 mb-1"><?= htmlspecialchars(t('register_otp.admin_name')) ?> <span class="text-gray-400 font-normal"><?= htmlspecialchars(t('register_otp.optional')) ?></span></label>
+                    <input type="text" id="otp_admin_name" name="admin_name" maxlength="120" autocomplete="name" value="<?= htmlspecialchars($adminName) ?>"
+                           class="w-full px-4 py-3 text-base rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1"><?= htmlspecialchars(t('register_otp.admin_phone')) ?></label>
-                    <input type="tel" name="phone" value="<?= htmlspecialchars($phone) ?>" dir="ltr" placeholder="+968 90000000"
-                           class="w-full px-4 py-2.5 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                    <p class="text-xs text-gray-500 mt-1"><?= htmlspecialchars(t('register_otp.phone_hint')) ?></p>
+                    <label for="otp_company" class="block text-sm font-medium text-gray-700 mb-1"><?= htmlspecialchars(t('register_otp.company_name')) ?></label>
+                    <input type="text" id="otp_company" name="company_name" required maxlength="150" autocomplete="organization" value="<?= htmlspecialchars($companyName) ?>" aria-describedby="otp_company_hint"
+                           class="w-full px-4 py-3 text-base rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    <p id="otp_company_hint" class="text-xs text-gray-500 mt-1"><?= htmlspecialchars(t('register_otp.company_hint')) ?></p>
                 </div>
-                <button type="submit" class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg">
+                <button type="submit" class="w-full min-h-[48px] py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg">
                     <?= htmlspecialchars(t('register_otp.send_code')) ?>
                 </button>
-                <p class="text-xs text-center text-gray-500 mt-2">
-                    <a href="<?= htmlspecialchars(getBasePath()) ?>login.php" class="text-blue-600 hover:underline"><?= htmlspecialchars(t('register_otp.have_account')) ?></a>
+                <p class="text-sm text-center text-gray-500 mt-2">
+                    <a href="<?= htmlspecialchars(getBasePath()) ?>login.php" class="inline-flex items-center min-h-[44px] text-blue-600 hover:underline"><?= htmlspecialchars(t('register_otp.have_account')) ?></a>
+                </p>
+                <p class="text-xs text-center text-gray-500">
+                    <a href="<?= htmlspecialchars(getBasePath()) ?>company/register.php" class="inline-flex items-center min-h-[44px] text-gray-600 underline hover:text-gray-900"><?= htmlspecialchars(t('register_otp.full_form_link')) ?></a>
                 </p>
             </form>
         <?php else: /* verify */ ?>
-            <form method="POST" class="space-y-4">
+            <form method="POST" class="space-y-4" id="otp-verify-form">
                 <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
                 <input type="hidden" name="action" value="verify">
                 <p class="text-sm text-gray-600 text-center">
-                    <?= htmlspecialchars(t('register_otp.code_sent_to', ['where' => ($_SESSION['otp_signup']['identifier'] ?? '')])) ?>
+                    <?php
+                    // Escape the sentence, then put the address back in bold.
+                    $__sent = htmlspecialchars(t('register_otp.code_sent_to', ['where' => '%%WHERE%%']));
+                    echo str_replace('%%WHERE%%', '<strong class="font-semibold text-gray-900" dir="ltr">' . htmlspecialchars($otpIdentifier) . '</strong>', $__sent);
+                    ?>
                 </p>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1 text-center"><?= htmlspecialchars(t('register_otp.code_label')) ?></label>
-                    <input type="text" name="code" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" required autofocus dir="ltr"
+                    <label for="otp_code" class="block text-sm font-medium text-gray-700 mb-1 text-center"><?= htmlspecialchars(t('register_otp.code_label')) ?></label>
+                    <input type="text" id="otp_code" name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" required autofocus dir="ltr"
                            class="w-full tracking-widest text-center text-2xl font-mono px-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    <p class="text-xs text-gray-500 mt-2 text-center"><?= htmlspecialchars(t('register_otp.delay_note')) ?></p>
                 </div>
-                <button type="submit" class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg">
+                <button type="submit" class="w-full min-h-[48px] py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg">
                     <?= htmlspecialchars(t('register_otp.verify_cta')) ?>
                 </button>
-                <p class="text-xs text-center text-gray-500">
-                    <a href="?resend=1" class="text-blue-600 hover:underline"><?= htmlspecialchars(t('register_otp.resend')) ?></a>
-                </p>
             </form>
+            <div class="mt-4 space-y-2 text-center">
+                <form method="POST">
+                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
+                    <input type="hidden" name="action" value="resend">
+                    <p id="otp_resend_wait" class="text-sm text-gray-500 min-h-[44px] flex items-center justify-center"<?= $resendIn > 0 ? '' : ' hidden' ?>>
+                        <span><?= htmlspecialchars(t('register_otp.resend_in')) ?> <span dir="ltr"><span id="otp_resend_seconds"><?= (int) $resendIn ?></span><?= htmlspecialchars(t('register_otp.seconds_suffix')) ?></span></span>
+                    </p>
+                    <button type="submit" id="otp_resend_btn" class="w-full min-h-[48px] py-3 border border-gray-300 text-gray-900 font-semibold rounded-lg hover:bg-gray-50"<?= $resendIn > 0 ? ' hidden' : '' ?>>
+                        <?= htmlspecialchars(t('register_otp.resend')) ?>
+                    </button>
+                </form>
+                <?php if ($otpChannel === 'whatsapp' && $otpHasEmail): ?>
+                <form method="POST" id="otp_email_form"<?= $resendIn > 0 ? ' hidden' : '' ?>>
+                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
+                    <input type="hidden" name="action" value="resend_email">
+                    <button type="submit" class="min-h-[44px] text-sm text-blue-600 hover:underline"><?= htmlspecialchars(t('register_otp.send_by_email')) ?></button>
+                </form>
+                <?php endif; ?>
+                <form method="POST">
+                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
+                    <input type="hidden" name="action" value="change">
+                    <button type="submit" class="min-h-[44px] text-sm text-gray-600 underline hover:text-gray-900"><?= htmlspecialchars(t('register_otp.change_identifier')) ?></button>
+                </form>
+            </div>
+            <script<?= cspNonceAttr() ?>>
+            (function () {
+                // Submit on the sixth digit, so a code pasted or offered by the
+                // iPhone keyboard (one-time-code) needs no extra tap.
+                var code = document.getElementById('otp_code');
+                var form = document.getElementById('otp-verify-form');
+                if (code && form) {
+                    code.addEventListener('input', function () {
+                        var digits = code.value.replace(/\D+/g, '').slice(0, 6);
+                        if (digits !== code.value) code.value = digits;
+                        if (digits.length === 6 && !form.dataset.sent) {
+                            form.dataset.sent = '1';
+                            form.submit();
+                        }
+                    });
+                }
+                // Resend countdown. The server enforces the same wait.
+                var left = <?= (int) $resendIn ?>;
+                var wait = document.getElementById('otp_resend_wait');
+                var secs = document.getElementById('otp_resend_seconds');
+                var btn  = document.getElementById('otp_resend_btn');
+                var alt  = document.getElementById('otp_email_form');
+                if (left > 0 && wait && secs && btn) {
+                    var timer = setInterval(function () {
+                        left -= 1;
+                        secs.textContent = String(Math.max(left, 0));
+                        if (left <= 0) {
+                            clearInterval(timer);
+                            wait.hidden = true;
+                            btn.hidden = false;
+                            if (alt) alt.hidden = false;
+                        }
+                    }, 1000);
+                }
+            })();
+            </script>
         <?php endif; ?>
     </div>
 </main>

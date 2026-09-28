@@ -72,7 +72,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
             The menu loads in under 1.2 seconds on Omantel 4G and under 800ms on an in-café Wi-Fi. No PDF pinch-zoom, no broken fonts on iPhones, no awkward scrolling through a 3MB image.
         </p>
 
-        <p><strong>Create digital business cards for your team, free to start with <?php echo $brandName; ?>.</strong> Add a QR menu to the owner's card and every table gets a scannable link. <a href="<?php echo getBasePath(); ?>company/register.php" class="text-blue-600 font-semibold">Start free &rarr;</a></p>
+        <p><strong>Create digital business cards for your team, free to start with <?php echo $brandName; ?>.</strong> Add a QR menu to the owner's card and every table gets a scannable link. <a href="<?php echo getBasePath(); ?>company/register-otp.php" class="text-blue-600 font-semibold">Start free &rarr;</a></p>
 
         <h2>Bilingual by Default, Arabic Menu That Actually Reads Right</h2>
         <p>
@@ -95,7 +95,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
         <div class="not-prose bg-blue-50 border-l-4 border-blue-500 rounded-lg p-6 my-8">
             <p class="text-blue-900 font-semibold mb-2">Ready to retire the laminated menu?</p>
             <p class="text-blue-800 mb-4">Create digital business cards for your team, free to start with <?php echo $brandName; ?>. QR menus are free for every team, no plan required.</p>
-            <a href="<?php echo getBasePath(); ?>company/register.php" class="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors">
+            <a href="<?php echo getBasePath(); ?>company/register-otp.php" class="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors">
                 Start Your QR Menu Free
                 <i class="fa-solid fa-arrow-right"></i>
             </a>

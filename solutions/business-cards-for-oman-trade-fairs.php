@@ -72,7 +72,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
             At the end of day 1 at OFEX, your Oman business development director can see: "Ahmed captured 34 leads, 22 of them qualified, 8 asked about our cold chain logistics product. Fatma captured 28 leads, 15 from KSA visitors specifically." That's a level of exhibition ROI measurement most Omani exhibitors have never had access to.
         </p>
 
-        <p><strong>Create digital business cards for your team, free to start with <?php echo $brandName; ?>.</strong> Add Event Mode for your next OCEC show. <a href="<?php echo getBasePath(); ?>company/register.php" class="text-blue-600 font-semibold">Start free &rarr;</a></p>
+        <p><strong>Create digital business cards for your team, free to start with <?php echo $brandName; ?>.</strong> Add Event Mode for your next OCEC show. <a href="<?php echo getBasePath(); ?>company/register-otp.php" class="text-blue-600 font-semibold">Start free &rarr;</a></p>
 
         <h2>Booth Design Around NFC, The New Standard</h2>
         <p>
@@ -92,7 +92,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
         <div class="not-prose bg-blue-50 border-l-4 border-blue-500 rounded-lg p-6 my-8">
             <p class="text-blue-900 font-semibold mb-2">Turn your next OCEC show into pipeline</p>
             <p class="text-blue-800 mb-4">Create digital business cards for your team, free to start with <?php echo $brandName; ?>. Enable Event Mode before the show; export tagged leads to your CRM while packing up the booth.</p>
-            <a href="<?php echo getBasePath(); ?>company/register.php" class="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors">
+            <a href="<?php echo getBasePath(); ?>company/register-otp.php" class="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors">
                 Start Free Before Your Next Show
                 <i class="fa-solid fa-arrow-right"></i>
             </a>

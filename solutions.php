@@ -37,7 +37,7 @@ $solutions = solutionShelf();
                 <?= htmlspecialchars(t('solutions.hero_sub')) ?>
             </p>
             <div class="mt-6">
-                <a href="<?php echo getBasePath(); ?>company/register.php" class="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors">
+                <a href="<?php echo getBasePath(); ?>company/register-otp.php" class="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors">
                     <?= htmlspecialchars(t('solutions.cta_hero_btn')) ?>
                     <i class="fa-solid fa-arrow-right"></i>
                 </a>
@@ -70,7 +70,7 @@ $solutions = solutionShelf();
                 <?= htmlspecialchars(t('solutions.cta_body')) ?>
             </p>
             <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                <a href="<?php echo getBasePath(); ?>company/register.php"
+                <a href="<?php echo getBasePath(); ?>company/register-otp.php"
                    class="inline-flex items-center justify-center gap-2 px-8 py-4 bg-white text-blue-600 font-semibold rounded-xl hover:bg-blue-50 transition-colors">
                     <?= htmlspecialchars(t('solutions.cta_primary')) ?>
                     <i class="fa-solid fa-arrow-right"></i>

@@ -44,7 +44,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
             <p class="text-gray-500 text-lg max-w-2xl mx-auto mb-6">
                 Give your restaurant a professional edge. Create stunning digital business cards with QR menus, contact details, and social links, all shareable in seconds.
             </p>
-            <a href="<?php echo getBasePath(); ?>company/register.php"
+            <a href="<?php echo getBasePath(); ?>company/register-otp.php"
                class="inline-flex items-center gap-2 px-8 py-4 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition-colors text-lg">
                 Create Your Restaurant's Business Cards Free
                 <i class="fa-solid fa-arrow-right"></i>
@@ -220,7 +220,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 Join hundreds of restaurants and cafés in Oman who use <?php echo $brandName; ?> to connect with customers, suppliers, and partners.
             </p>
             <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                <a href="<?php echo getBasePath(); ?>company/register.php"
+                <a href="<?php echo getBasePath(); ?>company/register-otp.php"
                    class="inline-flex items-center justify-center gap-2 px-8 py-4 bg-white text-orange-600 font-semibold rounded-xl hover:bg-orange-50 transition-colors">
                     Get Started Free
                     <i class="fa-solid fa-arrow-right"></i>

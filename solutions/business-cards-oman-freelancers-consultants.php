@@ -77,7 +77,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
             Once the work is done, Cardify can generate a simple PDF invoice with your CR number (or self-employment card number), VAT registration if applicable (the Oman Tax Authority's 5% VAT threshold means not all freelancers need to register, Cardify handles both cases), bank details (we never auto-prefill bank numbers, you enter them once carefully), and a payment link. The client taps the invoice, pays, and you get paid without the endless "have you sent the bank details?" back-and-forth.
         </p>
 
-        <p><strong>Create digital business cards for your team, free to start with <?php echo $brandName; ?>.</strong> The free platform includes everything a solo freelancer needs. <a href="<?php echo getBasePath(); ?>company/register.php" class="text-blue-600 font-semibold">Start your freelance card &rarr;</a></p>
+        <p><strong>Create digital business cards for your team, free to start with <?php echo $brandName; ?>.</strong> The free platform includes everything a solo freelancer needs. <a href="<?php echo getBasePath(); ?>company/register-otp.php" class="text-blue-600 font-semibold">Start your freelance card &rarr;</a></p>
 
         <h2>Personal Brand, Not Corporate Template</h2>
         <p>
@@ -95,7 +95,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
         <div class="not-prose bg-blue-50 border-l-4 border-blue-500 rounded-lg p-6 my-8">
             <p class="text-blue-900 font-semibold mb-2">Your one-person business, on a card</p>
             <p class="text-blue-800 mb-4">Create digital business cards for your team, free to start with <?php echo $brandName; ?>. Portfolio, booking, payment, invoices, all on your personal card.</p>
-            <a href="<?php echo getBasePath(); ?>company/register.php" class="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors">
+            <a href="<?php echo getBasePath(); ?>company/register-otp.php" class="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors">
                 Create Your Freelance Card
                 <i class="fa-solid fa-arrow-right"></i>
             </a>

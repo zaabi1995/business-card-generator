@@ -72,7 +72,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
             Your primary contact details, phone (in +968 format), email, office location, remain consistent. What changes is the copy around them: Arabic honorifics for a GCC counterparty, Korean politeness levels (존댓말) for a POSCO interaction, Dutch for a Rotterdam logistics partner.
         </p>
 
-        <p><strong>Create digital business cards for your team, free to start with <?php echo $brandName; ?>.</strong> Perfect for Duqm-based operators working with global partners. <a href="<?php echo getBasePath(); ?>company/register.php" class="text-blue-600 font-semibold">Start free &rarr;</a></p>
+        <p><strong>Create digital business cards for your team, free to start with <?php echo $brandName; ?>.</strong> Perfect for Duqm-based operators working with global partners. <a href="<?php echo getBasePath(); ?>company/register-otp.php" class="text-blue-600 font-semibold">Start free &rarr;</a></p>
 
         <h2>SEZAD Free Zone Licence, Why Verification Matters</h2>
         <p>
@@ -97,7 +97,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
         <div class="not-prose bg-blue-50 border-l-4 border-blue-500 rounded-lg p-6 my-8">
             <p class="text-blue-900 font-semibold mb-2">Global reach, from Oman's east coast</p>
             <p class="text-blue-800 mb-4">Create digital business cards for your team, free to start with <?php echo $brandName; ?>. Multi-language rendering, OPAZ licence verification, Duqm-direct delivery.</p>
-            <a href="<?php echo getBasePath(); ?>company/register.php" class="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors">
+            <a href="<?php echo getBasePath(); ?>company/register-otp.php" class="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors">
                 Start Your Duqm Card
                 <i class="fa-solid fa-arrow-right"></i>
             </a>

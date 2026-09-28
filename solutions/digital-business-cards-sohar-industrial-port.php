@@ -69,7 +69,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
             Companies operating inside the SOHAR Freezone hold a Freezone licence issued under the Freezone Companies Regulations and SOHAR's specific framework (administered with MoCIIP). Companies operating in the Sohar Industrial Estate mainland hold standard MoCIIP CRs. The distinction matters for customs duty, tax regime, Omanisation, and import/export. Your card should clearly state which regime you operate under, and Cardify adds a "Freezone Tenant, SOHAR" or "Sohar Industrial Estate, MoCIIP" badge field with a direct link to the verification record. Procurement teams in your customer's finance department check this before issuing purchase orders in some categories.
         </p>
 
-        <p><strong>Create digital business cards for your team, free to start with <?php echo $brandName; ?>.</strong> Ideal for Sohar-based SMEs, global multinationals, and port-adjacent logistics companies. <a href="<?php echo getBasePath(); ?>company/register.php" class="text-blue-600 font-semibold">Start free &rarr;</a></p>
+        <p><strong>Create digital business cards for your team, free to start with <?php echo $brandName; ?>.</strong> Ideal for Sohar-based SMEs, global multinationals, and port-adjacent logistics companies. <a href="<?php echo getBasePath(); ?>company/register-otp.php" class="text-blue-600 font-semibold">Start free &rarr;</a></p>
 
         <h2>Multi-Language Card for Global Counterparties</h2>
         <p>
@@ -95,7 +95,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
         <div class="not-prose bg-blue-50 border-l-4 border-blue-500 rounded-lg p-6 my-8">
             <p class="text-blue-900 font-semibold mb-2">Global-ready, Sohar-rooted</p>
             <p class="text-blue-800 mb-4">Create digital business cards for your team, free to start with <?php echo $brandName; ?>. Add multi-language profiles, freezone licence verification, and global shipping codes, all in one card.</p>
-            <a href="<?php echo getBasePath(); ?>company/register.php" class="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors">
+            <a href="<?php echo getBasePath(); ?>company/register-otp.php" class="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors">
                 Start Your Sohar Account
                 <i class="fa-solid fa-arrow-right"></i>
             </a>

@@ -44,7 +44,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
             <p class="text-gray-500 text-lg max-w-2xl mx-auto mb-6">
                 Equip your entire team, from site managers to project engineers, with professional digital business cards they can share on-site, at tenders, and at industry events.
             </p>
-            <a href="<?php echo getBasePath(); ?>company/register.php"
+            <a href="<?php echo getBasePath(); ?>company/register-otp.php"
                class="inline-flex items-center gap-2 px-8 py-4 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition-colors text-lg">
                 Get Your Team's Cards in Minutes
                 <i class="fa-solid fa-arrow-right"></i>
@@ -220,7 +220,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 From a 5-person contracting firm to a 500-employee construction company, <?php echo $brandName; ?> scales with your team.
             </p>
             <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                <a href="<?php echo getBasePath(); ?>company/register.php"
+                <a href="<?php echo getBasePath(); ?>company/register-otp.php"
                    class="inline-flex items-center justify-center gap-2 px-8 py-4 bg-white text-amber-700 font-semibold rounded-xl hover:bg-yellow-50 transition-colors">
                     Get Started Free
                     <i class="fa-solid fa-arrow-right"></i>

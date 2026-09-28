@@ -72,7 +72,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
             Cardify's "visiting consultant" template lets you list multiple facility affiliations with day/time availability, each with a direct booking link. A patient meeting you at a Badr Al Samaa dermatology slot can scan your card, see that you also do consultations at a Qurum specialty clinic on Wednesday evenings, and book directly into the right facility's system.
         </p>
 
-        <p><strong>Create digital business cards for your team, free to start with <?php echo $brandName; ?>.</strong> Perfect for a solo GP practice or a 50-doctor hospital rollout. <a href="<?php echo getBasePath(); ?>company/register.php" class="text-blue-600 font-semibold">Start free &rarr;</a></p>
+        <p><strong>Create digital business cards for your team, free to start with <?php echo $brandName; ?>.</strong> Perfect for a solo GP practice or a 50-doctor hospital rollout. <a href="<?php echo getBasePath(); ?>company/register-otp.php" class="text-blue-600 font-semibold">Start free &rarr;</a></p>
 
         <h2>Patient Appointment Integration</h2>
         <p>
@@ -95,7 +95,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
         <div class="not-prose bg-blue-50 border-l-4 border-blue-500 rounded-lg p-6 my-8">
             <p class="text-blue-900 font-semibold mb-2">A card your patients can trust</p>
             <p class="text-blue-800 mb-4">Create digital business cards for your team, free to start with <?php echo $brandName; ?>. MoH licence, specialty, appointment booking, Arabic/English, all in one.</p>
-            <a href="<?php echo getBasePath(); ?>company/register.php" class="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors">
+            <a href="<?php echo getBasePath(); ?>company/register-otp.php" class="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors">
                 Start Your Clinic's Account
                 <i class="fa-solid fa-arrow-right"></i>
             </a>

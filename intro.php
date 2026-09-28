@@ -270,7 +270,7 @@ if ($introIso):
                 </div>
                 <div class="flex items-center gap-3">
                     <a href="<?php echo $basePath; ?>login.php" class="text-gray-600 hover:text-gray-900 font-medium transition-colors hidden sm:block">Sign In</a>
-                    <a href="<?php echo $basePath; ?>company/register.php" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-all shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 hover:-translate-y-0.5">
+                    <a href="<?php echo $basePath; ?>company/register-otp.php" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-all shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 hover:-translate-y-0.5">
                         Get Started Free
                     </a>
                 </div>
@@ -316,7 +316,7 @@ if ($introIso):
                 
                 <!-- CTA Buttons -->
                 <div class="reveal-up flex flex-col sm:flex-row gap-4 justify-center mb-12">
-                    <a href="<?php echo $basePath; ?>company/register.php" class="group inline-flex items-center justify-center gap-3 px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white text-lg font-semibold rounded-2xl shadow-xl shadow-blue-500/30 transition-all hover:-translate-y-1 hover:shadow-2xl hover:shadow-blue-500/40">
+                    <a href="<?php echo $basePath; ?>company/register-otp.php" class="group inline-flex items-center justify-center gap-3 px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white text-lg font-semibold rounded-2xl shadow-xl shadow-blue-500/30 transition-all hover:-translate-y-1 hover:shadow-2xl hover:shadow-blue-500/40">
                         <span>Start Creating, It's Free</span>
                         <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
                     </a>
@@ -857,7 +857,7 @@ if ($introIso):
                                 </div>
                             </div>
                             
-                            <a href="<?php echo $basePath; ?>company/register.php" class="block w-full py-4 bg-blue-600 hover:bg-blue-700 text-white text-center font-bold rounded-xl shadow-lg shadow-blue-500/30 transition-all">
+                            <a href="<?php echo $basePath; ?>company/register-otp.php" class="block w-full py-4 bg-blue-600 hover:bg-blue-700 text-white text-center font-bold rounded-xl shadow-lg shadow-blue-500/30 transition-all">
                                 Get Started Free
                             </a>
                         </div>
@@ -1120,7 +1120,7 @@ if ($introIso):
                 </p>
                 
                 <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                    <a href="<?php echo $basePath; ?>company/register.php" class="group inline-flex items-center justify-center gap-3 px-10 py-5 bg-white hover:bg-gray-100 text-gray-900 text-lg font-bold rounded-2xl shadow-xl transition-all hover:-translate-y-1">
+                    <a href="<?php echo $basePath; ?>company/register-otp.php" class="group inline-flex items-center justify-center gap-3 px-10 py-5 bg-white hover:bg-gray-100 text-gray-900 text-lg font-bold rounded-2xl shadow-xl transition-all hover:-translate-y-1">
                         <span>Start Free, No Credit Card</span>
                         <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
                     </a>

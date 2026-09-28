@@ -69,7 +69,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
             A concierge at the Chedi Muscat or the Shangri-La doesn't just give recommendations; they plan a guest's week. Wadi Shab, Wadi Bani Khalid, Bimmah Sinkhole, the Omani dhow cruise at Sidab, the Al Hamra heritage walk, the Nizwa Friday goat market, the Jebel Shams balcony hike, a good Muscat concierge arranges 10–15 bookings during a guest's 5-day stay. With a Cardify card, the concierge texts the guest their card on WhatsApp on day 1. For every activity they arrange, they share a follow-up: booking confirmations, directions, weather update, meeting point. The guest keeps the concierge's card pinned in WhatsApp. On returning to Oman a year later, they WhatsApp the same concierge, converting the relationship into direct repeat business that bypasses the OTA commission to Booking.com or Expedia.
         </p>
 
-        <p><strong>Create digital business cards for your team, free to start with <?php echo $brandName; ?>.</strong> Ideal for hotel teams ranging from boutique 20-room properties to 400-room resorts. <a href="<?php echo getBasePath(); ?>company/register.php" class="text-blue-600 font-semibold">Start free &rarr;</a></p>
+        <p><strong>Create digital business cards for your team, free to start with <?php echo $brandName; ?>.</strong> Ideal for hotel teams ranging from boutique 20-room properties to 400-room resorts. <a href="<?php echo getBasePath(); ?>company/register-otp.php" class="text-blue-600 font-semibold">Start free &rarr;</a></p>
 
         <h2>F&B Managers & Event Coordinators, Conversion Machines</h2>
         <p>
@@ -97,7 +97,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
         <div class="not-prose bg-blue-50 border-l-4 border-blue-500 rounded-lg p-6 my-8">
             <p class="text-blue-900 font-semibold mb-2">The card that keeps guests coming back</p>
             <p class="text-blue-800 mb-4">Create digital business cards for your team, free to start with <?php echo $brandName; ?>. Bilingual, guest-shareable on WhatsApp, seasonal themes for Khareef, Eid, and National Day.</p>
-            <a href="<?php echo getBasePath(); ?>company/register.php" class="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors">
+            <a href="<?php echo getBasePath(); ?>company/register-otp.php" class="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors">
                 Start Your Hotel Team
                 <i class="fa-solid fa-arrow-right"></i>
             </a>

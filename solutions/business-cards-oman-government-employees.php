@@ -72,7 +72,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
             Data residency is absolute, no card data, scan data, or contact exchange leaves the Sultanate. For ministries that need this formally stated, we sign Data Processing Agreements referencing Oman's Personal Data Protection Law (PDPL, Royal Decree 6/2022) and can complete a full security clearance questionnaire for the Ministry of Defence, Royal Oman Police, or the Internal Security Service where appropriate.
         </p>
 
-        <p><strong>Create digital business cards for your team, free to start with <?php echo $brandName; ?>.</strong> Pilot with a directorate; scale to the full ministry with central IT controls. <a href="<?php echo getBasePath(); ?>company/register.php" class="text-blue-600 font-semibold">Start a pilot &rarr;</a></p>
+        <p><strong>Create digital business cards for your team, free to start with <?php echo $brandName; ?>.</strong> Pilot with a directorate; scale to the full ministry with central IT controls. <a href="<?php echo getBasePath(); ?>company/register-otp.php" class="text-blue-600 font-semibold">Start a pilot &rarr;</a></p>
 
         <h2>Use Cases Across the Omani Government</h2>
         <p>
@@ -95,7 +95,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
         <div class="not-prose bg-blue-50 border-l-4 border-blue-500 rounded-lg p-6 my-8">
             <p class="text-blue-900 font-semibold mb-2">Protocol-grade cards, centrally managed</p>
             <p class="text-blue-800 mb-4">Create digital business cards for your team, free with <?php echo $brandName; ?>. Unlimited employees, central admin, emblem controls, and on-demand print orders through verified Omani shops.</p>
-            <a href="<?php echo getBasePath(); ?>company/register.php" class="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors">
+            <a href="<?php echo getBasePath(); ?>company/register-otp.php" class="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors">
                 Start a Ministry Pilot
                 <i class="fa-solid fa-arrow-right"></i>
             </a>

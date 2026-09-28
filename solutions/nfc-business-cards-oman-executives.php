@@ -80,7 +80,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
             Finish options include: <strong>Stainless steel</strong> (2mm brushed, laser-engraved, weighs ~18g, a serious statement piece), <strong>Walnut or oak wood</strong> (sustainable, warm, unique Omani aesthetic when paired with incense-inspired branding), <strong>Matte black PVC</strong> (stealth-chic, commonly chosen by tech founders in KOM), and <strong>Gold-plated</strong> (specifically requested by senior Omani executives attending delegations abroad, the card becomes a small diplomatic gift). Pricing starts around OMR 12 per card for PVC and scales to OMR 45 for stainless steel.
         </p>
 
-        <p><strong>Create digital business cards for your team, free to start with <?php echo $brandName; ?>.</strong> When you're ready, order premium NFC cards through our Muscat partner. <a href="<?php echo getBasePath(); ?>company/register.php" class="text-blue-600 font-semibold">Start free &rarr;</a></p>
+        <p><strong>Create digital business cards for your team, free to start with <?php echo $brandName; ?>.</strong> When you're ready, order premium NFC cards through our Muscat partner. <a href="<?php echo getBasePath(); ?>company/register-otp.php" class="text-blue-600 font-semibold">Start free &rarr;</a></p>
 
         <h2>Use Cases Specific to Oman C-Suite</h2>
         <p>
@@ -103,7 +103,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
         <div class="not-prose bg-blue-50 border-l-4 border-blue-500 rounded-lg p-6 my-8">
             <p class="text-blue-900 font-semibold mb-2">Meet with the card that matches your role</p>
             <p class="text-blue-800 mb-4">Create digital business cards for your team, free to start with <?php echo $brandName; ?>. Order metal NFC cards when you're ready, delivered across Oman within 3 working days.</p>
-            <a href="<?php echo getBasePath(); ?>company/register.php" class="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors">
+            <a href="<?php echo getBasePath(); ?>company/register-otp.php" class="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors">
                 Set Up Your Executive Card
                 <i class="fa-solid fa-arrow-right"></i>
             </a>

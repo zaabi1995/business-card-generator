@@ -72,7 +72,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
             For larger rollouts, say a Sohar Port tenant onboarding 40 Omani technicians in a batch, or a bank running a graduate intake of 60 Omani management trainees, Cardify handles bulk upload from HR's spreadsheet and creates all 60 cards simultaneously with consistent branding. HR moves from "print shop logistics and proofreading 60 cards" to "upload CSV, sip coffee".
         </p>
 
-        <p><strong>Create digital business cards for your team, free to start with <?php echo $brandName; ?>.</strong> Scale from 1 to 1,000 hires without changing process. <a href="<?php echo getBasePath(); ?>company/register.php" class="text-blue-600 font-semibold">Start your HR integration &rarr;</a></p>
+        <p><strong>Create digital business cards for your team, free to start with <?php echo $brandName; ?>.</strong> Scale from 1 to 1,000 hires without changing process. <a href="<?php echo getBasePath(); ?>company/register-otp.php" class="text-blue-600 font-semibold">Start your HR integration &rarr;</a></p>
 
         <h2>Omanisation Compliance & Ministry of Labour Signaling</h2>
         <p>
@@ -95,7 +95,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
         <div class="not-prose bg-blue-50 border-l-4 border-blue-500 rounded-lg p-6 my-8">
             <p class="text-blue-900 font-semibold mb-2">Day-one cards for every Omani hire</p>
             <p class="text-blue-800 mb-4">Create digital business cards for your team, free to start with <?php echo $brandName; ?>. CSV bulk upload, HR integration, Omanisation audit dashboard.</p>
-            <a href="<?php echo getBasePath(); ?>company/register.php" class="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors">
+            <a href="<?php echo getBasePath(); ?>company/register-otp.php" class="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors">
                 Start Your HR Rollout
                 <i class="fa-solid fa-arrow-right"></i>
             </a>

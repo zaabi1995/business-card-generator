@@ -66,7 +66,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
             A paper card designed for Q4 looks mismatched when handed across a dates-and-laban table in Ramadan. Digital cards let you seasonally theme the look: a crescent-and-lantern (hilal and fanoos) illustration in muted gold, a "Ramadan Kareem, رمضان كريم" greeting that appears on the card landing page for 30 days and then quietly disappears on Eid, and a note showing your adjusted office hours (important, your contact will want to know whether to call at 11am or after iftar). The Cardify dashboard has a "Ramadan mode" toggle that applies these changes to every team member's card simultaneously, then reverts automatically on 1 Shawwal.
         </p>
 
-        <p><strong>Create digital business cards for your team, free to start with <?php echo $brandName; ?>.</strong> The Ramadan theme is included on every plan. <a href="<?php echo getBasePath(); ?>company/register.php" class="text-blue-600 font-semibold">Set up in 3 minutes &rarr;</a></p>
+        <p><strong>Create digital business cards for your team, free to start with <?php echo $brandName; ?>.</strong> The Ramadan theme is included on every plan. <a href="<?php echo getBasePath(); ?>company/register-otp.php" class="text-blue-600 font-semibold">Set up in 3 minutes &rarr;</a></p>
 
         <h2>Iftar-Ready Features</h2>
         <p>
@@ -89,7 +89,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
         <div class="not-prose bg-blue-50 border-l-4 border-blue-500 rounded-lg p-6 my-8">
             <p class="text-blue-900 font-semibold mb-2">Don't arrive at iftar unprepared</p>
             <p class="text-blue-800 mb-4">Create digital business cards for your team, free to start with <?php echo $brandName; ?>. Switch to Ramadan theme with one click; revert on Eid automatically.</p>
-            <a href="<?php echo getBasePath(); ?>company/register.php" class="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors">
+            <a href="<?php echo getBasePath(); ?>company/register-otp.php" class="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors">
                 Create Your Ramadan Card
                 <i class="fa-solid fa-arrow-right"></i>
             </a>

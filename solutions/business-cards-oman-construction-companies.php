@@ -72,7 +72,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
             When the resident engineer on a Sultan Haitham City infrastructure package stops by your portable cabin on the site, a single card tap gets them your site manager's details, the project's HSE manager's number, and your company's pre-qualification documents, all downloadable instantly to their phone for the weekly site report.
         </p>
 
-        <p><strong>Create digital business cards for your team, free to start with <?php echo $brandName; ?>.</strong> Add CR, grade, ICV, ISO cert numbers as structured fields. <a href="<?php echo getBasePath(); ?>company/register.php" class="text-blue-600 font-semibold">Start free &rarr;</a></p>
+        <p><strong>Create digital business cards for your team, free to start with <?php echo $brandName; ?>.</strong> Add CR, grade, ICV, ISO cert numbers as structured fields. <a href="<?php echo getBasePath(); ?>company/register-otp.php" class="text-blue-600 font-semibold">Start free &rarr;</a></p>
 
         <h2>Tender & Pre-Qualification Workflow</h2>
         <p>
@@ -95,7 +95,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
         <div class="not-prose bg-blue-50 border-l-4 border-blue-500 rounded-lg p-6 my-8">
             <p class="text-blue-900 font-semibold mb-2">Tender-ready, site-rugged, bilingual</p>
             <p class="text-blue-800 mb-4">Create digital business cards for your team, free to start with <?php echo $brandName; ?>. Rugged NFC for site supervisors, premium print for project directors.</p>
-            <a href="<?php echo getBasePath(); ?>company/register.php" class="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors">
+            <a href="<?php echo getBasePath(); ?>company/register-otp.php" class="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors">
                 Start Your Contracting Account
                 <i class="fa-solid fa-arrow-right"></i>
             </a>

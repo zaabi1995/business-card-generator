@@ -72,7 +72,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
             For investors meeting dozens of founders per event, this is transformational. They tap your card, see your traction in 2 seconds, tap the deck download, skim it in the taxi on the way home, and you're the founder they remember from that evening because you were the one whose card told them something other than a job title.
         </p>
 
-        <p><strong>Create digital business cards for your team, free to start with <?php echo $brandName; ?>.</strong> Free platform covers everything, from pre-seed founder to Series C team. <a href="<?php echo getBasePath(); ?>company/register.php" class="text-blue-600 font-semibold">Start your founder card &rarr;</a></p>
+        <p><strong>Create digital business cards for your team, free to start with <?php echo $brandName; ?>.</strong> Free platform covers everything, from pre-seed founder to Series C team. <a href="<?php echo getBasePath(); ?>company/register-otp.php" class="text-blue-600 font-semibold">Start your founder card &rarr;</a></p>
 
         <h2>Team Cards That Scale With Hiring</h2>
         <p>
@@ -98,7 +98,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
         <div class="not-prose bg-blue-50 border-l-4 border-blue-500 rounded-lg p-6 my-8">
             <p class="text-blue-900 font-semibold mb-2">Built by Omani founders, for Omani founders</p>
             <p class="text-blue-800 mb-4">Create digital business cards for your team, free to start with <?php echo $brandName; ?>. Pitch decks, waitlists, Calendly-style booking, and global language rendering built in.</p>
-            <a href="<?php echo getBasePath(); ?>company/register.php" class="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors">
+            <a href="<?php echo getBasePath(); ?>company/register-otp.php" class="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors">
                 Create Your Founder Card
                 <i class="fa-solid fa-arrow-right"></i>
             </a>

@@ -64,7 +64,7 @@ $waMsg   = $isAr ? 'مرحباً، أرغب بعرض توضيحي لكارديف
 // keep the separate BHD line 96899999100 on purpose.
 $waUrl   = 'https://api.whatsapp.com/send?phone=96898899100&text=' . rawurlencode($waMsg);
 $arrow   = $isAr ? 'left' : 'right';
-$regUrl  = ArTwins::navLink('company/register.php', '/', $isAr);
+$regUrl  = ArTwins::navLink('company/register-otp.php', '/', $isAr);
 
 // Product catalogue driver
 $products = [

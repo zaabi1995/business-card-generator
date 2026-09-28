@@ -69,7 +69,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
             A typical agent with Savills Oman, Hamptons International, Cluttons, Betterhomes, Asteco, or one of the excellent home-grown agencies (Crown Castle Properties, Alawi Enterprises, KOM Realty) hands out 40–80 paper cards a week. The conversion from paper card to booked viewing is about 4–7%. The rest are lost, chucked into hotel room bins in Al Mouj Marina, or stuck on a fridge and forgotten. A Cardify digital card with a "Save Contact" two-way exchange and an attached live listings page converts at 18–24% in our customer data, because the buyer walks away with your listings already saved on their phone.
         </p>
 
-        <p><strong>Create digital business cards for your team, free to start with <?php echo $brandName; ?>.</strong> <a href="<?php echo getBasePath(); ?>company/register.php" class="text-blue-600 font-semibold">Set up your agent card in 5 minutes &rarr;</a></p>
+        <p><strong>Create digital business cards for your team, free to start with <?php echo $brandName; ?>.</strong> <a href="<?php echo getBasePath(); ?>company/register-otp.php" class="text-blue-600 font-semibold">Set up your agent card in 5 minutes &rarr;</a></p>
 
         <h2>Live Listings on Every Card</h2>
         <p>
@@ -95,7 +95,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
         <div class="not-prose bg-blue-50 border-l-4 border-blue-500 rounded-lg p-6 my-8">
             <p class="text-blue-900 font-semibold mb-2">Your listings in the buyer's pocket, instantly</p>
             <p class="text-blue-800 mb-4">Create digital business cards for your team, free to start with <?php echo $brandName; ?>. Add live listings, licence ID, and one-tap WhatsApp, your card becomes a closing tool.</p>
-            <a href="<?php echo getBasePath(); ?>company/register.php" class="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors">
+            <a href="<?php echo getBasePath(); ?>company/register-otp.php" class="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors">
                 Start Your Agent Card
                 <i class="fa-solid fa-arrow-right"></i>
             </a>

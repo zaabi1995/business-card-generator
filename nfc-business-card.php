@@ -52,7 +52,7 @@ $GLOBALS['pageSchemaMainEntity'] = ['@id' => $baseUrl . '/pricing#product-nfc'];
 
 require_once INCLUDES_DIR . '/ui-header.php';
 
-$registerUrl = ArTwins::navLink('company/register.php', '/', $isAr);
+$registerUrl = ArTwins::navLink('company/register-otp.php', '/', $isAr);
 $pricingUrl = ArTwins::navLink('pricing', '/', $isAr);
 $digitalUrl = ArTwins::navLink('digital-business-card', '/', $isAr);
 $guideUrl = ArTwins::navLink('tools/nfc-business-card-guide', '/', $isAr);

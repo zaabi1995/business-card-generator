@@ -69,7 +69,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
             A Cardify digital card for an Omani advocate includes: bilingual full name (the Arabic version of your name as it appears on your Oman Bar Association membership card is critical, clients and counterparties check), MoJLA admission number, bar association membership number, practice areas (commercial, arbitration, family, labour, corporate, M&A, litigation, intellectual property, banking & finance), court jurisdiction, firm name with CR number, direct dial with private line extension, discreet mobile number (optional, many senior partners don't publish a mobile), fax line (still used by courts for formal service), physical office address (typically Al Qurum, Muttrah, Shatti, or Al Khuwair), and a PDF download of your CV/CV extract. For arbitration practitioners, we include ICC, LCIA, DIAC, GCCAC memberships as separate fields.
         </p>
 
-        <p><strong>Create digital business cards for your team, free to start with <?php echo $brandName; ?>.</strong> Order Luxury uncoated letterpress cards for the senior partners. <a href="<?php echo getBasePath(); ?>company/register.php" class="text-blue-600 font-semibold">Set up your firm &rarr;</a></p>
+        <p><strong>Create digital business cards for your team, free to start with <?php echo $brandName; ?>.</strong> Order Luxury uncoated letterpress cards for the senior partners. <a href="<?php echo getBasePath(); ?>company/register-otp.php" class="text-blue-600 font-semibold">Set up your firm &rarr;</a></p>
 
         <h2>Discretion, Client Confidentiality & Digital Trust</h2>
         <p>
@@ -92,7 +92,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
         <div class="not-prose bg-blue-50 border-l-4 border-blue-500 rounded-lg p-6 my-8">
             <p class="text-blue-900 font-semibold mb-2">Discretion, precision, bilingual</p>
             <p class="text-blue-800 mb-4">Create digital business cards for your team, free to start with <?php echo $brandName; ?>. Designed with the Omani legal profession in mind.</p>
-            <a href="<?php echo getBasePath(); ?>company/register.php" class="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors">
+            <a href="<?php echo getBasePath(); ?>company/register-otp.php" class="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors">
                 Start Your Firm's Account
                 <i class="fa-solid fa-arrow-right"></i>
             </a>

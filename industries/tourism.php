@@ -44,7 +44,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
             <p class="text-gray-500 text-lg max-w-2xl mx-auto mb-6">
                 Elevate your hospitality brand with multilingual digital business cards. Perfect for hotel staff, tour operators, travel agents, and concierge teams across Oman.
             </p>
-            <a href="<?php echo getBasePath(); ?>company/register.php"
+            <a href="<?php echo getBasePath(); ?>company/register-otp.php"
                class="inline-flex items-center gap-2 px-8 py-4 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition-colors text-lg">
                 Create Tourism Business Cards Free
                 <i class="fa-solid fa-arrow-right"></i>
@@ -220,7 +220,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 Join hotels, tour operators, and travel agencies across Oman who use <?php echo $brandName; ?> to connect with guests and partners professionally.
             </p>
             <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                <a href="<?php echo getBasePath(); ?>company/register.php"
+                <a href="<?php echo getBasePath(); ?>company/register-otp.php"
                    class="inline-flex items-center justify-center gap-2 px-8 py-4 bg-white text-emerald-600 font-semibold rounded-xl hover:bg-emerald-50 transition-colors">
                     Get Started Free
                     <i class="fa-solid fa-arrow-right"></i>
