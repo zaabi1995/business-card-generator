@@ -80,13 +80,16 @@ interface Panel {
 
   // Which step each field name belongs to.
   const STEP_ORDER = ['identity', 'name', 'role', 'contact', 'photo', 'confirm'];
+  // Four steps on a phone, not six: email sits with the name ("you"), and
+  // the optional photo sits at the end of the contact step. Empty steps are
+  // skipped below, so identity and photo simply never render.
   const STEP_NAMES: Record<string, string[]> = {
-    identity: ['email'],
-    name: ['name_en', 'name_ar'],
+    identity: [],
+    name: ['email', 'name_en', 'name_ar'],
     role: ['position_en', 'position_ar', 'position_en_2', 'position_ar_2', 'department_id'],
     contact: ['phone', 'mobile', 'fax', 'website', 'phone_ar', 'mobile_ar', 'website_ar', 'fax_ar',
-      'address_en', 'address_2_en', 'address_ar', 'address_2_ar', 'company_en', 'company_ar'],
-    photo: ['photo'],
+      'address_en', 'address_2_en', 'address_ar', 'address_2_ar', 'company_en', 'company_ar', 'photo'],
+    photo: [],
     confirm: [],
   };
   const CONFIRM_IDS = ['qrToggleBlock', 'requestTypeSection', 'requestNotesSection', 'quantitySection', 'submitSection'];
@@ -215,6 +218,25 @@ interface Panel {
     if (panels[i]) { panels[i].err.textContent = msg; panels[i].err.style.display = 'block'; }
   }
 
+  // On a phone the Continue bar is sticky at the bottom. A focused field
+  // that would sit under it (or under the keyboard) is brought to the middle.
+  const calmScroll = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  function keepClearOfNav(el: HTMLElement) {
+    if (window.innerWidth >= 920) return;
+    const nav = issuance ? (issuance.querySelector('.issue-nav') as HTMLElement | null) : null;
+    const navH = nav ? nav.getBoundingClientRect().height : 0;
+    const vv = window.visualViewport;
+    const viewBottom = vv ? vv.height : window.innerHeight;
+    const r = el.getBoundingClientRect();
+    if (r.bottom > viewBottom - navH - 8 || r.top < 80) {
+      el.scrollIntoView({ block: 'center', behavior: calmScroll ? 'auto' : 'smooth' });
+    }
+  }
+  form.addEventListener('focusin', (ev) => {
+    const t = ev.target as HTMLElement | null;
+    if (t && /^(INPUT|SELECT|TEXTAREA)$/.test(t.tagName)) setTimeout(() => keepClearOfNav(t), 250);
+  });
+
   function paintPips() {
     pips.forEach((p, i) => {
       p.classList.toggle('done', i < step);
@@ -236,18 +258,19 @@ interface Panel {
     if (last) { BR.previewGenerated = true; buildSummary(); }
     // Focus the first control of this panel (never a hidden input).
     const ctrl = panels[i].panel.querySelector('input:not([type=hidden]),select,textarea') as HTMLElement | null;
-    if (ctrl) setTimeout(() => { try { ctrl.focus(); } catch (e) { /* noop */ } }, 60);
+    if (ctrl) setTimeout(() => { try { ctrl.focus({ preventScroll: true }); keepClearOfNav(ctrl); } catch (e) { /* noop */ } }, 60);
     scheduleLive();
   }
 
   function validate(i: number): boolean {
     const key = activeKeys[i];
     clearErr(i);
-    if (key === 'identity') {
+    if (key === 'identity' || key === 'name') {
       const e = document.getElementById('email') as HTMLInputElement | null;
+      const inStep = !!(e && panels[i] && panels[i].panel.contains(e));
       const v = e ? e.value.trim() : '';
-      if (!v) { setErr(i, I18.err_email); return false; }
-      if (REQ_DOMAIN) {
+      if (inStep && !v) { setErr(i, I18.err_email); return false; }
+      if (inStep && REQ_DOMAIN) {
         const at = v.lastIndexOf('@');
         const dom = at >= 0 ? v.slice(at + 1).toLowerCase() : '';
         if (dom !== REQ_DOMAIN.toLowerCase()) { setErr(i, I18.err_domain.replace(':domain', REQ_DOMAIN)); return false; }

@@ -1301,6 +1301,9 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
     /* nav */
     .issue-nav{display:flex;align-items:center;gap:12px;margin-top:24px}
     @media(max-width:919px){
+        /* Leave room for the sticky Continue bar when the browser scrolls a
+           focused field into view. */
+        html{scroll-padding-bottom:calc(96px + env(safe-area-inset-bottom))}
         .issue-nav{position:sticky;bottom:0;margin:20px -16px 0;padding:12px 16px calc(12px + env(safe-area-inset-bottom));
             background:linear-gradient(180deg,rgba(255,255,255,0),#fff 36%);border-top:1px solid var(--line-soft)}
     }
@@ -1388,7 +1391,7 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                         <?php endif; ?>
                         <div class="min-w-0">
                             <h1 class="text-lg font-bold text-gray-900 truncate"><?php echo htmlspecialchars($companyName); ?></h1>
-                            <p class="text-xs text-gray-500 truncate">
+                            <p class="text-xs text-gray-500 leading-snug">
                                 <?php if ($selectedDepartment): ?>
                                     <?php echo htmlspecialchars($selectedDepartment['name']); ?> - <?= htmlspecialchars(t('portal.business_card_portal')) ?>
                                 <?php else: ?>
