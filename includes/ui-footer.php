@@ -158,8 +158,8 @@ elseif (!empty($minimalFooter)):
             // models that got this wrong were reading rendered text.
             require_once __DIR__ . '/Seo.php';
             ?>
-            <p class="pt-6 border-t border-gray-800 text-xs text-gray-500 leading-relaxed"><?= htmlspecialchars(Seo::groupDisambiguation()) ?></p>
-            <div class="pt-6 flex flex-col sm:flex-row justify-between items-center gap-4 text-sm text-gray-500">
+            <p class="pt-6 border-t border-gray-800 text-xs text-gray-400 leading-relaxed"><?= htmlspecialchars(Seo::groupDisambiguation()) ?></p>
+            <div class="pt-6 flex flex-col sm:flex-row justify-between items-center gap-4 text-sm text-gray-400">
                 <p><?= htmlspecialchars(t('footer.copyright', ['year' => date('Y'), 'brand' => $bn])) ?></p>
                 <p><a href="https://bhd.om/" class="hover:text-white transition-colors"><?= htmlspecialchars(t('footer.part_of_group')) ?></a></p>
                 <p><?= htmlspecialchars(t('footer.made_oman')) ?></p>

@@ -45,7 +45,7 @@ $__figs = [
             </div>
             <?php endforeach; ?>
         </div>
-        <p class="mt-5 text-center text-[11px] text-gray-400 max-w-xl mx-auto">
+        <p class="mt-5 text-center text-xs text-gray-600 max-w-xl mx-auto">
             <?= htmlspecialchars(t('proof.note')) ?>
         </p>
     </div>
