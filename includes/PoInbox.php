@@ -41,6 +41,54 @@ class PoInbox
         return defined('MHD_PO_MAILDIR') ? MHD_PO_MAILDIR : '/www/vmail/bhdoman.com/sales';
     }
 
+    /**
+     * A reply in the client's own thread carries the client's subject, not our
+     * [MHD-XXXXXX] tag (Ali, 30 Sep 2026). Find the job by the ref we print in
+     * the body, then by the thread ids, then by the thread subject.
+     */
+    public static function refFromThread(array $message): ?string
+    {
+        if (preg_match(self::REF_RE, (string)($message['body'] ?? ''), $m)) {
+            return strtoupper($m[1]);
+        }
+        $db  = Database::getInstance();
+        if (!$db->columnExists('card_requests', 'thread_message_id')) { return null; }
+        $ids = [];
+        preg_match_all('/<[^<>\s]+@[^<>\s]+>/',
+            (string)($message['in_reply_to'] ?? '') . ' ' . (string)($message['references'] ?? ''), $mm);
+        foreach ($mm[0] as $id) { $ids[] = $id; }
+        foreach (array_unique($ids) as $id) {
+            $row = $db->fetchOne(
+                "SELECT job_ref FROM card_requests WHERE job_ref IS NOT NULL AND
+                   (thread_message_id = :a OR thread_references LIKE :b) ORDER BY submitted_at DESC LIMIT 1",
+                ['a' => $id, 'b' => '%' . $id . '%']);
+            if ($row) { return strtoupper((string)$row['job_ref']); }
+        }
+        $topic = self::topic((string)($message['subject'] ?? ''));
+        if ($topic !== '') {
+            foreach ($db->fetchAll("SELECT job_ref, thread_subject FROM card_requests
+                                    WHERE thread_subject IS NOT NULL AND job_ref IS NOT NULL
+                                    ORDER BY submitted_at DESC LIMIT 200") as $r) {
+                if (self::topic((string)$r['thread_subject']) === $topic) {
+                    return strtoupper((string)$r['job_ref']);
+                }
+            }
+        }
+        return null;
+    }
+
+    /** Subject minus RE:/FW:/EXTERNAL.!!! prefixes, spaces collapsed, lower case. */
+    public static function topic(string $subject): string
+    {
+        $s = $subject;
+        do {
+            $prev = $s;
+            $s = preg_replace('/^\s*(re|fw|fwd)\s*:\s*/i', '', $s);
+            $s = preg_replace('/^\s*external\.?!*\s*/i', '', $s);
+        } while ($s !== $prev);
+        return strtolower(trim(preg_replace('/\s+/', ' ', $s)));
+    }
+
     /** Purchase orders are MHD's commercial documents, so they are kept in
      *  private/, which nginx refuses to serve. Not outside the web root:
      *  PHP-FPM runs with open_basedir confined to the site directory, so a path
@@ -142,9 +190,10 @@ class PoInbox
      */
     public static function ingest(array $message): array
     {
-        $ref = self::extractRef((string)($message['subject'] ?? ''));
+        $ref = self::extractRef((string)($message['subject'] ?? ''))
+            ?? self::refFromThread($message);
         if (!$ref) {
-            return ['matched' => false, 'reason' => 'no job ref in subject'];
+            return ['matched' => false, 'reason' => 'no job ref in subject or thread'];
         }
         // sales@bhdoman.com is copied on every quotation we send, so our own
         // outgoing mail is sitting in this mailbox carrying the same job ref and

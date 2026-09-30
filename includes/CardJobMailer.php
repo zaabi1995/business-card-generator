@@ -50,6 +50,37 @@ class CardJobMailer
     }
 
     /**
+     * Send a client-facing email for a job. When the job came from a client email
+     * thread, the email is a reply in that thread with the client's subject, and
+     * the job ref is carried in the body so the purchase-order intake still finds
+     * it. The thread is then extended with this email's id (Ali, 30 Sep 2026).
+     */
+    private static function sendForJob(array $req, array $to, array $cc, string $subject, string $html, array $files = []): array
+    {
+        $db  = Database::getInstance();
+        $row = !empty($req['id']) ? $db->fetchOne(
+            "SELECT id, job_ref, thread_message_id, thread_references, thread_subject FROM card_requests WHERE id = :i",
+            ['i' => $req['id']]) : null;
+        if (!$row || empty($row['thread_message_id'])) {
+            return MhdMailer::sendRaw($to, $cc, $subject, $html, $files);
+        }
+        $topic = trim((string)($row['thread_subject'] ?? ''));
+        $subj  = preg_match('/^\s*re\s*:/i', $topic) ? $topic : 'RE: ' . $topic;
+        $ref   = (string)($row['job_ref'] ?? '');
+        if ($ref !== '') {
+            $html .= '<p style="color:#9ca3af;font-size:12px">Job ref [' . htmlspecialchars($ref, ENT_QUOTES) . ']</p>';
+        }
+        $refs = trim(($row['thread_references'] ?? '') . ' ' . $row['thread_message_id']);
+        $sent = MhdMailer::sendRaw($to, $cc, $subj, $html, $files,
+                                   ['in_reply_to' => $row['thread_message_id'], 'references' => $refs]);
+        if (!empty($sent['ok']) && !empty($sent['message_id'])) {
+            $db->query("UPDATE card_requests SET thread_references = ?, thread_message_id = ? WHERE id = ?",
+                       [$refs, $sent['message_id'], $row['id']]);
+        }
+        return $sent;
+    }
+
+    /**
      * The approval email. One link, to the prefetch-safe interstitial that
      * offers Approve and Reject, rather than two links: a plain reject link
      * would be followed by a scanner.
@@ -144,7 +175,7 @@ class CardJobMailer
 
 
         $subject = ($ref !== '' ? "[{$ref}] " : '') . "Business card approval: {$name}, {$div}";
-        return MhdMailer::sendRaw($to, $cc, $subject, $html, $files);
+        return self::sendForJob($req, $to, $cc, $subject, $html, $files);
     }
 
     /**
@@ -254,7 +285,7 @@ class CardJobMailer
         $subject = ($ref !== '' ? "[{$ref}] " : '')
                  . (!empty($dept['invoice_without_po']) ? 'Quotation' : 'Purchase order needed')
                  . ": {$name}, {$div}";
-        $sent = MhdMailer::sendRaw($to, $cc, $subject, $html, $files);
+        $sent = self::sendForJob($req, $to, $cc, $subject, $html, $files);
 
         // And the division's own WhatsApp group, when it has one (OHB Cards).
         if (!empty($dept['whatsapp_group']) && $files) {
@@ -332,7 +363,7 @@ class CardJobMailer
               . '</div>';
 
         $subject = ($ref !== '' ? "[{$ref}] " : '') . "Invoice and delivery note: {$name}, {$div}";
-        $sent = MhdMailer::sendRaw($to, $cc, $subject, $html, $files);
+        $sent = self::sendForJob($req, $to, $cc, $subject, $html, $files);
 
         foreach ($files as $f) { @unlink($f['path']); }
         return $sent;
@@ -438,7 +469,7 @@ class CardJobMailer
               . ' is received for <strong>' . $e($name) . '</strong> (' . $e($div) . ').</p>'
               . '<p>The invoice and the delivery note follow shortly.</p>'
               . '</div>';
-        $sent = MhdMailer::sendRaw($to, $cc,
+        $sent = self::sendForJob($req, $to, $cc,
             ($ref !== '' ? "[{$ref}] " : '') . "Purchase order received: {$name}, {$div}", $html);
 
         self::sendInvoiceHeldInternal($req, $dept, $reason, $po);

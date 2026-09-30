@@ -64,6 +64,8 @@ def main(path):
 
     out = {
         'message_id': str(msg.get('Message-ID') or ''),
+        'in_reply_to': str(msg.get('In-Reply-To') or ''),
+        'references': str(msg.get('References') or ''),
         'subject': str(msg.get('Subject') or ''),
         'from': str(msg.get('From') or ''),
         'to': str(msg.get('To') or ''),

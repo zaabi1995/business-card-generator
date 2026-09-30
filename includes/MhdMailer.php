@@ -214,7 +214,7 @@ class MhdMailer
      * @param array $attachments list of ['path' => absolute path, 'name' => filename]
      * @return array ['ok'=>bool, 'error'=>?string, 'recipients'=>array]
      */
-    public static function sendRaw(array $to, array $cc, string $subject, string $html, array $attachments = []): array
+    public static function sendRaw(array $to, array $cc, string $subject, string $html, array $attachments = [], array $thread = []): array
     {
         $to = array_values(array_filter(array_map('trim', $to),
             fn($e) => $e !== '' && filter_var($e, FILTER_VALIDATE_EMAIL)));
@@ -239,7 +239,8 @@ class MhdMailer
             $files[] = ['path' => $path, 'name' => self::safeFilename($name)];
         }
 
-        $mime = self::buildMimeMulti($to, $cc, $subject, $html, $files);
+        $messageId = '<' . date('YmdHis') . '.' . bin2hex(random_bytes(8)) . '@bhdoman.com>';
+        $mime = self::buildMimeMulti($to, $cc, $subject, $html, $files, $thread + ['message_id' => $messageId]);
         $recipients = array_merge($to, $cc);
         $res = self::smtpSend(self::SENDER, $recipients, $mime);
         self::log($to[0], $subject, $res['ok'], $res['error'] ?? null, [
@@ -248,7 +249,7 @@ class MhdMailer
             'attachments' => implode(',', array_column($files, 'name')),
             'missing'     => implode(',', $missing),
         ]);
-        return ['ok' => $res['ok'], 'error' => $res['error'] ?? null, 'recipients' => $recipients];
+        return ['ok' => $res['ok'], 'error' => $res['error'] ?? null, 'recipients' => $recipients, 'message_id' => $messageId];
     }
 
     /** Attachments are PDFs and card designs, so the type follows the extension. */
@@ -271,7 +272,7 @@ class MhdMailer
     }
 
     /** buildMime with many attachments instead of exactly one. */
-    private static function buildMimeMulti(array $to, array $cc, string $subject, string $html, array $files): string
+    private static function buildMimeMulti(array $to, array $cc, string $subject, string $html, array $files, array $thread = []): string
     {
         $eol      = "\r\n";
         $boundary = 'mhd-' . bin2hex(substr(md5($subject . $to[0]), 0, 12));
@@ -281,6 +282,13 @@ class MhdMailer
         $h .= 'To: ' . implode(', ', $to) . $eol;
         if ($cc) { $h .= 'Cc: ' . implode(', ', $cc) . $eol; }
         $h .= 'Subject: ' . $subjEnc . $eol;
+        // A reply inside the client's own thread (Ali, 30 Sep 2026). Header values
+        // are message ids only: anything else is dropped, never injected.
+        $clean = fn($v) => implode(' ', array_filter(preg_split('/\s+/', (string)$v),
+                                    fn($t) => preg_match('/^<[^<>\s]+@[^<>\s]+>$/', $t)));
+        if (!empty($thread['message_id']))  { $h .= 'Message-ID: ' . $clean($thread['message_id']) . $eol; }
+        if (!empty($thread['in_reply_to'])) { $h .= 'In-Reply-To: ' . $clean($thread['in_reply_to']) . $eol; }
+        if (!empty($thread['references']))  { $h .= 'References: ' . $clean($thread['references']) . $eol; }
         $h .= 'MIME-Version: 1.0' . $eol;
         $h .= 'Content-Type: multipart/mixed; boundary="' . $boundary . '"' . $eol;
 
