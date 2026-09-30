@@ -180,6 +180,29 @@ class CardJobMailer
                 $files[] = ['path' => $pdf, 'name' => $fileName . '.pdf'];
             }
         }
+        $quoteAttached = (bool)$files;
+
+        // The card design goes with the quotation (Ali, 30 Sep 2026: "send the
+        // quotes with design"), so the approver sees what the price is for and
+        // can raise the PO from one email. A copy of the rendered proof, because
+        // every attachment is deleted after sending and the render is cached.
+        if (!empty($req['employee_id'])) {
+            try {
+                require_once __DIR__ . '/CardPDFRenderer.php';
+                $r = CardPDFRenderer::render((string)$req['employee_id'], 'print',
+                                             ['include_qr' => !empty($req['include_qr'])]);
+                if (!empty($r['success']) && !empty($r['path']) && is_file($r['path'])) {
+                    $tmp = sys_get_temp_dir() . '/card-design-' . bin2hex(random_bytes(4)) . '.pdf';
+                    if (@copy($r['path'], $tmp)) {
+                        $files[] = ['path' => $tmp,
+                                    'name' => ($ref !== '' ? $ref . '-' : '') . 'card-design.pdf'];
+                    }
+                }
+            } catch (Throwable $t) {
+                error_log('[mhd quotation] design not attached: ' . $t->getMessage());
+            }
+        }
+        $designAttached = count($files) > ($quoteAttached ? 1 : 0);
 
         // Only when the PDF could not be fetched. The body otherwise carries no
         // figures at all: Ali, 17 Sep 2026, the rate is standard and settled,
@@ -187,7 +210,7 @@ class CardJobMailer
         // still cannot be raised against nothing, so if the document is missing
         // the numbers appear here rather than nowhere.
         $figures = '';
-        if (!$files) {
+        if (!$quoteAttached) {
             $figures = '<table style="border-collapse:collapse;margin:16px 0;font-size:14px">'
               . '<tr><td style="padding:6px 16px 6px 0;color:#6b7280">Item</td>'
               . '<td style="padding:6px 0"><strong>' . $e($price['description']) . '</strong></td></tr>'
@@ -204,13 +227,17 @@ class CardJobMailer
               . '</table>';
         }
 
-        $line = $files
-            ? 'The quotation' . ($num !== '' ? ' <strong>' . $e($num) . '</strong>' : '') . ' is attached.'
-            : 'The quotation' . ($num !== '' ? ' <strong>' . $e($num) . '</strong>' : '') . ' is below.';
+        $q    = 'The quotation' . ($num !== '' ? ' <strong>' . $e($num) . '</strong>' : '');
+        $line = $quoteAttached
+            ? $q . ($designAttached ? ' and the card design are attached.' : ' is attached.')
+            : $q . ' is below.' . ($designAttached ? ' The card design is attached.' : '');
+        require_once __DIR__ . '/CardPrice.php';
+        $rate = abs((float)($price['unit'] ?? 0) - CardPrice::UNIT_PRICE) < 0.0005
+            ? ' and is on the standard rate' : '';
 
         $html = '<div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#222;line-height:1.6">'
               . '<p>The card for <strong>' . $e($name) . '</strong> is approved for <strong>'
-              . $e($div) . '</strong> and is on the standard rate. ' . $line . '</p>'
+              . $e($div) . '</strong>' . $rate . '. ' . $line . '</p>'
               . $figures
               . (!empty($dept['invoice_without_po'])
                   // A division invoiced on approval (OHB) is never asked for a PO.
