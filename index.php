@@ -1257,6 +1257,10 @@ require_once INCLUDES_DIR . '/ui-header.php';
             transform: translateY(110%); transition: transform 0.25s cubic-bezier(0.23,1,0.32,1);
         }
         .landing-sticky-cta.is-visible { transform: translateY(0); }
+        /* The bar shows again below the final CTA, over the footer. Pad the
+           footer by the bar's height (0.625rem x 2 + 48px + 1px border = 69px)
+           so its last line (Last updated ...) stays visible. */
+        footer { padding-bottom: calc(4.5rem + env(safe-area-inset-bottom)); }
         .landing-sticky-cta a {
             display: flex; align-items: center; justify-content: center; gap: 0.5rem;
             min-height: 48px; border-radius: 0.75rem;
