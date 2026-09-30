@@ -21,8 +21,8 @@ class MhdMailer
 
     /**
      * Ali, 30 Sep 2026: "For any MHD Email ... CC info & sales always".
-     * When a send reaches anyone outside BHD, both team mailboxes go on Cc so each
-     * holds the full thread. Internal notices (To sales@ only) are left alone.
+     * When a send reaches an MHD mailbox, both team mailboxes go on Cc so each
+     * holds the full thread. Other clients and internal notices are left alone.
      */
     const BHD_TEAM    = ['info@bhdoman.com', 'sales@bhdoman.com'];
     private static function withTeamCc(array $to, array $cc): array
@@ -31,7 +31,9 @@ class MhdMailer
         $external = false;
         foreach ($all as $e) {
             $dom = substr(strrchr($e, '@') ?: '', 1);
-            if ($dom !== '' && !in_array($dom, ['bhdoman.com', 'bhd.om'], true)) { $external = true; break; }
+            foreach (['mhd.co.om', 'mhdoman.com', 'mhdlogistics.com', 'mhditics.com'] as $m) {
+                if ($dom === $m || str_ends_with($dom, '.' . $m)) { $external = true; break 2; }
+            }
         }
         return $external ? array_merge($cc, self::BHD_TEAM) : $cc;
     }
