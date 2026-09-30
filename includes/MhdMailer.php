@@ -18,6 +18,23 @@ class MhdMailer
     const SENDER      = 'sales@bhdoman.com';
     const SENDER_NAME = 'BHD Printing & Designing';
     const BHD_OWNER   = 'sales@bhdoman.com';
+
+    /**
+     * Ali, 30 Sep 2026: "For any MHD Email ... CC info & sales always".
+     * When a send reaches anyone outside BHD, both team mailboxes go on Cc so each
+     * holds the full thread. Internal notices (To sales@ only) are left alone.
+     */
+    const BHD_TEAM    = ['info@bhdoman.com', 'sales@bhdoman.com'];
+    private static function withTeamCc(array $to, array $cc): array
+    {
+        $all = array_map('strtolower', array_merge($to, $cc));
+        $external = false;
+        foreach ($all as $e) {
+            $dom = substr(strrchr($e, '@') ?: '', 1);
+            if ($dom !== '' && !in_array($dom, ['bhdoman.com', 'bhd.om'], true)) { $external = true; break; }
+        }
+        return $external ? array_merge($cc, self::BHD_TEAM) : $cc;
+    }
     const SMTP_HOST   = '127.0.0.1';
     /**
      * 10026, not 25. Postfix runs the BHD signature filter as a content_filter
@@ -55,6 +72,7 @@ class MhdMailer
             is_array($c['cc_emails'] ?? null) ? $c['cc_emails'] : [],
             [self::BHD_OWNER]
         );
+        $cc = self::withTeamCc([$to], $cc);
         $cc = array_values(array_unique(array_filter(array_map('trim', $cc), function ($e) use ($to) {
             return $e !== '' && strcasecmp($e, $to) !== 0 && filter_var($e, FILTER_VALIDATE_EMAIL);
         })));
@@ -201,6 +219,7 @@ class MhdMailer
         if (!$to) {
             return ['ok' => false, 'error' => 'no valid recipient', 'recipients' => []];
         }
+        $cc = self::withTeamCc($to, $cc);
         // Same filter sendCard uses: case-insensitive against the To, so a CC that
         // differs only in case does not receive a second copy.
         $cc = array_values(array_unique(array_filter(array_map('trim', $cc),
