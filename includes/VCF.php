@@ -110,6 +110,13 @@ class VCF {
         $phone  = self::firstNonEmpty($employee['phone'] ?? null);
         $mobile = self::firstNonEmpty($employee['mobile'] ?? null);
         $fax    = self::firstNonEmpty($employee['fax'] ?? null);
+        // Oman cards store 8 local digits because "+968" is printed artwork.
+        // A saved contact needs the country code or it will not dial from a
+        // foreign SIM. Only bare 8-digit numbers on an OM tenant change.
+        $__country = strtoupper((string)($company['country'] ?? ''));
+        $phone  = self::withDialCode($phone, $__country);
+        $mobile = self::withDialCode($mobile, $__country);
+        $fax    = self::withDialCode($fax, $__country);
         $__pDig = preg_replace('/\D+/', '', $phone);
         $__mDig = preg_replace('/\D+/', '', $mobile);
         $__samePhoneMobile = ($__pDig !== '' && $__pDig === $__mDig);
@@ -117,7 +124,7 @@ class VCF {
             $lines[] = 'TEL;TYPE=WORK,VOICE:' . self::escape($phone);
         }
         // Second office line (MHD cards carry two office numbers).
-        $phone2 = self::firstNonEmpty($employee['phone_2'] ?? null);
+        $phone2 = self::withDialCode(self::firstNonEmpty($employee['phone_2'] ?? null), $__country);
         $__p2Dig = preg_replace('/\D+/', '', $phone2);
         if ($phone2 !== '' && $__p2Dig !== $__pDig && $__p2Dig !== $__mDig) {
             $lines[] = 'TEL;TYPE=WORK,VOICE:' . self::escape($phone2);
@@ -125,7 +132,7 @@ class VCF {
         if ($mobile !== '') {
             $lines[] = 'TEL;TYPE=CELL,VOICE:' . self::escape($mobile);
         }
-        $mobile2 = self::firstNonEmpty($employee['mobile_2'] ?? null);
+        $mobile2 = self::withDialCode(self::firstNonEmpty($employee['mobile_2'] ?? null), $__country);
         if ($mobile2 !== '' && preg_replace('/\D+/', '', $mobile2) !== $__mDig) {
             $lines[] = 'TEL;TYPE=CELL,VOICE:' . self::escape($mobile2);
         }
@@ -381,6 +388,22 @@ class VCF {
         return implode(';', $parts);
     }
     
+    /**
+     * Add +968 to a bare 8-digit Omani number (landline 2x, mobile 7x/9x).
+     * Anything with a "+", "00" prefix, other length or other country is kept.
+     */
+    private static function withDialCode($number, $country) {
+        $number = (string) $number;
+        if ($country !== 'OM' || $number === '' || strpos($number, '+') !== false) {
+            return $number;
+        }
+        $digits = preg_replace('/\D+/', '', $number);
+        if (strlen($digits) === 8 && preg_match('/^[279]/', $digits)) {
+            return '+968 ' . $digits;
+        }
+        return $number;
+    }
+
     /**
      * Escape special characters for vCard format
      */

@@ -402,4 +402,23 @@ check(
     true
 );
 
+// ---------------------------------------------------------------------------
+// Oman dial code: MHD stores 8 local digits ("+968" is printed artwork).
+// The saved contact must carry +968 or it will not dial from a foreign SIM.
+// ---------------------------------------------------------------------------
+$omEmp = ['id' => 'durai.k', 'name_en' => 'K K Durai', 'email' => 'durai.k@mhd.co.om',
+    'phone' => '24835500', 'mobile' => '99452985', 'fax' => '24830946', 'phone_2' => '24837752',
+    'mobile_2' => '+968 72258263'];
+$vOm = unfold(VCF::generate($omEmp, ['country' => 'OM', 'name' => 'MHD']));
+check('om: bare office gets +968', str_contains($vOm, 'TEL;TYPE=WORK,VOICE:+968 24835500'), true);
+check('om: bare mobile gets +968', str_contains($vOm, 'TEL;TYPE=CELL,VOICE:+968 99452985'), true);
+check('om: bare fax gets +968', str_contains($vOm, 'TEL;TYPE=FAX:+968 24830946'), true);
+check('om: phone_2 gets +968', str_contains($vOm, 'TEL;TYPE=WORK,VOICE:+968 24837752'), true);
+check('om: a number with + is kept', str_contains($vOm, 'TEL;TYPE=CELL,VOICE:+968 72258263'), true);
+check('om: never doubled', str_contains($vOm, '+968 +968'), false);
+$vBh = unfold(VCF::generate(['id' => 'x', 'name_en' => 'X', 'mobile' => '39123456'], ['country' => 'BH']));
+check('non-OM tenant is unchanged', str_contains($vBh, 'TEL;TYPE=CELL,VOICE:39123456'), true);
+$vOm7 = unfold(VCF::generate(['id' => 'y', 'name_en' => 'Y', 'mobile' => '1234567'], ['country' => 'OM']));
+check('om: a 7-digit number is unchanged', str_contains($vOm7, 'TEL;TYPE=CELL,VOICE:1234567'), true);
+
 echo "ALL PASS\n";

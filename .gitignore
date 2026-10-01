@@ -128,3 +128,6 @@ __pycache__/
 
 # MHD purchase orders and signed delivery notes (nginx refuses to serve it)
 /private/
+
+# Runtime directory exports (CSV data, never committed)
+storage/directory-exports/
