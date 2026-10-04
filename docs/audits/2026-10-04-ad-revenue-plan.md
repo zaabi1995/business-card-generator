@@ -5,7 +5,7 @@ Start with the logo library, directory and editorial pages. Use a measured ad ex
 Observed state and coordinated rollout
 
 - The initial inspection found 68 logo cards, no AdSense loader and a missing ads.txt. The existing CSP would have blocked a newly inserted ad script.
-- A separate, coordinated advertising release has now installed the real AdSense publisher and responsive unit, ads.txt, localized disclosures and a scoped CSP allowance. The 21 deployment smoke checks passed on 4 October 2026. A published Google consent message is reported by the advertising chat. Google site review was being submitted at the time of this report; approval and serving revenue are not yet confirmed.
+- A separate, coordinated advertising release has now installed the real AdSense publisher and responsive unit, ads.txt, localized disclosures and a scoped CSP allowance. The 21 deployment smoke checks passed on 4 October 2026. A published Google consent message is reported by the advertising chat. Google displays “Getting ready” and “Review requested”; approval and serving revenue are not yet confirmed.
 - Initial manually placed ads are limited to public company and logo content. They do not load on private cards, administrative, authentication, payment or purchase flows. This report proposes further placements to evaluate after the baseline is established.
 - The site already has an extensive directory, logo profiles, free tools and a blog, including a government logo guide. These give us contextual inventory.
 - No authenticated GA4 or AdSense revenue data was available to this logo review. The number of indexed pages is not evidence of monetizable human traffic.

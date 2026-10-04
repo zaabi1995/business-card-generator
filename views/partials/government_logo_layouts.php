@@ -5,8 +5,6 @@ if (!$canDownload || empty($identity['layouts'])) return;
 ?>
 <div class="cardify-government-layouts" aria-labelledby="government-layouts-title">
     <h3 id="government-layouts-title" class="text-lg font-bold text-gray-900"><?= logo_hero_esc(t('logos.gov_identity_title')) ?></h3>
-    <p class="mt-1 text-sm text-gray-600"><?= logo_hero_esc(t('logos.gov_identity_source', ['page' => $identity['pdf_page'] ?? ''])) ?></p>
-    <p class="mt-1 text-sm text-gray-600"><?= logo_hero_esc(t('logos.gov_identity_note')) ?></p>
     <?php foreach (['arabic' => 'ar_', 'bilingual' => '', 'international' => 'int_'] as $layout => $prefix): ?>
         <?php if (empty($identity['layouts'][$layout])) continue; ?>
         <h4 class="mt-5 font-semibold text-gray-900"><?= logo_hero_esc(t('logos.gov_layout_' . $layout)) ?></h4>

@@ -99,19 +99,17 @@ if ($format === 'zip') {
         $file = $assetFile($path);
         if ($file) $zip->addFile($file, (str_starts_with($key, 'ar_') ? 'arabic/' : (str_starts_with($key, 'int_') ? 'international/' : 'bilingual/')) . basename($file));
     }
-    $readme = "Logo bundle for {$company['name_en']}\n"
+    $readme = "Logos for {$company['name_en']}\n"
             . "Indexed by Cardify, https://cardify.om/logos\n\n"
-            . "All marks are property of their respective owners. This bundle\n"
-            . "contains indexed or verified artwork for reference;\n"
+            . "All marks are property of their respective owners. These files\n"
+            . "contain indexed or verified artwork for reference;\n"
             . "use is permitted for identification and reference only (nominative\n"
             . "fair use). Commercial reuse, redistribution, and derivative works\n"
             . "require the owner's permission.\n\n"
             . "Need business cards? Visit https://cardify.om/pricing\n";
     $identity = LogoLibrary::identityAssets($company);
     if ($identity) {
-        $readme .= "\nSource: " . ($identity['source_file'] ?? '') . " (2025), PDF page " . ($identity['pdf_page'] ?? '') . "\n";
-        if (!empty($identity['layouts']['international'])) $readme .= "International layout: outside the Sultanate of Oman only (guide PDF page 33).\n";
-        $zip->addFromString('source-manifest.json', json_encode($identity, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+        if (!empty($identity['layouts']['international'])) $readme .= "International layout: outside the Sultanate of Oman only.\n";
     }
     $zip->addFromString('README.txt', $readme);
     $zip->close();

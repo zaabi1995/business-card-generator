@@ -171,7 +171,7 @@ $companyId = (int) ($company['id'] ?? 0);
                                 'png_2048' => ['PNG · 2048',  'logo_png_2048_path', 'fa-image',        'image/png'],
                                 'png_512'  => ['PNG · 512',   'logo_png_512_path',  'fa-image',        'image/png'],
                                 'webp'     => ['WebP',        'logo_webp_path',     'fa-image',        'image/webp'],
-                                'zip'      => ['ZIP bundle',  null,                 'fa-box-archive',  'application/zip'],
+                                'zip'      => ['ZIP',  null,                 'fa-box-archive',  'application/zip'],
                             ];
                             $availFormats = [];
                             foreach ($fmtCatalogue as $fmt => [$label, $col, $icon, $mime]) {
@@ -372,25 +372,26 @@ $companyId = (int) ($company['id'] ?? 0);
                     'company_web'  => $isAr ? 'موقع الشركة' : 'Company website',
                     'user_upload'  => $isAr ? 'مالك الشركة' : 'Uploaded by owner',
                     'admin_upload' => $isAr ? 'محرر المكتبة' : 'Library editor',
-                    'government_guide' => t('logos.gov_identity_source_label'),
                     default        => $isAr ? 'مصدر عام' : 'Public source',
                 };
                 $updated = !empty($company['logo_updated_at']) ? date('M j, Y', dbTs($company['logo_updated_at'])) : null;
             ?>
             <div class="border-t border-gray-100 px-6 md:px-8 py-4">
-                <dl class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                <dl class="grid grid-cols-2 <?= $sourceRaw === 'government_guide' ? 'md:grid-cols-3' : 'md:grid-cols-4' ?> gap-4 text-sm">
                     <div>
                         <dt class="text-xs text-gray-500 mb-0.5"><?= $isAr ? 'الصيغ المتوفرة' : 'Formats' ?></dt>
                         <dd class="font-semibold text-gray-900"><?= logo_hero_esc($formatsStr) ?></dd>
                     </div>
                     <div>
-                        <dt class="text-xs text-gray-500 mb-0.5"><?= $isAr ? 'الأبعاد (الأصل)' : 'Dimensions (source)' ?></dt>
+                        <dt class="text-xs text-gray-500 mb-0.5"><?= $isAr ? 'الأبعاد (الأصل)' : 'Dimensions' ?></dt>
                         <dd class="font-semibold text-gray-900"><?= logo_hero_esc($dimText) ?></dd>
                     </div>
+                    <?php if ($sourceRaw !== 'government_guide'): ?>
                     <div>
                         <dt class="text-xs text-gray-500 mb-0.5"><?= $isAr ? 'المصدر' : 'Source' ?></dt>
                         <dd class="font-semibold text-gray-900"><?= logo_hero_esc($sourceLabel) ?></dd>
                     </div>
+                    <?php endif; ?>
                     <div>
                         <dt class="text-xs text-gray-500 mb-0.5"><?= $isAr ? 'الترخيص' : 'License' ?></dt>
                         <dd class="font-semibold text-gray-900">
