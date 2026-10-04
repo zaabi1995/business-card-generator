@@ -65,6 +65,8 @@ class ArTwins
         '/contact',
         '/faq',
         '/gcc-business-index',
+        '/iq',
+        '/iq/leaderboard',
         '/get-started',
         '/logos',
         '/logos/press',
@@ -93,6 +95,7 @@ class ArTwins
      */
     private const AR_SUBTREES = [
         '/companies',
+        '/iq',
         '/logos',
         '/case-studies',
     ];

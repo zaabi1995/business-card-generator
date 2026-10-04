@@ -5,6 +5,9 @@ final class CardifyAdSense
     public const CLIENT = 'ca-pub-4720055706897611';
     public const SLOT = '1547426434';
 
+    /** Set by a page that must not carry ads (the IQ test while running, IQ Pro members). */
+    public static bool $suppress = false;
+
     public static function apex(): bool
     {
         $host = strtolower(preg_replace('/:\d+$/', '', $_SERVER['HTTP_HOST'] ?? ''));
@@ -13,8 +16,11 @@ final class CardifyAdSense
 
     public static function contentPage(): bool
     {
-        if (!self::apex() || http_response_code() >= 400) return false;
+        if (self::$suppress || !self::apex() || http_response_code() >= 400) return false;
         $path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
+        // The IQ landing page, a shared result and the leaderboard carry ads; the test itself,
+        // the account, the paid report and practice never do.
+        if (preg_match('~^/(?:ar/)?iq(?:/(?:result/[A-Za-z0-9]{16}|leaderboard))?/?$~D', $path) === 1) return true;
         return preg_match('~^/(?:ar/)?(?:companies|logos)(?:\.php)?(?:/[^/]+)?/?$~D', $path) === 1
             && !preg_match('~/(?:terms|privacy|press|download)/?$~D', $path);
     }

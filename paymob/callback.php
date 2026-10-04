@@ -20,6 +20,25 @@ if ($isPost) {
     $hmac = $_GET['hmac'] ?? null;
 }
 
+// IQ test purchases (cardify.om/iq) carry an IQ_ reference and have their own table.
+$__flat = Payment::flattenCallback($data, $_GET ?? []);
+$__ref = $__flat['merchant_order_id'] ?? ($__flat['special_reference'] ?? null);
+if (is_string($__ref) && strncmp($__ref, 'IQ_', 3) === 0) {
+    require_once INCLUDES_DIR . '/iq/IqPay.php';
+    $iq = IqPay::handleCallback($data, $hmac);
+    if ($isPost) {
+        header('Content-Type: application/json');
+        http_response_code($iq['success'] ? 200 : 400);
+        echo json_encode(['status' => $iq['success'] ? 'success' : 'error', 'message' => $iq['error'] ?? '']);
+        exit;
+    }
+    $dest = ($iq['product'] ?? '') === 'report' && !empty($iq['attempt'])
+        ? '/iq/report/' . rawurlencode($iq['attempt'])
+        : '/iq/account';
+    header('Location: https://' . (defined('APP_HOST') ? APP_HOST : 'cardify.om') . $dest . '?payment=' . ($iq['success'] ? 'success' : 'failed'));
+    exit;
+}
+
 // Try Payment.php first (new unified handler)
 $result = Payment::handleCallback($data, $hmac);
 

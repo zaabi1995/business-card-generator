@@ -114,6 +114,11 @@ function smRouteDate($path) {
     // not a date nobody can question.
     static $RENDERER = [
         'press-kit'         => 'press.php',
+        // The IQ test: one front controller behind /iq and /ar/iq (iq/iq.php).
+        'iq'                => 'iq/iq.php',
+        'iq/leaderboard'    => 'iq/iq.php',
+        'ar/iq'             => 'iq/iq.php',
+        'ar/iq/leaderboard' => 'iq/iq.php',
         // r254 / bhd-r6-95 #67. Read out of .htaccess:260-267, same as the
         // rows below it. Without these four, /logos/press and /logos/terms and
         // their AR twins resolved to no file and took the fallback, so editing
@@ -415,6 +420,8 @@ if ($part === 'static') {
         // the site. tools/verify-ar-twins.php now fails if a PATHS entry is
         // missing here, so the list cannot drift out of the map again.
         ['/pricing',      'monthly', '0.9'],
+        ['/iq',           'weekly',  '0.9'],
+        ['/iq/leaderboard', 'daily', '0.6'],
         ['/case-studies', 'monthly', '0.8'],
         ['/changelog',    'weekly',  '0.5'],
         ['/status',       'daily',   '0.4'],
