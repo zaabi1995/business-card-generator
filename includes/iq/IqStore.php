@@ -27,6 +27,9 @@ final class IqStore
     public const AGE_MIN = 14;
     public const AGE_MAX = 90;
     public const NORM_MIN = 200;
+    /** Share to unlock: this many people starting the test from a shared result opens its full report. */
+    public const SHARE_UNLOCK = 1;
+    public const REF_COOKIE = 'cardify_iq_ref';
 
     private static ?array $settings = null;
 
@@ -135,6 +138,54 @@ final class IqStore
         return hash('sha256', $raw);
     }
 
+    /* ---------- share to unlock ---------- */
+
+    private static function ip(): string
+    {
+        return function_exists('getClientIp') ? (string)getClientIp() : (string)($_SERVER['REMOTE_ADDR'] ?? '');
+    }
+
+    /** A visitor arrived through a shared result (?ref=<public id>): remember it for 30 days. */
+    public static function captureRef(string $pid): void
+    {
+        $a = self::byPublicId($pid);
+        if (!$a || $a['status'] !== 'done' || self::owns($a)) return;
+        if (!headers_sent()) setcookie(self::REF_COOKIE, $pid, [
+            'expires' => time() + 30 * 86400, 'path' => '/', 'secure' => true, 'httponly' => true, 'samesite' => 'Lax',
+        ]);
+        $_COOKIE[self::REF_COOKIE] = $pid;
+    }
+
+    /**
+     * The shared result that brought this visitor, if it may be credited: not the visitor's own,
+     * and not from the sharer's own connection (opening your link in another browser is not a share).
+     */
+    private static function referrer(): ?array
+    {
+        $pid = (string)($_COOKIE[self::REF_COOKIE] ?? '');
+        $a = $pid !== '' ? self::byPublicId($pid) : null;
+        if (!$a || self::owns($a)) return null;
+        $uid = self::userId();
+        if ($uid !== null && $a['user_id'] === $uid) return null;
+        if ($a['ip'] !== null && $a['ip'] === substr(self::ip(), 0, 64)) return null;
+        return $a;
+    }
+
+    /** People who started the test from this result, each connection counted once. */
+    public static function referrals(array $a): int
+    {
+        $r = Database::getInstance()->fetchOne('SELECT COUNT(DISTINCT ip) AS n FROM iq_attempts WHERE ref_id = :id', ['id' => $a['id']]);
+        return (int)$r['n'];
+    }
+
+    private static function creditReferrer(array $ref): void
+    {
+        if (self::referrals($ref) < self::SHARE_UNLOCK) return;
+        Database::getInstance()->getConnection()->prepare(
+            "UPDATE iq_attempts SET report_paid = 1, unlocked_by = 'share' WHERE id = :id AND report_paid = 0"
+        )->execute([':id' => $ref['id']]);
+    }
+
     /* ---------- attempts ---------- */
 
     public static function byPublicId(string $pid): ?array
@@ -187,7 +238,7 @@ final class IqStore
     public static function start(string $name, int $age, ?string $country, string $lang): array
     {
         $db = Database::getInstance();
-        $ip = function_exists('getClientIp') ? (string)getClientIp() : (string)($_SERVER['REMOTE_ADDR'] ?? '');
+        $ip = self::ip();
         $since = date('Y-m-d H:i:s', time() - 86400);
         $n = $db->fetchOne('SELECT COUNT(*) AS n FROM iq_attempts WHERE ip = :ip AND started_at > :s', ['ip' => $ip, 's' => $since]);
         if ((int)$n['n'] >= self::PER_IP_PER_DAY) throw new IqError('rate_limited', 429);
@@ -200,8 +251,10 @@ final class IqStore
             // A guest's earlier attempt keeps its token row; a new attempt gets a fresh token.
             $token = self::issueGuestToken();
         }
+        $ref = self::referrer();
         $now = microtime(true);
         $db->insert('iq_attempts', [
+            'ref_id' => $ref['id'] ?? null,
             'public_id' => self::publicId(),
             'user_id' => $uid,
             'guest_token' => $token,
@@ -216,6 +269,7 @@ final class IqStore
             'started_at' => date('Y-m-d H:i:s', (int)$now),
         ]);
         $a = $db->fetchOne('SELECT * FROM iq_attempts WHERE id = :id', ['id' => $db->getConnection()->lastInsertId()]);
+        if ($ref) self::creditReferrer($ref);
         return $a;
     }
 

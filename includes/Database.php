@@ -37,7 +37,10 @@ class Database {
             ];
             
             if ($type === 'mysql') {
-                $options[PDO::MYSQL_ATTR_INIT_COMMAND] = "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci";
+                // PHP 8.5 renamed the constant (Pdo\Mysql::ATTR_INIT_COMMAND) and warns on the old
+                // name; 8.3 on the server only has the old one. Same value either way.
+                $initCommand = defined('Pdo\Mysql::ATTR_INIT_COMMAND') ? constant('Pdo\Mysql::ATTR_INIT_COMMAND') : PDO::MYSQL_ATTR_INIT_COMMAND;
+                $options[$initCommand] = "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci";
             }
             
             $this->connection = new PDO($dsn, $username, $password, $options);

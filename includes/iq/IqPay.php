@@ -146,7 +146,7 @@ final class IqPay
                     ':d' => json_encode($data), ':p' => $ok ? date('Y-m-d H:i:s') : null, ':id' => $pay['id']]);
             if ($ok) {
                 if ($pay['product'] === 'report' && $pay['attempt_id']) {
-                    $conn->prepare('UPDATE iq_attempts SET report_paid = 1 WHERE id = :id')->execute([':id' => $pay['attempt_id']]);
+                    $conn->prepare("UPDATE iq_attempts SET report_paid = 1, unlocked_by = COALESCE(unlocked_by, 'paid') WHERE id = :id")->execute([':id' => $pay['attempt_id']]);
                 } elseif ($pay['product'] === 'pro_month') {
                     // 30 days from today, or from the end of a pass that is still running.
                     $conn->prepare('UPDATE iq_users SET pro_until = DATE_ADD(GREATEST(COALESCE(pro_until, NOW()), NOW()), INTERVAL 30 DAY) WHERE id = :u')

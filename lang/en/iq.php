@@ -1,6 +1,14 @@
 <?php
 /* IQ test pages (iq/iq.php) and the test screen (assets/iq/iq.js). */
 return array (
+  'report_free_share' => 'Or get it free: share your result, and when one person starts the test from your link, it unlocks.',
+  'share_unlock_title' => 'Get the full report free',
+  'share_unlock_body' => 'Share your result. When :n person starts the test from your link, your full report and certificate unlock for free.',
+  'share_unlock_progress' => ':n of :t started from your link so far.',
+  'share_text' => 'I scored IQ :iq on the free Cardify IQ test. Can you beat it?',
+  'share_text_other' => ':name scored IQ :iq on the free Cardify IQ test. Can you beat it?',
+  'unlocked_share' => 'Unlocked by sharing. Thank you for spreading the word.',
+  'or_pay' => 'Or get it now:',
   'brand' => 'Cardify IQ',
   'title_home' => 'Free IQ Test: 30 Adaptive Questions, Real IQ Score',
   'desc_home' => 'Take a free, adaptive IQ test in 33 minutes. Get your IQ on the standard scale (average 100), a range, a percentile and a breakdown by skill. English and Arabic.',

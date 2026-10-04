@@ -78,6 +78,8 @@ $path = rtrim((string)$path, '/');
 $seg = $path === '' ? [] : explode('/', ltrim($path, '/'));
 $page = $seg[0] ?? '';
 
+if (isset($_GET['ref']) && is_string($_GET['ref']) && $page !== 'api') IqStore::captureRef($_GET['ref']);
+
 try {
     switch ($page) {
         case '': page_home(); break;
@@ -266,6 +268,7 @@ function page_home(): void
                 <h3 class="iqx-h3"><?= iq_e(iq_s('report_title')) ?></h3>
                 <p class="iqx-price"><?= iq_e(price_label($prices['report'])) ?> <small><?= $prices['report'] !== null ? iq_e(iq_s('one_off')) : '' ?></small></p>
                 <ul><?php foreach ($S['report_points'] as $p): ?><li><?= iq_e($p) ?></li><?php endforeach; ?></ul>
+                <p class="iqx-muted iqx-small"><?= iq_e(iq_s('report_free_share')) ?></p>
             </article>
             <article class="iqx-card iqx-offer iqx-offer-pro">
                 <h3 class="iqx-h3"><?= iq_e(iq_s('pro_name')) ?></h3>
@@ -318,6 +321,31 @@ function result_block(array $a, bool $owner): string
     return $h . '</div>';
 }
 
+/**
+ * Share buttons for a result. The link carries ?ref=<id>, so whoever starts the test from it
+ * counts towards this result's free report. The text names Cardify and the score.
+ */
+function share_buttons(array $a, bool $owner): string
+{
+    $url = iq_abs('/result/' . $a['public_id']) . ($owner ? '?ref=' . $a['public_id'] : '');
+    $text = $owner ? iq_s('share_text', ['iq' => (int)$a['iq']]) : iq_s('share_text_other', ['name' => $a['name'], 'iq' => (int)$a['iq']]);
+    $t = rawurlencode($text . ' ' . $url);
+    $u = rawurlencode($url);
+    $links = [
+        ['WhatsApp', 'https://api.whatsapp.com/send?text=' . $t],
+        ['X', 'https://twitter.com/intent/tweet?text=' . $t],
+        ['LinkedIn', 'https://www.linkedin.com/sharing/share-offsite/?url=' . $u],
+        ['Facebook', 'https://www.facebook.com/sharer/sharer.php?u=' . $u],
+        ['Telegram', 'https://t.me/share/url?url=' . $u . '&text=' . rawurlencode($text)],
+    ];
+    $h = '<div class="iqx-actions iqx-share">';
+    foreach ($links as [$label, $href]) {
+        $h .= '<a class="iqx-btn iqx-btn-ghost" href="' . iq_e($href) . '" target="_blank" rel="noopener">' . $label . '</a>';
+    }
+    return $h . '<button class="iqx-btn iqx-btn-ghost" type="button" data-iq-copy="' . iq_e($url) . '" data-iq-text="' . iq_e($text) . '">'
+        . iq_e(iq_s('copy')) . '</button></div>';
+}
+
 function domain_bars(array $a): string
 {
     global $LANG;
@@ -353,8 +381,6 @@ function page_result(string $pid): void
         'robots' => 'noindex,follow', 'canonical' => iq_abs('/result/' . $pid), 'og' => 'https://cardify.om/iq/og/' . $pid . '.png',
     ]);
     echo subnav('/result', '/result/' . $pid);
-    $shareUrl = iq_abs('/result/' . $pid);
-    $shareText = rawurlencode(iq_s('result_title', ['name' => $name]) . ': ' . $shareUrl);
     ?>
     <section class="iqx-wrap iqx-narrow">
         <p class="iqx-eyebrow"><?= iq_e($owner ? iq_s('your_result') : iq_s('result_title', ['name' => $name])) ?></p>
@@ -368,25 +394,32 @@ function page_result(string $pid): void
                 <?= domain_bars($a) ?>
                 <p class="iqx-muted iqx-small"><?= iq_e(iq_s('by_kind_note')) ?></p>
             </article>
-            <div class="iqx-actions">
-                <?php if (IqPay::canSeeReport($u, $a)): ?>
-                    <a class="iqx-btn" href="<?= iq_url('/report/' . $pid) ?>"><?= iq_e(iq_s('open_report')) ?></a>
-                <?php elseif ($u && $prices['report'] !== null): ?>
-                    <button class="iqx-btn" type="button" data-iq-buy="report" data-attempt="<?= iq_e($pid) ?>"><?= iq_e(iq_s('buy_report')) ?> · <?= iq_e(price_label($prices['report'])) ?></button>
-                <?php endif; ?>
-                <?php if (!$u): ?>
-                    <a class="iqx-btn iqx-btn-ghost" href="<?= iq_url('/account?next=' . rawurlencode('/result/' . $pid)) ?>"><?= iq_e(iq_s('claim')) ?></a>
-                <?php endif; ?>
-            </div>
+            <?php $canSee = IqPay::canSeeReport($u, $a); $refs = IqStore::referrals($a); ?>
+            <?php if ($canSee): ?>
+                <?php if ($a['unlocked_by'] === 'share'): ?><p class="iqx-note is-ok"><?= iq_e(iq_s('unlocked_share')) ?></p><?php endif; ?>
+                <div class="iqx-actions"><a class="iqx-btn" href="<?= iq_url('/report/' . $pid) ?>"><?= iq_e(iq_s('open_report')) ?></a></div>
+            <?php else: ?>
+                <article class="iqx-card iqx-unlock">
+                    <h2 class="iqx-h3"><?= iq_e(iq_s('share_unlock_title')) ?></h2>
+                    <p><?= iq_e(iq_s('share_unlock_body', ['n' => iq_num(IqStore::SHARE_UNLOCK)])) ?></p>
+                    <p class="iqx-muted iqx-small"><?= iq_e(iq_s('share_unlock_progress', ['n' => iq_num($refs), 't' => iq_num(IqStore::SHARE_UNLOCK)])) ?></p>
+                    <?= share_buttons($a, true) ?>
+                    <?php if ($u && $prices['report'] !== null): ?>
+                        <p class="iqx-muted iqx-small"><?= iq_e(iq_s('or_pay')) ?></p>
+                        <button class="iqx-btn iqx-btn-ghost" type="button" data-iq-buy="report" data-attempt="<?= iq_e($pid) ?>"><?= iq_e(iq_s('buy_report')) ?> · <?= iq_e(price_label($prices['report'])) ?></button>
+                    <?php endif; ?>
+                </article>
+            <?php endif; ?>
+            <?php if (!$u): ?>
+                <div class="iqx-actions"><a class="iqx-btn iqx-btn-ghost" href="<?= iq_url('/account?next=' . rawurlencode('/result/' . $pid)) ?>"><?= iq_e(iq_s('claim')) ?></a></div>
+            <?php endif; ?>
         <?php endif; ?>
+        <?php if (!$owner || IqPay::canSeeReport($u, $a)): ?>
         <article class="iqx-card">
             <h2 class="iqx-h3"><?= iq_e(iq_s('share')) ?></h2>
-            <div class="iqx-actions">
-                <a class="iqx-btn iqx-btn-ghost" href="https://api.whatsapp.com/send?text=<?= $shareText ?>" target="_blank" rel="noopener">WhatsApp</a>
-                <a class="iqx-btn iqx-btn-ghost" href="https://twitter.com/intent/tweet?text=<?= $shareText ?>" target="_blank" rel="noopener">X</a>
-                <button class="iqx-btn iqx-btn-ghost" type="button" data-iq-copy="<?= iq_e($shareUrl) ?>"><?= iq_e(iq_s('copy')) ?></button>
-            </div>
+            <?= share_buttons($a, $owner) ?>
         </article>
+        <?php endif; ?>
         <?php if (!$owner): ?><p class="iqx-center"><a class="iqx-btn iqx-btn-lg" href="<?= iq_url('/test') ?>"><?= iq_e(iq_s('take_test')) ?></a></p><?php endif; ?>
         <p class="iqx-muted iqx-small"><?= iq_e(iq_s('disclaimer')) ?><?= IqStore::normed() ? '' : ' ' . iq_e(iq_s('provisional')) ?></p>
     </section>

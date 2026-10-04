@@ -310,8 +310,10 @@
   document.querySelectorAll('[data-iq-copy]').forEach(function (b) {
     b.addEventListener('click', function () {
       var url = b.getAttribute('data-iq-copy');
-      if (navigator.share && /Mobi/.test(navigator.userAgent)) { navigator.share({ url: url }).catch(function () {}); return; }
-      (navigator.clipboard ? navigator.clipboard.writeText(url) : Promise.reject()).then(function () { toast(S.copied); }, function () { prompt('', url); });
+      var text = b.getAttribute('data-iq-text') || '';
+      if (navigator.share && /Mobi/.test(navigator.userAgent)) { navigator.share({ text: text, url: url }).catch(function () {}); return; }
+      var all = text ? text + ' ' + url : url;
+      (navigator.clipboard ? navigator.clipboard.writeText(all) : Promise.reject()).then(function () { toast(S.copied); }, function () { prompt('', all); });
     });
   });
 

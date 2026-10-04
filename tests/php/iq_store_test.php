@@ -152,6 +152,34 @@ $failed = IqPay::handleCallback($sign(array_merge($base, ['success' => 'false', 
 $after2 = strtotime((string)$db->fetchOne('SELECT pro_until FROM iq_users WHERE id = :id', ['id' => $u['id']])['pro_until']);
 check('a declined payment grants nothing', $failed['success'] === false && $after2 === $after);
 
+/* 7. Share to unlock: one person starting from your link opens the report; you cannot credit yourself. */
+unset($_SESSION['iq_user_id']);
+$_COOKIE = [];
+$_SERVER['REMOTE_ADDR'] = '10.0.0.50';
+$sharer = fill(IqStore::start('Sharer', 30, null, 'en'), 15);
+$sharerCookie = $_COOKIE[IqStore::GUEST_COOKIE];
+check('a fresh result is locked', !IqPay::canSeeReport(null, $sharer));
+// The sharer opens their own link in another browser on the same connection: no credit.
+$_COOKIE = [];
+IqStore::captureRef($sharer['public_id']);
+IqStore::start('Same Wifi Me', 30, null, 'en');
+$sharer = $db->fetchOne('SELECT * FROM iq_attempts WHERE id = :id', ['id' => $sharer['id']]);
+check('starting from your own connection does not unlock', (int)$sharer['report_paid'] === 0 && IqStore::referrals($sharer) === 0);
+// A friend on another connection starts from the link.
+$_COOKIE = [];
+$_SERVER['REMOTE_ADDR'] = '10.0.0.51';
+IqStore::captureRef($sharer['public_id']);
+check('the link is remembered for the friend', ($_COOKIE[IqStore::REF_COOKIE] ?? '') === $sharer['public_id']);
+IqStore::start('Friend', 28, null, 'en');
+$sharer = $db->fetchOne('SELECT * FROM iq_attempts WHERE id = :id', ['id' => $sharer['id']]);
+check('one friend starting unlocks the sharer report, marked as share', (int)$sharer['report_paid'] === 1 && $sharer['unlocked_by'] === 'share' && IqStore::referrals($sharer) === 1, $sharer);
+$_COOKIE = [IqStore::GUEST_COOKIE => $sharerCookie];
+check('the sharer can now open the report', IqPay::canSeeReport(null, $sharer));
+$_COOKIE = [];
+check('a stranger still cannot', !IqPay::canSeeReport(null, $sharer));
+$paidRow = $db->fetchOne("SELECT unlocked_by FROM iq_attempts WHERE public_id = :p", ['p' => $c['public_id']]);
+check('a paid unlock is marked as paid', $paidRow['unlocked_by'] === 'paid', $paidRow);
+
 foreach (['iq_answers', 'iq_attempts', 'iq_users', 'iq_payments', 'iq_settings'] as $t) $db->exec("DELETE FROM $t");
 echo $failures === 0 ? "all iq store checks passed\n" : "$failures failure(s)\n";
 exit($failures ? 1 : 0);
