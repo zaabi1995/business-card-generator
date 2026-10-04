@@ -195,6 +195,22 @@ def _norm_family(name: str) -> str:
     return "".join(ch for ch in name.lower() if ch.isalnum())
 
 
+def _style_weight(style: str) -> int:
+    """Weight of a font file style suffix: a word (Bold, SemiBold), a numbered
+    cut (Frutiger/Univers: 45 Light, 55 Roman, 65 Bold, 75 Black), or both
+    ("65Bold"). Unknown styles count as regular."""
+    norm = _norm_family(style)
+    if not norm:
+        return 400
+    digits = "".join(ch for ch in norm if ch.isdigit())
+    word = "".join(ch for ch in norm if ch.isalpha())
+    if word in _WEIGHT_WORDS:
+        return _WEIGHT_WORDS[word]
+    numbered = {"25": 100, "35": 200, "45": 300, "55": 400, "56": 400, "57": 400,
+                "65": 700, "66": 700, "67": 700, "75": 900, "76": 900, "85": 900, "95": 900}
+    return numbered.get(digits[:2], 400)
+
+
 def _template_font_file(template: dict, field: dict, text: str):
     """The template's own font file (its import fonts_dir), matched on family and
     nearest weight, used only when it has a glyph for every visible character.
@@ -215,7 +231,7 @@ def _template_font_file(template: dict, field: dict, text: str):
         base, _, style = path.stem.partition("-")
         if _norm_family(base) != family and _norm_family(path.stem) != family:
             continue
-        weight = _WEIGHT_WORDS.get(_norm_family(style), 400) if style else 400
+        weight = _style_weight(style)
         score = abs(weight - want)
         if best is None or score < best[0]:
             best = (score, path)
