@@ -1,0 +1,81 @@
+.cardify-company-cover {
+    height: clamp(6rem, 15vw, 11rem);
+    overflow: hidden;
+    background: #eef3f4;
+}
+.cardify-company-cover img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center 42%;
+}
+.cardify-company-content { padding: clamp(1.25rem, 4vw, 2.5rem); }
+.cardify-company-identity {
+    display: grid;
+    grid-template-columns: 11rem minmax(0, 1fr);
+    align-items: center;
+    gap: 1.75rem;
+}
+.cardify-company-avatar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    aspect-ratio: 3 / 2;
+    padding: .75rem;
+    border: 1px solid #e5e7eb;
+    border-radius: .875rem;
+    background: #fff;
+}
+.cardify-company-avatar img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    object-fit: contain;
+}
+.cardify-company-avatar-fallback {
+    color: #00718c;
+    background: #e6f5f9;
+    font-size: 2rem;
+    font-weight: 700;
+}
+.cardify-company-names { min-width: 0; }
+.cardify-company-title {
+    margin: 0;
+    color: #111827;
+    font-size: clamp(1.375rem, 2.8vw, 2.25rem);
+    font-weight: 700;
+    line-height: 1.35;
+    text-wrap: balance;
+    overflow-wrap: anywhere;
+}
+.cardify-company-alternate-name {
+    margin: .625rem 0 0;
+    color: #64748b;
+    font-size: 1rem;
+    line-height: 1.6;
+    text-align: left;
+    overflow-wrap: anywhere;
+}
+html[dir="rtl"] .cardify-company-title { letter-spacing: 0; }
+html[dir="rtl"] .cardify-company-alternate-name { text-align: right; }
+.cardify-company-tags {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .5rem;
+    margin-top: 1.5rem;
+}
+.cardify-company-tags > * { max-width: 100%; }
+@media (max-width: 639px) {
+    .cardify-company-identity {
+        grid-template-columns: 5.5rem minmax(0, 1fr);
+        align-items: start;
+        gap: 1rem;
+    }
+    .cardify-company-avatar { aspect-ratio: 1; padding: .5rem; }
+    .cardify-company-alternate-name { font-size: .875rem; margin-top: .375rem; }
+    .cardify-company-tags { margin-top: 1.125rem; }
+}

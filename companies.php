@@ -354,7 +354,8 @@ if ($company) {
     $extraHead = '<script type="application/ld+json">' . json_encode($orgLd, JsonLd::SAFE | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>'
                . '<script type="application/ld+json">' . json_encode($crumbLd, JsonLd::SAFE | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>'
                . ($imageLd ? '<script type="application/ld+json">' . json_encode($imageLd, JsonLd::SAFE | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>' : '')
-               . ArTwins::pairLinks('/companies/' . $company['slug']);
+               . ArTwins::pairLinks('/companies/' . $company['slug'])
+               . '<link rel="stylesheet" href="/assets/css/cardify-company-profile.css?v=' . filemtime(__DIR__ . '/assets/css/cardify-company-profile.css') . '">';
     $GLOBALS['pageSchemaType'] = 'ProfilePage';
     $GLOBALS['pageSchemaName'] = $displayName;
     $GLOBALS['pageSchemaDescription'] = $pageDescription;
@@ -440,16 +441,18 @@ function escq($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
             <span class="text-gray-700"><?= escq($isAr ? ($company['name_ar'] ?: $company['name_en']) : $company['name_en']) ?></span>
         </nav>
 
-        <article class="bg-white rounded-2xl shadow-sm overflow-hidden">
-            <!-- Hero banner (sector-themed background + company name burned in) -->
-            <div class="relative aspect-[1200/630] bg-gray-900">
-                <img src="/og/company/<?= escq($company['slug']) ?>.jpg"
-                     alt="<?= escq($company['name_en']) ?>, <?= escq(labelOf($company['sector'], $SECTORS, false)) ?> in <?= escq(labelOf($company['wilayat'], $WILAYATS, false)) ?>, Oman"
-                     class="absolute inset-0 w-full h-full object-cover"
-                     loading="eager" fetchpriority="high" width="1200" height="630">
+        <article class="cardify-company-profile bg-white rounded-2xl shadow-sm overflow-hidden">
+            <?php
+                $coverSector = isset($SECTORS[$company['sector']])
+                    && is_file(__DIR__ . '/assets/images/og-sectors/' . $company['sector'] . '.jpg')
+                    ? $company['sector'] : 'other';
+            ?>
+            <div class="cardify-company-cover" aria-hidden="true">
+                <img src="/assets/images/og-sectors/<?= escq($coverSector) ?>.jpg"
+                     alt="" loading="eager" fetchpriority="high" width="1200" height="630">
             </div>
-            <div class="p-8 lg:p-10">
-            <div class="flex items-start gap-5 flex-wrap">
+            <div class="cardify-company-content">
+            <header class="cardify-company-identity">
                 <?php
                     /* Legacy logo_url header avatar. Suppress when the Logo Library
                        has flagged the logo as taken down so the takedown actually hides
@@ -474,6 +477,10 @@ function escq($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
                                           ?: ($company['logo_webp_path'] ?? null)
                                           ?: ($company['logo_url'] ?? null);
                         }
+                        $headerIdentity = LogoLibrary::identityAssets($company);
+                        $headerLayout = $isAr ? 'arabic' : 'bilingual';
+                        $headerTone = $_headerFlip ? 'black' : 'normal';
+                        $headerLogoUrl = $headerIdentity['layouts'][$headerLayout]['assets'][$headerTone]['svg'] ?? $headerLogoUrl;
                         if ($headerLogoUrl && !empty($company['logo_updated_at'])
                             && !str_contains($headerLogoUrl, '?')) {
                             $headerLogoUrl .= '?v=' . dbTs($company['logo_updated_at']);
@@ -481,13 +488,15 @@ function escq($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
                     }
                 ?>
                 <?php if ($headerLogoUrl): ?>
-                    <img src="<?= escq($headerLogoUrl) ?>" alt="<?= escq($company['name_en']) ?> logo" class="w-20 h-20 rounded-xl object-contain bg-gray-50 border border-gray-200 flex-shrink-0 -mt-16 shadow-lg ring-4 ring-white">
+                    <div class="cardify-company-avatar">
+                        <img src="<?= escq($headerLogoUrl) ?>" alt="<?= escq($company['name_en']) ?> logo" width="180" height="120">
+                    </div>
                 <?php else: ?>
-                    <div class="w-20 h-20 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center text-3xl font-bold flex-shrink-0 -mt-16 shadow-lg ring-4 ring-white">
+                    <div class="cardify-company-avatar cardify-company-avatar-fallback" aria-hidden="true">
                         <?= escq(mb_substr($company['name_en'], 0, 1)) ?>
                     </div>
                 <?php endif; ?>
-                <div class="flex-1 min-w-0">
+                <div class="cardify-company-names">
                     <?php
                         // 20-40: a company with no name_ar used to put a purely Latin
                         // string in the H1 of an Arabic page, so the page's single
@@ -505,13 +514,15 @@ function escq($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
                             ? ' (' . $secLabel . ' في ' . $wilLabel . ')'
                             : '';
                     ?>
-                    <h1 class="text-3xl sm:text-4xl font-bold text-gray-900 leading-tight"><?= escq($h1Text) ?><?php if ($h1Qualifier): ?><span class="text-xl sm:text-2xl font-semibold text-gray-500"><?= escq($h1Qualifier) ?></span><?php endif; ?></h1>
+                    <h1 class="cardify-company-title"><?= escq($h1Text) ?><?php if ($h1Qualifier): ?><span class="text-xl sm:text-2xl font-semibold text-gray-500"><?= escq($h1Qualifier) ?></span><?php endif; ?></h1>
                     <?php if (!$isAr && $company['name_ar']): ?>
-                        <p class="mt-2 text-lg text-gray-500 font-arabic" dir="rtl"><?= escq($company['name_ar']) ?></p>
+                        <p class="cardify-company-alternate-name font-arabic" dir="rtl"><?= escq($company['name_ar']) ?></p>
                     <?php elseif ($isAr && $company['name_en']): ?>
-                        <p class="mt-2 text-lg text-gray-500" dir="ltr"><?= escq($company['name_en']) ?></p>
+                        <p class="cardify-company-alternate-name" dir="ltr"><?= escq($company['name_en']) ?></p>
                     <?php endif; ?>
-                    <div class="mt-4 flex flex-wrap gap-2">
+                </div>
+            </header>
+                    <div class="cardify-company-tags">
                         <a href="<?= $basePrefix ?>/sector/<?= escq($company['sector']) ?>" class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-50 text-blue-700 text-sm font-medium hover:bg-blue-100">
                             <i class="fa-solid fa-industry text-xs"></i>
                             <?= escq(labelOf($company['sector'], $SECTORS, $isAr)) ?>
@@ -527,8 +538,6 @@ function escq($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
                             <?= escq($isGovernmentGuide ? t('companies.government_entity') : ($company['size_bucket'] === 'large' ? t('companies.size_large_enterprise') : t('companies.size_medium_enterprise'))) ?>
                         </span>
                     </div>
-                </div>
-            </div>
 
             <?php
                 /* Logo Library hero, status badge, download / claim CTA, takedown link */
