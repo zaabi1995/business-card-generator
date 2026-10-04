@@ -195,6 +195,22 @@ class CardImageRenderer
         $front = self::normalizeTemplate($templates['front'] ?? null, 'front');
         $back = self::normalizeTemplate($templates['back'] ?? null, 'back');
 
+        // QR opt-in, the same rule the print PDF and the portal follow: MHD-style
+        // designs ship their qr_code slot switched off, and the person's request
+        // (card_requests.include_qr) or else the department default
+        // (departments.include_qr_default) switches it on. Only a slot the design
+        // already defines is switched on; a design without a slot never gains one.
+        // MHD only, as in portal.php: other tenants ship a disabled slot to mean no QR.
+        if (($company['slug'] ?? '') === 'mhd' && self::wantsQr($db, $employee)) {
+            foreach (['front', 'back'] as $__side) {
+                $__tpl = $__side === 'front' ? $front : $back;
+                if (isset($__tpl['fields']['qr_code']) && is_array($__tpl['fields']['qr_code'])) {
+                    $__tpl['fields']['qr_code']['enabled'] = true;
+                }
+                if ($__side === 'front') { $front = $__tpl; } else { $back = $__tpl; }
+            }
+        }
+
         $presetId = trim((string)($employee['card_template_id'] ?? ''));
         if ($presetId !== '' && empty($theme['managed'])) {
             require_once __DIR__ . '/CardPresets.php';
@@ -253,6 +269,32 @@ class CardImageRenderer
                 'public_url' => $publicUrl,
             ],
         ];
+    }
+
+    private static function wantsQr($db, array $employee): bool
+    {
+        try {
+            if ($db->columnExists('card_requests', 'include_qr')) {
+                $req = $db->fetchOne(
+                    'SELECT include_qr FROM card_requests
+                      WHERE employee_id = :e AND deleted_at IS NULL AND include_qr IS NOT NULL
+                      ORDER BY submitted_at DESC LIMIT 1',
+                    ['e' => $employee['id']]
+                );
+                if (is_array($req)) {
+                    return (bool)$req['include_qr'];
+                }
+            }
+            if (!empty($employee['department_id']) && $db->columnExists('departments', 'include_qr_default')) {
+                $dept = $db->fetchOne(
+                    'SELECT include_qr_default FROM departments WHERE id = :d LIMIT 1',
+                    ['d' => $employee['department_id']]
+                );
+                return is_array($dept) && !empty($dept['include_qr_default']);
+            }
+        } catch (Throwable $e) {
+        }
+        return false;
     }
 
     private static function normalizeTemplate($template, string $side): array
