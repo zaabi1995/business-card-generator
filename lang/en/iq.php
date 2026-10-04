@@ -248,4 +248,6 @@ return array (
   'cert_percentile' => 'Percentile',
   'cert_taken' => 'Test taken',
   'cert_number' => 'Certificate number',
+  'confirm_email_lead' => 'To use the IQ test with your Cardify account, confirm your email once with a code.',
+  'confirm_email' => 'Confirm my email',
 );

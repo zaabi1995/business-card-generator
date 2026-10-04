@@ -248,4 +248,6 @@ return array (
   'cert_percentile' => 'النسبة المئوية',
   'cert_taken' => 'تاريخ الاختبار',
   'cert_number' => 'رقم الشهادة',
+  'confirm_email_lead' => 'لاستخدام اختبار الذكاء بحساب Cardify، أكّد بريدك الإلكتروني مرة واحدة برمز.',
+  'confirm_email' => 'تأكيد بريدي الإلكتروني',
 );

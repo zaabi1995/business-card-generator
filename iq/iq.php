@@ -738,8 +738,12 @@ function page_account(): void
         // Signed in, but nothing to attach an IQ account to: never bounce to
         // /login (it would send them straight back here).
         layout_open(iq_s('account') . ' · ' . iq_s('brand'), '', ['robots' => 'noindex']);
+        // Signed in with a password: prove the email once with a code, then the
+        // IQ account links to it (a password does not prove the email).
+        $confirm = '/login?' . http_build_query(['method' => 'code', 'need' => 'email', 'redirect' => iq_url('/account')]);
         echo subnav('/account', '/account') . '<section class="iqx-wrap iqx-narrow"><article class="iqx-card"><p>'
-            . iq_e(iq_s('sign_in_lead')) . '</p></article></section>';
+            . iq_e(iq_s('confirm_email_lead')) . '</p><p><a class="iqx-btn" href="' . iq_e($confirm) . '">'
+            . iq_e(iq_s('confirm_email')) . '</a></p></article></section>';
         layout_close();
         return;
     }
