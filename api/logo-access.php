@@ -86,7 +86,14 @@ try {
             || $intent['subject'] !== LogoAccess::subject()) logoAccessResponse(['error' => 'checkout_expired'], 409);
         $order = $db->fetchOne('SELECT status FROM logo_pass_orders WHERE id = :id', ['id' => $intent['order']]);
         if (!$order || $order['status'] !== 'pending' || LogoAccess::paid()) logoAccessResponse(['error' => 'checkout_expired'], 409);
-        logoAccessResponse($intent['result']);
+        require_once INCLUDES_DIR . '/Payment.php';
+        $result = $intent['result'];
+        if (empty($result['paymentToken'])) {
+            $result['paymentToken'] = Payment::applePayToken($result['publicKey'], $result['clientSecret']);
+            if (!$result['paymentToken']) logoAccessResponse(['error' => 'gateway_unavailable'], 502);
+            $_SESSION['logo_checkout_intent']['result'] = $result;
+        }
+        logoAccessResponse($result);
     }
 
     if ($action === 'checkout') {

@@ -157,10 +157,11 @@
       self.publicKey = d.publicKey;
       self.clientSecret = d.clientSecret;
       if (d.fallbackUrl) self.cfg.hostedFallbackUrl = d.fallbackUrl;
+      if (d.paymentToken) return {payment_keys: {'apple-pay': d.paymentToken}};
       return fetch(self.cfg.apiBase + '/v1/intention/element/' + self.publicKey + '/' + self.clientSecret + '/', {
         headers: { Accept: 'application/json' }
-      });
-    }).then(function (er) { return er.json(); }).then(function (e) {
+      }).then(function (er) { return er.json(); });
+    }).then(function (e) {
       var token = e.payment_keys && e.payment_keys['apple-pay'];
       if (!token) {
         console.error('[cardify-apple-pay] no apple-pay payment token available');

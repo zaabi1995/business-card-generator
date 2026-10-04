@@ -329,6 +329,22 @@ class Payment {
     /**
      * Handle Paymob callback (both GET redirect and POST webhook)
      */
+    public static function applePayToken(string $publicKey, string $clientSecret): ?string
+    {
+        // Paymob's intention element endpoint does not allow browser CORS.
+        $url = 'https://oman.paymob.com/v1/intention/element/' . rawurlencode($publicKey) . '/' . rawurlencode($clientSecret) . '/';
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 15,
+            CURLOPT_HTTPHEADER => ['Accept: application/json']]);
+        $body = curl_exec($ch);
+        $status = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+        if ($status !== 200 || $body === false) return null;
+        $data = json_decode($body, true);
+        $token = $data['payment_keys']['apple-pay'] ?? null;
+        return is_string($token) && $token !== '' ? $token : null;
+    }
+
     /**
      * Flatten a Paymob callback into one array, and decide which fields the
      * query string is allowed to contribute.
