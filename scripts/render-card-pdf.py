@@ -332,9 +332,11 @@ def _apply_value_part(text, field):
         code = tokens[0] if tokens and tokens[0].startswith('+') else ''
         rest = tokens[1:] if code else tokens
         text = code if part == 'code' else ''.join(rest)
-        if part == 'code' and text:
+        if part == 'code' and text and any('\u0600' <= ch <= '\u06ff' for ch in text):
             bidi = 'ltr'
-    if text and bidi == 'ltr':
+    # Direction marks only around Arabic-script text: a Latin font has no glyph
+    # for U+202D, and an English "+973" needs no isolation.
+    if text and bidi == 'ltr' and any('\u0600' <= ch <= '\u06ff' for ch in text):
         text = '\u202d' + text + '\u202c'
     return text
 
@@ -1334,6 +1336,12 @@ def render(template_path: str, employee_path: str, out_path: str,
             # double-strike (e.g. "An Omantel Company"). Only the dynamic
             # fields (which were redacted out) get redrawn.
             if used_vector_bg and (field.get('render_in_bg') or static_text):
+                continue
+            # showIf: opt-in, print this field only when that employee column
+            # has a value (a row label/colon/code next to an optional number).
+            _show_if = field.get('showIf')
+            if _show_if and not _apply_value_part(
+                    _resolve_employee_value(_show_if, employee), {'valuePart': 'number'}):
                 continue
             if static_text:
                 text = static_text

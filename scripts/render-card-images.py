@@ -386,9 +386,11 @@ def _apply_value_part(text, field):
         code = tokens[0] if tokens and tokens[0].startswith('+') else ''
         rest = tokens[1:] if code else tokens
         text = code if part == 'code' else ''.join(rest)
-        if part == 'code' and text:
+        if part == 'code' and text and any('\u0600' <= ch <= '\u06ff' for ch in text):
             bidi = 'ltr'
-    if text and bidi == 'ltr':
+    # Direction marks only around Arabic-script text: a Latin font has no glyph
+    # for U+202D, and an English "+973" needs no isolation.
+    if text and bidi == 'ltr' and any('\u0600' <= ch <= '\u06ff' for ch in text):
         text = '\u202d' + text + '\u202c'
     return text
 
@@ -520,6 +522,9 @@ def _render(payload: dict, template: dict, side: str, input_dir: Path) -> Image.
         if key in {"qr", "qr_code", "qrcode"}:
             _draw_qr(canvas, template, field, str(payload.get("public_url") or ""))
             qr_drawn = True
+            continue
+        _show_if = field.get("showIf")
+        if _show_if and not _apply_value_part(_employee_value(str(_show_if), payload, {}), {"valuePart": "number"}):
             continue
         _bound = str(field.get("bind") or key)
         _draw_text(draw, template, key, field,

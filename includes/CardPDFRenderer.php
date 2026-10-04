@@ -611,6 +611,7 @@ class CardPDFRenderer
                 'field_key'    => (string)($f['bind'] ?? $key),
                 'valuePart'    => (string)($f['valuePart'] ?? ''),
                 'bidi'         => (string)($f['bidi'] ?? ''),
+                'showIf'       => (string)($f['showIf'] ?? ''),
                 'static_text'  => $staticText,
                 // Template sample, used as fallback for tenant-constant
                 // fields (website/company/address) when the employee row
