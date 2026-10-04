@@ -49,6 +49,7 @@ return [
     'nav_subscriptions'   => 'Subscriptions',
     'nav_referrals'       => 'Referrals',
     'nav_audit_logs'      => 'Audit Logs',
+    'nav_consumers'       => 'Consumers (IQ, logos)',
     'nav_email_logs'      => 'Email Logs',
     'nav_account_settings'=> 'Account Settings',
     'nav_email_settings'  => 'Email Settings',

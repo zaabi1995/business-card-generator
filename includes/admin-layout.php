@@ -104,6 +104,7 @@ function getAdminNavItems() {
             ['name' => t('admin.nav_linkedin'), 'icon' => 'fa-brands fa-linkedin', 'url' => $superBasePath . 'linkedin-carousels.php', 'key' => 'linkedin-carousels'],
             ['name' => t('admin.nav_plans'), 'icon' => 'fa-solid fa-tags', 'url' => $basePath . 'plans' . $ext, 'key' => 'plans'],
             ['name' => t('admin.nav_subscriptions'), 'icon' => 'fa-solid fa-credit-card', 'url' => $superBasePath . 'subscriptions.php', 'key' => 'subscriptions'],
+            ['name' => t('admin.nav_consumers'), 'icon' => 'fa-solid fa-user-group', 'url' => $superBasePath . 'consumers.php', 'key' => 'consumers'],
             ['name' => t('admin.nav_referrals'), 'icon' => 'fa-solid fa-share-nodes', 'url' => $superBasePath . 'referrals.php', 'key' => 'referrals'],
             ['name' => 'Scan Intelligence', 'icon' => 'fa-solid fa-brain', 'url' => $superBasePath . 'scan-intelligence.php', 'key' => 'scan-intelligence'],
             ['name' => t('admin.nav_audit_logs'), 'icon' => 'fa-solid fa-clipboard-list', 'url' => $basePath . 'audit-logs' . $ext, 'key' => 'audit-logs'],

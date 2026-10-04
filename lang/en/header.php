@@ -9,4 +9,6 @@ return [
     'close_menu'       => 'Close menu',
     'more'             => 'More',
     'my_account'       => 'My account',
+    'my_iq'            => 'My IQ results',
+    'my_logos'         => 'Logo downloads',
 ];

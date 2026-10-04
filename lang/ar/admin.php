@@ -49,6 +49,7 @@ return [
     'nav_subscriptions'   => 'الاشتراكات',
     'nav_referrals'       => 'الإحالات',
     'nav_audit_logs'      => 'سجلّ الأحداث',
+    'nav_consumers'       => 'المستهلكون (الذكاء، الشعارات)',
     'nav_email_logs'      => 'سجلّ البريد',
     'nav_account_settings'=> 'إعدادات الحساب',
     'nav_email_settings'  => 'إعدادات البريد',

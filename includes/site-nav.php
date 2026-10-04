@@ -58,6 +58,15 @@ if (!function_exists('renderNavigation')) {
         // Signed in by code with no Cardify account (IQ test only): one sign-in,
         // so the header shows their account instead of "Sign In".
         $iqOnly = !$isLoggedIn && !empty($_SESSION['iq_user_id']);
+        // One account menu for everything one sign-in covers (5 Oct 2026).
+        $accountLinks = [];
+        if ($isLoggedIn || $iqOnly) {
+            $tt = static fn(string $k, string $en) => function_exists('t') && t($k) !== $k ? t($k) : $en;
+            if ($isLoggedIn) $accountLinks[] = [$dashboardUrl, 'fa-gauge-high', $tt('header.dashboard', 'Dashboard')];
+            $accountLinks[] = [getBasePath() . 'iq/account', 'fa-brain', $tt('header.my_iq', 'My IQ results')];
+            $accountLinks[] = [getBasePath() . 'logo-access.php', 'fa-download', $tt('header.my_logos', 'Logo downloads')];
+            $accountLinks[] = [getBasePath() . 'logout.php', 'fa-right-from-bracket', $tt('auth.sign_out', 'Sign Out')];
+        }
         $myAccountLabel = function_exists('t') && t('header.my_account') !== 'header.my_account' ? t('header.my_account') : 'My account';
 
         // Default navigation links (used on all non-homepage pages).
@@ -141,10 +150,19 @@ if (!function_exists('renderNavigation')) {
                         <div class="hidden sm:block"><?php include __DIR__ . '/currency-selector.php'; ?></div>
                         <?php if ($isLoggedIn): ?>
                             <!-- Logged In State -->
-                            <span class="cardify-nav-hello items-center gap-2 px-4 py-2 text-gray-700 font-medium">
-                                <i class="fa-solid fa-circle-user text-blue-600"></i>
-                                <?= function_exists('t') ? htmlspecialchars(t('header.hello_user', ['name' => $userName])) : 'Hello, ' . htmlspecialchars($userName) ?>
-                            </span>
+                            <?php // account menu: everything the one sign-in covers ?>
+                            <details class="cardify-nav-more cardify-nav-account relative">
+                                <summary class="cursor-pointer list-none inline-flex items-center gap-1.5 px-2 py-2 text-gray-700 hover:text-blue-600 font-medium" aria-label="<?= htmlspecialchars($myAccountLabel) ?>">
+                                    <i class="fa-solid fa-circle-user text-blue-600 text-xl" aria-hidden="true"></i>
+                                    <span class="cardify-nav-hello"><?= htmlspecialchars($userName) ?></span>
+                                    <i class="fa-solid fa-chevron-down text-xs" aria-hidden="true"></i>
+                                </summary>
+                                <div class="cardify-nav-more-panel bg-white border border-gray-100 rounded-xl shadow-lg py-2">
+                                    <?php foreach ($accountLinks as [$href, $icon, $label]): ?>
+                                    <a href="<?= htmlspecialchars($href) ?>" class="flex items-center gap-3 px-4 py-2.5 text-gray-700 hover:bg-gray-50 hover:text-blue-600 font-medium whitespace-nowrap"><i class="fa-solid <?= $icon ?> w-4 text-gray-400" aria-hidden="true"></i><?= htmlspecialchars($label) ?></a>
+                                    <?php endforeach; ?>
+                                </div>
+                            </details>
                             <a href="<?php echo $dashboardUrl; ?>" class="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-lg shadow-blue-600/30 transition-all hover:shadow-xl hover:shadow-blue-600/40">
                                 <i class="fa-solid fa-gauge-high"></i>
                                 <?= function_exists('t') ? htmlspecialchars(t('header.dashboard')) : 'Dashboard' ?>
@@ -152,9 +170,16 @@ if (!function_exists('renderNavigation')) {
                         <?php else: ?>
                             <!-- Logged Out State -->
                             <?php if ($iqOnly): ?>
-                            <a href="<?php echo getBasePath(); ?>iq/account" class="hidden sm:inline-flex items-center gap-2 px-4 py-2 text-gray-700 hover:text-blue-600 font-medium transition-colors">
-                                <i class="fa-solid fa-circle-user text-blue-600" aria-hidden="true"></i> <?= htmlspecialchars($myAccountLabel) ?>
-                            </a>
+                            <details class="cardify-nav-more cardify-nav-account relative">
+                                <summary class="cursor-pointer list-none inline-flex items-center gap-2 px-4 py-2 text-gray-700 hover:text-blue-600 font-medium">
+                                    <i class="fa-solid fa-circle-user text-blue-600" aria-hidden="true"></i> <?= htmlspecialchars($myAccountLabel) ?> <i class="fa-solid fa-chevron-down text-xs" aria-hidden="true"></i>
+                                </summary>
+                                <div class="cardify-nav-more-panel bg-white border border-gray-100 rounded-xl shadow-lg py-2">
+                                    <?php foreach ($accountLinks as [$href, $icon, $label]): ?>
+                                    <a href="<?= htmlspecialchars($href) ?>" class="flex items-center gap-3 px-4 py-2.5 text-gray-700 hover:bg-gray-50 hover:text-blue-600 font-medium whitespace-nowrap"><i class="fa-solid <?= $icon ?> w-4 text-gray-400" aria-hidden="true"></i><?= htmlspecialchars($label) ?></a>
+                                    <?php endforeach; ?>
+                                </div>
+                            </details>
                             <?php else: ?>
                             <a href="<?php echo getBasePath(); ?>login" class="hidden sm:inline-flex items-center px-4 py-2 text-gray-700 hover:text-blue-600 font-medium transition-colors">
                                 <?= function_exists('t') ? htmlspecialchars(t('header.sign_in')) : 'Sign In' ?>
@@ -196,17 +221,14 @@ if (!function_exists('renderNavigation')) {
                             <i class="fa-solid fa-circle-user text-blue-600"></i>
                             <?= function_exists('t') ? htmlspecialchars(t('header.hello_user', ['name' => $userName])) : 'Hello, ' . htmlspecialchars($userName) ?>
                         </div>
-                        <a href="<?php echo $dashboardUrl; ?>" class="block py-2 text-blue-600 hover:text-blue-700 font-medium">
-                            <i class="fa-solid fa-gauge-high"></i>
-                            <?= function_exists('t') ? htmlspecialchars(t('header.dashboard')) : 'Dashboard' ?>
-                        </a>
-                        <a href="<?php echo getBasePath(); ?>logout.php" class="block py-2 text-gray-600 hover:text-red-600 font-medium">
-                            <i class="fa-solid fa-right-from-bracket"></i>
-                            <?= function_exists('t') ? htmlspecialchars(t('auth.sign_out')) : 'Sign Out' ?>
-                        </a>
+                        <?php foreach ($accountLinks as [$href, $icon, $label]): ?>
+                        <a href="<?= htmlspecialchars($href) ?>" class="block py-2 text-gray-600 hover:text-blue-600 font-medium"><i class="fa-solid <?= $icon ?> w-5 text-gray-400" aria-hidden="true"></i> <?= htmlspecialchars($label) ?></a>
+                        <?php endforeach; ?>
                     <?php else: ?>
                         <?php if ($iqOnly): ?>
-                        <a href="<?php echo getBasePath(); ?>iq/account" class="block py-2 text-gray-600 hover:text-blue-600 font-medium"><?= htmlspecialchars($myAccountLabel) ?></a>
+                        <?php foreach ($accountLinks as [$href, $icon, $label]): ?>
+                        <a href="<?= htmlspecialchars($href) ?>" class="block py-2 text-gray-600 hover:text-blue-600 font-medium"><i class="fa-solid <?= $icon ?> w-5 text-gray-400" aria-hidden="true"></i> <?= htmlspecialchars($label) ?></a>
+                        <?php endforeach; ?>
                         <?php else: ?>
                         <a href="<?php echo getBasePath(); ?>login" class="block py-2 text-gray-600 hover:text-blue-600 font-medium">
                             <?= function_exists('t') ? htmlspecialchars(t('header.sign_in')) : 'Sign In' ?>
@@ -224,7 +246,8 @@ if (!function_exists('renderNavigation')) {
         .cardify-nav-desktop{display:none}
         @media (min-width:1280px){.cardify-nav-desktop{display:flex}.cardify-nav-phone{display:none!important}}
         .cardify-nav-hello{display:none}
-        @media (min-width:1536px){.cardify-nav-hello{display:inline-flex}}
+        @media (min-width:1536px){.cardify-nav-hello{display:inline}}
+        .cardify-nav-account summary::-webkit-details-marker{display:none}
         .cardify-nav-more summary::-webkit-details-marker{display:none}
         .cardify-nav-more[open] summary i{transform:rotate(180deg)}
         .cardify-nav-more-panel{position:absolute;top:100%;margin-top:.75rem;inset-inline-end:0;min-width:14rem;z-index:60}
