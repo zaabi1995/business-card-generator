@@ -173,8 +173,8 @@
 .iqx-history { list-style: none; margin: 0; padding: 0; }
 .iqx-history a { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; align-items: center; padding: 10px 0; border-block-end: 1px solid var(--iq-line); text-decoration: none; color: var(--iq-ink); }
 .iqx-history .iqx-bar { grid-column: 1 / -1; }
-.iqx-review.is-ok { border-inline-start: 4px solid var(--iq-ok); }
-.iqx-review.is-bad { border-inline-start: 4px solid var(--iq-bad); }
+.iqx-review.is-ok { border-color: #b9dcc7; }
+.iqx-review.is-bad { border-color: #f1c4bf; }
 .iqx-review .iqx-opts { margin-block-start: 10px; }
 .iqx-review .iqx-opt { cursor: default; }
 
