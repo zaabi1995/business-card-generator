@@ -486,12 +486,15 @@ h1{font-size:30pt;margin:6mm 0 2mm}
 <p class="s">30 adaptive questions of fluid reasoning, 33 minutes, standard scale (average 100, standard deviation 15). Not a clinical diagnosis.</p>
 <div class="f"><span>Verify: ' . htmlspecialchars($verify) . '</span><span>ID ' . htmlspecialchars($pid) . '</span></div>
 </div></body></html>';
-    $dir = sys_get_temp_dir() . '/iq-cert';
-    @mkdir($dir, 0700, true);
+    // Cardify's own tmp/ (open_basedir allows it; /tmp may not be), and an absolute binary path
+    // because PHP-FPM's PATH does not always include /usr/local/bin.
+    $dir = dirname(__DIR__) . '/tmp/iq-cert';
+    @mkdir($dir, 0750, true);
     $in = $dir . '/' . $pid . '.html';
     $out = $dir . '/' . $pid . '.pdf';
     file_put_contents($in, $html);
-    exec('timeout 40 weasyprint ' . escapeshellarg($in) . ' ' . escapeshellarg($out) . ' 2>&1', $log, $rc);
+    $bin = is_file('/usr/local/bin/weasyprint') ? '/usr/local/bin/weasyprint' : 'weasyprint';
+    exec('timeout 40 ' . $bin . ' ' . escapeshellarg($in) . ' ' . escapeshellarg($out) . ' 2>&1', $log, $rc);
     @unlink($in);
     if ($rc !== 0 || !is_file($out)) {
         error_log('[iq] certificate failed: ' . implode(' ', array_slice($log, -3)));
