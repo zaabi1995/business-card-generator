@@ -65,6 +65,9 @@ function logos_terms_esc($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 
         <div class="prose prose-slate max-w-none prose-headings:font-bold prose-headings:text-gray-900 prose-a:text-blue-600 prose-a:no-underline hover:prose-a:underline">
             <p class="lead"><?= logos_terms_esc(t('logos.terms_lead')) ?></p>
 
+            <h2><?= logos_terms_esc(t('logos.terms_h2_access')) ?></h2>
+            <p><?= logos_terms_esc(t('logos.terms_p_access')) ?></p>
+
             <h2><?= logos_terms_esc(t('logos.terms_h2_reference')) ?></h2>
             <p><?= logos_terms_esc(t('logos.terms_p_reference')) ?></p>
 

@@ -95,6 +95,16 @@
     return loadAppleSdk().then(function () {
       var AP = window.ApplePaySession;
       if (!AP) { self.showUnavailable(); return; }
+      if (self.cfg.readyOnly) {
+        if (!self._bound && self.btnEl) {
+          self._bound = true;
+          self.btnEl.addEventListener('click', function () { void self.pay(); });
+        }
+        return self.isCapable(AP).then(function (ok) {
+          if (!ok) { self.hide(); self.showUnavailable(); return; }
+          return self.bootstrap().then(function () { self.reveal(); }).catch(function () { self.hide(); self.showUnavailable(); });
+        });
+      }
       self.reveal();
       if (!self._bound && self.btnEl) {
         self._bound = true;
@@ -137,8 +147,9 @@
     if (self.paymentToken) return Promise.resolve();
     return fetch(self.cfg.intentUrl, {
       method: 'POST',
-      headers: { Accept: 'application/json' },
-      credentials: 'same-origin'
+      headers: self.cfg.intentBody ? { Accept: 'application/json', 'Content-Type': 'application/json' } : { Accept: 'application/json' },
+      credentials: 'same-origin',
+      body: self.cfg.intentBody ? JSON.stringify(self.cfg.intentBody) : undefined
     }).then(function (r) { return r.json(); }).then(function (d) {
       if (!d.success || !d.clientSecret || !d.publicKey) {
         throw new Error(d.error || 'intent-failed');
@@ -152,7 +163,7 @@
     }).then(function (er) { return er.json(); }).then(function (e) {
       var token = e.payment_keys && e.payment_keys['apple-pay'];
       if (!token) {
-        console.error('[cardify-apple-pay] no apple-pay payment_token in element', e);
+        console.error('[cardify-apple-pay] no apple-pay payment token available');
         throw new Error('no-apple-pay-token');
       }
       self.paymentToken = token;
@@ -190,7 +201,7 @@
         }).catch(function () {
           session.completePayment(AP.STATUS_FAILURE);
           self.busy = false;
-          self.setStatus('Could not start Apple Pay. Please use another method below.', true);
+          self.setStatus((self.cfg.messages || {}).startFailed || 'Could not start Apple Pay. Please use another method below.', true);
         });
       };
 
@@ -207,16 +218,16 @@
           var ok = String(j && j.success) === 'true';
           session.completePayment(ok ? AP.STATUS_SUCCESS : AP.STATUS_FAILURE);
           if (ok) {
-            self.setStatus('Payment confirmed. Redirecting you now.');
+            self.setStatus((self.cfg.messages || {}).confirmed || 'Payment confirmed. Redirecting you now.');
             window.setTimeout(function () { window.location.href = self.cfg.successUrl; }, 1400);
           } else {
             self.busy = false;
-            self.setStatus((j && j.data && j.data.message) || 'Payment was declined. Please try another method below.', true);
+            self.setStatus((self.cfg.messages || {}).declined || (j && j.data && j.data.message) || 'Payment was declined. Please try another method below.', true);
           }
         }).catch(function () {
           session.completePayment(AP.STATUS_FAILURE);
           self.busy = false;
-          self.setStatus('Payment could not be completed. Please use another method below.', true);
+          self.setStatus((self.cfg.messages || {}).failed || 'Payment could not be completed. Please use another method below.', true);
         });
       };
 
@@ -238,6 +249,7 @@
     }
   };
 
+  window.CardifyNativeApplePay = NativeApplePay;
   function boot() {
     var cfg = window.__cardifyNativeAP;
     if (cfg) {

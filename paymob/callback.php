@@ -70,6 +70,11 @@ $host = defined('APP_HOST') ? APP_HOST : 'cardify.om';
 $baseUrl = 'https://' . $host;
 $type = $result['type'] ?? 'subscription';
 
+if ($type === 'logo_pass' || ($_GET['logo'] ?? '') === '1') {
+    header('Location: ' . $baseUrl . '/logo-access.php?payment=returned&order=' . rawurlencode($result['reference_id'] ?? ''));
+    exit;
+}
+
 if ($result['success']) {
     if ($type === 'print_order') {
         $orderId = $result['reference_id'] ?? '';

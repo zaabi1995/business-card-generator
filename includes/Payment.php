@@ -67,7 +67,7 @@ class Payment {
         string $type,
         string $referenceId,
         float $amount,
-        string $companyId,
+        ?string $companyId,
         array $billingData = [],
         string $currency = 'OMR',
         string $billingCycle = 'monthly'
@@ -88,7 +88,17 @@ class Payment {
         $db = Database::getInstance();
 
         // Get company info for real billing data
-        $company = $db->fetchOne("SELECT * FROM companies WHERE id = :id", ['id' => $companyId]);
+        if ($type === 'logo_pass') {
+            if (empty($billingData['first_name']) || empty($billingData['last_name'])
+                || !filter_var($billingData['email'] ?? '', FILTER_VALIDATE_EMAIL)
+                || !preg_match('/^\+[1-9][0-9]{7,14}$/D', $billingData['phone_number'] ?? '')) {
+                return ['error' => 'Valid billing details are required'];
+            }
+            $company = ['name' => $billingData['first_name'] . ' ' . $billingData['last_name']];
+            $companyId = null;
+        } else {
+            $company = $db->fetchOne("SELECT * FROM companies WHERE id = :id", ['id' => $companyId]);
+        }
         if (!$company) {
             return ['error' => 'Company not found'];
         }
@@ -106,6 +116,7 @@ class Payment {
         $amountCents = self::toSmallestUnit($amount, $currency);
         $prefix = ($type === 'subscription') ? 'SUB' : 'PO';
         $specialReference = "{$prefix}_{$companyId}_{$referenceId}_" . time();
+        if ($type === 'logo_pass') $specialReference = 'LOGO_' . $referenceId . '_' . bin2hex(random_bytes(8));
 
         // Build real billing data from company info, with overrides
         $companyName = $company['name'] ?? 'Customer';
@@ -165,6 +176,7 @@ class Payment {
         $configuredHost = defined('APP_HOST') ? APP_HOST : 'cardify.om';
         $baseUrl = (isset($_SERVER['HTTPS']) ? 'https' : 'http') . '://' . $configuredHost;
         $callbackUrl = $baseUrl . getBasePath() . 'paymob/callback.php';
+        if ($type === 'logo_pass') $callbackUrl = 'https://' . $configuredHost . '/paymob/callback.php';
 
         $payload = [
             'amount' => $amountCents,
@@ -192,6 +204,17 @@ class Payment {
                 ],
             ],
         ];
+
+        if ($type === 'logo_pass') {
+            // A prepaid access pass, no recurring charge or saved-card agreement.
+            $payload['save_card'] = false;
+            unset($payload['recurring_payment_data']);
+            $payload['redirection_url'] = $callbackUrl . '?logo=1';
+            $payload['items'][] = [
+                'name' => 'Cardify Logo Library access', 'amount' => $amountCents,
+                'description' => 'Unlimited logo downloads for the prepaid access period', 'quantity' => 1
+            ];
+        }
 
         // Add item description based on type
         if ($type === 'subscription') {
@@ -261,6 +284,15 @@ class Payment {
 
         // Update payment with intention ID
         $intentionId = $responseData['id'] ?? null;
+        if ($type === 'logo_pass') {
+            $gatewayOrder = $responseData['intention_order_id'] ?? ($responseData['order']['id'] ?? null);
+            if (!$intentionId || !$gatewayOrder) {
+                $db->update('payments', ['status' => 'failed'], 'id = :id', ['id' => $paymentId]);
+                error_log('Logo pass intention missing gateway order binding');
+                return ['error' => 'Payment gateway could not prepare this purchase'];
+            }
+            $db->update('payments', ['paymob_order_id' => (string)$gatewayOrder], 'id = :id', ['id' => $paymentId]);
+        }
         if ($intentionId) {
             $db->update('payments', ['paymob_intention_id' => $intentionId], 'id = :id', ['id' => $paymentId]);
         }
@@ -436,6 +468,11 @@ class Payment {
         if (!$payment) {
             error_log("Payment callback: Not found in payments table for {$merchantOrderId}, checking legacy");
             return ['success' => false, 'error' => 'Payment not found', 'legacy' => true, 'merchant_order_id' => $merchantOrderId];
+        }
+
+        if ($payment['type'] === 'logo_pass') {
+            require_once __DIR__ . '/LogoAccess.php';
+            return LogoAccess::callback($payment, $data);
         }
 
         // Idempotency: if already processed, return the stored result without re-running side effects

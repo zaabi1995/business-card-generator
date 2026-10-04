@@ -2,24 +2,22 @@
 /**
  * Signed logo download endpoint with rate limit + analytics.
  *
- * Only verified logos are downloadable. Each download logged to
- * logo_downloads (hashed IP/UA). Rate limit: 30/hour/IP.
+ * Indexed and verified logos are downloadable. Each download is logged to
+ * logo_downloads (hashed IP/UA). Quotas are checked when a ticket is issued.
  *
  * GET /logo-download?company=NNN&format=svg|png_512|png_1024|png_2048|webp|zip
  */
 require_once __DIR__ . '/config.php';
-require_once INCLUDES_DIR . '/LogoLibrary.php';
+require_once INCLUDES_DIR . '/LogoAccess.php';
+require_once INCLUDES_DIR . '/SecurityHeaders.php';
+SecurityHeaders::send();
+if (session_status() !== PHP_SESSION_ACTIVE) session_start();
+header('Cache-Control: private, no-store');
 
 $db = Database::getInstance();
 $companyId = (int) ($_GET['company'] ?? 0);
 $format    = $_GET['format'] ?? '';
-$allowed = ['svg','png_512','png_1024','png_2048','webp','zip',
-    'svg_dark','png_dark','webp_dark','svg_white','png_white','webp_white',
-    'pdf','pdf_dark','pdf_white','ar_svg','ar_pdf','ar_webp','ar_png_2048',
-    'ar_svg_dark','ar_pdf_dark','ar_png_dark','ar_webp_dark',
-    'ar_svg_white','ar_pdf_white','ar_png_white','ar_webp_white',
-    'int_svg','int_pdf','int_webp','int_png_2048','int_svg_dark','int_pdf_dark','int_png_dark','int_webp_dark',
-    'int_svg_white','int_pdf_white','int_png_white','int_webp_white'];
+$allowed = LogoAccess::FORMATS;
 
 if (!$companyId || !in_array($format, $allowed, true)) {
     http_response_code(400);
@@ -45,38 +43,16 @@ if (!LogoLibrary::canDownload($company)) {
     die($msg);
 }
 
-// Lead-capture gate: cookie set by /api/logo-unlock.php after the user
-// submits phone or email. Without it, redirect back to the company
-// profile with ?unlock=required so the page can pop the modal.
-$unlockCookie = $_COOKIE['cardify_logo_unlock_v1'] ?? '';
-if (!preg_match('/^[a-f0-9]{32}$/i', $unlockCookie)) {
-    $slug = (string) ($company['slug'] ?? '');
-    if ($slug !== '') {
-        header('Location: /companies/' . rawurlencode($slug) . '?unlock=required&format=' . rawurlencode($format), true, 303);
-        exit;
-    }
-    http_response_code(403);
-    die('Unlock required, please return to the company page and submit the short form.');
+// The legacy lead cookie is not an entitlement. Only a short-lived ticket
+// issued by the POST access endpoint authorizes a download.
+if (!LogoAccess::consumeTicket((string)($_GET['ticket'] ?? ''), $companyId, $format)) {
+    $prefix = currentLocale() === 'ar' ? '/ar' : '';
+    header('Location: ' . $prefix . '/companies/' . rawurlencode($company['slug']) . '?download=required&format=' . rawurlencode($format), true, 303);
+    exit;
 }
-
-// Rate limit: 30 downloads/hour per IP, atomic via rate_limits table
-// (non-atomic SELECT COUNT then INSERT lets parallel fetches bypass the cap).
 $ipHash = LogoLibrary::ipHash();
-$bucket = (int) floor(time() / 3600);
-$db->getConnection()->prepare(
-    "INSERT INTO rate_limits (action, ip, bucket, count, window_sec)
-     VALUES ('logo_download', :ip, :b, 1, 3600)
-     ON DUPLICATE KEY UPDATE count = count + 1"
-)->execute([':ip' => $ipHash, ':b' => $bucket]);
-$recent = (int) ($db->fetchOne(
-    "SELECT count FROM rate_limits WHERE action = 'logo_download' AND ip = :ip AND bucket = :b",
-    [':ip' => $ipHash, ':b' => $bucket]
-)['count'] ?? 0);
-if ($recent > 30) {
-    http_response_code(429);
-    header('Retry-After: 3600');
-    die('Rate limit exceeded');
-}
+$unlockCookie = $_COOKIE['cardify_logo_unlock_v1'] ?? null;
+if (session_status() === PHP_SESSION_ACTIVE) session_write_close();
 
 $paths = LogoLibrary::downloadPaths($company);
 // Only serve files beneath the logo storage root, even if a DB path is malformed.

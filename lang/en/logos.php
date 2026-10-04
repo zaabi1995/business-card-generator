@@ -38,7 +38,7 @@ return [
 
     // FAQ items
     'faq_q1'              => 'Is it free to download these Omani logos?',
-    'faq_a1'              => 'Yes. Browsing and downloading indexed and verified logos from the Omani Logo Library is free. The logos themselves remain trademarks of their respective owners.',
+    'faq_a1'              => 'Browsing is free. Guests can download 5 distinct entities per day, and a free account allows 10. All formats and colour versions of an entity count together. Paid access removes the daily download allowance. The marks remain the property of their owners.',
     'faq_q2'              => 'Can I use these logos commercially?',
     'faq_a2'              => 'The library is built under nominative / reference-use principles. You may use logos for identification and reference (journalism, research, internal documents). Commercial reuse, redistribution, and derivative works require the owner\'s permission.',
     'faq_q3'              => 'How do I claim my company\'s logo?',
@@ -87,6 +87,8 @@ return [
     'terms_breadcrumb'    => 'Terms',
     'terms_lead'          => 'All logos shown in the Omani Logo Library are trademarks of their respective owners. Cardify indexes them for identification and research purposes and claims no ownership.',
     'terms_h2_reference'  => 'Reference use',
+    'terms_h2_access'     => 'Download access',
+    'terms_p_access'      => 'Guests receive 5 distinct entity downloads per day; free accounts receive 10. The allowance resets at midnight in Oman. Another format or colour version of an entity selected that day does not use another allowance. Checkout displays the price and duration of unlimited access before payment. Access is prepaid and does not renew automatically. Payment buys access to the download service, not ownership of a trademark or a commercial-use licence. Automated abuse remains rate-limited. If available, an optional rewarded ad grants one additional entity on the same account after completion. Skipping an ad leaves browsing and existing selections available.',
     'terms_p_reference'   => 'Logos are displayed for identification only. Presence in the library does not imply any license for commercial reuse.',
     'terms_h2_verified'   => 'Verified logos',
     'terms_p_verified'    => 'When a brand owner verifies their logo via the claim process, the logo becomes downloadable with the owner\'s consent. Usage remains bounded by nominative fair-use: identification and reference, not redistribution or derivative commercial works.',

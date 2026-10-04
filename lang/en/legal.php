@@ -96,6 +96,7 @@ return [
                 'p' => 'We collect only what is needed to deliver the service:',
                 'list' => [
                     'Identity and contact: name, email, phone, company, job title.',
+                    'Logo library accounts: verified email, selected entities and download allowance. If you buy unlimited access, we collect your name and mobile for payment. A required, revocable cookie remembers your logo-library login for up to 30 days. We do not use signup as consent to marketing.',
                     'Card content: the text, photos, logos and design choices you put on your cards.',
                     'Payment data: billing address and the last four digits of your card. We never see or store full card numbers; Paymob handles those.',
                     'Device and usage: IP address, browser, OS, pages viewed, actions taken, all used to secure the service and improve it.',

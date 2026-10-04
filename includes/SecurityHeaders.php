@@ -245,6 +245,21 @@ class SecurityHeaders
             $hosts['connect'][] = 'https://csi.gstatic.com';
         }
 
+        $paymentPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
+        if (preg_match('~^/(?:ar/)?companies/|^/logo-access\.php$~', $paymentPath)) {
+            foreach (['script', 'style', 'connect', 'frame'] as $type) {
+                $hosts[$type][] = 'https://applepay.cdn-apple.com';
+                $hosts[$type][] = 'https://applepay.apple.com';
+            }
+            if (defined('LOGO_REWARDED_AD_UNIT') && LOGO_REWARDED_AD_UNIT !== '') {
+                foreach (['script', 'img', 'connect', 'frame', 'media'] as $type) {
+                    $hosts[$type][] = 'https://securepubads.g.doubleclick.net';
+                    $hosts[$type][] = 'https://pubads.g.doubleclick.net';
+                    $hosts[$type][] = 'https://tpc.googlesyndication.com';
+                }
+            }
+        }
+
         $parts = [
             "default-src 'self'",
             "base-uri 'self'",

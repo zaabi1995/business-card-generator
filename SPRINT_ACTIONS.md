@@ -920,3 +920,7 @@
 - [x] 862. `print_shop_companies` attachment + `PrintShopClients` policy: regular shops operate only attached client tenants; BHD internal provider keeps listing every company. Company admin reused for roster / locked template / bulk generate. No new prices or commission.
 - [x] 863. Partner company admin stay-in: `requireAdmin()` / `adminHeader()` use the URL tenant, not session `company_id`. Create-client adopts the new company into session. No fake `@invalid.cardify.om` mailbox.
 - [x] 864. `PrintShop::create()` INSERT matches live `print_shops` columns: `logo_url`, `pricing`, `min_order_quantity`. Signup POST no longer fails on unknown `logo_path` / `pricing_tiers` / `min_quantity`.
+
+## Appended, logo download access
+
+- [ ] 865. Configure and verify a genuine approved Google Ad Manager rewarded unit and its consent flow before enabling LOGO_REWARDED_AD_UNIT. Ordinary AdSense display units must never unlock downloads.

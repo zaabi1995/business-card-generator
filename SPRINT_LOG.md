@@ -217,3 +217,5 @@ Format: `YYYY-MM-DD HH:MM | #NNN | sha | outcome`
 2026-09-03 | #864 | 6fc7bee | PrintShop::create INSERT now uses live print_shops columns logo_url, pricing, min_order_quantity so partner signup POST can succeed.
 
 - 2026-10-04: Connect BHD AdSense publisher, responsive ads on public companies/logos pages, bilingual disclosures and Google CMP privacy choices. Tenant, private and error pages excluded; route/CSP/i18n checks passed.
+
+- 2026-10-04: Logo access: five guest entities and ten verified-account entities per Oman day; prepaid unlimited pass, Paymob Apple Pay/card/OmanNet, single-use download tickets and atomic payment activation. Rewarded ads remain disabled pending an approved Ad Manager unit. Isolated MySQL quota/payment checks passed.
