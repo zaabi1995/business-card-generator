@@ -43,7 +43,13 @@
               "png_2048": "council-of-ministers/bilingual-white-2048.png",
               "webp": "council-of-ministers/bilingual-white.webp"
             }
-          }
+          },
+          "canvas_viewbox": [
+            5.25732421875,
+            5.07666015625,
+            137.7744140625,
+            78.10107421875
+          ]
         },
         "arabic": {
           "crop": [
@@ -73,7 +79,13 @@
               "png_2048": "council-of-ministers/arabic-white-2048.png",
               "webp": "council-of-ministers/arabic-white.webp"
             }
-          }
+          },
+          "canvas_viewbox": [
+            5.4072265625,
+            5.24169921875,
+            61.769287109375,
+            102.4200439453125
+          ]
         }
       }
     },
@@ -117,7 +129,13 @@
               "png_2048": "diwan-of-royal-court/bilingual-white-2048.png",
               "webp": "diwan-of-royal-court/bilingual-white.webp"
             }
-          }
+          },
+          "canvas_viewbox": [
+            5.35400390625,
+            5.35400390625,
+            161.69091796875,
+            78.10546875
+          ]
         },
         "arabic": {
           "crop": [
@@ -147,7 +165,13 @@
               "png_2048": "diwan-of-royal-court/arabic-white-2048.png",
               "webp": "diwan-of-royal-court/arabic-white.webp"
             }
-          }
+          },
+          "canvas_viewbox": [
+            5.34375,
+            5.274169921875,
+            100.905029296875,
+            103.604736328125
+          ]
         },
         "international": {
           "crop": [
@@ -179,7 +203,13 @@
             }
           },
           "pdf_page": 33,
-          "usage": "Outside the Sultanate of Oman only"
+          "usage": "Outside the Sultanate of Oman only",
+          "canvas_viewbox": [
+            5.21484375,
+            5.34521484375,
+            167.43994140625,
+            81.416748046875
+          ]
         }
       }
     },
@@ -223,7 +253,13 @@
               "png_2048": "the-royal-office/bilingual-white-2048.png",
               "webp": "the-royal-office/bilingual-white.webp"
             }
-          }
+          },
+          "canvas_viewbox": [
+            5.3228759765625,
+            5.1141357421875,
+            132.2021484375,
+            78.08624267578125
+          ]
         },
         "arabic": {
           "crop": [
@@ -253,7 +289,13 @@
               "png_2048": "the-royal-office/arabic-white-2048.png",
               "webp": "the-royal-office/arabic-white.webp"
             }
-          }
+          },
+          "canvas_viewbox": [
+            5.05517578125,
+            5.32421875,
+            76.47900390625,
+            105.67724609375
+          ]
         },
         "international": {
           "crop": [
@@ -285,7 +327,13 @@
             }
           },
           "pdf_page": 33,
-          "usage": "Outside the Sultanate of Oman only"
+          "usage": "Outside the Sultanate of Oman only",
+          "canvas_viewbox": [
+            5.41015625,
+            5.17578125,
+            149.23828125,
+            81.40625
+          ]
         }
       }
     },
@@ -329,7 +377,13 @@
               "png_2048": "office-of-the-deputy-prime-minister-for-council-of-ministers/bilingual-white-2048.png",
               "webp": "office-of-the-deputy-prime-minister-for-council-of-ministers/bilingual-white.webp"
             }
-          }
+          },
+          "canvas_viewbox": [
+            5.0509033203125,
+            5.0509033203125,
+            246.7099609375,
+            78.1478271484375
+          ]
         },
         "arabic": {
           "crop": [
@@ -359,7 +413,13 @@
               "png_2048": "office-of-the-deputy-prime-minister-for-council-of-ministers/arabic-white-2048.png",
               "webp": "office-of-the-deputy-prime-minister-for-council-of-ministers/arabic-white.webp"
             }
-          }
+          },
+          "canvas_viewbox": [
+            4.962890625,
+            4.9306640625,
+            102.72216796875,
+            121.73583984375
+          ]
         }
       }
     },
@@ -403,7 +463,13 @@
               "png_2048": "office-of-deputy-prime-minister-for-international-relations-and-cooperation-affairs-and-personal-representative-of-his-majesty-the-sultan/bilingual-white-2048.png",
               "webp": "office-of-deputy-prime-minister-for-international-relations-and-cooperation-affairs-and-personal-representative-of-his-majesty-the-sultan/bilingual-white.webp"
             }
-          }
+          },
+          "canvas_viewbox": [
+            5.434936523437499,
+            5.154785156249999,
+            218.88226318359372,
+            79.73107910156249
+          ]
         },
         "arabic": {
           "crop": [
@@ -433,7 +499,13 @@
               "png_2048": "office-of-deputy-prime-minister-for-international-relations-and-cooperation-affairs-and-personal-representative-of-his-majesty-the-sultan/arabic-white-2048.png",
               "webp": "office-of-deputy-prime-minister-for-international-relations-and-cooperation-affairs-and-personal-representative-of-his-majesty-the-sultan/arabic-white.webp"
             }
-          }
+          },
+          "canvas_viewbox": [
+            5.3250732421875,
+            5.121826171875,
+            155.99212646484375,
+            114.2655029296875
+          ]
         }
       }
     },
@@ -477,7 +549,13 @@
               "png_2048": "office-of-the-special-envoy-of-his-majesty-the-sultan/bilingual-white-2048.png",
               "webp": "office-of-the-special-envoy-of-his-majesty-the-sultan/bilingual-white.webp"
             }
-          }
+          },
+          "canvas_viewbox": [
+            5.0811767578125,
+            5.0811767578125,
+            267.10052490234375,
+            78.14849853515625
+          ]
         },
         "arabic": {
           "crop": [
@@ -507,7 +585,13 @@
               "png_2048": "office-of-the-special-envoy-of-his-majesty-the-sultan/arabic-white-2048.png",
               "webp": "office-of-the-special-envoy-of-his-majesty-the-sultan/arabic-white.webp"
             }
-          }
+          },
+          "canvas_viewbox": [
+            5.455078125,
+            5.227783203125,
+            106.731201171875,
+            122.771728515625
+          ]
         }
       }
     },
@@ -551,7 +635,13 @@
               "png_2048": "the-supreme-judicial-council/bilingual-white-2048.png",
               "webp": "the-supreme-judicial-council/bilingual-white.webp"
             }
-          }
+          },
+          "canvas_viewbox": [
+            5.14892578125,
+            4.9005126953125,
+            174.7698974609375,
+            78.1146240234375
+          ]
         },
         "arabic": {
           "crop": [
@@ -581,7 +671,13 @@
               "png_2048": "the-supreme-judicial-council/arabic-white-2048.png",
               "webp": "the-supreme-judicial-council/arabic-white.webp"
             }
-          }
+          },
+          "canvas_viewbox": [
+            4.968017578125,
+            5.20458984375,
+            103.95263671875,
+            103.72998046875
+          ]
         }
       }
     },
@@ -625,7 +721,13 @@
               "png_2048": "royal-court-affairs/bilingual-white-2048.png",
               "webp": "royal-court-affairs/bilingual-white.webp"
             }
-          }
+          },
+          "canvas_viewbox": [
+            5.0390625,
+            4.93408203125,
+            161.77490234375,
+            78.10546875
+          ]
         },
         "arabic": {
           "crop": [
@@ -655,7 +757,13 @@
               "png_2048": "royal-court-affairs/arabic-white-2048.png",
               "webp": "royal-court-affairs/arabic-white.webp"
             }
-          }
+          },
+          "canvas_viewbox": [
+            5.3485107421875,
+            5.1519775390625,
+            104.190673828125,
+            104.696044921875
+          ]
         }
       }
     },
@@ -699,7 +807,13 @@
               "png_2048": "the-private-office/bilingual-white-2048.png",
               "webp": "the-private-office/bilingual-white.webp"
             }
-          }
+          },
+          "canvas_viewbox": [
+            5.02587890625,
+            5.3184814453125,
+            130.9482421875,
+            78.0904541015625
+          ]
         },
         "arabic": {
           "crop": [
@@ -729,7 +843,13 @@
               "png_2048": "the-private-office/arabic-white-2048.png",
               "webp": "the-private-office/arabic-white.webp"
             }
-          }
+          },
+          "canvas_viewbox": [
+            5.0677490234375,
+            4.94140625,
+            72.7593994140625,
+            104.9627685546875
+          ]
         }
       }
     },
@@ -773,7 +893,13 @@
               "png_2048": "the-general-secretariat-of-the-council-of-ministers/bilingual-white-2048.png",
               "webp": "the-general-secretariat-of-the-council-of-ministers/bilingual-white.webp"
             }
-          }
+          },
+          "canvas_viewbox": [
+            5.40899658203125,
+            5.1397705078125,
+            189.85333251953125,
+            78.12451171875
+          ]
         },
         "arabic": {
           "crop": [
@@ -803,7 +929,13 @@
               "png_2048": "the-general-secretariat-of-the-council-of-ministers/arabic-white-2048.png",
               "webp": "the-general-secretariat-of-the-council-of-ministers/arabic-white.webp"
             }
-          }
+          },
+          "canvas_viewbox": [
+            5.132080078125,
+            5.02734375,
+            132.631103515625,
+            104.2301025390625
+          ]
         },
         "international": {
           "crop": [
@@ -835,7 +967,13 @@
             }
           },
           "pdf_page": 33,
-          "usage": "Outside the Sultanate of Oman only"
+          "usage": "Outside the Sultanate of Oman only",
+          "canvas_viewbox": [
+            5.104736328125,
+            5.3773193359375,
+            192.542724609375,
+            81.4031982421875
+          ]
         }
       }
     },
@@ -879,7 +1017,13 @@
               "png_2048": "the-general-secretariat-for-the-national-celebrations/bilingual-white-2048.png",
               "webp": "the-general-secretariat-for-the-national-celebrations/bilingual-white.webp"
             }
-          }
+          },
+          "canvas_viewbox": [
+            5.07354736328125,
+            5.1605224609375,
+            227.32391357421875,
+            51.6632080078125
+          ]
         },
         "arabic": {
           "crop": [
@@ -909,7 +1053,13 @@
               "png_2048": "the-general-secretariat-for-the-national-celebrations/arabic-white-2048.png",
               "webp": "the-general-secretariat-for-the-national-celebrations/arabic-white.webp"
             }
-          }
+          },
+          "canvas_viewbox": [
+            5.11688232421875,
+            4.99053955078125,
+            162.24517822265625,
+            77.13226318359375
+          ]
         }
       }
     },
@@ -953,7 +1103,13 @@
               "png_2048": "oman-vision-2040-implementation-follow-up-unit/bilingual-white-2048.png",
               "webp": "oman-vision-2040-implementation-follow-up-unit/bilingual-white.webp"
             }
-          }
+          },
+          "canvas_viewbox": [
+            5.1396484375,
+            4.936767578125,
+            266.7545166015625,
+            51.6669921875
+          ]
         },
         "arabic": {
           "crop": [
@@ -983,7 +1139,13 @@
               "png_2048": "oman-vision-2040-implementation-follow-up-unit/arabic-white-2048.png",
               "webp": "oman-vision-2040-implementation-follow-up-unit/arabic-white.webp"
             }
-          }
+          },
+          "canvas_viewbox": [
+            5.265380859375,
+            5.07733154296875,
+            107.94030761718751,
+            98.08941650390626
+          ]
         }
       }
     },
@@ -1027,7 +1189,13 @@
               "png_2048": "ministry-of-culture-sports-and-youth/bilingual-white-2048.png",
               "webp": "ministry-of-culture-sports-and-youth/bilingual-white.webp"
             }
-          }
+          },
+          "canvas_viewbox": [
+            5.206665039062499,
+            5.368530273437499,
+            210.47875976562497,
+            51.66198730468749
+          ]
         },
         "arabic": {
           "crop": [
@@ -1057,7 +1225,13 @@
               "png_2048": "ministry-of-culture-sports-and-youth/arabic-white-2048.png",
               "webp": "ministry-of-culture-sports-and-youth/arabic-white.webp"
             }
-          }
+          },
+          "canvas_viewbox": [
+            5.05828857421875,
+            2.75726318359375,
+            152.34375,
+            78.05633544921875
+          ]
         }
       }
     },
@@ -1101,7 +1275,13 @@
               "png_2048": "ministry-of-interior/bilingual-white-2048.png",
               "webp": "ministry-of-interior/bilingual-white.webp"
             }
-          }
+          },
+          "canvas_viewbox": [
+            5.0394287109375,
+            5.23883056640625,
+            138.33050537109375,
+            51.64508056640625
+          ]
         },
         "arabic": {
           "crop": [
@@ -1131,7 +1311,13 @@
               "png_2048": "ministry-of-interior/arabic-white-2048.png",
               "webp": "ministry-of-interior/arabic-white.webp"
             }
-          }
+          },
+          "canvas_viewbox": [
+            5.375244140625,
+            5.3096923828125,
+            71.713623046875,
+            78.793212890625
+          ]
         }
       }
     },
@@ -1175,7 +1361,13 @@
               "png_2048": "ministry-of-foreign-affairs/bilingual-white-2048.png",
               "webp": "ministry-of-foreign-affairs/bilingual-white.webp"
             }
-          }
+          },
+          "canvas_viewbox": [
+            4.9951171875,
+            5.2032470703125,
+            144.593505859375,
+            51.654052734375
+          ]
         },
         "arabic": {
           "crop": [
@@ -1205,7 +1397,13 @@
               "png_2048": "ministry-of-foreign-affairs/arabic-white-2048.png",
               "webp": "ministry-of-foreign-affairs/arabic-white.webp"
             }
-          }
+          },
+          "canvas_viewbox": [
+            5.170166015625,
+            5.0596923828125,
+            80.12652587890625,
+            77.110595703125
+          ]
         },
         "international": {
           "crop": [
@@ -1237,7 +1435,13 @@
             }
           },
           "pdf_page": 33,
-          "usage": "Outside the Sultanate of Oman only"
+          "usage": "Outside the Sultanate of Oman only",
+          "canvas_viewbox": [
+            5.398681640625,
+            5.220703125,
+            151.43994140625,
+            52.464111328125
+          ]
         }
       }
     },
@@ -1281,7 +1485,13 @@
               "png_2048": "ministry-of-finance/bilingual-white-2048.png",
               "webp": "ministry-of-finance/bilingual-white.webp"
             }
-          }
+          },
+          "canvas_viewbox": [
+            5.0244140625,
+            5.203857421875,
+            136.8076171875,
+            51.643798828125
+          ]
         },
         "arabic": {
           "crop": [
@@ -1311,7 +1521,13 @@
               "png_2048": "ministry-of-finance/arabic-white-2048.png",
               "webp": "ministry-of-finance/arabic-white.webp"
             }
-          }
+          },
+          "canvas_viewbox": [
+            5.238525390625,
+            3.50634765625,
+            61.98046875,
+            77.3076171875
+          ]
         }
       }
     },
@@ -1355,7 +1571,13 @@
               "png_2048": "ministry-of-heritage-and-tourism/bilingual-white-2048.png",
               "webp": "ministry-of-heritage-and-tourism/bilingual-white.webp"
             }
-          }
+          },
+          "canvas_viewbox": [
+            5.4287109375,
+            5.279296875,
+            193.21728515625,
+            51.6474609375
+          ]
         },
         "arabic": {
           "crop": [
@@ -1385,7 +1607,13 @@
               "png_2048": "ministry-of-heritage-and-tourism/arabic-white-2048.png",
               "webp": "ministry-of-heritage-and-tourism/arabic-white.webp"
             }
-          }
+          },
+          "canvas_viewbox": [
+            5.411376953125,
+            5.15625,
+            99.405517578125,
+            75.933837890625
+          ]
         }
       }
     },
@@ -1429,7 +1657,13 @@
               "png_2048": "ministry-of-agriculture-fisheries-and-water-resources/bilingual-white-2048.png",
               "webp": "ministry-of-agriculture-fisheries-and-water-resources/bilingual-white.webp"
             }
-          }
+          },
+          "canvas_viewbox": [
+            5.2459716796875,
+            5.42083740234375,
+            276.2178955078125,
+            51.6903076171875
+          ]
         },
         "arabic": {
           "crop": [
@@ -1459,7 +1693,13 @@
               "png_2048": "ministry-of-agriculture-fisheries-and-water-resources/arabic-white-2048.png",
               "webp": "ministry-of-agriculture-fisheries-and-water-resources/arabic-white.webp"
             }
-          }
+          },
+          "canvas_viewbox": [
+            5.3912353515625,
+            5.25830078125,
+            110.453857421875,
+            96.392333984375
+          ]
         }
       }
     },
@@ -1503,7 +1743,13 @@
               "png_2048": "ministry-of-housing-and-urban-planning/bilingual-white-2048.png",
               "webp": "ministry-of-housing-and-urban-planning/bilingual-white.webp"
             }
-          }
+          },
+          "canvas_viewbox": [
+            5.04510498046875,
+            5.3016357421875,
+            223.124755859375,
+            51.67669677734375
+          ]
         },
         "arabic": {
           "crop": [
@@ -1533,7 +1779,13 @@
               "png_2048": "ministry-of-housing-and-urban-planning/arabic-white-2048.png",
               "webp": "ministry-of-housing-and-urban-planning/arabic-white.webp"
             }
-          }
+          },
+          "canvas_viewbox": [
+            5.1116943359375,
+            5.07080078125,
+            156.9903564453125,
+            78.1884765625
+          ]
         }
       }
     },
@@ -1577,7 +1829,13 @@
               "png_2048": "ministry-of-justice-and-legal-affairs/bilingual-white-2048.png",
               "webp": "ministry-of-justice-and-legal-affairs/bilingual-white.webp"
             }
-          }
+          },
+          "canvas_viewbox": [
+            5.2261962890625,
+            5.2781982421875,
+            202.49560546875,
+            51.6639404296875
+          ]
         },
         "arabic": {
           "crop": [
@@ -1607,7 +1865,13 @@
               "png_2048": "ministry-of-justice-and-legal-affairs/arabic-white-2048.png",
               "webp": "ministry-of-justice-and-legal-affairs/arabic-white.webp"
             }
-          }
+          },
+          "canvas_viewbox": [
+            5.347412109375,
+            4.983642578125,
+            138.705322265625,
+            76.60986328125
+          ]
         }
       }
     },
@@ -1651,7 +1915,13 @@
               "png_2048": "ministry-of-labour/bilingual-white-2048.png",
               "webp": "ministry-of-labour/bilingual-white.webp"
             }
-          }
+          },
+          "canvas_viewbox": [
+            5.203857421875,
+            4.9560546875,
+            134.7869873046875,
+            51.649169921875
+          ]
         },
         "arabic": {
           "crop": [
@@ -1681,7 +1951,13 @@
               "png_2048": "ministry-of-labour/arabic-white-2048.png",
               "webp": "ministry-of-labour/arabic-white.webp"
             }
-          }
+          },
+          "canvas_viewbox": [
+            5.0657958984375,
+            5.118896484375,
+            63.274658203125,
+            76.528564453125
+          ]
         }
       }
     },
@@ -1725,7 +2001,13 @@
               "png_2048": "ministry-of-transport-communications-and-information-technology/bilingual-white-2048.png",
               "webp": "ministry-of-transport-communications-and-information-technology/bilingual-white.webp"
             }
-          }
+          },
+          "canvas_viewbox": [
+            5.33233642578125,
+            5.17822265625,
+            242.17437744140625,
+            53.0767822265625
+          ]
         },
         "arabic": {
           "crop": [
@@ -1755,7 +2037,13 @@
               "png_2048": "ministry-of-transport-communications-and-information-technology/arabic-white-2048.png",
               "webp": "ministry-of-transport-communications-and-information-technology/arabic-white.webp"
             }
-          }
+          },
+          "canvas_viewbox": [
+            5.308532714843749,
+            5.323486328124999,
+            111.77825927734374,
+            99.42657470703124
+          ]
         }
       }
     },
@@ -1799,7 +2087,13 @@
               "png_2048": "ministry-of-higher-education-research-and-innovation/bilingual-white-2048.png",
               "webp": "ministry-of-higher-education-research-and-innovation/bilingual-white.webp"
             }
-          }
+          },
+          "canvas_viewbox": [
+            5.1328125,
+            5.23974609375,
+            281.84130859375,
+            51.6845703125
+          ]
         },
         "arabic": {
           "crop": [
@@ -1829,7 +2123,13 @@
               "png_2048": "ministry-of-higher-education-research-and-innovation/arabic-white-2048.png",
               "webp": "ministry-of-higher-education-research-and-innovation/arabic-white.webp"
             }
-          }
+          },
+          "canvas_viewbox": [
+            5.40625,
+            5.203125,
+            117.359375,
+            98.28125
+          ]
         }
       }
     },
@@ -1873,7 +2173,13 @@
               "png_2048": "ministry-of-health/bilingual-white-2048.png",
               "webp": "ministry-of-health/bilingual-white.webp"
             }
-          }
+          },
+          "canvas_viewbox": [
+            5.1669921875,
+            5.132080078125,
+            132.561279296875,
+            51.635009765625
+          ]
         },
         "arabic": {
           "crop": [
@@ -1903,7 +2209,13 @@
               "png_2048": "ministry-of-health/arabic-white-2048.png",
               "webp": "ministry-of-health/arabic-white.webp"
             }
-          }
+          },
+          "canvas_viewbox": [
+            5.196533203125,
+            5.31201171875,
+            71.7646484375,
+            75.6279296875
+          ]
         },
         "international": {
           "crop": [
@@ -1935,7 +2247,13 @@
             }
           },
           "pdf_page": 33,
-          "usage": "Outside the Sultanate of Oman only"
+          "usage": "Outside the Sultanate of Oman only",
+          "canvas_viewbox": [
+            5.359130859375,
+            5.0625,
+            151.4794921875,
+            52.48388671875
+          ]
         }
       }
     },
@@ -1979,7 +2297,13 @@
               "png_2048": "ministry-of-social-development/bilingual-white-2048.png",
               "webp": "ministry-of-social-development/bilingual-white.webp"
             }
-          }
+          },
+          "canvas_viewbox": [
+            5.2099609375,
+            5.2099609375,
+            184.740478515625,
+            51.649658203125
+          ]
         },
         "arabic": {
           "crop": [
@@ -2009,7 +2333,13 @@
               "png_2048": "ministry-of-social-development/arabic-white-2048.png",
               "webp": "ministry-of-social-development/arabic-white.webp"
             }
-          }
+          },
+          "canvas_viewbox": [
+            5.401611328125,
+            5.185546875,
+            107.355224609375,
+            76.630859375
+          ]
         }
       }
     },
@@ -2053,7 +2383,13 @@
               "png_2048": "ministry-of-economy/bilingual-white-2048.png",
               "webp": "ministry-of-economy/bilingual-white.webp"
             }
-          }
+          },
+          "canvas_viewbox": [
+            5.41522216796875,
+            4.9842529296875,
+            143.0443115234375,
+            51.66009521484375
+          ]
         },
         "arabic": {
           "crop": [
@@ -2083,7 +2419,13 @@
               "png_2048": "ministry-of-economy/arabic-white-2048.png",
               "webp": "ministry-of-economy/arabic-white.webp"
             }
-          }
+          },
+          "canvas_viewbox": [
+            4.97845458984375,
+            5.135009765625,
+            72.38067626953125,
+            75.3343505859375
+          ]
         }
       }
     },
@@ -2127,7 +2469,13 @@
               "png_2048": "ministry-of-information/bilingual-white-2048.png",
               "webp": "ministry-of-information/bilingual-white.webp"
             }
-          }
+          },
+          "canvas_viewbox": [
+            5.414306640625,
+            4.94964599609375,
+            154.9542236328125,
+            51.65814208984375
+          ]
         },
         "arabic": {
           "crop": [
@@ -2157,7 +2505,13 @@
               "png_2048": "ministry-of-information/arabic-white-2048.png",
               "webp": "ministry-of-information/arabic-white.webp"
             }
-          }
+          },
+          "canvas_viewbox": [
+            5.2144775390625,
+            5.203857421875,
+            71.9088134765625,
+            76.7303466796875
+          ]
         }
       }
     },
@@ -2201,7 +2555,13 @@
               "png_2048": "ministry-of-energy-and-minerals/bilingual-white-2048.png",
               "webp": "ministry-of-energy-and-minerals/bilingual-white.webp"
             }
-          }
+          },
+          "canvas_viewbox": [
+            5.244873046874999,
+            5.317382812499999,
+            189.22631835937497,
+            51.67529296874999
+          ]
         },
         "arabic": {
           "crop": [
@@ -2231,7 +2591,13 @@
               "png_2048": "ministry-of-energy-and-minerals/arabic-white-2048.png",
               "webp": "ministry-of-energy-and-minerals/arabic-white.webp"
             }
-          }
+          },
+          "canvas_viewbox": [
+            5.24017333984375,
+            5.21295166015625,
+            100.8563232421875,
+            76.601806640625
+          ]
         }
       }
     },
@@ -2275,7 +2641,13 @@
               "png_2048": "ministry-of-commerce-industry-and-investment-promotion/bilingual-white-2048.png",
               "webp": "ministry-of-commerce-industry-and-investment-promotion/bilingual-white.webp"
             }
-          }
+          },
+          "canvas_viewbox": [
+            5.09375,
+            5.09375,
+            245.875,
+            51.65625
+          ]
         },
         "arabic": {
           "crop": [
@@ -2306,7 +2678,13 @@
               "webp": "ministry-of-commerce-industry-and-investment-promotion/arabic-white.webp"
             }
           },
-          "pdf_page": 28
+          "pdf_page": 28,
+          "canvas_viewbox": [
+            5.222290039062501,
+            5.193115234375001,
+            108.89495849609376,
+            99.06304931640626
+          ]
         }
       }
     },
@@ -2350,7 +2728,13 @@
               "png_2048": "muscat-governorate/bilingual-white-2048.png",
               "webp": "muscat-governorate/bilingual-white.webp"
             }
-          }
+          },
+          "canvas_viewbox": [
+            5.19671630859375,
+            5.3631591796875,
+            141.1805419921875,
+            51.65277099609375
+          ]
         },
         "arabic": {
           "crop": [
@@ -2380,7 +2764,13 @@
               "png_2048": "muscat-governorate/arabic-white-2048.png",
               "webp": "muscat-governorate/arabic-white.webp"
             }
-          }
+          },
+          "canvas_viewbox": [
+            5.1826171875,
+            5.267578125,
+            75.0523681640625,
+            76.67724609375
+          ]
         }
       }
     },
@@ -2424,7 +2814,13 @@
               "png_2048": "dhofar-governorate/bilingual-white-2048.png",
               "webp": "dhofar-governorate/bilingual-white.webp"
             }
-          }
+          },
+          "canvas_viewbox": [
+            5.2193603515625,
+            5.40185546875,
+            138.9517822265625,
+            51.6461181640625
+          ]
         },
         "arabic": {
           "crop": [
@@ -2454,7 +2850,13 @@
               "png_2048": "dhofar-governorate/arabic-white-2048.png",
               "webp": "dhofar-governorate/arabic-white.webp"
             }
-          }
+          },
+          "canvas_viewbox": [
+            5.200439453125,
+            5.21136474609375,
+            79.02264404296875,
+            76.6737060546875
+          ]
         }
       }
     },
@@ -2498,7 +2900,13 @@
               "png_2048": "musandam-governorate/bilingual-white-2048.png",
               "webp": "musandam-governorate/bilingual-white.webp"
             }
-          }
+          },
+          "canvas_viewbox": [
+            5.45074462890625,
+            5.16278076171875,
+            157.6396484375,
+            51.64837646484375
+          ]
         },
         "arabic": {
           "crop": [
@@ -2528,7 +2936,13 @@
               "png_2048": "musandam-governorate/arabic-white-2048.png",
               "webp": "musandam-governorate/arabic-white.webp"
             }
-          }
+          },
+          "canvas_viewbox": [
+            5.13421630859375,
+            4.9779052734375,
+            88.14739990234376,
+            76.67657470703125
+          ]
         }
       }
     },
@@ -2572,7 +2986,13 @@
               "png_2048": "ministry-of-education/bilingual-white-2048.png",
               "webp": "ministry-of-education/bilingual-white.webp"
             }
-          }
+          },
+          "canvas_viewbox": [
+            4.99053955078125,
+            4.94842529296875,
+            162.20306396484375,
+            51.65313720703125
+          ]
         },
         "arabic": {
           "crop": [
@@ -2602,7 +3022,13 @@
               "png_2048": "ministry-of-education/arabic-white-2048.png",
               "webp": "ministry-of-education/arabic-white.webp"
             }
-          }
+          },
+          "canvas_viewbox": [
+            5.26934814453125,
+            5.03173828125,
+            104.17095947265625,
+            76.91571044921875
+          ]
         }
       }
     },
@@ -2646,7 +3072,13 @@
               "png_2048": "ministry-of-endowments-and-religious-affairs/bilingual-white-2048.png",
               "webp": "ministry-of-endowments-and-religious-affairs/bilingual-white.webp"
             }
-          }
+          },
+          "canvas_viewbox": [
+            5.2637939453125,
+            4.99322509765625,
+            191.14459228515625,
+            52.41656494140625
+          ]
         },
         "arabic": {
           "crop": [
@@ -2676,7 +3108,13 @@
               "png_2048": "ministry-of-endowments-and-religious-affairs/arabic-white-2048.png",
               "webp": "ministry-of-endowments-and-religious-affairs/arabic-white.webp"
             }
-          }
+          },
+          "canvas_viewbox": [
+            5.0098876953125,
+            5.062255859375,
+            132.700927734375,
+            76.3353271484375
+          ]
         }
       }
     },
@@ -2720,7 +3158,13 @@
               "png_2048": "ministry-of-defence/bilingual-white-2048.png",
               "webp": "ministry-of-defence/bilingual-white.webp"
             }
-          }
+          },
+          "canvas_viewbox": [
+            5.4560546875,
+            5.1669921875,
+            137.50341796875,
+            51.65185546875
+          ]
         },
         "arabic": {
           "crop": [
@@ -2750,7 +3194,13 @@
               "png_2048": "ministry-of-defence/arabic-white-2048.png",
               "webp": "ministry-of-defence/arabic-white.webp"
             }
-          }
+          },
+          "canvas_viewbox": [
+            5.10992431640625,
+            5.04510498046875,
+            65.4891357421875,
+            78.1072998046875
+          ]
         }
       }
     },
@@ -2794,7 +3244,13 @@
               "png_2048": "al-sharqiyah-south-governorate/bilingual-white-2048.png",
               "webp": "al-sharqiyah-south-governorate/bilingual-white.webp"
             }
-          }
+          },
+          "canvas_viewbox": [
+            5.33331298828125,
+            5.26025390625,
+            189.0281982421875,
+            51.6771240234375
+          ]
         },
         "arabic": {
           "crop": [
@@ -2824,7 +3280,13 @@
               "png_2048": "al-sharqiyah-south-governorate/arabic-white-2048.png",
               "webp": "al-sharqiyah-south-governorate/arabic-white.webp"
             }
-          }
+          },
+          "canvas_viewbox": [
+            5.316162109375,
+            5.093994140625,
+            119.3359375,
+            77.171630859375
+          ]
         }
       }
     },
@@ -2868,7 +3330,13 @@
               "png_2048": "al-sharqiyah-north-governorate/bilingual-white-2048.png",
               "webp": "al-sharqiyah-north-governorate/bilingual-white.webp"
             }
-          }
+          },
+          "canvas_viewbox": [
+            5.419921875,
+            5.2734375,
+            189.501953125,
+            51.66015625
+          ]
         },
         "arabic": {
           "crop": [
@@ -2898,7 +3366,13 @@
               "png_2048": "al-sharqiyah-north-governorate/arabic-white-2048.png",
               "webp": "al-sharqiyah-north-governorate/arabic-white.webp"
             }
-          }
+          },
+          "canvas_viewbox": [
+            5.1549072265625,
+            5.3321533203125,
+            110.6754150390625,
+            77.1611328125
+          ]
         }
       }
     },
@@ -2942,7 +3416,13 @@
               "png_2048": "al-wusta-governorate/bilingual-white-2048.png",
               "webp": "al-wusta-governorate/bilingual-white.webp"
             }
-          }
+          },
+          "canvas_viewbox": [
+            5.35693359375,
+            5.007568359375,
+            148.36376953125,
+            51.6478271484375
+          ]
         },
         "arabic": {
           "crop": [
@@ -2972,7 +3452,13 @@
               "png_2048": "al-wusta-governorate/arabic-white-2048.png",
               "webp": "al-wusta-governorate/arabic-white.webp"
             }
-          }
+          },
+          "canvas_viewbox": [
+            5.020751953125,
+            5.0537109375,
+            79.9365234375,
+            76.673583984375
+          ]
         }
       }
     },
@@ -3016,7 +3502,13 @@
               "png_2048": "al-dhahirah-governorate/bilingual-white-2048.png",
               "webp": "al-dhahirah-governorate/bilingual-white.webp"
             }
-          }
+          },
+          "canvas_viewbox": [
+            5.009765625,
+            5.1767578125,
+            160.9178466796875,
+            51.642333984375
+          ]
         },
         "arabic": {
           "crop": [
@@ -3046,7 +3538,13 @@
               "png_2048": "al-dhahirah-governorate/arabic-white-2048.png",
               "webp": "al-dhahirah-governorate/arabic-white.webp"
             }
-          }
+          },
+          "canvas_viewbox": [
+            5.02734375,
+            4.984375,
+            77.9345703125,
+            77.408203125
+          ]
         }
       }
     },
@@ -3090,7 +3588,13 @@
               "png_2048": "al-buraimi-governorate/bilingual-white-2048.png",
               "webp": "al-buraimi-governorate/bilingual-white.webp"
             }
-          }
+          },
+          "canvas_viewbox": [
+            5.2166748046875,
+            5.3375244140625,
+            154.76806640625,
+            51.64306640625
+          ]
         },
         "arabic": {
           "crop": [
@@ -3120,7 +3624,13 @@
               "png_2048": "al-buraimi-governorate/arabic-white-2048.png",
               "webp": "al-buraimi-governorate/arabic-white.webp"
             }
-          }
+          },
+          "canvas_viewbox": [
+            5.251708984375,
+            5.455078125,
+            87.68798828125001,
+            77.30419921875
+          ]
         }
       }
     },
@@ -3164,7 +3674,13 @@
               "png_2048": "al-dakhiliyah-governorate/bilingual-white-2048.png",
               "webp": "al-dakhiliyah-governorate/bilingual-white.webp"
             }
-          }
+          },
+          "canvas_viewbox": [
+            5.1639404296875,
+            5.27197265625,
+            166.8233642578125,
+            51.639404296875
+          ]
         },
         "arabic": {
           "crop": [
@@ -3194,7 +3710,13 @@
               "png_2048": "al-dakhiliyah-governorate/arabic-white-2048.png",
               "webp": "al-dakhiliyah-governorate/arabic-white.webp"
             }
-          }
+          },
+          "canvas_viewbox": [
+            5.2069091796875,
+            5.1953125,
+            84.7833251953125,
+            77.79052734375
+          ]
         }
       }
     },
@@ -3238,7 +3760,13 @@
               "png_2048": "al-batinah-north-governorate/bilingual-white-2048.png",
               "webp": "al-batinah-north-governorate/bilingual-white.webp"
             }
-          }
+          },
+          "canvas_viewbox": [
+            5.4415283203125,
+            4.99969482421875,
+            179.8494873046875,
+            51.6712646484375
+          ]
         },
         "arabic": {
           "crop": [
@@ -3268,7 +3796,13 @@
               "png_2048": "al-batinah-north-governorate/arabic-white-2048.png",
               "webp": "al-batinah-north-governorate/arabic-white.webp"
             }
-          }
+          },
+          "canvas_viewbox": [
+            5.1207275390625,
+            5.0628662109375,
+            107.96923828125001,
+            77.66436767578125
+          ]
         }
       }
     },
@@ -3312,7 +3846,13 @@
               "png_2048": "al-batinah-south-governorate/bilingual-white-2048.png",
               "webp": "al-batinah-south-governorate/bilingual-white.webp"
             }
-          }
+          },
+          "canvas_viewbox": [
+            5.39501953125,
+            5.1624755859375,
+            179.89599609375,
+            51.6712646484375
+          ]
         },
         "arabic": {
           "crop": [
@@ -3342,7 +3882,13 @@
               "png_2048": "al-batinah-south-governorate/arabic-white-2048.png",
               "webp": "al-batinah-south-governorate/arabic-white.webp"
             }
-          }
+          },
+          "canvas_viewbox": [
+            5.121643066406251,
+            5.152038574218751,
+            113.95275878906251,
+            78.23803710937501
+          ]
         }
       }
     },
@@ -3386,7 +3932,13 @@
               "png_2048": "tax-authority/bilingual-white-2048.png",
               "webp": "tax-authority/bilingual-white.webp"
             }
-          }
+          },
+          "canvas_viewbox": [
+            5.4619140625,
+            5.146484375,
+            125.474609375,
+            51.630859375
+          ]
         },
         "arabic": {
           "crop": [
@@ -3416,7 +3968,13 @@
               "png_2048": "tax-authority/arabic-white-2048.png",
               "webp": "tax-authority/arabic-white.webp"
             }
-          }
+          },
+          "canvas_viewbox": [
+            5.203857421875,
+            5.2569580078125,
+            67.310302734375,
+            76.59228515625
+          ]
         }
       }
     },
@@ -3460,7 +4018,13 @@
               "png_2048": "oman-investment-authority/bilingual-white-2048.png",
               "webp": "oman-investment-authority/bilingual-white.webp"
             }
-          }
+          },
+          "canvas_viewbox": [
+            5.07366943359375,
+            5.3616943359375,
+            171.37481689453125,
+            51.667236328125
+          ]
         },
         "arabic": {
           "crop": [
@@ -3490,7 +4054,13 @@
               "png_2048": "oman-investment-authority/arabic-white-2048.png",
               "webp": "oman-investment-authority/arabic-white.webp"
             }
-          }
+          },
+          "canvas_viewbox": [
+            5.20587158203125,
+            5.294860839843749,
+            111.31072998046874,
+            77.064697265625
+          ]
         },
         "international": {
           "crop": [
@@ -3522,7 +4092,13 @@
             }
           },
           "pdf_page": 33,
-          "usage": "Outside the Sultanate of Oman only"
+          "usage": "Outside the Sultanate of Oman only",
+          "canvas_viewbox": [
+            5.16357421875,
+            5.25537109375,
+            177.6728515625,
+            52.48486328125
+          ]
         }
       }
     },
@@ -3566,7 +4142,13 @@
               "png_2048": "national-centre-for-statistics-and-information/bilingual-white-2048.png",
               "webp": "national-centre-for-statistics-and-information/bilingual-white.webp"
             }
-          }
+          },
+          "canvas_viewbox": [
+            5.3525390625,
+            5.19873046875,
+            241.6025390625,
+            51.6796875
+          ]
         },
         "arabic": {
           "crop": [
@@ -3597,7 +4179,13 @@
               "webp": "national-centre-for-statistics-and-information/arabic-white.webp"
             }
           },
-          "pdf_page": 31
+          "pdf_page": 31,
+          "canvas_viewbox": [
+            5.106201171875,
+            5.236572265625,
+            167.505126953125,
+            77.722900390625
+          ]
         }
       }
     },
@@ -3641,7 +4229,13 @@
               "png_2048": "board-of-governors-of-the-central-bank-of-oman/bilingual-white-2048.png",
               "webp": "board-of-governors-of-the-central-bank-of-oman/bilingual-white.webp"
             }
-          }
+          },
+          "canvas_viewbox": [
+            5.39471435546875,
+            5.33087158203125,
+            250.7105712890625,
+            51.68072509765625
+          ]
         },
         "arabic": {
           "crop": [
@@ -3671,7 +4265,13 @@
               "png_2048": "board-of-governors-of-the-central-bank-of-oman/arabic-white-2048.png",
               "webp": "board-of-governors-of-the-central-bank-of-oman/arabic-white.webp"
             }
-          }
+          },
+          "canvas_viewbox": [
+            5.30029296875,
+            4.967041015625,
+            119.43115234375,
+            98.388671875
+          ]
         }
       }
     },
@@ -3715,7 +4315,13 @@
               "png_2048": "oman-medical-speciality-board/bilingual-white-2048.png",
               "webp": "oman-medical-speciality-board/bilingual-white.webp"
             }
-          }
+          },
+          "canvas_viewbox": [
+            5.29876708984375,
+            5.2099609375,
+            232.22808837890625,
+            51.6851806640625
+          ]
         },
         "arabic": {
           "crop": [
@@ -3745,7 +4351,13 @@
               "png_2048": "oman-medical-speciality-board/arabic-white-2048.png",
               "webp": "oman-medical-speciality-board/arabic-white.webp"
             }
-          }
+          },
+          "canvas_viewbox": [
+            5.37158203125,
+            4.99462890625,
+            182.2803955078125,
+            79.8905029296875
+          ]
         }
       }
     },
@@ -3789,7 +4401,13 @@
               "png_2048": "state-financial-and-administrative-audit-authority/bilingual-white-2048.png",
               "webp": "state-financial-and-administrative-audit-authority/bilingual-white.webp"
             }
-          }
+          },
+          "canvas_viewbox": [
+            5.12310791015625,
+            5.19281005859375,
+            275.3931884765625,
+            51.68414306640625
+          ]
         },
         "arabic": {
           "crop": [
@@ -3820,7 +4438,13 @@
               "webp": "state-financial-and-administrative-audit-authority/arabic-white.webp"
             }
           },
-          "pdf_page": 31
+          "pdf_page": 31,
+          "canvas_viewbox": [
+            5.242431640625,
+            5.455322265625,
+            98.541748046875,
+            96.9849853515625
+          ]
         }
       }
     },
@@ -3865,7 +4489,13 @@
               "webp": "sultanate-of-oman/bilingual-white.webp"
             }
           },
-          "pdf_page": 9
+          "pdf_page": 9,
+          "canvas_viewbox": [
+            4.937744140625,
+            4.937744140625,
+            394.32824707031256,
+            151.44061279296875
+          ]
         },
         "arabic": {
           "crop": [
@@ -3896,9 +4526,16 @@
               "webp": "sultanate-of-oman/arabic-white.webp"
             }
           },
-          "pdf_page": 9
+          "pdf_page": 9,
+          "canvas_viewbox": [
+            5.2431640625,
+            5.416015625,
+            211.88720703125,
+            225.36962890625
+          ]
         }
       }
     }
-  ]
+  ],
+  "asset_revision": "tight-v2"
 }

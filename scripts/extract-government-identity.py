@@ -51,19 +51,62 @@ def monochrome(svg,tone):
             if e.get('stroke') and e.get('stroke')!='none':e.set('stroke',tone)
     return ET.tostring(root,encoding='unicode')
 
+def svg_pdf(svg):
+    vector = fitz.open(stream=svg.encode(), filetype='svg')
+    return fitz.open(stream=vector.convert_to_pdf(), filetype='pdf')
+
+def tight_svg(svg, resolution=8192):
+    """Trim to painted bounds, retaining every source path and transform."""
+    root = ET.fromstring(svg)
+    old = [float(n) for n in root.attrib['viewBox'].split()]
+    pdf = svg_pdf(svg)
+    page = pdf[0]
+    scale = resolution / max(page.rect.width, page.rect.height)
+    pix = page.get_pixmap(matrix=fitz.Matrix(scale, scale), alpha=True)
+    alpha = Image.open(io.BytesIO(pix.tobytes('png'))).getchannel('A')
+    box = alpha.getbbox()
+    if not box:
+        raise ValueError('Empty vector artwork')
+    # One high-resolution pixel protects anti-aliased tips. At a 2048 export
+    # this is at most 0.25 px, and the raster exports are trimmed separately.
+    left = max(0, box[0] - 1) / scale
+    top = max(0, box[1] - 1) / scale
+    right = min(page.rect.width, (box[2] + 1) / scale)
+    bottom = min(page.rect.height, (box[3] + 1) / scale)
+    bounds = [old[0] + left, old[1] + top, right-left, bottom-top]
+    number = lambda value: f'{value:.8f}'.rstrip('0').rstrip('.')
+    root.set('viewBox', ' '.join(number(n) for n in bounds))
+    root.set('width', number(bounds[2]))
+    root.set('height', number(bounds[3]))
+    return ET.tostring(root, encoding='unicode'), bounds
+
+def write_svg_assets(svg, folder, key, layout):
+    assets = {}
+    for tone, color in [('normal', None), ('black', '#000000'), ('white', '#ffffff')]:
+        name = f'{layout}-{tone}'
+        text = svg if color is None else monochrome(svg, color)
+        (folder / f'{name}.svg').write_text(text)
+        pdf = svg_pdf(text)
+        pdf.save(folder / f'{name}.pdf', garbage=4, deflate=True)
+        files = {'svg': f'{key}/{name}.svg', 'pdf': f'{key}/{name}.pdf'}
+        for size in ([512, 1024, 2048] if tone == 'normal' else [2048]):
+            scale = size / max(pdf[0].rect.width, pdf[0].rect.height)
+            pix = pdf[0].get_pixmap(matrix=fitz.Matrix(scale, scale), alpha=True)
+            image = Image.open(io.BytesIO(pix.tobytes('png'))).convert('RGBA')
+            image = image.crop(image.getchannel('A').getbbox())
+            image.save(folder / f'{name}-{size}.png', optimize=True)
+            files[f'png_{size}'] = f'{key}/{name}-{size}.png'
+            if size == (1024 if tone == 'normal' else 2048):
+                image.save(folder / f'{name}.webp', 'WEBP', lossless=True)
+                files['webp'] = f'{key}/{name}.webp'
+        assets[tone] = files
+    return assets
+
 def write_layout(doc, page, region, folder, key, layout):
-    svg,crop=extract(doc,page,fitz.Rect(region));assets={}
-    for tone,color in [('normal',None),('black','#000000'),('white','#ffffff')]:
-        name=f'{layout}-{tone}';text=svg if color is None else monochrome(svg,color)
-        (folder/f'{name}.svg').write_text(text)
-        vector=fitz.open(stream=text.encode(),filetype='svg');pdf=fitz.open(stream=vector.convert_to_pdf(),filetype='pdf');pdf.save(folder/f'{name}.pdf',garbage=4,deflate=True)
-        files={'svg':f'{key}/{name}.svg','pdf':f'{key}/{name}.pdf'}
-        for size in ([512,1024,2048] if tone=='normal' else [2048]):
-            scale=size/max(pdf[0].rect.width,pdf[0].rect.height);pix=pdf[0].get_pixmap(matrix=fitz.Matrix(scale,scale),alpha=True)
-            image=Image.open(io.BytesIO(pix.tobytes('png'))).convert('RGBA');image.save(folder/f'{name}-{size}.png',optimize=True);files[f'png_{size}']=f'{key}/{name}-{size}.png'
-            if size==(1024 if tone=='normal' else 2048):image.save(folder/f'{name}.webp','WEBP',lossless=True);files['webp']=f'{key}/{name}.webp'
-        assets[tone]=files
-    return {'crop':crop,'assets':assets,'pdf_page':page}
+    svg, crop = extract(doc, page, fitz.Rect(region))
+    svg, bounds = tight_svg(svg)
+    return {'crop': crop, 'canvas_viewbox': bounds,
+            'assets': write_svg_assets(svg, folder, key, layout), 'pdf_page': page}
 
 def add_supplemental(doc, dest, manifest, companies):
     key='sultanate-of-oman';folder=dest/key;folder.mkdir(exist_ok=True)
@@ -106,19 +149,7 @@ def main():
                 if page==28 and i==3: ly0,ly1=(645,745) if layout=='bilingual' else (625,745)
                 if page==31:
                     ly0,ly1=([(350,434),(505,585),(655,745)] if layout=='bilingual' else [(305,434),(475,585),(625,745)])[i]
-                svg,crop=extract(doc,page,fitz.Rect(xs[0],ly0,xs[1],ly1));assets={}
-                for tone,color in [('normal',None),('black','#000000'),('white','#ffffff')]:
-                    s=svg if color is None else monochrome(svg,color)
-                    name=f'{layout}-{tone}';(folder/f'{name}.svg').write_text(s)
-                    v=fitz.open(stream=s.encode(),filetype='svg');pdf=fitz.open(stream=v.convert_to_pdf(),filetype='pdf');pdf.save(folder/f'{name}.pdf',garbage=4,deflate=True)
-                    assets[tone]={'svg':f'{key}/{name}.svg','pdf':f'{key}/{name}.pdf'}
-                    for size in ([512,1024,2048] if tone=='normal' else [2048]):
-                        pix=pdf[0].get_pixmap(matrix=fitz.Matrix(size/max(pdf[0].rect.width,pdf[0].rect.height),size/max(pdf[0].rect.width,pdf[0].rect.height)),alpha=True)
-                        im=Image.open(io.BytesIO(pix.tobytes('png'))).convert('RGBA');pn=f'{name}-{size}.png';im.save(folder/pn,optimize=True)
-                        assets[tone][f'png_{size}']=f'{key}/{pn}'
-                        if size==(1024 if tone=='normal' else 2048):
-                            wn=f'{name}.webp';im.save(folder/wn,'WEBP',lossless=True);assets[tone]['webp']=f'{key}/{wn}'
-                row['layouts'][layout]={'crop':crop,'assets':assets}
+                row['layouts'][layout]=write_layout(doc,page,[xs[0],ly0,xs[1],ly1],folder,key,layout)
             manifest['entities'].append(row)
             print(en, 'existing='+str(row['company_id']),flush=True)
     manifest=add_supplemental(doc,dest,manifest,companies)

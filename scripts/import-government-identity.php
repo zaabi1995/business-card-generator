@@ -12,6 +12,14 @@ if (count($manifest['entities'] ?? []) !== 50 || !preg_match('/^[a-f0-9]{64}$/',
 $pdo = Database::getInstance()->getConnection();
 $root = dirname(__DIR__);
 $prefix = '/storage/logos/indexed/government-2025/';
+foreach ($argv as $argument) {
+    if (str_starts_with($argument, '--asset-prefix=')) {
+        $prefix = substr($argument, strlen('--asset-prefix='));
+    }
+}
+if (!preg_match('~^/storage/logos/indexed/government-2025(?:-[a-z0-9-]+)?/$~', $prefix)) {
+    throw new RuntimeException('Invalid government asset directory');
+}
 $all = $pdo->query('SELECT * FROM om_companies')->fetchAll(PDO::FETCH_ASSOC);
 $normalize = static function ($s) {
     return preg_replace('/[^\p{L}\p{N}]/u', '', mb_strtolower((string) $s));
