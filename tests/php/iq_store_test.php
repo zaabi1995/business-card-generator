@@ -152,6 +152,30 @@ $failed = IqPay::handleCallback($sign(array_merge($base, ['success' => 'false', 
 $after2 = strtotime((string)$db->fetchOne('SELECT pro_until FROM iq_users WHERE id = :id', ['id' => $u['id']])['pro_until']);
 check('a declined payment grants nothing', $failed['success'] === false && $after2 === $after);
 
+/* 6b. The verified certificate (OMR 4.900): name confirmed at checkout, number issued on payment. */
+IqStore::setSetting('price_certificate', '4.900');
+$c = $db->fetchOne('SELECT * FROM iq_attempts WHERE id = :id', ['id' => $c['id']]);
+try { IqPay::checkout($u, 'certificate', $c, ['name' => 'A']); $err = null; } catch (IqError $x) { $err = $x->codeName; }
+check('a certificate needs a real name', $err === 'cert_name', $err);
+check('the certificate price is OMR 4.900', IqPay::price('certificate') === 4.9);
+$certRef = 'IQ_CER_' . bin2hex(random_bytes(6));
+$db->insert('iq_payments', ['id' => generateUUID(), 'user_id' => $u['id'], 'attempt_id' => $c['id'], 'product' => 'certificate',
+    'amount' => 4.9, 'special_reference' => $certRef, 'status' => 'pending', 'meta' => json_encode(['name' => 'Claimed Person Al Test'])]);
+$declined = IqPay::handleCallback($sign(array_merge($base, ['success' => 'false', 'merchant_order_id' => $certRef, 'order' => '781', 'amount_cents' => '4900'])), null);
+$c = $db->fetchOne('SELECT * FROM iq_attempts WHERE id = :id', ['id' => $c['id']]);
+check('a declined certificate payment issues nothing', $declined['success'] === false && $c['cert_no'] === null);
+$certRef2 = 'IQ_CER_' . bin2hex(random_bytes(6));
+$db->insert('iq_payments', ['id' => generateUUID(), 'user_id' => $u['id'], 'attempt_id' => $c['id'], 'product' => 'certificate',
+    'amount' => 4.9, 'special_reference' => $certRef2, 'status' => 'pending', 'meta' => json_encode(['name' => 'Claimed Person Al Test'])]);
+$paid = IqPay::handleCallback($sign($base + ['merchant_order_id' => $certRef2, 'order' => '782', 'amount_cents' => '4900']), null);
+$c = $db->fetchOne('SELECT * FROM iq_attempts WHERE id = :id', ['id' => $c['id']]);
+check('a paid certificate gets a number, the confirmed name and a date', $paid['success'] === true
+    && preg_match('/^CIQ-\d{4}-[A-Z0-9]{8}$/', (string)$c['cert_no']) === 1 && $c['cert_name'] === 'Claimed Person Al Test' && $c['cert_issued_at'] !== null, $c);
+check('the number finds the certificate', (IqPay::byCertNo((string)$c['cert_no'])['id'] ?? null) === $c['id']);
+check('a made-up number finds nothing', IqPay::byCertNo('CIQ-2026-AAAAAAAA') === null);
+try { IqPay::checkout($u, 'certificate', $c, ['name' => 'Someone Else']); $err = null; } catch (IqError $x) { $err = $x->codeName; }
+check('a test cannot be certified twice', $err === 'already_issued', $err);
+
 /* 7. Share to unlock: one person starting from your link opens the report; you cannot credit yourself. */
 unset($_SESSION['iq_user_id']);
 $_COOKIE = [];

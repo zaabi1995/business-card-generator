@@ -87,6 +87,7 @@ try {
         case 'result': page_result($seg[1] ?? ''); break;
         case 'report': page_report($seg[1] ?? ''); break;
         case 'certificate': page_certificate(preg_replace('/\.pdf$/', '', $seg[1] ?? '')); break;
+        case 'verify': page_verify($seg[1] ?? ''); break;
         case 'og': page_og(preg_replace('/\.png$/', '', $seg[1] ?? '')); break;
         case 'leaderboard': page_leaderboard(); break;
         case 'account': page_account(); break;
@@ -410,6 +411,7 @@ function page_result(string $pid): void
                     <?php endif; ?>
                 </article>
             <?php endif; ?>
+            <?= cert_card($a, $u, $prices['certificate']) ?>
             <?php if (!$u): ?>
                 <div class="iqx-actions"><a class="iqx-btn iqx-btn-ghost" href="<?= iq_url('/account?next=' . rawurlencode('/result/' . $pid)) ?>"><?= iq_e(iq_s('claim')) ?></a></div>
             <?php endif; ?>
@@ -448,7 +450,7 @@ function page_report(string $pid): void
     echo '<h1 class="iqx-h1">' . iq_e(iq_s('report')) . '</h1>';
     echo '<article class="iqx-card iqx-hero-card">' . result_block($a, true) . '</article>';
     echo '<article class="iqx-card"><h2 class="iqx-h3">' . iq_e(iq_s('by_kind')) . '</h2>' . domain_bars($a) . '</article>';
-    echo '<p><a class="iqx-btn" href="' . iq_url('/certificate/' . $pid . '.pdf') . '">' . iq_e(iq_s('certificate')) . '</a></p>';
+    echo cert_card($a, $u, IqPay::price('certificate'));
     echo '<h2 class="iqx-h2">' . iq_e(iq_s('review')) . '</h2>';
     $kinds = $GLOBALS['S']['kinds'];
     $levels = $GLOBALS['S']['level'];
@@ -490,44 +492,103 @@ function review_body(array $q): string
     return '';
 }
 
+function cert_verify_url(array $a): string
+{
+    return 'https://cardify.om/iq/verify/' . $a['cert_no'];
+}
+
+/** "Add to profile" on LinkedIn, pre-filled as a licence or certification. */
+function cert_linkedin_url(array $a): string
+{
+    $t = strtotime((string)$a['cert_issued_at']);
+    return 'https://www.linkedin.com/profile/add?' . http_build_query([
+        'startTask' => 'CERTIFICATION_NAME', 'name' => 'Verified IQ Certificate (IQ ' . (int)$a['iq'] . ')',
+        'organizationName' => 'Cardify', 'issueYear' => date('Y', $t), 'issueMonth' => date('n', $t),
+        'certUrl' => cert_verify_url($a), 'certId' => $a['cert_no'],
+    ]);
+}
+
+function cert_qr_data_uri(string $url): string
+{
+    $lib = dirname(__DIR__) . '/vendor/tecnickcom/tcpdf/tcpdf_barcodes_2d.php';
+    if (!is_file($lib)) return '';
+    require_once $lib;
+    $svg = (new TCPDF2DBarcode($url, 'QRCODE,M'))->getBarcodeSVGcode(4, 4, '#0b2433');
+    return 'data:image/svg+xml;base64,' . base64_encode($svg);
+}
+
+/** The verified certificate: A4 landscape, bilingual, with the confirmed name, a number and a QR code. */
 function page_certificate(string $pid): void
 {
     $a = IqStore::byPublicId($pid);
-    if (!$a || $a['status'] !== 'done' || !IqPay::canSeeReport(IqStore::user(), $a)) not_found();
+    if (!$a || $a['status'] !== 'done' || empty($a['cert_no']) || !IqStore::owns($a)) not_found();
     $r = IqStore::result($a);
-    $verify = 'https://cardify.om/iq/result/' . $pid;
-    $name = htmlspecialchars($a['name'] !== '' ? $a['name'] : 'Cardify IQ', ENT_QUOTES);
-    $date = date('j F Y', strtotime((string)$a['finished_at']));
+    $verify = cert_verify_url($a);
+    $qr = cert_qr_data_uri($verify);
+    $logo = dirname(__DIR__) . '/assets/images/logo.svg';
+    $e = fn($s) => htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8');
+    $issued = strtotime((string)$a['cert_issued_at']);
+    $taken = strtotime((string)$a['finished_at']);
+    $arDigits = fn($s) => strtr((string)$s, ['0' => '٠', '1' => '١', '2' => '٢', '3' => '٣', '4' => '٤', '5' => '٥', '6' => '٦', '7' => '٧', '8' => '٨', '9' => '٩']);
     $html = '<!doctype html><html><head><meta charset="utf-8"><style>
-@import url("https://fonts.bhd.om/css2?family=Sora:wght@400;600;700&family=Noto+Sans+Arabic:wght@400;700&display=swap");
+@import url("https://fonts.bhd.om/css2?family=Sora:wght@400;600;700;800&family=Noto+Sans+Arabic:wght@400;600;700&display=swap");
 @page{size:A4 landscape;margin:0}
+*{box-sizing:border-box}
 body{margin:0;font-family:Sora,"Noto Sans Arabic",sans-serif;color:#0b2433}
-.c{position:relative;box-sizing:border-box;width:269mm;height:182mm;margin:14mm;border:2.5mm solid #009bc1;padding:18mm 20mm 0;text-align:center}
-.k{font-size:11pt;letter-spacing:3pt;text-transform:uppercase;color:#007a9c;margin:0}
-h1{font-size:30pt;margin:6mm 0 2mm}
-.n{font-size:26pt;font-weight:700;margin:8mm 0 2mm}
-.iq{font-size:64pt;font-weight:700;color:#009bc1;margin:4mm 0 0;line-height:1}
-.b{font-size:16pt;margin:2mm 0 6mm}
-.s{font-size:10pt;color:#456;margin:1mm 0}
-.f{position:absolute;left:20mm;right:20mm;bottom:12mm;font-size:9pt;color:#567;display:flex;justify-content:space-between}
-.k{margin-top:4mm}
-</style></head><body><div class="c">
-<p class="k">Cardify IQ</p><h1>Certificate of IQ Assessment</h1>
-<p class="s">This certifies that</p><p class="n">' . $name . '</p>
-<p class="s">completed the Cardify adaptive IQ test on ' . $date . ' and scored</p>
-<p class="iq">' . (int)$r['iq'] . '</p><p class="b">' . htmlspecialchars($r['band']['en']) . ' · higher than ' . (int)$r['percentile'] . '% of people · range ' . (int)$r['iq_low'] . '–' . (int)$r['iq_high'] . '</p>
-<p class="s">30 adaptive questions of fluid reasoning, 33 minutes, standard scale (average 100, standard deviation 15). Not a clinical diagnosis.</p>
-<div class="f"><span>Verify: ' . htmlspecialchars($verify) . '</span><span>ID ' . htmlspecialchars($pid) . '</span></div>
-</div></body></html>';
-    // Cardify's own tmp/ (open_basedir allows it; /tmp may not be), and an absolute binary path
-    // because PHP-FPM's PATH does not always include /usr/local/bin.
+.page{position:relative;width:297mm;height:210mm;padding:10mm}
+.frame{position:relative;width:100%;height:100%;border:1.6mm solid #009bc1;padding:2.2mm}
+.inner{position:relative;width:100%;height:100%;border:.35mm solid #9fd8e8;padding:12mm 18mm 10mm}
+.top{display:flex;justify-content:space-between;align-items:center}
+.logo{height:11mm}
+.no{font-size:8.5pt;color:#456;text-align:right;line-height:1.5}
+.no b{color:#0b2433;letter-spacing:.3pt}
+h1{margin:8mm 0 0;text-align:center;font-size:27pt;font-weight:800;letter-spacing:.4pt}
+.ar{font-family:"Noto Sans Arabic",sans-serif;direction:rtl}
+h2.ar{margin:1mm 0 0;text-align:center;font-size:15pt;font-weight:700;color:#007a9c}
+.cert{margin:6mm 0 0;text-align:center;font-size:10.5pt;color:#456}
+.name{margin:2.5mm 0 0;text-align:center;font-size:28pt;font-weight:700}
+.rule{width:120mm;margin:2mm auto 0;border-top:.4mm solid #e2b34a}
+.line{margin:3mm 0 0;text-align:center;font-size:10.5pt;color:#456}
+.score{display:flex;justify-content:center;align-items:center;gap:14mm;margin:5mm 0 0}
+.iq{text-align:center}
+.iq b{display:block;font-size:54pt;line-height:1;font-weight:800;color:#009bc1}
+.iq span{font-size:9pt;letter-spacing:2pt;color:#456}
+.facts{font-size:10.5pt;line-height:1.75}
+.facts b{color:#0b2433}
+.foot{position:absolute;left:18mm;right:18mm;bottom:9mm;display:flex;justify-content:space-between;align-items:flex-end}
+.small{font-size:7.6pt;color:#567;line-height:1.5;max-width:150mm}
+.qr{text-align:center;font-size:7.4pt;color:#456}
+.qr img{width:25mm;height:25mm;display:block;margin:0 auto 1mm}
+.seal{position:absolute;right:52mm;bottom:12mm;width:26mm;height:26mm;border-radius:50%;border:.7mm solid #e2b34a;color:#b8892c;
+ display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:6.6pt;font-weight:700;letter-spacing:.8pt;text-align:center;line-height:1.3}
+</style></head><body><div class="page"><div class="frame"><div class="inner">
+<div class="top"><img class="logo" src="file://' . $e($logo) . '"><div class="no">Certificate No. <b>' . $e($a['cert_no']) . '</b><br>Issued ' . date('j F Y', $issued) . '</div></div>
+<h1>Verified IQ Certificate</h1>
+<h2 class="ar">شهادة ذكاء موثّقة</h2>
+<p class="cert">This certifies that &nbsp;·&nbsp; <span class="ar">نشهد بأن</span></p>
+<p class="name" dir="auto">' . $e($a['cert_name']) . '</p>
+<div class="rule"></div>
+<p class="line">completed the Cardify adaptive IQ assessment on ' . date('j F Y', $taken) . ' and achieved</p>
+<div class="score">
+ <div class="iq"><b>' . (int)$r['iq'] . '</b><span>IQ SCORE</span></div>
+ <div class="facts">Classification: <b>' . $e($r['band']['en']) . '</b> <span class="ar">(' . $e($r['band']['ar']) . ')</span><br>
+ Higher than <b>' . (int)$r['percentile'] . '%</b> of people<br>
+ 90% range: <b>' . (int)$r['iq_low'] . ' to ' . (int)$r['iq_high'] . '</b><br>
+ <span class="ar">درجة الذكاء ' . $arDigits((int)$r['iq']) . '، أعلى من ' . $arDigits((int)$r['percentile']) . '٪ من الناس</span></div>
+</div>
+<div class="seal">VERIFIED<br>CARDIFY<br>IQ</div>
+<div class="foot">
+ <div class="small">30 adaptive questions of fluid reasoning (patterns, numbers, spatial, observation, logic), one 33-minute clock, scored with item response theory on the standard scale (average 100, standard deviation 15). Server-timed, questions generated for each test. Not a clinical diagnosis.<br>Verify this certificate: <b>' . $e($verify) . '</b></div>
+ <div class="qr">' . ($qr !== '' ? '<img src="' . $qr . '">' : '') . 'Scan to verify</div>
+</div>
+</div></div></div></body></html>';
     $dir = dirname(__DIR__) . '/tmp/iq-cert';
     @mkdir($dir, 0750, true);
     $in = $dir . '/' . $pid . '.html';
     $out = $dir . '/' . $pid . '.pdf';
     file_put_contents($in, $html);
     // open_basedir hides /usr/local/bin from is_file(), but exec() is not limited by it.
-    $bin = '/usr/local/bin/weasyprint';
+    $bin = PHP_OS_FAMILY === 'Darwin' ? '/opt/homebrew/bin/weasyprint' : '/usr/local/bin/weasyprint'; // local Mac vs the VPS
     exec('timeout 40 ' . $bin . ' ' . escapeshellarg($in) . ' ' . escapeshellarg($out) . ' 2>&1', $log, $rc);
     @unlink($in);
     if ($rc !== 0 || !is_file($out)) {
@@ -537,10 +598,64 @@ h1{font-size:30pt;margin:6mm 0 2mm}
         return;
     }
     no_store();
+    $file = 'Cardify-IQ-Certificate-' . preg_replace('/[^A-Za-z0-9]+/', '-', (string)$a['cert_no']) . '.pdf';
     header('Content-Type: application/pdf');
-    header('Content-Disposition: inline; filename="Cardify-IQ-certificate-' . $pid . '.pdf"');
+    header('Content-Disposition: inline; filename="' . $file . '"');
     readfile($out);
     @unlink($out);
+}
+
+/** Public check an employer can open from the QR code or the number printed on the certificate. */
+function page_verify(string $no): void
+{
+    no_store();
+    $a = IqPay::byCertNo(strtoupper($no));
+    layout_open(iq_s('verify_title'), '', ['robots' => 'noindex,nofollow']);
+    echo '<section class="iqx-wrap iqx-narrow">';
+    if (!$a) {
+        echo '<article class="iqx-card iqx-center"><h1 class="iqx-h2">' . iq_e(iq_s('verify_title')) . '</h1><p class="iqx-note is-bad">'
+            . iq_e(iq_s('verify_invalid')) . '</p></article></section>';
+        layout_close();
+        return;
+    }
+    $r = IqStore::result($a);
+    $lang = $GLOBALS['LANG'];
+    echo '<article class="iqx-card"><p class="iqx-note is-ok">' . iq_e(iq_s('verify_valid')) . '</p>'
+        . '<h1 class="iqx-h2"><bdi>' . iq_e((string)$a['cert_name']) . '</bdi></h1>'
+        . '<dl class="iqx-dl">'
+        . '<dt>' . iq_e(iq_s('estimated')) . '</dt><dd class="iqx-num">' . iq_num((int)$a['iq']) . '</dd>'
+        . '<dt>' . iq_e(iq_s('cert_class')) . '</dt><dd>' . iq_e($lang === 'ar' ? $r['band']['ar'] : $r['band']['en']) . '</dd>'
+        . '<dt>' . iq_e(iq_s('cert_percentile')) . '</dt><dd>' . iq_e(iq_s('percentile', ['p' => iq_num($r['percentile'])])) . '</dd>'
+        . '<dt>' . iq_e(iq_s('cert_taken')) . '</dt><dd>' . iq_e(date('j M Y', strtotime((string)$a['finished_at']))) . '</dd>'
+        . '<dt>' . iq_e(iq_s('cert_number')) . '</dt><dd dir="ltr">' . iq_e((string)$a['cert_no']) . '</dd>'
+        . '</dl><p class="iqx-muted iqx-small">' . iq_e(iq_s('disclaimer')) . '</p></article>'
+        . '<p class="iqx-center"><a class="iqx-btn" href="' . iq_url('/test') . '">' . iq_e(iq_s('take_test')) . '</a></p></section>';
+    layout_close();
+}
+
+/** The certificate offer (or the issued certificate) on the owner's result page. */
+function cert_card(array $a, ?array $u, ?float $price): string
+{
+    $pid = $a['public_id'];
+    if (!empty($a['cert_no'])) {
+        return '<article class="iqx-card iqx-cert"><h2 class="iqx-h3">' . iq_e(iq_s('cert_issued')) . '</h2>'
+            . '<p class="iqx-muted iqx-small" dir="ltr">' . iq_e((string)$a['cert_no']) . '</p><div class="iqx-actions">'
+            . '<a class="iqx-btn" href="' . iq_url('/certificate/' . $pid . '.pdf') . '">' . iq_e(iq_s('download_cert')) . '</a>'
+            . '<a class="iqx-btn iqx-btn-ghost" href="' . iq_e(cert_linkedin_url($a)) . '" target="_blank" rel="noopener">' . iq_e(iq_s('add_linkedin')) . '</a>'
+            . '<a class="iqx-btn iqx-btn-ghost" href="' . iq_e(cert_verify_url($a)) . '">' . iq_e(iq_s('verify_cert')) . '</a></div></article>';
+    }
+    if ($price === null) return '';
+    $h = '<article class="iqx-card iqx-cert" id="certificate"><h2 class="iqx-h3">' . iq_e(iq_s('cert_title')) . '</h2>'
+        . '<p class="iqx-price">' . iq_e(price_label($price)) . ' <small>' . iq_e(iq_s('one_off')) . '</small></p><ul>';
+    foreach ($GLOBALS['S']['cert_points'] as $p) $h .= '<li>' . iq_e($p) . '</li>';
+    $h .= '</ul>';
+    if (!$u) {
+        return $h . '<a class="iqx-btn" href="' . iq_url('/account?next=' . rawurlencode('/result/' . $pid)) . '">' . iq_e(iq_s('cert_sign_in')) . '</a></article>';
+    }
+    return $h . '<form class="iqx-form" data-iq-cert="' . iq_e($pid) . '"><label>' . iq_e(iq_s('cert_name_label'))
+        . '<input class="iqx-input" name="cert_name" maxlength="80" required value="' . iq_e($u['display_name'] ?: $a['name']) . '"></label>'
+        . '<p class="iqx-muted iqx-small">' . iq_e(iq_s('cert_name_hint')) . '</p>'
+        . '<button class="iqx-btn" type="submit">' . iq_e(iq_s('buy_cert')) . ' · ' . iq_e(price_label($price)) . '</button></form></article>';
 }
 
 function page_og(string $pid): void
@@ -825,11 +940,11 @@ function api(string $action): void
             if (!$u) api_out(['error' => 'sign_in'], 401);
             $product = (string)($b['product'] ?? '');
             $att = null;
-            if ($product === 'report') {
+            if ($product === 'report' || $product === 'certificate') {
                 $att = IqStore::byPublicId((string)($b['attempt'] ?? ''));
                 if (!$att || $att['user_id'] !== $u['id']) api_out(['error' => 'no_result'], 409);
             }
-            api_out(['url' => IqPay::checkout($u, $product, $att)]);
+            api_out(['url' => IqPay::checkout($u, $product, $att, ['name' => (string)($b['name'] ?? '')])]);
         default:
             api_out(['error' => 'unknown'], 404);
     }

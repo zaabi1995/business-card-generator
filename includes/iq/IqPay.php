@@ -7,7 +7,9 @@ require_once dirname(__DIR__) . '/Payment.php';
 /*
  * Paid IQ products, through Cardify's Paymob merchant.
  *
- *   report     one attempt's full report and named certificate (one-off)
+ *   report     one attempt's full report: every question reviewed, time per question (one-off)
+ *   certificate one attempt's verified IQ certificate: A4 PDF with the confirmed name, a number,
+ *              a QR code and a public verification page (one-off, OMR 4.900)
  *   pro_month  IQ Pro for 30 days: retakes without the 30-day wait, every report and
  *              certificate, progress over time, practice mode, no ads (one-off, renewed by hand;
  *              nothing is charged again without the person paying again)
@@ -21,7 +23,7 @@ require_once dirname(__DIR__) . '/Payment.php';
  */
 final class IqPay
 {
-    public const PRODUCTS = ['report', 'pro_month'];
+    public const PRODUCTS = ['report', 'pro_month', 'certificate'];
 
     public static function price(string $product): ?float
     {
@@ -32,16 +34,22 @@ final class IqPay
 
     public static function prices(): array
     {
-        return ['report' => self::price('report'), 'pro_month' => self::price('pro_month')];
+        return ['report' => self::price('report'), 'pro_month' => self::price('pro_month'), 'certificate' => self::price('certificate')];
     }
 
     /** Starts a Paymob checkout. Returns the hosted checkout URL. */
-    public static function checkout(array $user, string $product, ?array $attempt): string
+    public static function checkout(array $user, string $product, ?array $attempt, array $meta = []): string
     {
         if (!in_array($product, self::PRODUCTS, true)) throw new IqError('unknown_product');
         $amount = self::price($product);
         if ($amount === null) throw new IqError('not_on_sale', 409);
-        if ($product === 'report' && (!$attempt || $attempt['status'] !== 'done')) throw new IqError('no_result', 409);
+        if (in_array($product, ['report', 'certificate'], true) && (!$attempt || $attempt['status'] !== 'done')) throw new IqError('no_result', 409);
+        if ($product === 'certificate') {
+            if (!empty($attempt['cert_no'])) throw new IqError('already_issued', 409);
+            $name = trim(preg_replace('/\s+/u', ' ', preg_replace('/[\p{C}<>]+/u', ' ', (string)($meta['name'] ?? '')) ?? '') ?? '');
+            if (mb_strlen($name) < 3 || mb_strlen($name) > 80) throw new IqError('cert_name', 422);
+            $meta = ['name' => $name];
+        }
 
         $secret = defined('PAYMOB_SECRET_KEY') ? PAYMOB_SECRET_KEY : '';
         $public = defined('PAYMOB_PUBLIC_KEY') ? PAYMOB_PUBLIC_KEY : '';
@@ -54,6 +62,7 @@ final class IqPay
         $db->insert('iq_payments', [
             'id' => $id, 'user_id' => $user['id'], 'attempt_id' => $attempt['id'] ?? null,
             'product' => $product, 'amount' => $amount, 'special_reference' => $ref, 'status' => 'pending',
+            'meta' => $meta ? json_encode($meta, JSON_UNESCAPED_UNICODE) : null,
         ]);
 
         $cents = Payment::toSmallestUnit($amount, 'OMR');
@@ -61,7 +70,7 @@ final class IqPay
         $parts = explode(' ', $name, 2);
         $host = defined('APP_HOST') ? APP_HOST : 'cardify.om';
         $callback = 'https://' . $host . '/paymob/callback.php';
-        $label = $product === 'report' ? 'IQ full report and certificate' : 'IQ Pro, 30 days';
+        $label = ['report' => 'IQ full report', 'certificate' => 'Verified IQ certificate', 'pro_month' => 'IQ Pro, 30 days'][$product];
         $payload = [
             'amount' => $cents,
             'currency' => 'OMR',
@@ -147,6 +156,10 @@ final class IqPay
             if ($ok) {
                 if ($pay['product'] === 'report' && $pay['attempt_id']) {
                     $conn->prepare("UPDATE iq_attempts SET report_paid = 1, unlocked_by = COALESCE(unlocked_by, 'paid') WHERE id = :id")->execute([':id' => $pay['attempt_id']]);
+                } elseif ($pay['product'] === 'certificate' && $pay['attempt_id']) {
+                    $meta = json_decode((string)$pay['meta'], true) ?: [];
+                    $conn->prepare('UPDATE iq_attempts SET cert_no = :n, cert_name = :m, cert_issued_at = :t WHERE id = :id AND cert_no IS NULL')
+                        ->execute([':n' => self::newCertNo(), ':m' => mb_substr((string)($meta['name'] ?? ''), 0, 80), ':t' => date('Y-m-d H:i:s'), ':id' => $pay['attempt_id']]);
                 } elseif ($pay['product'] === 'pro_month') {
                     // 30 days from today, or from the end of a pass that is still running.
                     $conn->prepare('UPDATE iq_users SET pro_until = DATE_ADD(GREATEST(COALESCE(pro_until, NOW()), NOW()), INTERVAL 30 DAY) WHERE id = :u')
@@ -160,6 +173,22 @@ final class IqPay
             return ['success' => false, 'error' => 'Server error'] + $out;
         }
         return ['success' => $ok, 'error' => $ok ? null : 'Payment was not completed'] + $out;
+    }
+
+    /** A certificate number: CIQ-<year>-<8 characters>, no look-alike letters. */
+    public static function newCertNo(): string
+    {
+        $abc = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+        $s = '';
+        for ($i = 0; $i < 8; $i++) $s .= $abc[random_int(0, strlen($abc) - 1)];
+        return 'CIQ-' . date('Y') . '-' . $s;
+    }
+
+    public static function byCertNo(string $no): ?array
+    {
+        if (!preg_match('/^CIQ-\d{4}-[A-Z0-9]{8}$/', $no)) return null;
+        $a = Database::getInstance()->fetchOne('SELECT * FROM iq_attempts WHERE cert_no = :n', ['n' => $no]);
+        return $a ?: null;
     }
 
     /** Has this person paid for this attempt's full report (or is Pro)? */

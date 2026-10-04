@@ -307,6 +307,18 @@
         .catch(function (err) { toast(errText(err.code), true); b.disabled = false; });
     });
   });
+  document.querySelectorAll('[data-iq-cert]').forEach(function (f) {
+    f.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var btn = f.querySelector('button');
+      var name = f.cert_name.value.trim();
+      if (name.length < 3) { toast(errText('cert_name'), true); f.cert_name.focus(); return; }
+      btn.disabled = true;
+      api('checkout', { product: 'certificate', attempt: f.getAttribute('data-iq-cert'), name: name })
+        .then(function (r) { location.href = r.url; })
+        .catch(function (err) { toast(errText(err.code), true); btn.disabled = false; });
+    });
+  });
   document.querySelectorAll('[data-iq-copy]').forEach(function (b) {
     b.addEventListener('click', function () {
       var url = b.getAttribute('data-iq-copy');

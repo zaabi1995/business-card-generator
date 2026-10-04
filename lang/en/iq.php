@@ -61,13 +61,12 @@ return array (
     0 => 'Your score by kind of reasoning',
     1 => 'Every question reviewed, with the right answer',
     2 => 'Your time on each question',
-    3 => 'A named certificate (PDF) with a link anyone can check',
   ),
   'pro_name' => 'IQ Pro',
   'pro_points' => 
   array (
     0 => 'Retake any time, no 30-day wait',
-    1 => 'Every report and certificate included',
+    1 => 'Every full report included',
     2 => 'Practice mode with instant feedback',
     3 => 'Your progress over time',
     4 => 'No ads',
@@ -107,6 +106,11 @@ return array (
     array (
       0 => 'How is cheating handled?',
       1 => 'Questions are generated fresh for every test, so there is no answer list to find. The server keeps the clock. Leaving the page is recorded, and a test where the person left the page more than twice does not count for the leaderboard.',
+    ),
+    6 => 
+    array (
+      0 => 'Can I put the certificate on my CV?',
+      1 => 'Yes. Each certificate has a unique number, a QR code and a public verification page, so an employer can confirm it is genuine. It certifies your result on the Cardify adaptive IQ test; it is not a clinical diagnosis.',
     ),
   ),
   'name' => 'Your name',
@@ -218,5 +222,30 @@ return array (
     'no_result' => 'Finish a test first.',
     'csrf' => 'The page expired. Refresh and try again.',
     'server' => 'Something went wrong. Try again.',
+    'cert_name' => 'Type your full name (3 to 80 characters).',
+    'already_issued' => 'This test already has a certificate.',
   ),
+  'cert_title' => 'Verified IQ certificate',
+  'cert_points' => 
+  array (
+    0 => 'A4 landscape PDF with your full name and IQ score',
+    1 => 'A unique certificate number and a QR code',
+    2 => 'A public page that confirms it is genuine, for employers',
+    3 => 'Add it to your LinkedIn profile and CV in one click',
+  ),
+  'cert_name_label' => 'Your full name, as it should appear on the certificate',
+  'cert_name_hint' => 'Check the spelling. The name cannot be changed after the certificate is issued.',
+  'buy_cert' => 'Get the certificate',
+  'cert_sign_in' => 'Sign in to get your certificate',
+  'cert_issued' => 'Your verified IQ certificate',
+  'download_cert' => 'Download the certificate (PDF)',
+  'add_linkedin' => 'Add to LinkedIn',
+  'verify_cert' => 'Verification page',
+  'verify_title' => 'Certificate check',
+  'verify_valid' => 'This is a genuine Cardify IQ certificate.',
+  'verify_invalid' => 'No certificate has this number. Check it and try again.',
+  'cert_class' => 'Classification',
+  'cert_percentile' => 'Percentile',
+  'cert_taken' => 'Test taken',
+  'cert_number' => 'Certificate number',
 );

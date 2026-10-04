@@ -32,9 +32,11 @@ if (is_string($__ref) && strncmp($__ref, 'IQ_', 3) === 0) {
         echo json_encode(['status' => $iq['success'] ? 'success' : 'error', 'message' => $iq['error'] ?? '']);
         exit;
     }
-    $dest = ($iq['product'] ?? '') === 'report' && !empty($iq['attempt'])
-        ? '/iq/report/' . rawurlencode($iq['attempt'])
-        : '/iq/account';
+    $dest = match (true) {
+        ($iq['product'] ?? '') === 'report' && !empty($iq['attempt']) => '/iq/report/' . rawurlencode($iq['attempt']),
+        ($iq['product'] ?? '') === 'certificate' && !empty($iq['attempt']) => '/iq/result/' . rawurlencode($iq['attempt']),
+        default => '/iq/account',
+    };
     header('Location: https://' . (defined('APP_HOST') ? APP_HOST : 'cardify.om') . $dest . '?payment=' . ($iq['success'] ? 'success' : 'failed'));
     exit;
 }

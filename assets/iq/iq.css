@@ -161,6 +161,13 @@
 .iqx-feedback { margin: 0; min-block-size: 1.6em; font-size: 14px; color: var(--iq-bad); }
 .iqx-feedback.is-ok { color: var(--iq-ok); }
 
+/* certificate */
+.iqx-cert { border-color: #e7c873; box-shadow: 0 0 0 3px #fbf3dd; }
+.iqx-cert ul { padding-inline-start: 20px; margin: 0 0 14px; list-style: disc; }
+.iqx-dl { display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; margin: 12px 0; }
+.iqx-dl dt { color: var(--iq-muted); font-size: 14px; }
+.iqx-dl dd { margin: 0; font-weight: 600; }
+
 /* result */
 .iqx-hero-card { text-align: center; }
 .iqx-result { display: grid; justify-items: center; gap: 4px; }
