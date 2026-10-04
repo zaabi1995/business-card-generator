@@ -475,7 +475,15 @@ def _render(payload: dict, template: dict, side: str, input_dir: Path) -> Image.
             qr_drawn = True
             continue
         _draw_text(draw, template, key, field, _employee_value(key, payload, field))
-    if side == "back" and not qr_drawn:
+    # A template that defines its own QR slot decides for itself: a disabled
+    # qr_code means "no QR on this side" (MHD division cards, F&B), and an
+    # imported design without a slot has no QR by design. The fallback below
+    # is only for presets and legacy hand-built templates with no slot at all.
+    # Before this, it stamped a QR on 39 card backs across 8 tenants (over the job title on MHD division cards).
+    qr_defined = any(k in {"qr", "qr_code", "qrcode"} for k, _ in _field_items(template))
+    settings = _template_value(template, "settings", "settings_json", {}) or {}
+    imported = str(settings.get("imported_from") or "") == "pdf" or bool(settings.get("import_token"))
+    if side == "back" and not qr_drawn and not qr_defined and not imported:
         # Fallback QR for a back with no qr_code field. The literals were
         # 805/330/190, i.e. fractions of the legacy 1050x600 canvas; expressed
         # as fractions they land identically there and stay in the same corner
