@@ -294,7 +294,7 @@ function cardsheet_build_raster_card_pdf(array $employee, array $company): strin
         $row = $db->fetchOne(
             "SELECT front_file_path, back_file_path FROM generated_cards
              WHERE employee_id = :e AND front_file_path IS NOT NULL AND front_file_path <> ''
-             ORDER BY generated_at DESC LIMIT 1",
+             ORDER BY (COALESCE(front_web_path, front_file_path) IS NOT NULL) DESC, generated_at DESC LIMIT 1",
             ['e' => $eid]
         );
         if (!$row || empty($row['front_file_path'])) return '';

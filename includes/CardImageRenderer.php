@@ -86,7 +86,12 @@ class CardImageRenderer
             }
             $newFinalFiles[] = $backFinal;
 
-            $now = date('Y-m-d H:i:s');
+            // UTC, the clock the column default and NOW() use. date() wrote Muscat
+            // wall-clock, 4 hours ahead, so a row this method wrote outranked any
+            // row stamped by the database for 4 hours: after an invalidate, the
+            // nulled Muscat row hid the fresh render and the public card lost its
+            // images (MHD, 4 Oct 2026).
+            $now = gmdate('Y-m-d H:i:s');
             $card = $db->fetchOne(
                 'SELECT id FROM generated_cards
                   WHERE employee_id = :employee_id AND company_id = :company_id

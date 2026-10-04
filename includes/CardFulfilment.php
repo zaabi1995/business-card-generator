@@ -438,7 +438,7 @@ class CardFulfilment
         $row = $db->fetchOne(
             "SELECT front_file_path, back_file_path FROM generated_cards
               WHERE employee_id = :e AND front_file_path IS NOT NULL AND front_file_path <> ''
-              ORDER BY generated_at DESC LIMIT 1", ['e' => $employeeId]);
+              ORDER BY (COALESCE(front_web_path, front_file_path) IS NOT NULL) DESC, generated_at DESC LIMIT 1", ['e' => $employeeId]);
         if (!$row) { return null; }
         $dir   = function_exists('getCompanyCardsDir') ? getCompanyCardsDir($companyId)
                                                         : BASE_DIR . '/uploads/companies/' . $companyId . '/cards';

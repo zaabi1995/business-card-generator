@@ -39,7 +39,7 @@ if (!$employee) {
 
 // Latest generated card (front + back filenames + URLs)
 $card = $db->fetchOne(
-    "SELECT * FROM generated_cards WHERE employee_id = :eid AND company_id = :cid ORDER BY generated_at DESC LIMIT 1",
+    "SELECT * FROM generated_cards WHERE employee_id = :eid AND company_id = :cid ORDER BY (COALESCE(front_web_path, front_file_path) IS NOT NULL) DESC, generated_at DESC LIMIT 1",
     ['eid' => $employeeId, 'cid' => $companyId]
 );
 $cardBaseUrl = getBasePath() . 'uploads/companies/' . $companyId . '/cards/';

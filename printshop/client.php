@@ -42,7 +42,7 @@ $empStmt = $pdo->prepare(
      LEFT JOIN generated_cards gc ON gc.id = (
         SELECT id FROM generated_cards
         WHERE employee_id = e.id AND company_id = e.company_id
-        ORDER BY generated_at DESC LIMIT 1
+        ORDER BY (COALESCE(front_web_path, front_file_path) IS NOT NULL) DESC, generated_at DESC LIMIT 1
      )
      WHERE e.company_id = ? ORDER BY e.name_en ASC"
 );
