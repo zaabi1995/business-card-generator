@@ -42,6 +42,10 @@ if ($method === 'POST') {
         ]);
         unset($_COOKIE['pso_remember']);
     }
+    // One sign-out for cardify.om: logo downloads keep their own cookie, so end it
+    // here too (the IQ test lives in the session that Auth::logout() destroys).
+    require_once INCLUDES_DIR . '/LogoAccess.php';
+    try { LogoAccess::signOut(); } catch (Throwable $e) { error_log('[logout] logo sign-out: ' . $e->getMessage()); }
     Auth::logout();
     header('Location: ' . getBasePath() . 'login.php');
     exit;

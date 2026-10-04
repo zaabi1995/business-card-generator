@@ -109,32 +109,11 @@
         catch (e) { error(e.message); }
         finally { button.disabled = false; button.textContent = original; }
     }
-    one('[data-access-email]').addEventListener('submit', function (e) {
-        e.preventDefault(); var form = e.currentTarget;
-        void submit(form, 'send_code', {email: form.elements.email.value}, async function (data) {
-            form.hidden = true; one('[data-access-code]').hidden = false;
-            one('[data-access-code-message]').textContent = text('code_sent', {email: data.email});
-            one('[name=code]').focus();
-        });
-    });
-    one('[data-access-code]').addEventListener('submit', function (e) {
-        e.preventDefault(); var form = e.currentTarget;
-        void submit(form, 'verify_code', {code: form.elements.code.value}, async function () {
-            if (wantsUpgrade) showBilling();
-            else if (pending) await download(pending);
-        });
-    });
-    one('[name=code]').addEventListener('input', function () {
-        this.value = this.value.replace(/[\u0660-\u0669\u06f0-\u06f9]/g, function (c) { return String(c.charCodeAt(0) % 16); });
-        if (/^[0-9]{6}$/.test(this.value) && !one('[data-access-code] button[type=submit]').disabled) one('[data-access-code]').requestSubmit();
-    });
-    one('[data-access-change]').addEventListener('click', function () {
-        one('[data-access-code]').hidden = true; one('[data-access-email]').hidden = false;
-        one('[name=code]').value = ''; clearError(); one('[name=email]').focus();
-    });
+    // Sign-in happens on /login (one sign-in for cardify.om); the panel only links there.
     one('[data-access-continue]').addEventListener('click', function () { if (pending) void download(pending); });
     one('[data-access-signout]').addEventListener('click', async function () {
-        try { await request('sign_out'); one('[data-access-code]').hidden = true; one('[data-access-email]').hidden = false; }
+        // One sign-out: this ends the whole cardify.om session, so reload.
+        try { await request('sign_out'); location.reload(); }
         catch (e) { error(e.message); }
     });
     function showBilling() {
@@ -144,7 +123,7 @@
     one('[data-access-buy]').addEventListener('click', function () {
         wantsUpgrade = true; clearError();
         if (state && state.registered) showBilling();
-        else one('[name=email]').focus();
+        else one('[data-access-guest] a').focus(); // sign in first, on /login
     });
     one('[data-access-billing]').addEventListener('submit', function (e) {
         e.preventDefault(); var form = e.currentTarget; var fields = Object.fromEntries(new FormData(form));

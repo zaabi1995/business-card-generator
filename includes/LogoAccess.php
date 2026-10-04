@@ -58,6 +58,16 @@ final class LogoAccess
                     ?: ['id' => null, 'email' => $email, 'name' => $user['name'] ?? '', 'paid_until' => null];
             }
         }
+        // One sign-in for cardify.om: someone signed in by code with no Cardify
+        // account (an IQ test account with an email) is a member here too.
+        if (!self::$cachedMember && !empty($_SESSION['iq_user_id'])) {
+            $iq = $db->fetchOne('SELECT email, display_name FROM iq_users WHERE id = :id', ['id' => $_SESSION['iq_user_id']]);
+            $email = strtolower(trim((string) ($iq['email'] ?? '')));
+            if (filter_var($email, FILTER_VALIDATE_EMAIL) && strlen($email) <= 120) {
+                self::$cachedMember = $db->fetchOne('SELECT * FROM logo_members WHERE email = :email', ['email' => $email])
+                    ?: ['id' => null, 'email' => $email, 'name' => (string) ($iq['display_name'] ?? ''), 'paid_until' => null];
+            }
+        }
         return self::$cachedMember;
     }
 
@@ -124,7 +134,7 @@ final class LogoAccess
         $limit = $member ? self::MEMBER_LIMIT : self::GUEST_LIMIT;
         $used = (int) ($row['used'] ?? 0); $bonus = (int) ($row['bonus'] ?? 0);
         return ['registered' => (bool) $member, 'email' => $member['email'] ?? '', 'name' => $member['name'] ?? '', 'phone' => $member['phone'] ?? '',
-            'canSignOut' => (bool)$member && !Auth::isLoggedIn(), 'paid' => self::paid(),
+            'canSignOut' => (bool)$member, 'paid' => self::paid(),
             'paidUntil' => $member['paid_until'] ?? null, 'used' => $used, 'limit' => $limit,
             'remaining' => max(0, $limit + $bonus - $used), 'period' => self::period(),
             'daily' => self::period() !== '1970-01-01', 'price' => number_format(self::price(), 3, '.', ''),

@@ -66,10 +66,12 @@ final class IqStore
         if (isset($_SESSION['iq_user_id']) && is_string($_SESSION['iq_user_id'])) return $_SESSION['iq_user_id'];
         // One sign-in for Cardify and the IQ test: anyone signed in to Cardify
         // (password or code) is signed in here too, matched by email.
-        $email = strtolower(trim((string)($_SESSION['user_email'] ?? '')));
-        if (!empty($_SESSION['user_id']) && filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            return self::attach($email, 'email', false)['id'];
-        }
+        // A print shop operator signed in by WhatsApp carries a phone number here.
+        $ident = strtolower(trim((string)($_SESSION['user_email'] ?? '')));
+        if (empty($_SESSION['user_id']) || $ident === '') return null;
+        if (filter_var($ident, FILTER_VALIDATE_EMAIL)) return self::attach($ident, 'email', false)['id'];
+        $digits = preg_replace('/\D+/', '', $ident);
+        if (strlen($digits) >= 10 && strlen($digits) <= 15) return self::attach($digits, 'whatsapp', false)['id'];
         return null;
     }
 

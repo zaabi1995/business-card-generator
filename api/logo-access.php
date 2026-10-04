@@ -39,32 +39,14 @@ try {
             'url' => '/logo-download?company=' . $companyId . '&format=' . rawurlencode($format) . '&ticket=' . $ticket]);
     }
 
-    if ($action === 'send_code') {
-        $email = strtolower(trim((string)($input['email'] ?? '')));
-        if (!filter_var($email, FILTER_VALIDATE_EMAIL) || strlen($email) > 120) logoAccessResponse(['error' => 'invalid_email'], 422);
-        if (!RateLimiter::check('logo_otp:' . hash('sha256', $email), $ip, 3, 3600)) logoAccessResponse(['error' => 'rate_limited'], 429);
-        require_once INCLUDES_DIR . '/OtpService.php';
-        require_once INCLUDES_DIR . '/Mailer.php';
-        $result = OtpService::send($email, 'email', 'logo_access');
-        if (!$result['ok']) logoAccessResponse(['error' => $result['error'] === 'delivery_failed' ? 'delivery_failed' : 'rate_limited'], 429);
-        $_SESSION['logo_otp_email'] = $email;
-        logoAccessResponse(['success' => true, 'email' => $email]);
-    }
-
-    if ($action === 'verify_code') {
-        $email = $_SESSION['logo_otp_email'] ?? '';
-        if (!$email || !RateLimiter::check('logo_otp_verify', $ip, 20, 900)) logoAccessResponse(['error' => 'invalid_code'], 422);
-        require_once INCLUDES_DIR . '/OtpService.php';
-        $result = OtpService::verify($email, (string)($input['code'] ?? ''), 'logo_access');
-        if (!$result['ok']) logoAccessResponse(['error' => 'invalid_code'], 422);
-        $member = LogoAccess::ensureMember($email);
-        LogoAccess::signIn($member);
-        unset($_SESSION['logo_otp_email']);
-        logoAccessResponse(['success' => true, 'state' => LogoAccess::state(), 'csrf' => generateCSRFToken()]);
-    }
+    // Sign-in is /login for all of cardify.om; the old send_code/verify_code pair is gone.
 
     if ($action === 'sign_out') {
+        // One sign-out: logo access, the IQ test and the Cardify session together.
         LogoAccess::signOut();
+        unset($_SESSION['iq_user_id']);
+        Auth::logout();
+        if (session_status() === PHP_SESSION_NONE) session_start();
         logoAccessResponse(['success' => true, 'state' => LogoAccess::state()]);
     }
 

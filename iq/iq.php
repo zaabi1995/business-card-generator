@@ -734,6 +734,15 @@ function page_account(): void
     $u = IqStore::user();
     $next = (string)($_GET['next'] ?? '');
     $next = preg_match('~^/[A-Za-z0-9/_-]*$~', $next) ? $next : '';
+    if (!$u && !empty($_SESSION['user_id'])) {
+        // Signed in, but nothing to attach an IQ account to: never bounce to
+        // /login (it would send them straight back here).
+        layout_open(iq_s('account') . ' · ' . iq_s('brand'), '', ['robots' => 'noindex']);
+        echo subnav('/account', '/account') . '<section class="iqx-wrap iqx-narrow"><article class="iqx-card"><p>'
+            . iq_e(iq_s('sign_in_lead')) . '</p></article></section>';
+        layout_close();
+        return;
+    }
     if (!$u) {
         // One sign-in for cardify.om: the site's /login page, opened on the code
         // option, then straight back here (and on to ?next).
@@ -910,6 +919,8 @@ function api(string $action): void
         case 'logout':
             // One sign-in, one sign-out: this ends the Cardify session too.
             IqStore::signOut();
+            require_once INCLUDES_DIR . '/LogoAccess.php';
+            LogoAccess::signOut();
             require_once INCLUDES_DIR . '/Auth.php';
             Auth::logout();
             api_out(['ok' => true]);

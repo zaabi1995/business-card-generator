@@ -22,19 +22,13 @@ $accessReturn = '/logo-access.php?company=' . (int)($logoAccessCompany ?? 0) . '
     <p data-access-error class="logo-access-error" role="alert" hidden></p>
 
     <div data-access-guest>
-        <form data-access-email>
-            <label for="logo-access-email"><?= t('logoaccess.email') ?></label>
-            <input id="logo-access-email" name="email" type="email" autocomplete="email" dir="ltr" maxlength="120" required>
-            <button class="logo-access-primary" type="submit"><?= t('logoaccess.send_code') ?></button>
-        </form>
-        <form data-access-code hidden>
-            <p data-access-code-message class="logo-access-muted"></p>
-            <label for="logo-access-code"><?= t('logoaccess.code') ?></label>
-            <input id="logo-access-code" name="code" type="text" inputmode="numeric" autocomplete="one-time-code" dir="ltr" pattern="[0-9]{6}" minlength="6" maxlength="6" required>
-            <button class="logo-access-primary" type="submit"><?= t('logoaccess.verify') ?></button>
-            <button type="button" data-access-change class="logo-access-link"><?= t('logoaccess.change_email') ?></button>
-        </form>
-        <a class="logo-access-link" href="/login.php?redirect=<?= rawurlencode($accessReturn) ?>"><?= t('logoaccess.existing_login') ?></a>
+        <?php
+        // One sign-in for cardify.om: the site's /login page (code by email or
+        // WhatsApp, or password), then back to this page.
+        $accessHere = (string) ($_SERVER['REQUEST_URI'] ?? '');
+        if (!preg_match('#^/[a-zA-Z0-9/_.\-?&=%]*$#', $accessHere)) $accessHere = $accessReturn;
+        ?>
+        <a class="logo-access-primary" href="/login?<?= $accessEsc(http_build_query(['method' => 'code', 'redirect' => $accessHere])) ?>"><?= t('logoaccess.register') ?></a>
     </div>
 
     <div data-access-member hidden>

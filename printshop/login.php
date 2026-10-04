@@ -17,6 +17,18 @@ if ($ctx['shop']) {
     exit;
 }
 
+// One sign-in for cardify.om (4 Oct 2026): operators sign in on /login with the
+// same code by email or WhatsApp; it recognises them and opens the dashboard.
+// The form below remains for someone already signed in to Cardify who also
+// needs to sign in as an operator.
+// Only when nobody is signed in: a Cardify user who is not an operator would
+// otherwise bounce between /login and the dashboard forever.
+require_once INCLUDES_DIR . '/Auth.php';
+if (!Auth::isLoggedIn()) {
+    header('Location: ' . getBasePath() . 'login?' . http_build_query(['method' => 'code', 'redirect' => '/printshop/dashboard.php']), true, 302);
+    exit;
+}
+
 $pageTitle = t('printshopinternal.login_title');
 $bodyClass = 'bg-gray-50';
 $showNavigation = true; // shared site header, same on every public page

@@ -116,6 +116,26 @@ class Auth {
     }
 
     /**
+     * Same as loginByVerifiedEmail() for someone who proved a WhatsApp number.
+     * $digits is the number in digits only with its country code (96891234567).
+     * A number on several accounts (Ali's is on 51) picks a super admin first,
+     * then the account with no company, then the most recent sign-in.
+     */
+    public static function loginByVerifiedPhone(string $digits): array {
+        self::init();
+        if (!self::$db || !self::$db->isConnected() || !preg_match('/^\d{8,15}$/', $digits)) return ['success' => false];
+        $user = self::$db->fetchOne(
+            "SELECT * FROM users
+              WHERE status = 'active' AND phone IS NOT NULL AND phone <> ''
+                AND REGEXP_REPLACE(phone, '[^0-9]', '') = :d
+              ORDER BY role = 'super_admin' DESC, company_id IS NULL DESC, last_login_at DESC
+              LIMIT 1",
+            ['d' => $digits]
+        );
+        return $user ? self::loginUser($user) : ['success' => false];
+    }
+
+    /**
      * Legacy login method - kept for backward compatibility
      */
     public static function login($email, $password, $companySlug = null) {

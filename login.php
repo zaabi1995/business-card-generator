@@ -41,8 +41,8 @@ if (($_GET['error'] ?? '') === 'unauthorized' && Auth::isLoggedIn()) {
 
 // Someone signed in by code with no Cardify account (IQ test only) is signed in
 // too: send them on instead of showing the form again.
-if (!Auth::isLoggedIn() && !empty($_SESSION['iq_user_id']) && $redirectUrl) {
-    header('Location: ' . getBasePath() . ltrim($redirectUrl, '/'));
+if (!Auth::isLoggedIn() && !empty($_SESSION['iq_user_id'])) {
+    header('Location: ' . getBasePath() . ltrim($redirectUrl ?: '/iq/account', '/'));
     exit;
 }
 
@@ -57,7 +57,7 @@ if (Auth::isLoggedIn()) {
         
         if ($role === 'super_admin') {
             header('Location: ' . getBasePath() . 'admin/');
-        } elseif ($role === 'print_shop') {
+        } elseif ($role === 'print_shop' || $role === 'print_shop_operator') {
             header('Location: ' . getBasePath() . 'printshop/dashboard.php');
         } elseif ($companySlug) {
             header('Location: ' . getTenantUrl($companySlug, '/admin/'));
@@ -106,6 +106,17 @@ HTML;
 // same as the password would; everyone else gets their IQ test account. The IQ
 // account attaches to every sign-in, so there is no second login anywhere.
 require_once INCLUDES_DIR . '/iq/IqStore.php';
+// Logo downloads use the same sign-in: attach the logo account (and carry this
+// browser's guest downloads into it). Never lets a logo problem block sign-in.
+$attachLogoAccess = static function (string $email): void {
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) return;
+    try {
+        require_once INCLUDES_DIR . '/LogoAccess.php';
+        LogoAccess::signIn(LogoAccess::ensureMember($email));
+    } catch (Throwable $e) {
+        error_log('[login] logo access attach failed: ' . $e->getMessage());
+    }
+};
 $codeMode  = ($_GET['method'] ?? $_POST['method'] ?? '') === 'code';
 $codeState = $_SESSION['login_code'] ?? null;
 $codeSent  = is_array($codeState) && (time() - (int)($codeState['at'] ?? 0)) < 900;
@@ -150,12 +161,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $codeMode) {
             $error = ($r['error'] ?? '') === 'expired_or_missing' ? t('auth.otp_expired') : t('auth.otp_invalid');
         } else {
             unset($_SESSION['login_code']);
-            $cardify = $codeState['channel'] === 'email' ? Auth::loginByVerifiedEmail($codeState['identifier']) : ['success' => false];
+            // 1. a Cardify account (company, staff, admin)
+            $cardify = $codeState['channel'] === 'email'
+                ? Auth::loginByVerifiedEmail($codeState['identifier'])
+                : Auth::loginByVerifiedPhone($codeState['identifier']);
+            // 2. a print shop operator (this used to be its own page, /printshop/login.php)
+            $operatorHome = null;
+            if (empty($cardify['success'])) {
+                require_once INCLUDES_DIR . '/Phone.php';
+                require_once INCLUDES_DIR . '/PrintShopOperator.php';
+                require_once INCLUDES_DIR . '/PrintShop.php';
+                require_once INCLUDES_DIR . '/PrintShopAuth.php';
+                $op = $codeState['channel'] === 'email'
+                    ? PrintShopOperator::getByEmail($codeState['identifier'])
+                    : PrintShopOperator::getByPhone((string) Phone::normalize('+' . $codeState['identifier']));
+                $shop = $op ? PrintShop::getById((int) $op['print_shop_id']) : null;
+                if ($op && $shop && ($shop['status'] ?? '') === 'active') {
+                    PrintShopAuth::loginAsOperator($op, $shop, $codeState['channel'] === 'email' ? 'email_otp' : 'phone_otp');
+                    $operatorHome = getBasePath() . 'printshop/dashboard.php';
+                }
+            }
+            // 3. everyone gets the IQ test and logo downloads on the same sign-in
             IqStore::signIn($codeState['identifier'], $codeState['channel']);
+            if ($codeState['channel'] === 'email') $attachLogoAccess($codeState['identifier']);
             if ($redirectUrl) {
                 header('Location: ' . getBasePath() . ltrim($redirectUrl, '/'));
             } elseif (!empty($cardify['success'])) {
                 header('Location: ' . $cardify['redirect']);
+            } elseif ($operatorHome) {
+                header('Location: ' . $operatorHome);
             } else {
                 header('Location: ' . getBasePath() . 'iq/account');
             }
@@ -183,6 +217,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$codeMode) {
         $result = Auth::unifiedLogin($email, $password);
         
         if ($result['success']) {
+            $attachLogoAccess($email);
             // Use provided redirect URL if available (already validated above), otherwise use default
             if ($redirectUrl) {
                 header('Location: ' . getBasePath() . ltrim($redirectUrl, '/'));
