@@ -565,6 +565,8 @@ $minimalFooter = true; // compact footer for auth page
 // login.php: self-canonical plus noindex,follow.
 $canonicalUrl = 'https://cardify.om/company/register.php';
 $metaRobots   = 'noindex,follow';
+$showNavigation = true; // shared site header, same on every public page
+$navSpacer      = true;
 require_once INCLUDES_DIR . '/ui-header.php';
 ?>
     <div class="flex min-h-full">
@@ -573,9 +575,6 @@ require_once INCLUDES_DIR . '/ui-header.php';
             <div class="mx-auto w-full max-w-sm lg:w-96">
                 <!-- Logo & Header -->
                 <div>
-                    <a href="<?php echo getBasePath(); ?>" class="flex items-center gap-3">
-                        <img src="<?php echo assetUrl('images/logo.svg'); ?>" class="h-10 w-auto" alt="<?php echo $brandName; ?>">
-                    </a>
                     <?php if ($pendingReferral === 'bhd'): ?>
                     <div class="mt-6 flex items-center gap-3 rounded-xl bg-blue-50 border border-blue-200 px-4 py-3">
                         <div class="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center flex-shrink-0">

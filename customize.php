@@ -49,11 +49,13 @@ $extraHead = '
 </style>
 ';
 
+$showNavigation = true; // shared site header, same on every public page
+$navSpacer      = true;
 require_once INCLUDES_DIR . '/ui-header.php';
 ?>
 
 <!-- Nav -->
-<nav class="bg-white border-b border-gray-200">
+<nav class="bg-white border-b border-gray-200" aria-label="Breadcrumb">
     <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex items-center justify-between h-14">
             <div class="flex items-center gap-3">

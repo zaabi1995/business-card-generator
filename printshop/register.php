@@ -142,6 +142,8 @@ $canonicalUrl = ArTwins::SITE . '/print-shops/register';
 $pageDescription = $pageDescription ?? t('printshoppages.desc_register');
 $bodyClass = 'bg-gray-50';
 $minimalFooter = true; // compact footer for auth page
+$showNavigation = true; // shared site header, same on every public page
+$navSpacer      = true;
 require_once INCLUDES_DIR . '/ui-header.php';
 ?>
 
@@ -164,9 +166,6 @@ require_once INCLUDES_DIR . '/ui-header.php';
     <div class="max-w-2xl w-full">
         <!-- Header -->
         <div class="text-center mb-8">
-            <a href="<?php echo getBasePath(); ?>" class="inline-flex items-center gap-2 text-2xl font-bold text-gray-900 mb-4">
-                <img src="<?php echo getBasePath(); ?>assets/images/logo.svg" alt="Cardify" class="h-10 w-auto">
-            </a>
             <h1 class="text-3xl font-bold text-gray-900"><?= htmlspecialchars(t("printshoppages.h1_register")) ?></h1>
             <p class="mt-2 text-gray-600"><?= htmlspecialchars(t('printshopregister.page_sub')) ?></p>
         </div>

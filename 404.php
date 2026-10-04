@@ -33,7 +33,9 @@ $bodyClass = 'h-full';
 
 http_response_code(404);
 ?>
-<?php require_once INCLUDES_DIR . '/ui-header.php'; ?>
+<?php $showNavigation = true; // shared site header, same on every public page
+$navSpacer      = true;
+require_once INCLUDES_DIR . '/ui-header.php'; ?>
     <div class="flex flex-col justify-center items-center px-6 mx-auto min-h-screen xl:px-0">
         <div class="block md:max-w-lg mb-8">
             <img src="<?php echo assetUrl('images/illustrations/404.svg'); ?>" alt="<?= htmlspecialchars(t('errors.page_404_title')) ?>" class="w-full h-auto">

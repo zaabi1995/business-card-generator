@@ -48,16 +48,16 @@ $brandName = defined('SITE_NAME') ? SITE_NAME : 'Cardify';
 $pageTitle = 'My Profile';
 $bodyClass = 'bg-gray-50';
 
+$showNavigation = true; // shared site header, same on every public page
+$navSpacer      = true;
 require_once INCLUDES_DIR . '/ui-header.php';
 ?>
 
 <!-- Simple Navigation -->
-<nav class="bg-white border-b border-gray-200">
+<nav class="bg-white border-b border-gray-200" aria-label="Profile">
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between items-center h-16">
-            <a href="<?php echo getBasePath(); ?>" class="flex items-center gap-3">
-                <img src="<?php echo assetUrl('images/logo.svg'); ?>" alt="<?php echo $brandName; ?>" class="h-8 w-auto">
-            </a>
+        <div class="flex justify-between items-center h-12">
+            <span class="font-semibold text-gray-900">My Profile</span>
             <div class="flex items-center gap-4">
                 <span class="text-gray-600">
                     Hello, <?php echo htmlspecialchars($employee['name_en'] ?? $employee['name'] ?? 'User'); ?>

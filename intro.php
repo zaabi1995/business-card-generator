@@ -41,6 +41,7 @@ $basePath = getBasePath();
     <link rel="icon" type="image/svg+xml" href="<?php echo $basePath; ?>favicon.svg">
     
     <!-- Tailwind CSS -->
+    <?php require_once __DIR__ . '/includes/site-nav.php'; cardifySiteNavHead(); ?>
     <script src="https://cdn.tailwindcss.com"></script>
     <script<?= cspNonceAttr() ?>>
         tailwind.config = {
@@ -256,30 +257,11 @@ if ($introIso):
     <!-- Scroll Progress Bar -->
     <div id="scrollProgress" class="fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 z-[100]"></div>
 
-    <!-- Navigation -->
-    <nav class="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-xl border-b border-gray-100 transition-all duration-300" id="navbar">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex items-center justify-between h-16">
-                <a href="<?php echo $basePath; ?>" class="flex items-center gap-2">
-                    <img src="<?php echo $basePath; ?>assets/images/logo.svg" alt="<?php echo $brandName; ?>" class="h-9 w-auto">
-                </a>
-                <div class="hidden md:flex items-center gap-8">
-                    <a href="#journey" class="text-gray-600 hover:text-blue-600 font-medium transition-colors">The Journey</a>
-                    <a href="#features" class="text-gray-600 hover:text-blue-600 font-medium transition-colors">Features</a>
-                    <a href="#pricing" class="text-gray-600 hover:text-blue-600 font-medium transition-colors">Pricing</a>
-                </div>
-                <div class="flex items-center gap-3">
-                    <a href="<?php echo $basePath; ?>login.php" class="text-gray-600 hover:text-gray-900 font-medium transition-colors hidden sm:block">Sign In</a>
-                    <a href="<?php echo $basePath; ?>company/register-otp.php" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-all shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 hover:-translate-y-0.5">
-                        Get Started Free
-                    </a>
-                </div>
-            </div>
-        </div>
-    </nav>
+    <!-- Shared site header, same as every public page -->
+    <?php renderNavigation(); ?>
 
     <!-- Hero Section - Full Screen Interactive -->
-    <section class="relative min-h-screen flex items-center justify-center overflow-hidden pt-16">
+    <section class="relative min-h-screen flex items-center justify-center overflow-hidden pt-16 lg:pt-20">
         <!-- Animated Background -->
         <div class="absolute inset-0 overflow-hidden">
             <div class="absolute -top-40 -right-40 w-96 h-96 bg-blue-100 rounded-full mix-blend-multiply filter blur-3xl opacity-70 float"></div>

@@ -212,6 +212,8 @@ $csrfToken = generateCSRFToken();
 $dir       = currentDir();
 $isRtl     = $dir === 'rtl';
 
+$showNavigation = true; // shared site header, same on every public page
+$navSpacer      = true;
 require_once INCLUDES_DIR . '/ui-header.php';
 ?>
 <main class="min-h-screen flex items-center justify-center bg-gray-50 px-4 py-12" dir="<?= htmlspecialchars($dir) ?>">

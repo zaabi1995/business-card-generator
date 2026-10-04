@@ -54,8 +54,10 @@ $registerUrl = $campaignQs !== ''
 $waMsg = $isAr ? 'مرحباً، أرغب بعرض توضيحي لكارديفاي لشركتي' : 'Hi, I would like a demo of Cardify for my company';
 $waUrl = 'https://api.whatsapp.com/send?phone=96898899100&text=' . rawurlencode($waMsg);
 
-// The page carries its own minimal header, so the site nav stays off.
-$showNavigation = false;
+// Shared site header, same as every public page (4 Oct 2026; this page used to
+// carry its own logo + language + sign-in bar).
+$showNavigation = true;
+$navSpacer      = true;
 $bodyClass      = 'bg-white' . ($isAr ? ' font-arabic' : '');
 $bodyAttributes = $isAr ? 'dir="rtl" lang="ar"' : '';
 require_once INCLUDES_DIR . '/ui-header.php';
@@ -64,23 +66,6 @@ $gs = static fn(string $k): string => htmlspecialchars(t('getstarted.' . $k));
 ?>
 
 <div class="min-h-screen bg-white">
-
-    <!-- Landing chrome: logo, language, sign in. Nothing else to click away with. -->
-    <div class="bg-white/90 backdrop-blur border-b border-gray-100 py-3 px-4 sticky top-0 z-30">
-        <div class="max-w-6xl mx-auto flex items-center justify-between gap-4">
-            <a href="<?= $base . ($isAr ? 'ar/' : '') ?>" class="flex items-center gap-2 shrink-0">
-                <img src="<?= assetUrl('images/logo.svg') ?>" alt="<?= htmlspecialchars($brandName) ?>" class="h-8 w-auto" width="120" height="32">
-            </a>
-            <div class="flex items-center gap-4 text-sm">
-                <a href="<?= htmlspecialchars(($isAr ? '/get-started' : '/ar/get-started') . $campaignQs) ?>"
-                   class="inline-flex items-center font-semibold text-gray-600 hover:text-gray-900" style="min-height:44px" hreflang="<?= $isAr ? 'en' : 'ar' ?>">
-                    <?= $isAr ? 'English' : 'العربية' ?>
-                </a>
-                <span class="hidden sm:inline text-gray-400"><?= $gs('hero_signin') ?></span>
-                <a href="<?= $base ?>login.php" class="inline-flex items-center font-semibold text-blue-700 hover:text-blue-800" style="min-height:44px"><?= $gs('hero_signin_cta') ?></a>
-            </div>
-        </div>
-    </div>
 
     <!-- Hero -->
     <section class="hero-gradient pt-14 lg:pt-20 pb-14 lg:pb-20 overflow-hidden">

@@ -135,17 +135,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $canonicalUrl = 'https://cardify.om/login';
 $metaRobots   = 'noindex,follow';
 ?>
-<?php require_once INCLUDES_DIR . '/ui-header.php'; ?>
+<?php $showNavigation = true; // shared site header, same on every public page
+$navSpacer      = true;
+require_once INCLUDES_DIR . '/ui-header.php'; ?>
     <div class="flex min-h-full">
         <!-- Left Side - Form -->
         <div class="flex flex-1 flex-col justify-center px-4 py-12 sm:px-6 lg:flex-none lg:px-20 xl:px-24">
             <div class="mx-auto w-full max-w-sm lg:w-96">
                 <!-- Logo & Header -->
                 <div>
-                    <a href="<?php echo getBasePath(); ?>" class="flex items-center gap-3">
-                        <img src="<?php echo assetUrl('images/logo.svg'); ?>" class="h-10 w-auto" alt="<?php echo $brandName; ?>">
-                    </a>
-                    <h1 class="mt-8 text-2xl font-bold tracking-tight text-gray-900">
+                    <h1 class="text-2xl font-bold tracking-tight text-gray-900">
                         <?= htmlspecialchars(t('auth.sign_in_headline')) ?>
                     </h1>
                     <p class="mt-2 text-sm text-gray-600">

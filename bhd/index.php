@@ -22,7 +22,9 @@ $brandName = defined('SITE_NAME') ? SITE_NAME : 'Cardify';
 $registerUrl = getBasePath() . 'company/register.php?ref=bhd';
 $loginUrl    = getBasePath() . 'login.php';
 
-$showNavigation = false; // Custom nav for this landing page
+$showNavigation = true; // shared site header, same on every public page
+$navSpacer      = true;
+$navCtaHref     = $registerUrl; // keep the BHD referral on the header button
 
 $extraHead = '<style>
     .bhd-gradient { background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 60%, #1e40af 100%); }
@@ -49,24 +51,15 @@ require_once INCLUDES_DIR . '/ui-header.php';
 ?>
 
 <!-- ===== NAV ===== -->
-<nav class="fixed top-0 inset-x-0 z-50 bg-white/95 backdrop-blur border-b border-gray-100 shadow-sm">
-    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-        <div class="flex items-center gap-3">
-            <img src="<?= getBasePath() ?>assets/images/logo.svg" alt="Cardify" class="h-8 w-auto">
-            <span class="hidden sm:inline text-gray-300">×</span>
-            <span class="hidden sm:inline text-sm font-semibold text-gray-600">BHD Printing Partner</span>
-        </div>
-        <div class="flex items-center gap-3">
-            <a href="<?= $loginUrl ?>" class="text-sm text-gray-500 hover:text-gray-800 transition-colors">Sign in</a>
-            <a href="<?= $registerUrl ?>" class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors shadow-sm">
-                Get Started Free
-            </a>
-        </div>
+<!-- Partner bar under the shared site header -->
+<div class="bg-white border-b border-gray-100">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 text-sm font-semibold text-gray-600">
+        Cardify <span class="text-gray-300 mx-1">×</span> BHD Printing Partner
     </div>
-</nav>
+</div>
 
 <!-- ===== HERO ===== -->
-<section class="bhd-gradient pt-16 pb-20 px-4 overflow-hidden relative">
+<section class="bhd-gradient pt-4 pb-20 px-4 overflow-hidden relative">
     <!-- Decorative circles -->
     <div class="absolute top-0 right-0 w-96 h-96 bg-blue-500/10 rounded-full -translate-y-1/2 translate-x-1/3 pointer-events-none"></div>
     <div class="absolute bottom-0 left-0 w-64 h-64 bg-blue-700/10 rounded-full translate-y-1/2 -translate-x-1/4 pointer-events-none"></div>

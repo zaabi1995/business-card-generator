@@ -36,7 +36,7 @@ $cardifyReqUri  = $_SERVER['REQUEST_URI'] ?? '/';
 $cardifyReqPath = parse_url($cardifyReqUri, PHP_URL_PATH) ?: '/';
 $cardifyReqQs   = parse_url($cardifyReqUri, PHP_URL_QUERY) ?: '';
 
-$cardifyMode = isset($cardifyLangSwitchMode) ? $cardifyLangSwitchMode : 'path';
+$cardifyMode = $cardifyLangSwitchMode ?? ($GLOBALS['cardifyLangSwitchMode'] ?? 'path');
 $cardifySwitchUrl = null;
 
 if ($cardifyMode === 'query') {

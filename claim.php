@@ -237,6 +237,7 @@ $t = $isRtl
     <?php if ($isRtl): ?>
     <link href="https://fonts.bhd.om/css2?family=Noto+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
     <?php endif; ?>
+    <?php require_once INCLUDES_DIR . '/site-nav.php'; cardifySiteNavHead(); ?>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         :root {
@@ -260,9 +261,10 @@ $t = $isRtl
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 24px;
+            padding: 88px 24px 24px; /* clears the 64px fixed site header */
             -webkit-font-smoothing: antialiased;
         }
+        @media (min-width: 1024px) { body { padding-top: 104px; } }
         .card {
             width: 100%;
             max-width: 440px;
@@ -470,10 +472,7 @@ $t = $isRtl
     </style>
 </head>
 <body>
-    <nav class="lang-switcher" aria-label="Language">
-        <a href="?lang=en<?php echo $utmContent ? '&utm_content=' . urlencode($utmContent) : ''; ?>" class="<?php echo $locale === 'en' ? 'active' : ''; ?>" hreflang="en">EN</a>
-        <a href="?lang=ar<?php echo $utmContent ? '&utm_content=' . urlencode($utmContent) : ''; ?>" class="<?php echo $locale === 'ar' ? 'active' : ''; ?>" hreflang="ar">عربي</a>
-    </nav>
+    <?php $GLOBALS['cardifyLangSwitchMode'] = 'query'; renderNavigation(); // shared site header; ?lang= switch, /claim has no /ar twin ?>
 
     <main class="card">
         <div class="brand" aria-label="Cardify">

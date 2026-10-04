@@ -17,8 +17,9 @@ require_once INCLUDES_DIR . '/LogoClaimService.php';
 $db = Database::getInstance();
 $companyId = (int) ($_GET['company'] ?? $_POST['company'] ?? 0);
 if ($companyId <= 0) {
-    http_response_code(400);
-    die(t('logoclaim.missing_company'));
+    // A bare error line had no site header; send people to the library instead.
+    header('Location: ' . getBasePath() . 'logos', true, 302);
+    exit;
 }
 
 $company = $db->fetchOne(
@@ -26,8 +27,9 @@ $company = $db->fetchOne(
     [':id' => $companyId]
 );
 if (!$company) {
-    http_response_code(404);
-    die(t('logoclaim.company_not_found'));
+    // A bare error line had no site header; send people to the library instead.
+    header('Location: ' . getBasePath() . 'logos', true, 302);
+    exit;
 }
 
 // Require login
