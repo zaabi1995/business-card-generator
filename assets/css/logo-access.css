@@ -28,7 +28,8 @@ html[dir=rtl] .logo-access-dialog>.logo-access-close{margin:12px auto 0 16px}
 .logo-access-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
 .logo-access-error{background:#fff1f2;color:#9f1239;border-radius:8px;padding:10px;font-size:13px}
 .logo-access-success{background:#ecfdf5;color:#065f46;border-radius:10px;padding:12px;font-size:14px}
-.logo-access-page{max-width:560px;margin:32px auto;padding:0 16px}
+.logo-access-page{max-width:560px;margin:96px auto 32px;padding:0 16px}
+@media(min-width:1024px){.logo-access-page{margin-top:112px}}
 .logo-access-page>.logo-access{background:#fff;border:1px solid #e2e8f0;border-radius:20px;max-width:none}
 .logo-access-allowance{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;margin:18px 0;color:#64748b;font-size:12px}
 .logo-access-allowance a{color:#00718c;font-weight:600;text-decoration:underline}

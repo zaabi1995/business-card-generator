@@ -8,6 +8,8 @@ header('Cache-Control: private, no-store');
 $pageTitle = t('logoaccess.title');
 $pageDescription = t('logoaccess.description');
 $metaRobots = 'noindex,follow';
+$showNavigation = true;
+$minimalFooter = true;
 $extraHead = '<link rel="stylesheet" href="/assets/css/logo-access.css?v=' . filemtime(__DIR__ . '/assets/css/logo-access.css') . '">';
 $logoAccessCompany = (int)($_GET['company'] ?? 0);
 $logoAccessFormat = in_array($_GET['format'] ?? '', LogoAccess::FORMATS, true) ? $_GET['format'] : '';
