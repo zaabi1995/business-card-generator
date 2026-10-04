@@ -493,7 +493,8 @@ h1{font-size:30pt;margin:6mm 0 2mm}
     $in = $dir . '/' . $pid . '.html';
     $out = $dir . '/' . $pid . '.pdf';
     file_put_contents($in, $html);
-    $bin = is_file('/usr/local/bin/weasyprint') ? '/usr/local/bin/weasyprint' : 'weasyprint';
+    // open_basedir hides /usr/local/bin from is_file(), but exec() is not limited by it.
+    $bin = '/usr/local/bin/weasyprint';
     exec('timeout 40 ' . $bin . ' ' . escapeshellarg($in) . ' ' . escapeshellarg($out) . ' 2>&1', $log, $rc);
     @unlink($in);
     if ($rc !== 0 || !is_file($out)) {
