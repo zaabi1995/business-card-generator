@@ -11,6 +11,11 @@
 #   6. Post-flight: HTTP smoke 5 URLs, rollback + FPM re-reload on fail.
 
 set -euo pipefail
+# Root umask is 0027: git wrote changed files as root:root 0640, unreadable by
+# PHP-FPM (www) until the chown step ~160 lines later, so every deploy served
+# "Server error" on the pages it touched (seen on /iq, 4 Oct 2026). 022 keeps
+# them world-readable from the moment git writes them.
+umask 022
 cd /www/wwwroot/cardify.om
 
 # --- Pre-flight 0: the working tree must be clean BEFORE anything runs ---
