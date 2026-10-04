@@ -34,7 +34,7 @@ function checkLogo(bool $value, string $message): void { global $checks; $checks
 function resetLogoMember(): void { foreach (['memberResolved' => false, 'cachedMember' => null] as $key => $value) { $r = new ReflectionProperty(LogoAccess::class, $key); $r->setValue(null, $value); } }
 try {
     $pdo->exec("CREATE TABLE payments (id VARCHAR(36) PRIMARY KEY, company_id VARCHAR(36) NOT NULL, type ENUM('subscription','print_order','card_order') NOT NULL, reference_id VARCHAR(36), amount DECIMAL(10,3), currency VARCHAR(3), special_reference VARCHAR(255), paymob_order_id VARCHAR(255), paymob_transaction_id VARCHAR(255), payment_method VARCHAR(50), callback_data JSON, status VARCHAR(20))");
-    require $root . '/database/migrations/174_logo_access.php';
+    require $root . '/database/migrations/176_logo_access.php';
     require $root . '/includes/LogoAccess.php';
     require $root . '/includes/Payment.php';
     checkLogo(LogoAccess::period() === (new DateTimeImmutable('now',new DateTimeZone('Asia/Muscat')))->format('Y-m-d'), 'quota uses the Oman calendar day');

@@ -62,4 +62,4 @@ if (str_starts_with($type, 'enum(') && !str_contains($type, "'logo_pass'")) {
     $pdo->exec("ALTER TABLE payments MODIFY COLUMN type $type NOT NULL");
 }
 $pdo->exec('ALTER TABLE payments MODIFY COLUMN company_id VARCHAR(36) NULL');
-echo "Migration 174: logo download access ready\n";
+echo "Migration 176: logo download access ready\n";
