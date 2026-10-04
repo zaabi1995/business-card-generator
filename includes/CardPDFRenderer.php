@@ -601,8 +601,16 @@ class CardPDFRenderer
                 $f['y_pt'] = $pct['y_pt'];
                 if (!isset($f['w_pt']) && isset($pct['w_pt'])) $f['w_pt'] = $pct['w_pt'];
             }
+            // anchorBox: opt-in for a static whose box IS its column (MHD contact
+            // block labels, 4 Oct 2026). It keeps its width and alignment, so a
+            // right-aligned label column lines up whatever each word's width.
+            $boxStatic = !empty($f['is_static']) && !empty($f['anchorBox']);
             $fieldList[] = [
-                'field_key'    => $key,
+                // bind: read another employee column (one stored number feeds a
+                // code field and a number field, see valuePart).
+                'field_key'    => (string)($f['bind'] ?? $key),
+                'valuePart'    => (string)($f['valuePart'] ?? ''),
+                'bidi'         => (string)($f['bidi'] ?? ''),
                 'static_text'  => $staticText,
                 // Template sample, used as fallback for tenant-constant
                 // fields (website/company/address) when the employee row
@@ -636,7 +644,7 @@ class CardPDFRenderer
                 // 373.2..516.0 to 230.1..373.0, 143px wrong. The origin has to
                 // be forced to 'left' as well, which is what Fabric does
                 // (card-editor.js:736 sets originX 'left' when width<=0).
-                'w_pt'         => !empty($f['is_static'])
+                'w_pt'         => (!empty($f['is_static']) && !$boxStatic)
                                     ? 0.0
                                     : (float)($f['w_pt'] ?? (($f['width'] ?? 0) / 4.166)),
                 'font_family'  => (string)($f['fontFamily'] ?? $f['font_family'] ?? 'Lato'),
@@ -648,7 +656,7 @@ class CardPDFRenderer
                 // both the LTR path (line 1377) and the Arabic htmlbox path
                 // (line 818), so forcing 'left' here is the faithful translation
                 // of Fabric zeroing the width and setting originX 'left'.
-                'text_align'   => !empty($f['is_static'])
+                'text_align'   => (!empty($f['is_static']) && !$boxStatic)
                                     ? 'left'
                                     : (string)($f['textAlign'] ?? 'left'),
             ];

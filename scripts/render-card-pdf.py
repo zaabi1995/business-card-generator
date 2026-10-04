@@ -313,6 +313,32 @@ def _resolve_employee_value(field_key: str, employee: dict, template_default: st
     return ''
 
 
+# Opt-in column layout (MHD contact blocks, 4 Oct 2026). Absent on every other
+# template, so nothing else moves.
+#   valuePart "code"   -> the leading "+NNN" token of the stored number
+#   valuePart "number" -> the rest, without the code
+#   bidi "ltr"         -> wrap in LRO..PDF so "+" stays left of the digits
+# One stored value ("+973 38456415") feeds two fields placed as fixed columns,
+# instead of one run padded with spaces whose width depends on the glyphs.
+_BIDI_MARKS = dict.fromkeys(map(ord, '\u200e\u200f\u202a\u202b\u202c\u202d\u202e\u2066\u2067\u2068\u2069'))
+
+
+def _apply_value_part(text, field):
+    part = str(field.get('valuePart') or field.get('value_part') or '').lower()
+    bidi = str(field.get('bidi') or '').lower()
+    if part in ('code', 'number'):
+        clean = (text or '').translate(_BIDI_MARKS).replace('\u00a0', ' ').strip()
+        tokens = clean.split()
+        code = tokens[0] if tokens and tokens[0].startswith('+') else ''
+        rest = tokens[1:] if code else tokens
+        text = code if part == 'code' else ''.join(rest)
+        if part == 'code' and text:
+            bidi = 'ltr'
+    if text and bidi == 'ltr':
+        text = '\u202d' + text + '\u202c'
+    return text
+
+
 def _hex_to_rgb(hex_color) -> tuple:
     """Convert '#rrggbb' or '#rgb' to (r, g, b) floats in [0, 1].
 
@@ -1318,6 +1344,7 @@ def render(template_path: str, employee_path: str, out_path: str,
                     field_key, employee,
                     template_default=field.get('detected_text', '')
                 )
+            text = _apply_value_part(text, field)
             if not text:
                 continue
 

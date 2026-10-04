@@ -367,6 +367,32 @@ def _employee_value(key: str, payload: dict, field: dict) -> str:
     return "" if value is None else str(value)
 
 
+# Opt-in column layout (MHD contact blocks, 4 Oct 2026). Absent on every other
+# template, so nothing else moves.
+#   valuePart "code"   -> the leading "+NNN" token of the stored number
+#   valuePart "number" -> the rest, without the code
+#   bidi "ltr"         -> wrap in LRO..PDF so "+" stays left of the digits
+# One stored value ("+973 38456415") feeds two fields placed as fixed columns,
+# instead of one run padded with spaces whose width depends on the glyphs.
+_BIDI_MARKS = dict.fromkeys(map(ord, '\u200e\u200f\u202a\u202b\u202c\u202d\u202e\u2066\u2067\u2068\u2069'))
+
+
+def _apply_value_part(text, field):
+    part = str(field.get('valuePart') or field.get('value_part') or '').lower()
+    bidi = str(field.get('bidi') or '').lower()
+    if part in ('code', 'number'):
+        clean = (text or '').translate(_BIDI_MARKS).replace('\u00a0', ' ').strip()
+        tokens = clean.split()
+        code = tokens[0] if tokens and tokens[0].startswith('+') else ''
+        rest = tokens[1:] if code else tokens
+        text = code if part == 'code' else ''.join(rest)
+        if part == 'code' and text:
+            bidi = 'ltr'
+    if text and bidi == 'ltr':
+        text = '\u202d' + text + '\u202c'
+    return text
+
+
 def _coords(field: dict, template: dict) -> tuple[float, float]:
     x = float(field.get("x", field.get("left", 0)) or 0)
     y = float(field.get("y", field.get("top", 0)) or 0)
@@ -389,16 +415,21 @@ def _draw_text(draw: ImageDraw.ImageDraw, template: dict, key: str, field: dict,
     arabic = key.endswith("_ar") or any("\u0600" <= char <= "\u06ff" for char in text)
     font = _font(field, arabic, None, template, text)
     x, y = _coords(field, template)
+    # webDy: opt-in vertical correction for this PNG path only. Pillow anchors
+    # Arabic at the ascender, the print path at its HTML box, so a column that
+    # sits on an exact pitch in print rides ~3px high here (MHD, 4 Oct 2026).
+    y += float(field.get("webDy") or 0)
     fill = _color(field.get("fill", field.get("color")), "#111827")
     align = str(field.get("textAlign", field.get("text_align", "right" if arabic else "left"))).lower()
     origin = str(field.get("originX", field.get("origin_x", align))).lower()
     width = float(field.get("width", 0) or 0)
-    if field.get("is_static"):
+    if field.get("is_static") and not field.get("anchorBox"):
         # Static decorations carry a bbox sized tightly to the original glyph
         # run, so both Fabric (generate_card_html.php:644) and this script
-        # bypass the width constraint for them.
+        # bypass the width constraint for them. anchorBox opts a static in to
+        # box anchoring (a right-aligned label column), without any shrink.
         width = 0.0
-    if width > 0:
+    if width > 0 and not field.get("is_static"):
         requested_size = max(8, int(round(float(field.get("fontSize", field.get("font_size", 24))))))
         while requested_size > 8 and draw.textlength(text, font=font) > width:
             requested_size -= 1
@@ -490,7 +521,9 @@ def _render(payload: dict, template: dict, side: str, input_dir: Path) -> Image.
             _draw_qr(canvas, template, field, str(payload.get("public_url") or ""))
             qr_drawn = True
             continue
-        _draw_text(draw, template, key, field, _employee_value(key, payload, field))
+        _bound = str(field.get("bind") or key)
+        _draw_text(draw, template, key, field,
+                   _apply_value_part(_employee_value(_bound, payload, field), field))
     # A template that defines its own QR slot decides for itself: a disabled
     # qr_code means "no QR on this side" (MHD division cards, F&B), and an
     # imported design without a slot has no QR by design. The fallback below
