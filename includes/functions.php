@@ -131,7 +131,7 @@ if (!function_exists('getBasePath')) {
             $appDirs = ['admin', 'includes', 'company', 'amwalpay', 'paymob', 'webhooks', 'super',
                 'install', 'share', 'printshop', 'api', 'database', 'bhd', 'tools', 'industries',
                 'gcc', 'solutions', 'views', 'compare', 'glossary', 'portal', 'cron', 'data',
-                'blog', 'careers', 'logos', 'case-studies', 'scripts', 'ops', 'ar'];
+                'blog', 'careers', 'logos', 'case-studies', 'scripts', 'ops', 'ar', 'iq'];
             
             // Navigate up through app directories to find the root
             while (in_array(basename($scriptDir), $appDirs) && $scriptDir !== '/' && $scriptDir !== '.') {

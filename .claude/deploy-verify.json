@@ -1,0 +1,7 @@
+{
+  "targets": [
+    { "url": "https://cardify.om/", "match": "cardify-nav-more" },
+    { "url": "https://cardify.om/iq/leaderboard", "match": "iqx-subnav" },
+    { "url": "https://cardify.om/tools", "match": "id=\"navbar\"" }
+  ]
+}

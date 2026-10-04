@@ -1,5 +1,6 @@
 <?php
 declare(strict_types=1);
+require_once __DIR__ . '/../../JsonLd.php';
 /**
  * Mehdi Store link page: https://mehdistore.cardify.om/main
  *
@@ -183,7 +184,7 @@ $nonce = SecurityHeaders::nonce();
 <link rel="preload" href="<?= $e($asset('icons-brands.woff2')) ?>" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="<?= $e($asset('icons-light.woff2')) ?>" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="<?= $e($asset('icons-solid.woff2')) ?>" as="font" type="font/woff2" crossorigin>
-<script type="application/ld+json" nonce="<?= $e($nonce) ?>"><?= json_encode($jsonLd, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG) ?></script>
+<script type="application/ld+json" nonce="<?= $e($nonce) ?>"><?= JsonLd::encode($jsonLd) ?></script>
 <style>
 /* Icons: FontAwesome 7.2 Pro (design.bhd.om/fa), subset to the glyphs this page uses. */
 @font-face{font-family:"MS Icons Brands";font-style:normal;font-weight:400;font-display:block;src:url("<?= $e($asset('icons-brands.woff2')) ?>") format("woff2")}

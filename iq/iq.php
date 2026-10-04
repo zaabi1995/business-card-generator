@@ -25,6 +25,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/../config.php';
 require_once INCLUDES_DIR . '/UrlSafety.php';
 require_once INCLUDES_DIR . '/SecurityHeaders.php';
+require_once INCLUDES_DIR . '/JsonLd.php';
 SecurityHeaders::send();
 require_once INCLUDES_DIR . '/iq/IqStore.php';
 require_once INCLUDES_DIR . '/iq/IqPay.php';
@@ -223,7 +224,7 @@ function page_home(): void
         ['@type' => 'ListItem', 'position' => 2, 'name' => iq_s('home'), 'item' => iq_abs()]]];
     $ld = '';
     foreach ([$appLd, $faqLd, $crumbLd] as $node) {
-        $ld .= '<script type="application/ld+json">' . json_encode($node, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG) . "</script>\n";
+        $ld .= '<script type="application/ld+json">' . JsonLd::encode($node) . "</script>\n";
     }
     if (!IqStore::userId() && !$inProgress) {
         header('Cache-Control: public, max-age=300');
