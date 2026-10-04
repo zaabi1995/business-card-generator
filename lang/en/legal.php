@@ -99,7 +99,7 @@ return [
                     'Card content: the text, photos, logos and design choices you put on your cards.',
                     'Payment data: billing address and the last four digits of your card. We never see or store full card numbers; Paymob handles those.',
                     'Device and usage: IP address, browser, OS, pages viewed, actions taken, all used to secure the service and improve it.',
-                    'Cookies: a minimal session cookie (required) and optional analytics cookies that you can decline.',
+                    'Cookies: a required session cookie, analytics cookies and advertising cookies on selected public content pages. Advertising privacy choices are available through Google’s consent message where it applies.',
                 ],
             ],
             [
@@ -121,6 +121,15 @@ return [
                     'ERP (internal to BHD Group) for invoicing and accounting.',
                     'Hosting (Hostinger KVM, Muscat region) for storage and uptime.',
                     'Legal authorities when required by Omani law or a court order.',
+                ],
+            ],
+            [
+                'h' => 'Advertising on public pages',
+                'p' => 'Selected public directory and logo-library pages use Google AdSense. Google and its advertising partners may use cookies, device identifiers, IP addresses and browsing information to serve, measure and personalise advertisements, subject to your consent choices where required. Google may use advertising cookies to serve ads based on visits to this and other websites. We do not send private card designs, account details or payment data to AdSense. Account dashboards, card editors, digital cards and checkout pages do not display these ads.',
+                'list' => [
+                    'Users in the EEA, UK and Switzerland can consent, refuse or manage options in Google’s certified consent message. Reopen it using Privacy and cookie settings at the bottom of advertising pages.',
+                    'You can also manage personalised advertising at https://myadcenter.google.com/ and learn how Google uses information at https://policies.google.com/technologies/partner-sites.',
+                    'Advertisements are labelled and do not imply endorsement by Cardify or by organisations listed in the directory.',
                 ],
             ],
             [
@@ -151,7 +160,7 @@ return [
             ],
             [
                 'h' => 'International transfers',
-                'p' => 'Our servers are in Oman. Some processors (Paymob for payments, Google for fonts, Hostinger for infrastructure) may process data in their own regions under contractual safeguards. We do not sell your data to anyone.',
+                'p' => 'Our servers are in Oman. Some processors (Paymob for payments, Google for analytics and advertising, Hostinger for infrastructure) may process data in their own regions under contractual safeguards. We do not sell your data to anyone.',
             ],
             [
                 'h' => 'Changes to this policy',

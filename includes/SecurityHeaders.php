@@ -227,6 +227,23 @@ class SecurityHeaders
             'object'   => ["'none'"],
         ];
 
+        require_once __DIR__ . '/AdSense.php';
+        if (CardifyAdSense::messagingPage()) {
+            // Only public ad and privacy pages admit Google's ad/CMP origins.
+            $adHosts = [
+                'https://pagead2.googlesyndication.com',
+                'https://googleads.g.doubleclick.net',
+                'https://tpc.googlesyndication.com',
+                'https://fundingchoicesmessages.google.com',
+                'https://ep1.adtrafficquality.google',
+                'https://ep2.adtrafficquality.google',
+            ];
+            foreach (['script', 'img', 'connect', 'frame'] as $type) {
+                $hosts[$type] = array_merge($hosts[$type], $adHosts);
+            }
+            $hosts['script'][] = 'https://www.googletagservices.com';
+        }
+
         $parts = [
             "default-src 'self'",
             "base-uri 'self'",

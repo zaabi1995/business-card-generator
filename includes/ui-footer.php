@@ -4,6 +4,8 @@
 // a child of it. cardify_close_main() is idempotent and is also registered as a
 // shutdown handler, so a page that renders no footer still emits balanced HTML.
 if (function_exists('cardify_close_main')) { cardify_close_main(); }
+require_once __DIR__ . '/AdSense.php';
+CardifyAdSense::footer();
 
 // Site-wide footer (skip on homepage which has its own footer)
 $currentPage = basename($_SERVER['SCRIPT_NAME'] ?? '', '.php');

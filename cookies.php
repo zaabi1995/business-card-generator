@@ -115,6 +115,9 @@ require_once INCLUDES_DIR . '/ui-header.php';
             </section>
 
             <section class="mb-10">
+                <h2 class="text-2xl font-bold text-gray-900 mb-4"><?= htmlspecialchars(t('advertising.cookie_heading')) ?></h2>
+                <p class="text-gray-600 leading-relaxed mb-4"><?= htmlspecialchars(t('advertising.cookie_description')) ?></p>
+                <p class="mb-6"><a href="/privacy" class="text-blue-600 underline">Privacy Policy</a></p>
                 <h2 class="text-2xl font-bold text-gray-900 mb-4">Managing Cookies</h2>
                 <p class="text-gray-600 leading-relaxed mb-4">
                     Most web browsers allow you to control cookies through their settings. Here's how to manage cookies in popular browsers:

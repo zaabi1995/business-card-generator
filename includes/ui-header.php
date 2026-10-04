@@ -166,6 +166,7 @@ $cardifyOgLocale = ($cardifyLocale === 'ar') ? 'ar_OM' : 'en_US';
     <?php if (defined('GOOGLE_SITE_VERIFICATION') && GOOGLE_SITE_VERIFICATION): ?>
     <meta name="google-site-verification" content="<?= GOOGLE_SITE_VERIFICATION ?>">
     <?php endif; ?>
+    <?php require_once __DIR__ . '/AdSense.php'; CardifyAdSense::head(); ?>
 
     <!-- Open Graph -->
     <meta property="og:site_name" content="Cardify">

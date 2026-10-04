@@ -215,3 +215,5 @@ Format: `YYYY-MM-DD HH:MM | #NNN | sha | outcome`
 2026-09-03 | #861-862 | 1a6eec6 | Print partners can sign up at /print-shops/register or /partners and operate attached client company tenants through the existing company admin. BHD marketplace prices unchanged.
 2026-09-03 | #863 | 3407f79 | Partner can stay in client company admin: requireAdmin/adminHeader use the URL tenant. Session company_id is set only after attach. createCompany email collision was not real.
 2026-09-03 | #864 | 6fc7bee | PrintShop::create INSERT now uses live print_shops columns logo_url, pricing, min_order_quantity so partner signup POST can succeed.
+
+- 2026-10-04: Connect BHD AdSense publisher, responsive ads on public companies/logos pages, bilingual disclosures and Google CMP privacy choices. Tenant, private and error pages excluded; route/CSP/i18n checks passed.
