@@ -177,7 +177,8 @@ function subnav(string $active, string $tail): string
     foreach ($items as [$p, $l]) {
         $h .= '<a href="' . iq_url($p) . '"' . ($p === $active ? ' aria-current="page"' : '') . '>' . iq_e($l) . '</a>';
     }
-    return $h . lang_switch($tail) . '</div></nav>';
+    // The site header already carries the language switch; no second copy here.
+    return $h . '</div></nav>';
 }
 
 function price_label(?float $p): string
