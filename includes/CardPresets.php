@@ -249,6 +249,7 @@ class CardPresets
 
         $pair = $db->fetchAll(
             "SELECT id, side FROM templates WHERE company_id = :c AND deleted_at IS NULL
+               AND locked_at IS NULL
              ORDER BY is_active DESC, created_at DESC",
             ['c' => $companyId]
         );

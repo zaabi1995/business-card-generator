@@ -14,7 +14,23 @@ try {
     }
 
     $action = $_POST['action'] ?? '';
-    
+
+    // Approved designs are locked (templates.locked_at). Refuse any action that
+    // would change or remove one.
+    $lockCheck = [
+        'update' => [$_POST['id'] ?? '', false],
+        'update_background' => [$_POST['id'] ?? '', false],
+        'delete' => [$_POST['id'] ?? '', false],
+        'revert_version' => [$_POST['id'] ?? '', false],
+        'delete_pair' => [$_POST['pair_id'] ?? '', true],
+    ];
+    if (isset($lockCheck[$action])) {
+        [$lockId, $lockByPair] = $lockCheck[$action];
+        if (cardifyTemplateLocked(Database::getInstance(), (string)$lockId, $lockByPair)) {
+            throw new Exception('This design is approved and locked. Ask the account owner to unlock it before changing it.');
+        }
+    }
+
     switch ($action) {
         case 'add':
             $result = addNewTemplate();

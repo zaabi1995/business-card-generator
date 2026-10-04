@@ -1970,3 +1970,28 @@ if (!function_exists('cspNonceAttr')) {
 // A session opened from an approval link reaches only the approval flow.
 require_once __DIR__ . '/MagicLinkScope.php';
 MagicLinkScope::enforce();
+
+
+/**
+ * An approved design is locked: templates.locked_at set (migration 080 added the
+ * column; nothing enforced it until 4 Oct 2026). A locked template's fields,
+ * background and settings cannot be edited, reverted, replaced by a preset or
+ * deleted. Unlock is a deliberate owner action:
+ *   UPDATE templates SET locked_at = NULL WHERE pair_id = '<pair>';
+ * Pass a template id, or a pair id with $byPair = true.
+ */
+function cardifyTemplateLocked($db, string $id, bool $byPair = false): bool
+{
+    if ($id === '') return false;
+    try {
+        $row = $db->fetchOne(
+            $byPair
+                ? "SELECT COUNT(*) AS n FROM templates WHERE pair_id = :id AND locked_at IS NOT NULL"
+                : "SELECT COUNT(*) AS n FROM templates WHERE id = :id AND locked_at IS NOT NULL",
+            ['id' => $id]
+        );
+        return (int)($row['n'] ?? 0) > 0;
+    } catch (Throwable $e) {
+        return false;   // column missing on an old database: behave as before
+    }
+}

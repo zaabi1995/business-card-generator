@@ -972,6 +972,12 @@ class DatabaseAdapter {
                     $data['settings_json'] = json_encode($settingsToEncode);
                 }
                 
+                if ($existing && function_exists('cardifyTemplateLocked')
+                    && cardifyTemplateLocked(self::$db, (string)$template['id'])) {
+                    // Approved design: the bulk save carries every template of
+                    // the company, so a locked one is left exactly as it is.
+                    continue;
+                }
                 if ($existing) {
                     self::$db->update('templates', $data, 'id = :id', ['id' => $template['id']]);
                 } else {
