@@ -1013,14 +1013,11 @@ function getEmployeeTemplates($employee, $companyId = null) {
                     $backTemplate['fields'] = json_decode($backTemplate['fields_json'], true) ?? [];
                 }
                 
-                // MHD imported fonts and dimensions live in settings_json.
-                // Match the normalized company/personal template shape before
-                // browser generation reads import_token and emits @font-face.
-                $templateCompany = $db->fetchOne(
-                    'SELECT slug FROM companies WHERE id = :id',
-                    ['id' => $companyId]
-                );
-                if (($templateCompany['slug'] ?? '') === 'mhd') {
+                // Imported fonts and dimensions live in settings_json. Match the
+                // normalized company/personal template shape before browser
+                // generation reads import_token and emits @font-face. Was MHD-only;
+                // every department template (Al Maha portrait pair) needs it.
+                {
                     if ($frontTemplate) {
                         $frontTemplate['settings'] = json_decode($frontTemplate['settings_json'] ?? '', true) ?: null;
                         $frontTemplate['backgroundImage'] = $frontTemplate['background_image_path'] ?? '';

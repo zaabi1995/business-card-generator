@@ -218,14 +218,13 @@ class CardImageRenderer
             'address', 'address_en', 'address_2_en', 'address_ar', 'address_2_ar',
             'photo', 'photo_path',
         ]);
-        // MHD division templates include additional job-title/contact lines.
-        // Keep the server raster payload complete, matching browser/PDF data.
-        if (($company['slug'] ?? '') === 'mhd') {
-            $employeePayload = array_merge($employeePayload, self::only($employee, [
-                'position_en_2', 'position_ar_2', 'position_en_3', 'position_ar_3',
-                'phone_2', 'phone_2_ar', 'mobile_2', 'mobile_2_ar',
-            ]));
-        }
+        // Additional job-title/contact lines. Was MHD-only, so Al Maha (and any
+        // tenant whose template carries these fields) lost title lines 2-3 on the
+        // raster card. A template without the field never draws it.
+        $employeePayload = array_merge($employeePayload, self::only($employee, [
+            'position_en_2', 'position_ar_2', 'position_en_3', 'position_ar_3',
+            'phone_2', 'phone_2_ar', 'mobile_2', 'mobile_2_ar',
+        ]));
         $companyPayload = self::only($company, [
             'id', 'name', 'name_en', 'name_ar', 'slug', 'phone', 'email',
             'website', 'address', 'address_en', 'address_ar', 'logo',

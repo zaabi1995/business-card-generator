@@ -186,10 +186,61 @@ def _font_candidates(field: dict, bold: bool, arabic: bool) -> list[Path]:
     return candidates
 
 
+_WEIGHT_WORDS = {"thin": 100, "extralight": 200, "light": 300, "regular": 400, "roman": 400,
+                 "book": 400, "medium": 500, "semibold": 600, "demibold": 600, "bold": 700,
+                 "extrabold": 800, "black": 900, "heavy": 900}
+
+
+def _norm_family(name: str) -> str:
+    return "".join(ch for ch in name.lower() if ch.isalnum())
+
+
+def _template_font_file(template: dict, field: dict, text: str):
+    """The template's own font file (its import fonts_dir), matched on family and
+    nearest weight, used only when it has a glyph for every visible character.
+    The PDF renderer already draws from these files; this keeps the PNG (digital
+    card, wallet strip, og:image, print preview) in the same typeface. Any miss
+    returns None and the generic fallback runs exactly as before."""
+    rel = str(template.get("fonts_dir") or "").strip()
+    family = _norm_family(str(field.get("fontFamily", field.get("font_family", "")) or ""))
+    if not rel or not family:
+        return None
+    fonts_dir = ROOT / rel.lstrip("/")
+    if not fonts_dir.is_dir():
+        return None
+    raw = str(field.get("fontWeight", field.get("font_weight", 400)) or 400).lower()
+    want = int(raw) if raw.isdigit() else (700 if raw == "bold" else 400)
+    best = None
+    for path in sorted(list(fonts_dir.glob("*.ttf")) + list(fonts_dir.glob("*.otf"))):
+        base, _, style = path.stem.partition("-")
+        if _norm_family(base) != family and _norm_family(path.stem) != family:
+            continue
+        weight = _WEIGHT_WORDS.get(_norm_family(style), 400) if style else 400
+        score = abs(weight - want)
+        if best is None or score < best[0]:
+            best = (score, path)
+    if best is None:
+        return None
+    try:
+        import fitz
+        face = fitz.Font(fontfile=str(best[1]))
+        for ch in text:
+            cp = ord(ch)
+            if ch.isspace() or 0x200B <= cp <= 0x200F or 0x202A <= cp <= 0x202E or 0x2066 <= cp <= 0x2069:
+                continue
+            if not face.has_glyph(cp):
+                return None
+    except Exception:
+        return None
+    return best[1]
+
+
 def _font(
     field: dict,
     arabic: bool,
     size_override: int | None = None,
+    template: dict | None = None,
+    text: str = "",
 ) -> ImageFont.FreeTypeFont | ImageFont.ImageFont:
     requested = size_override if size_override is not None else field.get(
         "fontSize", field.get("font_size", 24)
@@ -197,6 +248,12 @@ def _font(
     size = max(8, min(180, int(round(float(requested)))))
     weight = str(field.get("fontWeight", field.get("font_weight", ""))).lower()
     bold = weight in {"bold", "600", "700", "800", "900"} or (weight.isdigit() and int(weight) >= 600)
+    own = _template_font_file(template or {}, field, text) if text else None
+    if own is not None:
+        try:
+            return ImageFont.truetype(str(own), size=size)
+        except OSError:
+            pass
     for candidate in _font_candidates(field, bold, arabic):
         try:
             if candidate.is_file():
@@ -314,7 +371,7 @@ def _draw_text(draw: ImageDraw.ImageDraw, template: dict, key: str, field: dict,
     if not text:
         return
     arabic = key.endswith("_ar") or any("\u0600" <= char <= "\u06ff" for char in text)
-    font = _font(field, arabic)
+    font = _font(field, arabic, None, template, text)
     x, y = _coords(field, template)
     fill = _color(field.get("fill", field.get("color")), "#111827")
     align = str(field.get("textAlign", field.get("text_align", "right" if arabic else "left"))).lower()
@@ -329,7 +386,7 @@ def _draw_text(draw: ImageDraw.ImageDraw, template: dict, key: str, field: dict,
         requested_size = max(8, int(round(float(field.get("fontSize", field.get("font_size", 24))))))
         while requested_size > 8 and draw.textlength(text, font=font) > width:
             requested_size -= 1
-            font = _font(field, arabic, requested_size)
+            font = _font(field, arabic, requested_size, template, text)
 
     # Derive the anchor from (x, width, originX). `x` is the bbox LEFT edge
     # (CardifyTemplateImporter.php:100-105), so a right-aligned field sits its
