@@ -172,7 +172,10 @@ function lang_switch(string $pathTail): string
 function subnav(string $active, string $tail): string
 {
     $u = IqStore::user();
-    $items = [['', iq_s('home')], ['/leaderboard', iq_s('board_title')], ['/account', $u ? iq_s('account') : iq_s('sign_in')]];
+    // One Sign In on the page: the site header's. The IQ account link shows only once
+    // signed in; signing in is reached from the claim, certificate and Pro buttons.
+    $items = [['', iq_s('home')], ['/leaderboard', iq_s('board_title')]];
+    if ($u) $items[] = ['/account', iq_s('account')];
     if (IqStore::isPro($u)) array_splice($items, 2, 0, [['/practice', iq_s('practice')]]);
     $h = '<nav class="iqx-subnav" aria-label="IQ"><div class="iqx-wrap iqx-subnav-in">';
     foreach ($items as [$p, $l]) {
