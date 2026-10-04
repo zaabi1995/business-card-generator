@@ -13,11 +13,13 @@
   --iq-bad-bg: #fdecea;
   --iq-r: 14px;
   color: var(--iq-ink);
-  padding-block: 72px 48px;
+  /* fixed site header is 64px, 80px from 1024px; +24px that the subnav pulls up */
+  padding-block: 88px 48px;
   background: var(--iq-soft);
   font-size: 16px;
   line-height: 1.6;
 }
+@media (min-width: 1024px) { .iqx { padding-block-start: 104px; } }
 .iqx * { box-sizing: border-box; }
 .iqx a { color: var(--iq-brand-dk); }
 .iqx-wrap { max-inline-size: 1080px; margin-inline: auto; padding-inline: 16px; }

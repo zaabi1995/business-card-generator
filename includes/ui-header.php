@@ -579,8 +579,10 @@ if (!function_exists('renderNavigation')) {
             ['href' => $nav('#pricing'), 'label' => function_exists('t') ? t('footer.link_pricing') : 'Pricing'],
             ['href' => $nav('tools'), 'label' => function_exists('t') ? t('footer.link_all_tools') : 'Free Tools'],
             ['href' => $nav('app'), 'label' => (class_exists('I18n') && I18n::getLocale() === 'ar') ? 'التطبيق' : 'Mobile App'],
-            ['href' => $nav('logos'), 'label' => function_exists('t') ? t('footer.link_logos') : 'Logo Library'],
-            ['href' => $nav('oman-business-index'), 'label' => function_exists('t') ? t('footer.link_oman_index') : 'Oman Business Index'],
+            // 'more' links sit in the desktop "More" menu: seven links in one row
+            // wrapped to three lines at every desktop width (measured 4 Oct 2026).
+            ['href' => $nav('logos'), 'label' => function_exists('t') ? t('footer.link_logos') : 'Logo Library', 'more' => true],
+            ['href' => $nav('oman-business-index'), 'label' => function_exists('t') ? t('footer.link_oman_index') : 'Oman Business Index', 'more' => true],
             ['href' => $nav('blog'), 'label' => function_exists('t') ? t('footer.link_blog') : 'Blog'],
         ];
         
@@ -601,25 +603,42 @@ if (!function_exists('renderNavigation')) {
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex justify-between items-center gap-6 h-16 lg:h-20">
                     <!-- Logo -->
-                    <a href="<?php echo htmlspecialchars($nav('')); ?>" class="flex items-center gap-3">
+                    <a href="<?php echo htmlspecialchars($nav('')); ?>" class="flex items-center gap-3 shrink-0">
                         <img src="<?php echo assetUrl('images/logo.svg'); ?>" alt="<?php echo $brandName; ?>" class="h-10 w-auto">
                     </a>
 
-                    <!-- Desktop Navigation -->
-                    <div class="hidden lg:flex items-center gap-8">
-                        <?php foreach ($navLinks as $link): ?>
-                        <a href="<?php echo htmlspecialchars($link['href']); ?>" class="<?php echo $linkClass; ?> transition-colors font-medium"><?php echo htmlspecialchars($link['label']); ?></a>
+                    <!-- Desktop Navigation: from 1280px only, one line, never wraps -->
+                    <?php
+                    $primaryLinks = array_values(array_filter($navLinks, fn($l) => empty($l['more'])));
+                    $moreLinks    = array_values(array_filter($navLinks, fn($l) => !empty($l['more'])));
+                    $moreLabel    = function_exists('t') && t('header.more') !== 'header.more' ? t('header.more') : 'More';
+                    ?>
+                    <div class="cardify-nav-desktop items-center gap-5 min-w-0">
+                        <?php foreach ($primaryLinks as $link): ?>
+                        <a href="<?php echo htmlspecialchars($link['href']); ?>" class="<?php echo $linkClass; ?> transition-colors font-medium whitespace-nowrap"><?php echo htmlspecialchars($link['label']); ?></a>
                         <?php endforeach; ?>
+                        <?php if ($moreLinks): ?>
+                        <details class="cardify-nav-more relative">
+                            <summary class="<?php echo $linkClass; ?> transition-colors font-medium whitespace-nowrap cursor-pointer list-none inline-flex items-center gap-1.5">
+                                <?php echo htmlspecialchars($moreLabel); ?> <i class="fa-solid fa-chevron-down text-xs" aria-hidden="true"></i>
+                            </summary>
+                            <div class="cardify-nav-more-panel bg-white border border-gray-100 rounded-xl shadow-lg py-2">
+                                <?php foreach ($moreLinks as $link): ?>
+                                <a href="<?php echo htmlspecialchars($link['href']); ?>" class="block px-4 py-2.5 text-gray-700 hover:bg-gray-50 hover:text-blue-600 font-medium whitespace-nowrap"><?php echo htmlspecialchars($link['label']); ?></a>
+                                <?php endforeach; ?>
+                            </div>
+                        </details>
+                        <?php endif; ?>
                     </div>
 
                     <!-- CTA Buttons -->
-                    <div class="flex items-center gap-3">
+                    <div class="flex items-center gap-3 shrink-0 whitespace-nowrap">
                         <?php /* Phones: the currency picker lives in the menu, so the bar
                                  holds only logo, language and menu. */ ?>
                         <div class="hidden sm:block"><?php include __DIR__ . '/currency-selector.php'; ?></div>
                         <?php if ($isLoggedIn): ?>
                             <!-- Logged In State -->
-                            <span class="hidden sm:inline-flex items-center gap-2 px-4 py-2 text-gray-700 font-medium">
+                            <span class="cardify-nav-hello items-center gap-2 px-4 py-2 text-gray-700 font-medium">
                                 <i class="fa-solid fa-circle-user text-blue-600"></i>
                                 <?= function_exists('t') ? htmlspecialchars(t('header.hello_user', ['name' => $userName])) : 'Hello, ' . htmlspecialchars($userName) ?>
                             </span>
@@ -643,7 +662,7 @@ if (!function_exists('renderNavigation')) {
                         </span>
 
                         <!-- Mobile Menu Button -->
-                        <button type="button" class="lg:hidden p-2 text-gray-600 hover:text-blue-600" id="mobile-menu-btn"
+                        <button type="button" class="cardify-nav-phone p-2 text-gray-600 hover:text-blue-600" id="mobile-menu-btn"
                                 aria-label="<?= htmlspecialchars(t('common.menu_toggle')) ?>"
                                 aria-expanded="false" aria-controls="mobile-menu">
                             <i class="fa-solid fa-bars text-xl" aria-hidden="true"></i>
@@ -653,7 +672,7 @@ if (!function_exists('renderNavigation')) {
             </div>
 
             <!-- Mobile Menu -->
-            <div class="lg:hidden hidden bg-white border-t border-gray-100 py-4" id="mobile-menu">
+            <div class="cardify-nav-phone hidden bg-white border-t border-gray-100 py-4" id="mobile-menu">
                 <div class="max-w-7xl mx-auto px-4 space-y-3">
                     <?php foreach ($navLinks as $link): ?>
                     <a href="<?php echo htmlspecialchars($link['href']); ?>" class="block py-2 text-gray-600 hover:text-blue-600 font-medium"><?php echo htmlspecialchars($link['label']); ?></a>
@@ -687,6 +706,39 @@ if (!function_exists('renderNavigation')) {
                 </div>
             </div>
         </nav>
+        <style>
+        /* Prebuilt Tailwind has no xl: utilities, so the breakpoint lives here. */
+        .cardify-nav-desktop{display:none}
+        @media (min-width:1280px){.cardify-nav-desktop{display:flex}.cardify-nav-phone{display:none!important}}
+        .cardify-nav-hello{display:none}
+        @media (min-width:1536px){.cardify-nav-hello{display:inline-flex}}
+        .cardify-nav-more summary::-webkit-details-marker{display:none}
+        .cardify-nav-more[open] summary i{transform:rotate(180deg)}
+        .cardify-nav-more-panel{position:absolute;top:100%;margin-top:.75rem;inset-inline-end:0;min-width:14rem;z-index:60}
+        </style>
+        <script<?= function_exists('cspNonceAttr') ? cspNonceAttr() : '' ?>>
+        // One menu script for every page. Before 4 Oct 2026 only index.php had
+        // one, so the phone menu button did nothing anywhere else.
+        (function () {
+            var btn = document.getElementById('mobile-menu-btn');
+            var menu = document.getElementById('mobile-menu');
+            if (btn && menu && !btn.dataset.bound) {
+                btn.dataset.bound = '1';
+                btn.addEventListener('click', function () {
+                    var open = menu.classList.toggle('hidden') === false;
+                    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+                });
+            }
+            document.addEventListener('click', function (e) {
+                document.querySelectorAll('.cardify-nav-more[open]').forEach(function (d) {
+                    if (!d.contains(e.target)) d.removeAttribute('open');
+                });
+            });
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape') document.querySelectorAll('.cardify-nav-more[open]').forEach(function (d) { d.removeAttribute('open'); });
+            });
+        })();
+        </script>
         <?php
     }
 }

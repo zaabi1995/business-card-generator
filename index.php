@@ -453,18 +453,9 @@ $extraHead = $homeHreflang . $homeJsonLd . $scannerJsonLd . $homeFaqJsonLd . $ap
 
 // Enable dynamic navigation with auth awareness
 $showNavigation = true;
-// r79: the homepage owns a SECOND copy of the nav list, exactly as it owned a
-// second copy of the footer in r78. Both copies now ask ArTwins::navLink()
-// instead of gluing getBasePath() to a slug, which is locale-blind.
-// Bare '#features' resolves to /ar/#features on the Arabic home, not to the
-// English home's anchor.
-$navLinks = [
-    ['href' => ArTwins::navLink('#features',            getBasePath(), $_homeIsAr), 'label' => function_exists('t') ? t('footer.link_features')   : 'Features'],
-    ['href' => ArTwins::navLink('#pricing',             getBasePath(), $_homeIsAr), 'label' => function_exists('t') ? t('footer.link_pricing')    : 'Pricing'],
-    ['href' => ArTwins::navLink('tools',                getBasePath(), $_homeIsAr), 'label' => function_exists('t') ? t('footer.link_all_tools')  : 'Free Tools'],
-    ['href' => ArTwins::navLink('oman-business-index',  getBasePath(), $_homeIsAr), 'label' => function_exists('t') ? t('footer.link_oman_index') : 'Oman Business Index'],
-    ['href' => ArTwins::navLink('blog',                 getBasePath(), $_homeIsAr), 'label' => function_exists('t') ? t('footer.link_blog')       : 'Blog'],
-];
+// The homepage uses the shared nav list in ui-header.php, so every page shows
+// the same links (4 Oct 2026; it used to carry its own shorter copy).
+
 
 // Include Auth for navigation state
 require_once INCLUDES_DIR . '/Auth.php';
@@ -1300,13 +1291,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
     $cardifyNonce = function_exists('cspNonceAttr') ? cspNonceAttr() : '';
     $extraScripts = <<<HTML
     <script{$cardifyNonce}>
-        // Mobile menu toggle
-        const mobileMenuBtn = document.getElementById('mobile-menu-btn');
-        const mobileMenu = document.getElementById('mobile-menu');
-        
-        mobileMenuBtn?.addEventListener('click', () => {
-            mobileMenu.classList.toggle('hidden');
-        });
+        // The mobile menu toggle lives in ui-header.php for every page.
 
         // Navbar scroll effect
         const navbar = document.getElementById('navbar');

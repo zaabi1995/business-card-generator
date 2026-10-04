@@ -7,4 +7,5 @@ return [
     'sign_up'          => 'Sign Up',
     'menu'             => 'Menu',
     'close_menu'       => 'Close menu',
+    'more'             => 'More',
 ];
