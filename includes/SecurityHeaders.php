@@ -242,6 +242,7 @@ class SecurityHeaders
                 $hosts[$type] = array_merge($hosts[$type], $adHosts);
             }
             $hosts['script'][] = 'https://www.googletagservices.com';
+            $hosts['connect'][] = 'https://csi.gstatic.com';
         }
 
         $parts = [
