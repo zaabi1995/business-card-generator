@@ -234,7 +234,7 @@ $companyId = (int) ($company['id'] ?? 0);
                                     <!-- Dark preview chip -->
                                     <span class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-gray-900 text-white">
                                         <span class="w-2 h-2 rounded-full bg-white"></span>
-                                        <span><?= $isAr ? 'داكن' : 'Dark' ?></span>
+                                        <span><?= logo_hero_esc(t('logos.gov_tone_black')) ?></span>
                                     </span>
                                     <?php if (!empty($company['logo_svg_dark_path'])): ?>
                                         <a href="/logo-download?company=<?= $companyId ?>&format=svg_dark"
@@ -354,12 +354,14 @@ $companyId = (int) ($company['id'] ?? 0);
         </div>
 
         <?php if ($src): ?>
+            <?php include __DIR__ . '/government_logo_layouts.php'; ?>
             <!-- Logo metadata strip -->
             <?php
                 $formats = [];
                 if (!empty($company['logo_svg_path']))      $formats[] = 'SVG';
                 if (!empty($company['logo_png_path']))      $formats[] = 'PNG';
                 if (!empty($company['logo_webp_path']))     $formats[] = 'WebP';
+                if (!empty(LogoLibrary::downloadPaths($company)['pdf'])) $formats[] = 'PDF';
                 $formatsStr = $formats ? implode(' · ', $formats) : ',';
                 $dimText = ($company['logo_width'] ?? 0) && ($company['logo_height'] ?? 0)
                     ? ((int) $company['logo_width']) . ' × ' . ((int) $company['logo_height']) . ' px'
@@ -370,6 +372,7 @@ $companyId = (int) ($company['id'] ?? 0);
                     'company_web'  => $isAr ? 'موقع الشركة' : 'Company website',
                     'user_upload'  => $isAr ? 'مالك الشركة' : 'Uploaded by owner',
                     'admin_upload' => $isAr ? 'محرر المكتبة' : 'Library editor',
+                    'government_guide' => t('logos.gov_identity_source_label'),
                     default        => $isAr ? 'مصدر عام' : 'Public source',
                 };
                 $updated = !empty($company['logo_updated_at']) ? date('M j, Y', dbTs($company['logo_updated_at'])) : null;

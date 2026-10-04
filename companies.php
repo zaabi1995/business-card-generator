@@ -228,6 +228,7 @@ $brandName = 'Cardify';
 $showNavigation = true;
 
 if ($company) {
+    $isGovernmentGuide = ($company['logo_source'] ?? '') === 'government_guide';
     $displayName = $isAr ? ($company['name_ar'] ?: $company['name_en']) : $company['name_en'];
     $secLabel = labelOf($company['sector'], $SECTORS, $isAr);
     $wilLabel = labelOf($company['wilayat'], $WILAYATS, $isAr);
@@ -249,13 +250,13 @@ if ($company) {
         if ($curatedSummaryAr !== '') {
             $pageDescription = preg_replace('/\s+/', ' ', strip_tags($curatedSummaryAr));
         } else {
-            $pageDescription = t('companies.company_page_desc_fallback', ['name' => $displayName, 'sector' => $secLabel, 'wilayat' => $wilLabel]);
+            $pageDescription = t($isGovernmentGuide ? 'companies.government_profile' : 'companies.company_page_desc_fallback', ['name' => $displayName, 'sector' => $secLabel, 'wilayat' => $wilLabel]);
         }
     } else {
         if ($curatedSummaryEn !== '') {
             $pageDescription = preg_replace('/\s+/', ' ', strip_tags($curatedSummaryEn));
         } else {
-            $pageDescription = t('companies.company_page_desc_fallback', ['name' => $displayName, 'sector' => $secLabel, 'wilayat' => $wilLabel]);
+            $pageDescription = t($isGovernmentGuide ? 'companies.government_profile' : 'companies.company_page_desc_fallback', ['name' => $displayName, 'sector' => $secLabel, 'wilayat' => $wilLabel]);
         }
     }
     // A composed description is the only place the length can be asserted: the
@@ -515,13 +516,15 @@ function escq($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
                             <i class="fa-solid fa-industry text-xs"></i>
                             <?= escq(labelOf($company['sector'], $SECTORS, $isAr)) ?>
                         </a>
+                        <?php if (!empty($company['wilayat'])): ?>
                         <a href="<?= $basePrefix ?>/wilayat/<?= escq($company['wilayat']) ?>" class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-700 text-sm font-medium hover:bg-emerald-100">
                             <i class="fa-solid fa-location-dot text-xs"></i>
                             <?= escq(labelOf($company['wilayat'], $WILAYATS, $isAr)) ?>
                         </a>
+                        <?php endif; ?>
                         <span class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-gray-100 text-gray-700 text-sm font-medium">
                             <i class="fa-solid fa-building text-xs"></i>
-                            <?= escq($company['size_bucket'] === 'large' ? t('companies.size_large_enterprise') : t('companies.size_medium_enterprise')) ?>
+                            <?= escq($isGovernmentGuide ? t('companies.government_entity') : ($company['size_bucket'] === 'large' ? t('companies.size_large_enterprise') : t('companies.size_medium_enterprise'))) ?>
                         </span>
                     </div>
                 </div>
@@ -561,7 +564,7 @@ function escq($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
                     '/\basyad\s+group\b/i',
                     '/\bsohar\s+port\b/i',
                 ];
-                $isSovereign = false;
+                $isSovereign = $isGovernmentGuide;
                 foreach ($sovereignNamePatterns as $re) {
                     if (preg_match($re, (string) ($company['name_en'] ?? ''))) { $isSovereign = true; break; }
                 }
@@ -588,7 +591,7 @@ function escq($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
                     <?= escq(t('companies.profile_snapshot_heading', ['name' => $displayName])) ?>
                 </h2>
                 <p class="mt-2 text-gray-700 leading-relaxed">
-                    <?= escq(t('companies.profile_snapshot', [
+                    <?= escq(t($isGovernmentGuide ? 'companies.government_profile' : 'companies.profile_snapshot', [
                         'name' => $displayName,
                         'sector' => $secLabelEn,
                         'wilayat' => $wilLabelEn,
@@ -673,11 +676,11 @@ function escq($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
                     </div>
                     <div>
                         <dt class="text-xs text-gray-500"><?= escq(t('companies.qf_governorate')) ?></dt>
-                        <dd class="mt-1 font-semibold text-gray-900 text-sm"><?= escq(labelOf($company['wilayat'], $WILAYATS, $isAr)) ?></dd>
+                        <dd class="mt-1 font-semibold text-gray-900 text-sm"><?= escq($company['wilayat'] ? labelOf($company['wilayat'], $WILAYATS, $isAr) : t('companies.government_unspecified')) ?></dd>
                     </div>
                     <div>
-                        <dt class="text-xs text-gray-500"><?= escq(t('companies.qf_size')) ?></dt>
-                        <dd class="mt-1 font-semibold text-gray-900 text-sm"><?= escq($company['size_bucket'] === 'large' ? t('companies.size_large') : t('companies.size_medium')) ?></dd>
+                        <dt class="text-xs text-gray-500"><?= escq(t($isGovernmentGuide ? 'companies.government_type' : 'companies.qf_size')) ?></dt>
+                        <dd class="mt-1 font-semibold text-gray-900 text-sm"><?= escq($isGovernmentGuide ? t('companies.government_entity') : ($company['size_bucket'] === 'large' ? t('companies.size_large') : t('companies.size_medium'))) ?></dd>
                     </div>
                     <div>
                         <dt class="text-xs text-gray-500"><?= escq(t('companies.qf_country')) ?></dt>
@@ -793,8 +796,8 @@ function escq($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
 
         <p class="mt-10 text-xs text-gray-400 text-center">
             <?= escq(t($companyUpdatedAtTs !== null
-                ? 'companies.source_footer'
-                : 'companies.source_footer_undated')) ?>
+                ? ($isGovernmentGuide ? 'companies.government_source_footer' : 'companies.source_footer')
+                : ($isGovernmentGuide ? 'companies.government_source_undated' : 'companies.source_footer_undated'))) ?>
             <?php if ($companyUpdatedAtTs !== null): ?>
             <time datetime="<?= escq(StructuredDataDate::fromUnixTimestamp($companyUpdatedAtTs)) ?>"><?= escq(I18n::formatDate($companyUpdatedAtTs, $lang)) ?></time>
             <?php endif; ?>

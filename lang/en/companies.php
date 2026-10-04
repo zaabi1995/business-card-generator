@@ -78,4 +78,10 @@ return [
     'logo_page_title_mid'   => ':name Logo | Logo Library | Cardify',
     'logo_page_title_short' => ':name Logo | Cardify',
     'logo_desc_en'          => 'Download the :name logo in :formats from the Omani Logo Library by Cardify. Indexed for identification and research. :sector sector, :wilayat governorate, Oman.',
+    'government_profile' => 'The logo and entity name for :name are indexed from the Unified Government Identity Guide, 2025 edition. Both official language layouts are available in colour, black and white.',
+    'government_source_footer' => 'Logo source: Unified Government Identity Guide (2025), Updated: ',
+    'government_source_undated' => 'Logo source: Unified Government Identity Guide (2025)',
+    'government_entity' => 'Government entity',
+    'government_type' => 'Entity type',
+    'government_unspecified' => 'Not supplied in the guide',
 ];

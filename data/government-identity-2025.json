@@ -1,0 +1,3904 @@
+{
+  "source_file": "_الهوية الحكومية الموحدة.pdf",
+  "source_sha256": "b51f1b5b2cf5704096a04ca964228075d0457c26caf301be9e93f539f4916e17",
+  "edition": 2025,
+  "entities": [
+    {
+      "key": "council-of-ministers",
+      "name_en": "Council of Ministers",
+      "name_ar": "مجلس الوزراء",
+      "company_id": null,
+      "slug": null,
+      "pdf_page": 24,
+      "printed_pages": [
+        46,
+        47
+      ],
+      "layouts": {
+        "bilingual": {
+          "crop": [
+            191.5,
+            365.0,
+            339.5,
+            453.5
+          ],
+          "assets": {
+            "normal": {
+              "svg": "council-of-ministers/bilingual-normal.svg",
+              "pdf": "council-of-ministers/bilingual-normal.pdf",
+              "png_512": "council-of-ministers/bilingual-normal-512.png",
+              "png_1024": "council-of-ministers/bilingual-normal-1024.png",
+              "webp": "council-of-ministers/bilingual-normal.webp",
+              "png_2048": "council-of-ministers/bilingual-normal-2048.png"
+            },
+            "black": {
+              "svg": "council-of-ministers/bilingual-black.svg",
+              "pdf": "council-of-ministers/bilingual-black.pdf",
+              "png_2048": "council-of-ministers/bilingual-black-2048.png",
+              "webp": "council-of-ministers/bilingual-black.webp"
+            },
+            "white": {
+              "svg": "council-of-ministers/bilingual-white.svg",
+              "pdf": "council-of-ministers/bilingual-white.pdf",
+              "png_2048": "council-of-ministers/bilingual-white-2048.png",
+              "webp": "council-of-ministers/bilingual-white.webp"
+            }
+          }
+        },
+        "arabic": {
+          "crop": [
+            406.5,
+            340.5,
+            479.0,
+            453.5
+          ],
+          "assets": {
+            "normal": {
+              "svg": "council-of-ministers/arabic-normal.svg",
+              "pdf": "council-of-ministers/arabic-normal.pdf",
+              "png_512": "council-of-ministers/arabic-normal-512.png",
+              "png_1024": "council-of-ministers/arabic-normal-1024.png",
+              "webp": "council-of-ministers/arabic-normal.webp",
+              "png_2048": "council-of-ministers/arabic-normal-2048.png"
+            },
+            "black": {
+              "svg": "council-of-ministers/arabic-black.svg",
+              "pdf": "council-of-ministers/arabic-black.pdf",
+              "png_2048": "council-of-ministers/arabic-black-2048.png",
+              "webp": "council-of-ministers/arabic-black.webp"
+            },
+            "white": {
+              "svg": "council-of-ministers/arabic-white.svg",
+              "pdf": "council-of-ministers/arabic-white.pdf",
+              "png_2048": "council-of-ministers/arabic-white-2048.png",
+              "webp": "council-of-ministers/arabic-white.webp"
+            }
+          }
+        }
+      }
+    },
+    {
+      "key": "diwan-of-royal-court",
+      "name_en": "Diwan of Royal Court",
+      "name_ar": "ديوان البلاط السلطاني",
+      "company_id": null,
+      "slug": null,
+      "pdf_page": 24,
+      "printed_pages": [
+        46,
+        47
+      ],
+      "layouts": {
+        "bilingual": {
+          "crop": [
+            167.5,
+            516.5,
+            339.5,
+            605.0
+          ],
+          "assets": {
+            "normal": {
+              "svg": "diwan-of-royal-court/bilingual-normal.svg",
+              "pdf": "diwan-of-royal-court/bilingual-normal.pdf",
+              "png_512": "diwan-of-royal-court/bilingual-normal-512.png",
+              "png_1024": "diwan-of-royal-court/bilingual-normal-1024.png",
+              "webp": "diwan-of-royal-court/bilingual-normal.webp",
+              "png_2048": "diwan-of-royal-court/bilingual-normal-2048.png"
+            },
+            "black": {
+              "svg": "diwan-of-royal-court/bilingual-black.svg",
+              "pdf": "diwan-of-royal-court/bilingual-black.pdf",
+              "png_2048": "diwan-of-royal-court/bilingual-black-2048.png",
+              "webp": "diwan-of-royal-court/bilingual-black.webp"
+            },
+            "white": {
+              "svg": "diwan-of-royal-court/bilingual-white.svg",
+              "pdf": "diwan-of-royal-court/bilingual-white.pdf",
+              "png_2048": "diwan-of-royal-court/bilingual-white-2048.png",
+              "webp": "diwan-of-royal-court/bilingual-white.webp"
+            }
+          }
+        },
+        "arabic": {
+          "crop": [
+            387.0,
+            490.5,
+            498.5,
+            604.5
+          ],
+          "assets": {
+            "normal": {
+              "svg": "diwan-of-royal-court/arabic-normal.svg",
+              "pdf": "diwan-of-royal-court/arabic-normal.pdf",
+              "png_512": "diwan-of-royal-court/arabic-normal-512.png",
+              "png_1024": "diwan-of-royal-court/arabic-normal-1024.png",
+              "webp": "diwan-of-royal-court/arabic-normal.webp",
+              "png_2048": "diwan-of-royal-court/arabic-normal-2048.png"
+            },
+            "black": {
+              "svg": "diwan-of-royal-court/arabic-black.svg",
+              "pdf": "diwan-of-royal-court/arabic-black.pdf",
+              "png_2048": "diwan-of-royal-court/arabic-black-2048.png",
+              "webp": "diwan-of-royal-court/arabic-black.webp"
+            },
+            "white": {
+              "svg": "diwan-of-royal-court/arabic-white.svg",
+              "pdf": "diwan-of-royal-court/arabic-white.pdf",
+              "png_2048": "diwan-of-royal-court/arabic-white-2048.png",
+              "webp": "diwan-of-royal-court/arabic-white.webp"
+            }
+          }
+        },
+        "international": {
+          "crop": [
+            928.5,
+            254.0,
+            1106.5,
+            346.0
+          ],
+          "assets": {
+            "normal": {
+              "svg": "diwan-of-royal-court/international-normal.svg",
+              "pdf": "diwan-of-royal-court/international-normal.pdf",
+              "png_512": "diwan-of-royal-court/international-normal-512.png",
+              "png_1024": "diwan-of-royal-court/international-normal-1024.png",
+              "webp": "diwan-of-royal-court/international-normal.webp",
+              "png_2048": "diwan-of-royal-court/international-normal-2048.png"
+            },
+            "black": {
+              "svg": "diwan-of-royal-court/international-black.svg",
+              "pdf": "diwan-of-royal-court/international-black.pdf",
+              "png_2048": "diwan-of-royal-court/international-black-2048.png",
+              "webp": "diwan-of-royal-court/international-black.webp"
+            },
+            "white": {
+              "svg": "diwan-of-royal-court/international-white.svg",
+              "pdf": "diwan-of-royal-court/international-white.pdf",
+              "png_2048": "diwan-of-royal-court/international-white-2048.png",
+              "webp": "diwan-of-royal-court/international-white.webp"
+            }
+          },
+          "pdf_page": 33,
+          "usage": "Outside the Sultanate of Oman only"
+        }
+      }
+    },
+    {
+      "key": "the-royal-office",
+      "name_en": "The Royal Office",
+      "name_ar": "المكتب السلطاني",
+      "company_id": null,
+      "slug": null,
+      "pdf_page": 24,
+      "printed_pages": [
+        46,
+        47
+      ],
+      "layouts": {
+        "bilingual": {
+          "crop": [
+            197.0,
+            672.5,
+            339.5,
+            761.0
+          ],
+          "assets": {
+            "normal": {
+              "svg": "the-royal-office/bilingual-normal.svg",
+              "pdf": "the-royal-office/bilingual-normal.pdf",
+              "png_512": "the-royal-office/bilingual-normal-512.png",
+              "png_1024": "the-royal-office/bilingual-normal-1024.png",
+              "webp": "the-royal-office/bilingual-normal.webp",
+              "png_2048": "the-royal-office/bilingual-normal-2048.png"
+            },
+            "black": {
+              "svg": "the-royal-office/bilingual-black.svg",
+              "pdf": "the-royal-office/bilingual-black.pdf",
+              "png_2048": "the-royal-office/bilingual-black-2048.png",
+              "webp": "the-royal-office/bilingual-black.webp"
+            },
+            "white": {
+              "svg": "the-royal-office/bilingual-white.svg",
+              "pdf": "the-royal-office/bilingual-white.pdf",
+              "png_2048": "the-royal-office/bilingual-white-2048.png",
+              "webp": "the-royal-office/bilingual-white.webp"
+            }
+          }
+        },
+        "arabic": {
+          "crop": [
+            399.5,
+            644.0,
+            486.0,
+            760.0
+          ],
+          "assets": {
+            "normal": {
+              "svg": "the-royal-office/arabic-normal.svg",
+              "pdf": "the-royal-office/arabic-normal.pdf",
+              "png_512": "the-royal-office/arabic-normal-512.png",
+              "png_1024": "the-royal-office/arabic-normal-1024.png",
+              "webp": "the-royal-office/arabic-normal.webp",
+              "png_2048": "the-royal-office/arabic-normal-2048.png"
+            },
+            "black": {
+              "svg": "the-royal-office/arabic-black.svg",
+              "pdf": "the-royal-office/arabic-black.pdf",
+              "png_2048": "the-royal-office/arabic-black-2048.png",
+              "webp": "the-royal-office/arabic-black.webp"
+            },
+            "white": {
+              "svg": "the-royal-office/arabic-white.svg",
+              "pdf": "the-royal-office/arabic-white.pdf",
+              "png_2048": "the-royal-office/arabic-white-2048.png",
+              "webp": "the-royal-office/arabic-white.webp"
+            }
+          }
+        },
+        "international": {
+          "crop": [
+            946.5,
+            553.5,
+            1106.5,
+            645.5
+          ],
+          "assets": {
+            "normal": {
+              "svg": "the-royal-office/international-normal.svg",
+              "pdf": "the-royal-office/international-normal.pdf",
+              "png_512": "the-royal-office/international-normal-512.png",
+              "png_1024": "the-royal-office/international-normal-1024.png",
+              "webp": "the-royal-office/international-normal.webp",
+              "png_2048": "the-royal-office/international-normal-2048.png"
+            },
+            "black": {
+              "svg": "the-royal-office/international-black.svg",
+              "pdf": "the-royal-office/international-black.pdf",
+              "png_2048": "the-royal-office/international-black-2048.png",
+              "webp": "the-royal-office/international-black.webp"
+            },
+            "white": {
+              "svg": "the-royal-office/international-white.svg",
+              "pdf": "the-royal-office/international-white.pdf",
+              "png_2048": "the-royal-office/international-white-2048.png",
+              "webp": "the-royal-office/international-white.webp"
+            }
+          },
+          "pdf_page": 33,
+          "usage": "Outside the Sultanate of Oman only"
+        }
+      }
+    },
+    {
+      "key": "office-of-the-deputy-prime-minister-for-council-of-ministers",
+      "name_en": "Office of the Deputy Prime Minister for Council of Ministers",
+      "name_ar": "مكتب نائب رئيس الوزراء لشؤون مجلس الوزراء",
+      "company_id": null,
+      "slug": null,
+      "pdf_page": 24,
+      "printed_pages": [
+        46,
+        47
+      ],
+      "layouts": {
+        "bilingual": {
+          "crop": [
+            686.5,
+            365.0,
+            943.5,
+            453.5
+          ],
+          "assets": {
+            "normal": {
+              "svg": "office-of-the-deputy-prime-minister-for-council-of-ministers/bilingual-normal.svg",
+              "pdf": "office-of-the-deputy-prime-minister-for-council-of-ministers/bilingual-normal.pdf",
+              "png_512": "office-of-the-deputy-prime-minister-for-council-of-ministers/bilingual-normal-512.png",
+              "png_1024": "office-of-the-deputy-prime-minister-for-council-of-ministers/bilingual-normal-1024.png",
+              "webp": "office-of-the-deputy-prime-minister-for-council-of-ministers/bilingual-normal.webp",
+              "png_2048": "office-of-the-deputy-prime-minister-for-council-of-ministers/bilingual-normal-2048.png"
+            },
+            "black": {
+              "svg": "office-of-the-deputy-prime-minister-for-council-of-ministers/bilingual-black.svg",
+              "pdf": "office-of-the-deputy-prime-minister-for-council-of-ministers/bilingual-black.pdf",
+              "png_2048": "office-of-the-deputy-prime-minister-for-council-of-ministers/bilingual-black-2048.png",
+              "webp": "office-of-the-deputy-prime-minister-for-council-of-ministers/bilingual-black.webp"
+            },
+            "white": {
+              "svg": "office-of-the-deputy-prime-minister-for-council-of-ministers/bilingual-white.svg",
+              "pdf": "office-of-the-deputy-prime-minister-for-council-of-ministers/bilingual-white.pdf",
+              "png_2048": "office-of-the-deputy-prime-minister-for-council-of-ministers/bilingual-white-2048.png",
+              "webp": "office-of-the-deputy-prime-minister-for-council-of-ministers/bilingual-white.webp"
+            }
+          }
+        },
+        "arabic": {
+          "crop": [
+            990.0,
+            321.5,
+            1103.0,
+            453.5
+          ],
+          "assets": {
+            "normal": {
+              "svg": "office-of-the-deputy-prime-minister-for-council-of-ministers/arabic-normal.svg",
+              "pdf": "office-of-the-deputy-prime-minister-for-council-of-ministers/arabic-normal.pdf",
+              "png_512": "office-of-the-deputy-prime-minister-for-council-of-ministers/arabic-normal-512.png",
+              "png_1024": "office-of-the-deputy-prime-minister-for-council-of-ministers/arabic-normal-1024.png",
+              "webp": "office-of-the-deputy-prime-minister-for-council-of-ministers/arabic-normal.webp",
+              "png_2048": "office-of-the-deputy-prime-minister-for-council-of-ministers/arabic-normal-2048.png"
+            },
+            "black": {
+              "svg": "office-of-the-deputy-prime-minister-for-council-of-ministers/arabic-black.svg",
+              "pdf": "office-of-the-deputy-prime-minister-for-council-of-ministers/arabic-black.pdf",
+              "png_2048": "office-of-the-deputy-prime-minister-for-council-of-ministers/arabic-black-2048.png",
+              "webp": "office-of-the-deputy-prime-minister-for-council-of-ministers/arabic-black.webp"
+            },
+            "white": {
+              "svg": "office-of-the-deputy-prime-minister-for-council-of-ministers/arabic-white.svg",
+              "pdf": "office-of-the-deputy-prime-minister-for-council-of-ministers/arabic-white.pdf",
+              "png_2048": "office-of-the-deputy-prime-minister-for-council-of-ministers/arabic-white-2048.png",
+              "webp": "office-of-the-deputy-prime-minister-for-council-of-ministers/arabic-white.webp"
+            }
+          }
+        }
+      }
+    },
+    {
+      "key": "office-of-deputy-prime-minister-for-international-relations-and-cooperation-affairs-and-personal-representative-of-his-majesty-the-sultan",
+      "name_en": "Office of Deputy Prime Minister for International Relations and Cooperation Affairs and Personal Representative of His Majesty the Sultan",
+      "name_ar": "مكتب نائب رئيس الوزراء لشؤون العلاقات والتعاون الدولي والممثل الخاص لجلالة السلطان",
+      "company_id": null,
+      "slug": null,
+      "pdf_page": 24,
+      "printed_pages": [
+        46,
+        47
+      ],
+      "layouts": {
+        "bilingual": {
+          "crop": [
+            714.0,
+            514.5,
+            943.5,
+            604.5
+          ],
+          "assets": {
+            "normal": {
+              "svg": "office-of-deputy-prime-minister-for-international-relations-and-cooperation-affairs-and-personal-representative-of-his-majesty-the-sultan/bilingual-normal.svg",
+              "pdf": "office-of-deputy-prime-minister-for-international-relations-and-cooperation-affairs-and-personal-representative-of-his-majesty-the-sultan/bilingual-normal.pdf",
+              "png_512": "office-of-deputy-prime-minister-for-international-relations-and-cooperation-affairs-and-personal-representative-of-his-majesty-the-sultan/bilingual-normal-512.png",
+              "png_1024": "office-of-deputy-prime-minister-for-international-relations-and-cooperation-affairs-and-personal-representative-of-his-majesty-the-sultan/bilingual-normal-1024.png",
+              "webp": "office-of-deputy-prime-minister-for-international-relations-and-cooperation-affairs-and-personal-representative-of-his-majesty-the-sultan/bilingual-normal.webp",
+              "png_2048": "office-of-deputy-prime-minister-for-international-relations-and-cooperation-affairs-and-personal-representative-of-his-majesty-the-sultan/bilingual-normal-2048.png"
+            },
+            "black": {
+              "svg": "office-of-deputy-prime-minister-for-international-relations-and-cooperation-affairs-and-personal-representative-of-his-majesty-the-sultan/bilingual-black.svg",
+              "pdf": "office-of-deputy-prime-minister-for-international-relations-and-cooperation-affairs-and-personal-representative-of-his-majesty-the-sultan/bilingual-black.pdf",
+              "png_2048": "office-of-deputy-prime-minister-for-international-relations-and-cooperation-affairs-and-personal-representative-of-his-majesty-the-sultan/bilingual-black-2048.png",
+              "webp": "office-of-deputy-prime-minister-for-international-relations-and-cooperation-affairs-and-personal-representative-of-his-majesty-the-sultan/bilingual-black.webp"
+            },
+            "white": {
+              "svg": "office-of-deputy-prime-minister-for-international-relations-and-cooperation-affairs-and-personal-representative-of-his-majesty-the-sultan/bilingual-white.svg",
+              "pdf": "office-of-deputy-prime-minister-for-international-relations-and-cooperation-affairs-and-personal-representative-of-his-majesty-the-sultan/bilingual-white.pdf",
+              "png_2048": "office-of-deputy-prime-minister-for-international-relations-and-cooperation-affairs-and-personal-representative-of-his-majesty-the-sultan/bilingual-white-2048.png",
+              "webp": "office-of-deputy-prime-minister-for-international-relations-and-cooperation-affairs-and-personal-representative-of-his-majesty-the-sultan/bilingual-white.webp"
+            }
+          }
+        },
+        "arabic": {
+          "crop": [
+            963.0,
+            480.0,
+            1129.5,
+            604.5
+          ],
+          "assets": {
+            "normal": {
+              "svg": "office-of-deputy-prime-minister-for-international-relations-and-cooperation-affairs-and-personal-representative-of-his-majesty-the-sultan/arabic-normal.svg",
+              "pdf": "office-of-deputy-prime-minister-for-international-relations-and-cooperation-affairs-and-personal-representative-of-his-majesty-the-sultan/arabic-normal.pdf",
+              "png_512": "office-of-deputy-prime-minister-for-international-relations-and-cooperation-affairs-and-personal-representative-of-his-majesty-the-sultan/arabic-normal-512.png",
+              "png_1024": "office-of-deputy-prime-minister-for-international-relations-and-cooperation-affairs-and-personal-representative-of-his-majesty-the-sultan/arabic-normal-1024.png",
+              "webp": "office-of-deputy-prime-minister-for-international-relations-and-cooperation-affairs-and-personal-representative-of-his-majesty-the-sultan/arabic-normal.webp",
+              "png_2048": "office-of-deputy-prime-minister-for-international-relations-and-cooperation-affairs-and-personal-representative-of-his-majesty-the-sultan/arabic-normal-2048.png"
+            },
+            "black": {
+              "svg": "office-of-deputy-prime-minister-for-international-relations-and-cooperation-affairs-and-personal-representative-of-his-majesty-the-sultan/arabic-black.svg",
+              "pdf": "office-of-deputy-prime-minister-for-international-relations-and-cooperation-affairs-and-personal-representative-of-his-majesty-the-sultan/arabic-black.pdf",
+              "png_2048": "office-of-deputy-prime-minister-for-international-relations-and-cooperation-affairs-and-personal-representative-of-his-majesty-the-sultan/arabic-black-2048.png",
+              "webp": "office-of-deputy-prime-minister-for-international-relations-and-cooperation-affairs-and-personal-representative-of-his-majesty-the-sultan/arabic-black.webp"
+            },
+            "white": {
+              "svg": "office-of-deputy-prime-minister-for-international-relations-and-cooperation-affairs-and-personal-representative-of-his-majesty-the-sultan/arabic-white.svg",
+              "pdf": "office-of-deputy-prime-minister-for-international-relations-and-cooperation-affairs-and-personal-representative-of-his-majesty-the-sultan/arabic-white.pdf",
+              "png_2048": "office-of-deputy-prime-minister-for-international-relations-and-cooperation-affairs-and-personal-representative-of-his-majesty-the-sultan/arabic-white-2048.png",
+              "webp": "office-of-deputy-prime-minister-for-international-relations-and-cooperation-affairs-and-personal-representative-of-his-majesty-the-sultan/arabic-white.webp"
+            }
+          }
+        }
+      }
+    },
+    {
+      "key": "office-of-the-special-envoy-of-his-majesty-the-sultan",
+      "name_en": "Office of the Special Envoy of His Majesty the Sultan",
+      "name_ar": "مكتب المبعوث الخاص لجلالة السلطان",
+      "company_id": null,
+      "slug": null,
+      "pdf_page": 24,
+      "printed_pages": [
+        46,
+        47
+      ],
+      "layouts": {
+        "bilingual": {
+          "crop": [
+            666.5,
+            672.5,
+            944.0,
+            761.0
+          ],
+          "assets": {
+            "normal": {
+              "svg": "office-of-the-special-envoy-of-his-majesty-the-sultan/bilingual-normal.svg",
+              "pdf": "office-of-the-special-envoy-of-his-majesty-the-sultan/bilingual-normal.pdf",
+              "png_512": "office-of-the-special-envoy-of-his-majesty-the-sultan/bilingual-normal-512.png",
+              "png_1024": "office-of-the-special-envoy-of-his-majesty-the-sultan/bilingual-normal-1024.png",
+              "webp": "office-of-the-special-envoy-of-his-majesty-the-sultan/bilingual-normal.webp",
+              "png_2048": "office-of-the-special-envoy-of-his-majesty-the-sultan/bilingual-normal-2048.png"
+            },
+            "black": {
+              "svg": "office-of-the-special-envoy-of-his-majesty-the-sultan/bilingual-black.svg",
+              "pdf": "office-of-the-special-envoy-of-his-majesty-the-sultan/bilingual-black.pdf",
+              "png_2048": "office-of-the-special-envoy-of-his-majesty-the-sultan/bilingual-black-2048.png",
+              "webp": "office-of-the-special-envoy-of-his-majesty-the-sultan/bilingual-black.webp"
+            },
+            "white": {
+              "svg": "office-of-the-special-envoy-of-his-majesty-the-sultan/bilingual-white.svg",
+              "pdf": "office-of-the-special-envoy-of-his-majesty-the-sultan/bilingual-white.pdf",
+              "png_2048": "office-of-the-special-envoy-of-his-majesty-the-sultan/bilingual-white-2048.png",
+              "webp": "office-of-the-special-envoy-of-his-majesty-the-sultan/bilingual-white.webp"
+            }
+          }
+        },
+        "arabic": {
+          "crop": [
+            987.5,
+            627.0,
+            1105.0,
+            760.0
+          ],
+          "assets": {
+            "normal": {
+              "svg": "office-of-the-special-envoy-of-his-majesty-the-sultan/arabic-normal.svg",
+              "pdf": "office-of-the-special-envoy-of-his-majesty-the-sultan/arabic-normal.pdf",
+              "png_512": "office-of-the-special-envoy-of-his-majesty-the-sultan/arabic-normal-512.png",
+              "png_1024": "office-of-the-special-envoy-of-his-majesty-the-sultan/arabic-normal-1024.png",
+              "webp": "office-of-the-special-envoy-of-his-majesty-the-sultan/arabic-normal.webp",
+              "png_2048": "office-of-the-special-envoy-of-his-majesty-the-sultan/arabic-normal-2048.png"
+            },
+            "black": {
+              "svg": "office-of-the-special-envoy-of-his-majesty-the-sultan/arabic-black.svg",
+              "pdf": "office-of-the-special-envoy-of-his-majesty-the-sultan/arabic-black.pdf",
+              "png_2048": "office-of-the-special-envoy-of-his-majesty-the-sultan/arabic-black-2048.png",
+              "webp": "office-of-the-special-envoy-of-his-majesty-the-sultan/arabic-black.webp"
+            },
+            "white": {
+              "svg": "office-of-the-special-envoy-of-his-majesty-the-sultan/arabic-white.svg",
+              "pdf": "office-of-the-special-envoy-of-his-majesty-the-sultan/arabic-white.pdf",
+              "png_2048": "office-of-the-special-envoy-of-his-majesty-the-sultan/arabic-white-2048.png",
+              "webp": "office-of-the-special-envoy-of-his-majesty-the-sultan/arabic-white.webp"
+            }
+          }
+        }
+      }
+    },
+    {
+      "key": "the-supreme-judicial-council",
+      "name_en": "The Supreme Judicial Council",
+      "name_ar": "المجلس الأعلى للقضاء",
+      "company_id": null,
+      "slug": null,
+      "pdf_page": 25,
+      "printed_pages": [
+        48,
+        49
+      ],
+      "layouts": {
+        "bilingual": {
+          "crop": [
+            757.0,
+            188.0,
+            942.0,
+            276.0
+          ],
+          "assets": {
+            "normal": {
+              "svg": "the-supreme-judicial-council/bilingual-normal.svg",
+              "pdf": "the-supreme-judicial-council/bilingual-normal.pdf",
+              "png_512": "the-supreme-judicial-council/bilingual-normal-512.png",
+              "png_1024": "the-supreme-judicial-council/bilingual-normal-1024.png",
+              "webp": "the-supreme-judicial-council/bilingual-normal.webp",
+              "png_2048": "the-supreme-judicial-council/bilingual-normal-2048.png"
+            },
+            "black": {
+              "svg": "the-supreme-judicial-council/bilingual-black.svg",
+              "pdf": "the-supreme-judicial-council/bilingual-black.pdf",
+              "png_2048": "the-supreme-judicial-council/bilingual-black-2048.png",
+              "webp": "the-supreme-judicial-council/bilingual-black.webp"
+            },
+            "white": {
+              "svg": "the-supreme-judicial-council/bilingual-white.svg",
+              "pdf": "the-supreme-judicial-council/bilingual-white.pdf",
+              "png_2048": "the-supreme-judicial-council/bilingual-white-2048.png",
+              "webp": "the-supreme-judicial-council/bilingual-white.webp"
+            }
+          }
+        },
+        "arabic": {
+          "crop": [
+            992.0,
+            161.5,
+            1106.0,
+            275.5
+          ],
+          "assets": {
+            "normal": {
+              "svg": "the-supreme-judicial-council/arabic-normal.svg",
+              "pdf": "the-supreme-judicial-council/arabic-normal.pdf",
+              "png_512": "the-supreme-judicial-council/arabic-normal-512.png",
+              "png_1024": "the-supreme-judicial-council/arabic-normal-1024.png",
+              "webp": "the-supreme-judicial-council/arabic-normal.webp",
+              "png_2048": "the-supreme-judicial-council/arabic-normal-2048.png"
+            },
+            "black": {
+              "svg": "the-supreme-judicial-council/arabic-black.svg",
+              "pdf": "the-supreme-judicial-council/arabic-black.pdf",
+              "png_2048": "the-supreme-judicial-council/arabic-black-2048.png",
+              "webp": "the-supreme-judicial-council/arabic-black.webp"
+            },
+            "white": {
+              "svg": "the-supreme-judicial-council/arabic-white.svg",
+              "pdf": "the-supreme-judicial-council/arabic-white.pdf",
+              "png_2048": "the-supreme-judicial-council/arabic-white-2048.png",
+              "webp": "the-supreme-judicial-council/arabic-white.webp"
+            }
+          }
+        }
+      }
+    },
+    {
+      "key": "royal-court-affairs",
+      "name_en": "Royal Court Affairs",
+      "name_ar": "شؤون البلاط السلطاني",
+      "company_id": null,
+      "slug": null,
+      "pdf_page": 25,
+      "printed_pages": [
+        48,
+        49
+      ],
+      "layouts": {
+        "bilingual": {
+          "crop": [
+            769.5,
+            367.0,
+            941.5,
+            455.0
+          ],
+          "assets": {
+            "normal": {
+              "svg": "royal-court-affairs/bilingual-normal.svg",
+              "pdf": "royal-court-affairs/bilingual-normal.pdf",
+              "png_512": "royal-court-affairs/bilingual-normal-512.png",
+              "png_1024": "royal-court-affairs/bilingual-normal-1024.png",
+              "webp": "royal-court-affairs/bilingual-normal.webp",
+              "png_2048": "royal-court-affairs/bilingual-normal-2048.png"
+            },
+            "black": {
+              "svg": "royal-court-affairs/bilingual-black.svg",
+              "pdf": "royal-court-affairs/bilingual-black.pdf",
+              "png_2048": "royal-court-affairs/bilingual-black-2048.png",
+              "webp": "royal-court-affairs/bilingual-black.webp"
+            },
+            "white": {
+              "svg": "royal-court-affairs/bilingual-white.svg",
+              "pdf": "royal-court-affairs/bilingual-white.pdf",
+              "png_2048": "royal-court-affairs/bilingual-white-2048.png",
+              "webp": "royal-court-affairs/bilingual-white.webp"
+            }
+          }
+        },
+        "arabic": {
+          "crop": [
+            991.5,
+            340.5,
+            1106.0,
+            455.5
+          ],
+          "assets": {
+            "normal": {
+              "svg": "royal-court-affairs/arabic-normal.svg",
+              "pdf": "royal-court-affairs/arabic-normal.pdf",
+              "png_512": "royal-court-affairs/arabic-normal-512.png",
+              "png_1024": "royal-court-affairs/arabic-normal-1024.png",
+              "webp": "royal-court-affairs/arabic-normal.webp",
+              "png_2048": "royal-court-affairs/arabic-normal-2048.png"
+            },
+            "black": {
+              "svg": "royal-court-affairs/arabic-black.svg",
+              "pdf": "royal-court-affairs/arabic-black.pdf",
+              "png_2048": "royal-court-affairs/arabic-black-2048.png",
+              "webp": "royal-court-affairs/arabic-black.webp"
+            },
+            "white": {
+              "svg": "royal-court-affairs/arabic-white.svg",
+              "pdf": "royal-court-affairs/arabic-white.pdf",
+              "png_2048": "royal-court-affairs/arabic-white-2048.png",
+              "webp": "royal-court-affairs/arabic-white.webp"
+            }
+          }
+        }
+      }
+    },
+    {
+      "key": "the-private-office",
+      "name_en": "The Private Office",
+      "name_ar": "المكتب الخاص",
+      "company_id": null,
+      "slug": null,
+      "pdf_page": 25,
+      "printed_pages": [
+        48,
+        49
+      ],
+      "layouts": {
+        "bilingual": {
+          "crop": [
+            801.0,
+            526.0,
+            942.0,
+            614.5
+          ],
+          "assets": {
+            "normal": {
+              "svg": "the-private-office/bilingual-normal.svg",
+              "pdf": "the-private-office/bilingual-normal.pdf",
+              "png_512": "the-private-office/bilingual-normal-512.png",
+              "png_1024": "the-private-office/bilingual-normal-1024.png",
+              "webp": "the-private-office/bilingual-normal.webp",
+              "png_2048": "the-private-office/bilingual-normal-2048.png"
+            },
+            "black": {
+              "svg": "the-private-office/bilingual-black.svg",
+              "pdf": "the-private-office/bilingual-black.pdf",
+              "png_2048": "the-private-office/bilingual-black-2048.png",
+              "webp": "the-private-office/bilingual-black.webp"
+            },
+            "white": {
+              "svg": "the-private-office/bilingual-white.svg",
+              "pdf": "the-private-office/bilingual-white.pdf",
+              "png_2048": "the-private-office/bilingual-white-2048.png",
+              "webp": "the-private-office/bilingual-white.webp"
+            }
+          }
+        },
+        "arabic": {
+          "crop": [
+            1007.5,
+            499.5,
+            1090.5,
+            614.5
+          ],
+          "assets": {
+            "normal": {
+              "svg": "the-private-office/arabic-normal.svg",
+              "pdf": "the-private-office/arabic-normal.pdf",
+              "png_512": "the-private-office/arabic-normal-512.png",
+              "png_1024": "the-private-office/arabic-normal-1024.png",
+              "webp": "the-private-office/arabic-normal.webp",
+              "png_2048": "the-private-office/arabic-normal-2048.png"
+            },
+            "black": {
+              "svg": "the-private-office/arabic-black.svg",
+              "pdf": "the-private-office/arabic-black.pdf",
+              "png_2048": "the-private-office/arabic-black-2048.png",
+              "webp": "the-private-office/arabic-black.webp"
+            },
+            "white": {
+              "svg": "the-private-office/arabic-white.svg",
+              "pdf": "the-private-office/arabic-white.pdf",
+              "png_2048": "the-private-office/arabic-white-2048.png",
+              "webp": "the-private-office/arabic-white.webp"
+            }
+          }
+        }
+      }
+    },
+    {
+      "key": "the-general-secretariat-of-the-council-of-ministers",
+      "name_en": "The General Secretariat of the Council of Ministers",
+      "name_ar": "الأمانة العامة لمجلس الوزراء",
+      "company_id": null,
+      "slug": null,
+      "pdf_page": 25,
+      "printed_pages": [
+        48,
+        49
+      ],
+      "layouts": {
+        "bilingual": {
+          "crop": [
+            741.0,
+            672.0,
+            941.5,
+            760.5
+          ],
+          "assets": {
+            "normal": {
+              "svg": "the-general-secretariat-of-the-council-of-ministers/bilingual-normal.svg",
+              "pdf": "the-general-secretariat-of-the-council-of-ministers/bilingual-normal.pdf",
+              "png_512": "the-general-secretariat-of-the-council-of-ministers/bilingual-normal-512.png",
+              "png_1024": "the-general-secretariat-of-the-council-of-ministers/bilingual-normal-1024.png",
+              "webp": "the-general-secretariat-of-the-council-of-ministers/bilingual-normal.webp",
+              "png_2048": "the-general-secretariat-of-the-council-of-ministers/bilingual-normal-2048.png"
+            },
+            "black": {
+              "svg": "the-general-secretariat-of-the-council-of-ministers/bilingual-black.svg",
+              "pdf": "the-general-secretariat-of-the-council-of-ministers/bilingual-black.pdf",
+              "png_2048": "the-general-secretariat-of-the-council-of-ministers/bilingual-black-2048.png",
+              "webp": "the-general-secretariat-of-the-council-of-ministers/bilingual-black.webp"
+            },
+            "white": {
+              "svg": "the-general-secretariat-of-the-council-of-ministers/bilingual-white.svg",
+              "pdf": "the-general-secretariat-of-the-council-of-ministers/bilingual-white.pdf",
+              "png_2048": "the-general-secretariat-of-the-council-of-ministers/bilingual-white-2048.png",
+              "webp": "the-general-secretariat-of-the-council-of-ministers/bilingual-white.webp"
+            }
+          }
+        },
+        "arabic": {
+          "crop": [
+            977.5,
+            645.5,
+            1120.5,
+            760.0
+          ],
+          "assets": {
+            "normal": {
+              "svg": "the-general-secretariat-of-the-council-of-ministers/arabic-normal.svg",
+              "pdf": "the-general-secretariat-of-the-council-of-ministers/arabic-normal.pdf",
+              "png_512": "the-general-secretariat-of-the-council-of-ministers/arabic-normal-512.png",
+              "png_1024": "the-general-secretariat-of-the-council-of-ministers/arabic-normal-1024.png",
+              "webp": "the-general-secretariat-of-the-council-of-ministers/arabic-normal.webp",
+              "png_2048": "the-general-secretariat-of-the-council-of-ministers/arabic-normal-2048.png"
+            },
+            "black": {
+              "svg": "the-general-secretariat-of-the-council-of-ministers/arabic-black.svg",
+              "pdf": "the-general-secretariat-of-the-council-of-ministers/arabic-black.pdf",
+              "png_2048": "the-general-secretariat-of-the-council-of-ministers/arabic-black-2048.png",
+              "webp": "the-general-secretariat-of-the-council-of-ministers/arabic-black.webp"
+            },
+            "white": {
+              "svg": "the-general-secretariat-of-the-council-of-ministers/arabic-white.svg",
+              "pdf": "the-general-secretariat-of-the-council-of-ministers/arabic-white.pdf",
+              "png_2048": "the-general-secretariat-of-the-council-of-ministers/arabic-white-2048.png",
+              "webp": "the-general-secretariat-of-the-council-of-ministers/arabic-white.webp"
+            }
+          }
+        },
+        "international": {
+          "crop": [
+            903.5,
+            394.0,
+            1106.5,
+            486.0
+          ],
+          "assets": {
+            "normal": {
+              "svg": "the-general-secretariat-of-the-council-of-ministers/international-normal.svg",
+              "pdf": "the-general-secretariat-of-the-council-of-ministers/international-normal.pdf",
+              "png_512": "the-general-secretariat-of-the-council-of-ministers/international-normal-512.png",
+              "png_1024": "the-general-secretariat-of-the-council-of-ministers/international-normal-1024.png",
+              "webp": "the-general-secretariat-of-the-council-of-ministers/international-normal.webp",
+              "png_2048": "the-general-secretariat-of-the-council-of-ministers/international-normal-2048.png"
+            },
+            "black": {
+              "svg": "the-general-secretariat-of-the-council-of-ministers/international-black.svg",
+              "pdf": "the-general-secretariat-of-the-council-of-ministers/international-black.pdf",
+              "png_2048": "the-general-secretariat-of-the-council-of-ministers/international-black-2048.png",
+              "webp": "the-general-secretariat-of-the-council-of-ministers/international-black.webp"
+            },
+            "white": {
+              "svg": "the-general-secretariat-of-the-council-of-ministers/international-white.svg",
+              "pdf": "the-general-secretariat-of-the-council-of-ministers/international-white.pdf",
+              "png_2048": "the-general-secretariat-of-the-council-of-ministers/international-white-2048.png",
+              "webp": "the-general-secretariat-of-the-council-of-ministers/international-white.webp"
+            }
+          },
+          "pdf_page": 33,
+          "usage": "Outside the Sultanate of Oman only"
+        }
+      }
+    },
+    {
+      "key": "the-general-secretariat-for-the-national-celebrations",
+      "name_en": "The General Secretariat for the National Celebrations",
+      "name_ar": "الأمانة العامة للاحتفالات الوطنية",
+      "company_id": 2487,
+      "slug": "the-general-secretariat-for-the-national-celebrations-c038",
+      "pdf_page": 26,
+      "printed_pages": [
+        50,
+        51
+      ],
+      "layouts": {
+        "bilingual": {
+          "crop": [
+            74.0,
+            368.5,
+            311.5,
+            430.5
+          ],
+          "assets": {
+            "normal": {
+              "svg": "the-general-secretariat-for-the-national-celebrations/bilingual-normal.svg",
+              "pdf": "the-general-secretariat-for-the-national-celebrations/bilingual-normal.pdf",
+              "png_512": "the-general-secretariat-for-the-national-celebrations/bilingual-normal-512.png",
+              "png_1024": "the-general-secretariat-for-the-national-celebrations/bilingual-normal-1024.png",
+              "webp": "the-general-secretariat-for-the-national-celebrations/bilingual-normal.webp",
+              "png_2048": "the-general-secretariat-for-the-national-celebrations/bilingual-normal-2048.png"
+            },
+            "black": {
+              "svg": "the-general-secretariat-for-the-national-celebrations/bilingual-black.svg",
+              "pdf": "the-general-secretariat-for-the-national-celebrations/bilingual-black.pdf",
+              "png_2048": "the-general-secretariat-for-the-national-celebrations/bilingual-black-2048.png",
+              "webp": "the-general-secretariat-for-the-national-celebrations/bilingual-black.webp"
+            },
+            "white": {
+              "svg": "the-general-secretariat-for-the-national-celebrations/bilingual-white.svg",
+              "pdf": "the-general-secretariat-for-the-national-celebrations/bilingual-white.pdf",
+              "png_2048": "the-general-secretariat-for-the-national-celebrations/bilingual-white-2048.png",
+              "webp": "the-general-secretariat-for-the-national-celebrations/bilingual-white.webp"
+            }
+          }
+        },
+        "arabic": {
+          "crop": [
+            357.5,
+            342.5,
+            530.0,
+            430.0
+          ],
+          "assets": {
+            "normal": {
+              "svg": "the-general-secretariat-for-the-national-celebrations/arabic-normal.svg",
+              "pdf": "the-general-secretariat-for-the-national-celebrations/arabic-normal.pdf",
+              "png_512": "the-general-secretariat-for-the-national-celebrations/arabic-normal-512.png",
+              "png_1024": "the-general-secretariat-for-the-national-celebrations/arabic-normal-1024.png",
+              "webp": "the-general-secretariat-for-the-national-celebrations/arabic-normal.webp",
+              "png_2048": "the-general-secretariat-for-the-national-celebrations/arabic-normal-2048.png"
+            },
+            "black": {
+              "svg": "the-general-secretariat-for-the-national-celebrations/arabic-black.svg",
+              "pdf": "the-general-secretariat-for-the-national-celebrations/arabic-black.pdf",
+              "png_2048": "the-general-secretariat-for-the-national-celebrations/arabic-black-2048.png",
+              "webp": "the-general-secretariat-for-the-national-celebrations/arabic-black.webp"
+            },
+            "white": {
+              "svg": "the-general-secretariat-for-the-national-celebrations/arabic-white.svg",
+              "pdf": "the-general-secretariat-for-the-national-celebrations/arabic-white.pdf",
+              "png_2048": "the-general-secretariat-for-the-national-celebrations/arabic-white-2048.png",
+              "webp": "the-general-secretariat-for-the-national-celebrations/arabic-white.webp"
+            }
+          }
+        }
+      }
+    },
+    {
+      "key": "oman-vision-2040-implementation-follow-up-unit",
+      "name_en": "Oman Vision 2040 Implementation Follow-Up Unit",
+      "name_ar": "وحدة متابعة تنفيذ رؤية عُمان 2040",
+      "company_id": 2472,
+      "slug": "oman-vision-2040-implementation-follow-up-unit-ca1e",
+      "pdf_page": 26,
+      "printed_pages": [
+        50,
+        51
+      ],
+      "layouts": {
+        "bilingual": {
+          "crop": [
+            34.5,
+            534.0,
+            311.5,
+            596.0
+          ],
+          "assets": {
+            "normal": {
+              "svg": "oman-vision-2040-implementation-follow-up-unit/bilingual-normal.svg",
+              "pdf": "oman-vision-2040-implementation-follow-up-unit/bilingual-normal.pdf",
+              "png_512": "oman-vision-2040-implementation-follow-up-unit/bilingual-normal-512.png",
+              "png_1024": "oman-vision-2040-implementation-follow-up-unit/bilingual-normal-1024.png",
+              "webp": "oman-vision-2040-implementation-follow-up-unit/bilingual-normal.webp",
+              "png_2048": "oman-vision-2040-implementation-follow-up-unit/bilingual-normal-2048.png"
+            },
+            "black": {
+              "svg": "oman-vision-2040-implementation-follow-up-unit/bilingual-black.svg",
+              "pdf": "oman-vision-2040-implementation-follow-up-unit/bilingual-black.pdf",
+              "png_2048": "oman-vision-2040-implementation-follow-up-unit/bilingual-black-2048.png",
+              "webp": "oman-vision-2040-implementation-follow-up-unit/bilingual-black.webp"
+            },
+            "white": {
+              "svg": "oman-vision-2040-implementation-follow-up-unit/bilingual-white.svg",
+              "pdf": "oman-vision-2040-implementation-follow-up-unit/bilingual-white.pdf",
+              "png_2048": "oman-vision-2040-implementation-follow-up-unit/bilingual-white-2048.png",
+              "webp": "oman-vision-2040-implementation-follow-up-unit/bilingual-white.webp"
+            }
+          }
+        },
+        "arabic": {
+          "crop": [
+            384.5,
+            486.0,
+            503.0,
+            594.5
+          ],
+          "assets": {
+            "normal": {
+              "svg": "oman-vision-2040-implementation-follow-up-unit/arabic-normal.svg",
+              "pdf": "oman-vision-2040-implementation-follow-up-unit/arabic-normal.pdf",
+              "png_512": "oman-vision-2040-implementation-follow-up-unit/arabic-normal-512.png",
+              "png_1024": "oman-vision-2040-implementation-follow-up-unit/arabic-normal-1024.png",
+              "webp": "oman-vision-2040-implementation-follow-up-unit/arabic-normal.webp",
+              "png_2048": "oman-vision-2040-implementation-follow-up-unit/arabic-normal-2048.png"
+            },
+            "black": {
+              "svg": "oman-vision-2040-implementation-follow-up-unit/arabic-black.svg",
+              "pdf": "oman-vision-2040-implementation-follow-up-unit/arabic-black.pdf",
+              "png_2048": "oman-vision-2040-implementation-follow-up-unit/arabic-black-2048.png",
+              "webp": "oman-vision-2040-implementation-follow-up-unit/arabic-black.webp"
+            },
+            "white": {
+              "svg": "oman-vision-2040-implementation-follow-up-unit/arabic-white.svg",
+              "pdf": "oman-vision-2040-implementation-follow-up-unit/arabic-white.pdf",
+              "png_2048": "oman-vision-2040-implementation-follow-up-unit/arabic-white-2048.png",
+              "webp": "oman-vision-2040-implementation-follow-up-unit/arabic-white.webp"
+            }
+          }
+        }
+      }
+    },
+    {
+      "key": "ministry-of-culture-sports-and-youth",
+      "name_en": "Ministry of Culture, Sports and Youth",
+      "name_ar": "وزارة الثقافة والرياضة والشباب",
+      "company_id": 2479,
+      "slug": "ministry-of-culture-sports-and-youth-3f2c",
+      "pdf_page": 26,
+      "printed_pages": [
+        50,
+        51
+      ],
+      "layouts": {
+        "bilingual": {
+          "crop": [
+            90.0,
+            659.5,
+            311.0,
+            721.5
+          ],
+          "assets": {
+            "normal": {
+              "svg": "ministry-of-culture-sports-and-youth/bilingual-normal.svg",
+              "pdf": "ministry-of-culture-sports-and-youth/bilingual-normal.pdf",
+              "png_512": "ministry-of-culture-sports-and-youth/bilingual-normal-512.png",
+              "png_1024": "ministry-of-culture-sports-and-youth/bilingual-normal-1024.png",
+              "webp": "ministry-of-culture-sports-and-youth/bilingual-normal.webp",
+              "png_2048": "ministry-of-culture-sports-and-youth/bilingual-normal-2048.png"
+            },
+            "black": {
+              "svg": "ministry-of-culture-sports-and-youth/bilingual-black.svg",
+              "pdf": "ministry-of-culture-sports-and-youth/bilingual-black.pdf",
+              "png_2048": "ministry-of-culture-sports-and-youth/bilingual-black-2048.png",
+              "webp": "ministry-of-culture-sports-and-youth/bilingual-black.webp"
+            },
+            "white": {
+              "svg": "ministry-of-culture-sports-and-youth/bilingual-white.svg",
+              "pdf": "ministry-of-culture-sports-and-youth/bilingual-white.pdf",
+              "png_2048": "ministry-of-culture-sports-and-youth/bilingual-white-2048.png",
+              "webp": "ministry-of-culture-sports-and-youth/bilingual-white.webp"
+            }
+          }
+        },
+        "arabic": {
+          "crop": [
+            362.5,
+            635.0,
+            525.0,
+            721.0
+          ],
+          "assets": {
+            "normal": {
+              "svg": "ministry-of-culture-sports-and-youth/arabic-normal.svg",
+              "pdf": "ministry-of-culture-sports-and-youth/arabic-normal.pdf",
+              "png_512": "ministry-of-culture-sports-and-youth/arabic-normal-512.png",
+              "png_1024": "ministry-of-culture-sports-and-youth/arabic-normal-1024.png",
+              "webp": "ministry-of-culture-sports-and-youth/arabic-normal.webp",
+              "png_2048": "ministry-of-culture-sports-and-youth/arabic-normal-2048.png"
+            },
+            "black": {
+              "svg": "ministry-of-culture-sports-and-youth/arabic-black.svg",
+              "pdf": "ministry-of-culture-sports-and-youth/arabic-black.pdf",
+              "png_2048": "ministry-of-culture-sports-and-youth/arabic-black-2048.png",
+              "webp": "ministry-of-culture-sports-and-youth/arabic-black.webp"
+            },
+            "white": {
+              "svg": "ministry-of-culture-sports-and-youth/arabic-white.svg",
+              "pdf": "ministry-of-culture-sports-and-youth/arabic-white.pdf",
+              "png_2048": "ministry-of-culture-sports-and-youth/arabic-white-2048.png",
+              "webp": "ministry-of-culture-sports-and-youth/arabic-white.webp"
+            }
+          }
+        }
+      }
+    },
+    {
+      "key": "ministry-of-interior",
+      "name_en": "Ministry of Interior",
+      "name_ar": "وزارة الداخلية",
+      "company_id": 2490,
+      "slug": "ministry-of-interior-c2d0",
+      "pdf_page": 26,
+      "printed_pages": [
+        50,
+        51
+      ],
+      "layouts": {
+        "bilingual": {
+          "crop": [
+            754.5,
+            368.5,
+            903.0,
+            430.5
+          ],
+          "assets": {
+            "normal": {
+              "svg": "ministry-of-interior/bilingual-normal.svg",
+              "pdf": "ministry-of-interior/bilingual-normal.pdf",
+              "png_512": "ministry-of-interior/bilingual-normal-512.png",
+              "png_1024": "ministry-of-interior/bilingual-normal-1024.png",
+              "webp": "ministry-of-interior/bilingual-normal.webp",
+              "png_2048": "ministry-of-interior/bilingual-normal-2048.png"
+            },
+            "black": {
+              "svg": "ministry-of-interior/bilingual-black.svg",
+              "pdf": "ministry-of-interior/bilingual-black.pdf",
+              "png_2048": "ministry-of-interior/bilingual-black-2048.png",
+              "webp": "ministry-of-interior/bilingual-black.webp"
+            },
+            "white": {
+              "svg": "ministry-of-interior/bilingual-white.svg",
+              "pdf": "ministry-of-interior/bilingual-white.pdf",
+              "png_2048": "ministry-of-interior/bilingual-white-2048.png",
+              "webp": "ministry-of-interior/bilingual-white.webp"
+            }
+          }
+        },
+        "arabic": {
+          "crop": [
+            1006.0,
+            340.5,
+            1088.5,
+            430.0
+          ],
+          "assets": {
+            "normal": {
+              "svg": "ministry-of-interior/arabic-normal.svg",
+              "pdf": "ministry-of-interior/arabic-normal.pdf",
+              "png_512": "ministry-of-interior/arabic-normal-512.png",
+              "png_1024": "ministry-of-interior/arabic-normal-1024.png",
+              "webp": "ministry-of-interior/arabic-normal.webp",
+              "png_2048": "ministry-of-interior/arabic-normal-2048.png"
+            },
+            "black": {
+              "svg": "ministry-of-interior/arabic-black.svg",
+              "pdf": "ministry-of-interior/arabic-black.pdf",
+              "png_2048": "ministry-of-interior/arabic-black-2048.png",
+              "webp": "ministry-of-interior/arabic-black.webp"
+            },
+            "white": {
+              "svg": "ministry-of-interior/arabic-white.svg",
+              "pdf": "ministry-of-interior/arabic-white.pdf",
+              "png_2048": "ministry-of-interior/arabic-white-2048.png",
+              "webp": "ministry-of-interior/arabic-white.webp"
+            }
+          }
+        }
+      }
+    },
+    {
+      "key": "ministry-of-foreign-affairs",
+      "name_en": "Ministry of Foreign Affairs",
+      "name_ar": "وزارة الخارجية",
+      "company_id": 2481,
+      "slug": "ministry-of-foreign-affairs-a119",
+      "pdf_page": 26,
+      "printed_pages": [
+        50,
+        51
+      ],
+      "layouts": {
+        "bilingual": {
+          "crop": [
+            749.0,
+            533.0,
+            904.0,
+            595.0
+          ],
+          "assets": {
+            "normal": {
+              "svg": "ministry-of-foreign-affairs/bilingual-normal.svg",
+              "pdf": "ministry-of-foreign-affairs/bilingual-normal.pdf",
+              "png_512": "ministry-of-foreign-affairs/bilingual-normal-512.png",
+              "png_1024": "ministry-of-foreign-affairs/bilingual-normal-1024.png",
+              "webp": "ministry-of-foreign-affairs/bilingual-normal.webp",
+              "png_2048": "ministry-of-foreign-affairs/bilingual-normal-2048.png"
+            },
+            "black": {
+              "svg": "ministry-of-foreign-affairs/bilingual-black.svg",
+              "pdf": "ministry-of-foreign-affairs/bilingual-black.pdf",
+              "png_2048": "ministry-of-foreign-affairs/bilingual-black-2048.png",
+              "webp": "ministry-of-foreign-affairs/bilingual-black.webp"
+            },
+            "white": {
+              "svg": "ministry-of-foreign-affairs/bilingual-white.svg",
+              "pdf": "ministry-of-foreign-affairs/bilingual-white.pdf",
+              "png_2048": "ministry-of-foreign-affairs/bilingual-white-2048.png",
+              "webp": "ministry-of-foreign-affairs/bilingual-white.webp"
+            }
+          }
+        },
+        "arabic": {
+          "crop": [
+            1002.0,
+            507.0,
+            1092.5,
+            594.5
+          ],
+          "assets": {
+            "normal": {
+              "svg": "ministry-of-foreign-affairs/arabic-normal.svg",
+              "pdf": "ministry-of-foreign-affairs/arabic-normal.pdf",
+              "png_512": "ministry-of-foreign-affairs/arabic-normal-512.png",
+              "png_1024": "ministry-of-foreign-affairs/arabic-normal-1024.png",
+              "webp": "ministry-of-foreign-affairs/arabic-normal.webp",
+              "png_2048": "ministry-of-foreign-affairs/arabic-normal-2048.png"
+            },
+            "black": {
+              "svg": "ministry-of-foreign-affairs/arabic-black.svg",
+              "pdf": "ministry-of-foreign-affairs/arabic-black.pdf",
+              "png_2048": "ministry-of-foreign-affairs/arabic-black-2048.png",
+              "webp": "ministry-of-foreign-affairs/arabic-black.webp"
+            },
+            "white": {
+              "svg": "ministry-of-foreign-affairs/arabic-white.svg",
+              "pdf": "ministry-of-foreign-affairs/arabic-white.pdf",
+              "png_2048": "ministry-of-foreign-affairs/arabic-white-2048.png",
+              "webp": "ministry-of-foreign-affairs/arabic-white.webp"
+            }
+          }
+        },
+        "international": {
+          "crop": [
+            705.5,
+            283.5,
+            867.5,
+            346.5
+          ],
+          "assets": {
+            "normal": {
+              "svg": "ministry-of-foreign-affairs/international-normal.svg",
+              "pdf": "ministry-of-foreign-affairs/international-normal.pdf",
+              "png_512": "ministry-of-foreign-affairs/international-normal-512.png",
+              "png_1024": "ministry-of-foreign-affairs/international-normal-1024.png",
+              "webp": "ministry-of-foreign-affairs/international-normal.webp",
+              "png_2048": "ministry-of-foreign-affairs/international-normal-2048.png"
+            },
+            "black": {
+              "svg": "ministry-of-foreign-affairs/international-black.svg",
+              "pdf": "ministry-of-foreign-affairs/international-black.pdf",
+              "png_2048": "ministry-of-foreign-affairs/international-black-2048.png",
+              "webp": "ministry-of-foreign-affairs/international-black.webp"
+            },
+            "white": {
+              "svg": "ministry-of-foreign-affairs/international-white.svg",
+              "pdf": "ministry-of-foreign-affairs/international-white.pdf",
+              "png_2048": "ministry-of-foreign-affairs/international-white-2048.png",
+              "webp": "ministry-of-foreign-affairs/international-white.webp"
+            }
+          },
+          "pdf_page": 33,
+          "usage": "Outside the Sultanate of Oman only"
+        }
+      }
+    },
+    {
+      "key": "ministry-of-finance",
+      "name_en": "Ministry of Finance",
+      "name_ar": "وزارة المالية",
+      "company_id": 2431,
+      "slug": "ministry-of-finance-91b1",
+      "pdf_page": 26,
+      "printed_pages": [
+        50,
+        51
+      ],
+      "layouts": {
+        "bilingual": {
+          "crop": [
+            756.5,
+            660.5,
+            903.5,
+            722.5
+          ],
+          "assets": {
+            "normal": {
+              "svg": "ministry-of-finance/bilingual-normal.svg",
+              "pdf": "ministry-of-finance/bilingual-normal.pdf",
+              "png_512": "ministry-of-finance/bilingual-normal-512.png",
+              "png_1024": "ministry-of-finance/bilingual-normal-1024.png",
+              "webp": "ministry-of-finance/bilingual-normal.webp",
+              "png_2048": "ministry-of-finance/bilingual-normal-2048.png"
+            },
+            "black": {
+              "svg": "ministry-of-finance/bilingual-black.svg",
+              "pdf": "ministry-of-finance/bilingual-black.pdf",
+              "png_2048": "ministry-of-finance/bilingual-black-2048.png",
+              "webp": "ministry-of-finance/bilingual-black.webp"
+            },
+            "white": {
+              "svg": "ministry-of-finance/bilingual-white.svg",
+              "pdf": "ministry-of-finance/bilingual-white.pdf",
+              "png_2048": "ministry-of-finance/bilingual-white-2048.png",
+              "webp": "ministry-of-finance/bilingual-white.webp"
+            }
+          }
+        },
+        "arabic": {
+          "crop": [
+            1011.0,
+            635.0,
+            1083.5,
+            721.0
+          ],
+          "assets": {
+            "normal": {
+              "svg": "ministry-of-finance/arabic-normal.svg",
+              "pdf": "ministry-of-finance/arabic-normal.pdf",
+              "png_512": "ministry-of-finance/arabic-normal-512.png",
+              "png_1024": "ministry-of-finance/arabic-normal-1024.png",
+              "webp": "ministry-of-finance/arabic-normal.webp",
+              "png_2048": "ministry-of-finance/arabic-normal-2048.png"
+            },
+            "black": {
+              "svg": "ministry-of-finance/arabic-black.svg",
+              "pdf": "ministry-of-finance/arabic-black.pdf",
+              "png_2048": "ministry-of-finance/arabic-black-2048.png",
+              "webp": "ministry-of-finance/arabic-black.webp"
+            },
+            "white": {
+              "svg": "ministry-of-finance/arabic-white.svg",
+              "pdf": "ministry-of-finance/arabic-white.pdf",
+              "png_2048": "ministry-of-finance/arabic-white-2048.png",
+              "webp": "ministry-of-finance/arabic-white.webp"
+            }
+          }
+        }
+      }
+    },
+    {
+      "key": "ministry-of-heritage-and-tourism",
+      "name_en": "Ministry of Heritage and Tourism",
+      "name_ar": "وزارة التراث والسياحة",
+      "company_id": 2475,
+      "slug": "ministry-of-heritage-and-tourism-9bdd",
+      "pdf_page": 27,
+      "printed_pages": [
+        52,
+        53
+      ],
+      "layouts": {
+        "bilingual": {
+          "crop": [
+            131.5,
+            206.0,
+            335.5,
+            268.0
+          ],
+          "assets": {
+            "normal": {
+              "svg": "ministry-of-heritage-and-tourism/bilingual-normal.svg",
+              "pdf": "ministry-of-heritage-and-tourism/bilingual-normal.pdf",
+              "png_512": "ministry-of-heritage-and-tourism/bilingual-normal-512.png",
+              "png_1024": "ministry-of-heritage-and-tourism/bilingual-normal-1024.png",
+              "webp": "ministry-of-heritage-and-tourism/bilingual-normal.webp",
+              "png_2048": "ministry-of-heritage-and-tourism/bilingual-normal-2048.png"
+            },
+            "black": {
+              "svg": "ministry-of-heritage-and-tourism/bilingual-black.svg",
+              "pdf": "ministry-of-heritage-and-tourism/bilingual-black.pdf",
+              "png_2048": "ministry-of-heritage-and-tourism/bilingual-black-2048.png",
+              "webp": "ministry-of-heritage-and-tourism/bilingual-black.webp"
+            },
+            "white": {
+              "svg": "ministry-of-heritage-and-tourism/bilingual-white.svg",
+              "pdf": "ministry-of-heritage-and-tourism/bilingual-white.pdf",
+              "png_2048": "ministry-of-heritage-and-tourism/bilingual-white-2048.png",
+              "webp": "ministry-of-heritage-and-tourism/bilingual-white.webp"
+            }
+          }
+        },
+        "arabic": {
+          "crop": [
+            405.0,
+            181.0,
+            515.0,
+            267.5
+          ],
+          "assets": {
+            "normal": {
+              "svg": "ministry-of-heritage-and-tourism/arabic-normal.svg",
+              "pdf": "ministry-of-heritage-and-tourism/arabic-normal.pdf",
+              "png_512": "ministry-of-heritage-and-tourism/arabic-normal-512.png",
+              "png_1024": "ministry-of-heritage-and-tourism/arabic-normal-1024.png",
+              "webp": "ministry-of-heritage-and-tourism/arabic-normal.webp",
+              "png_2048": "ministry-of-heritage-and-tourism/arabic-normal-2048.png"
+            },
+            "black": {
+              "svg": "ministry-of-heritage-and-tourism/arabic-black.svg",
+              "pdf": "ministry-of-heritage-and-tourism/arabic-black.pdf",
+              "png_2048": "ministry-of-heritage-and-tourism/arabic-black-2048.png",
+              "webp": "ministry-of-heritage-and-tourism/arabic-black.webp"
+            },
+            "white": {
+              "svg": "ministry-of-heritage-and-tourism/arabic-white.svg",
+              "pdf": "ministry-of-heritage-and-tourism/arabic-white.pdf",
+              "png_2048": "ministry-of-heritage-and-tourism/arabic-white-2048.png",
+              "webp": "ministry-of-heritage-and-tourism/arabic-white.webp"
+            }
+          }
+        }
+      }
+    },
+    {
+      "key": "ministry-of-agriculture-fisheries-and-water-resources",
+      "name_en": "Ministry of Agriculture, Fisheries and Water Resources",
+      "name_ar": "وزارة الثروة الزراعية والسمكية وموارد المياه",
+      "company_id": 2480,
+      "slug": "ministry-of-agriculture-fisheries-and-water-resources-0097",
+      "pdf_page": 27,
+      "printed_pages": [
+        52,
+        53
+      ],
+      "layouts": {
+        "bilingual": {
+          "crop": [
+            48.0,
+            372.5,
+            334.5,
+            435.0
+          ],
+          "assets": {
+            "normal": {
+              "svg": "ministry-of-agriculture-fisheries-and-water-resources/bilingual-normal.svg",
+              "pdf": "ministry-of-agriculture-fisheries-and-water-resources/bilingual-normal.pdf",
+              "png_512": "ministry-of-agriculture-fisheries-and-water-resources/bilingual-normal-512.png",
+              "png_1024": "ministry-of-agriculture-fisheries-and-water-resources/bilingual-normal-1024.png",
+              "webp": "ministry-of-agriculture-fisheries-and-water-resources/bilingual-normal.webp",
+              "png_2048": "ministry-of-agriculture-fisheries-and-water-resources/bilingual-normal-2048.png"
+            },
+            "black": {
+              "svg": "ministry-of-agriculture-fisheries-and-water-resources/bilingual-black.svg",
+              "pdf": "ministry-of-agriculture-fisheries-and-water-resources/bilingual-black.pdf",
+              "png_2048": "ministry-of-agriculture-fisheries-and-water-resources/bilingual-black-2048.png",
+              "webp": "ministry-of-agriculture-fisheries-and-water-resources/bilingual-black.webp"
+            },
+            "white": {
+              "svg": "ministry-of-agriculture-fisheries-and-water-resources/bilingual-white.svg",
+              "pdf": "ministry-of-agriculture-fisheries-and-water-resources/bilingual-white.pdf",
+              "png_2048": "ministry-of-agriculture-fisheries-and-water-resources/bilingual-white-2048.png",
+              "webp": "ministry-of-agriculture-fisheries-and-water-resources/bilingual-white.webp"
+            }
+          }
+        },
+        "arabic": {
+          "crop": [
+            399.5,
+            326.5,
+            520.5,
+            433.5
+          ],
+          "assets": {
+            "normal": {
+              "svg": "ministry-of-agriculture-fisheries-and-water-resources/arabic-normal.svg",
+              "pdf": "ministry-of-agriculture-fisheries-and-water-resources/arabic-normal.pdf",
+              "png_512": "ministry-of-agriculture-fisheries-and-water-resources/arabic-normal-512.png",
+              "png_1024": "ministry-of-agriculture-fisheries-and-water-resources/arabic-normal-1024.png",
+              "webp": "ministry-of-agriculture-fisheries-and-water-resources/arabic-normal.webp",
+              "png_2048": "ministry-of-agriculture-fisheries-and-water-resources/arabic-normal-2048.png"
+            },
+            "black": {
+              "svg": "ministry-of-agriculture-fisheries-and-water-resources/arabic-black.svg",
+              "pdf": "ministry-of-agriculture-fisheries-and-water-resources/arabic-black.pdf",
+              "png_2048": "ministry-of-agriculture-fisheries-and-water-resources/arabic-black-2048.png",
+              "webp": "ministry-of-agriculture-fisheries-and-water-resources/arabic-black.webp"
+            },
+            "white": {
+              "svg": "ministry-of-agriculture-fisheries-and-water-resources/arabic-white.svg",
+              "pdf": "ministry-of-agriculture-fisheries-and-water-resources/arabic-white.pdf",
+              "png_2048": "ministry-of-agriculture-fisheries-and-water-resources/arabic-white-2048.png",
+              "webp": "ministry-of-agriculture-fisheries-and-water-resources/arabic-white.webp"
+            }
+          }
+        }
+      }
+    },
+    {
+      "key": "ministry-of-housing-and-urban-planning",
+      "name_en": "Ministry of Housing and Urban Planning",
+      "name_ar": "وزارة الإسكان والتخطيط العمراني",
+      "company_id": 2467,
+      "slug": "ministry-of-housing-and-urban-planning-5eb6",
+      "pdf_page": 27,
+      "printed_pages": [
+        52,
+        53
+      ],
+      "layouts": {
+        "bilingual": {
+          "crop": [
+            102.0,
+            532.5,
+            335.5,
+            594.5
+          ],
+          "assets": {
+            "normal": {
+              "svg": "ministry-of-housing-and-urban-planning/bilingual-normal.svg",
+              "pdf": "ministry-of-housing-and-urban-planning/bilingual-normal.pdf",
+              "png_512": "ministry-of-housing-and-urban-planning/bilingual-normal-512.png",
+              "png_1024": "ministry-of-housing-and-urban-planning/bilingual-normal-1024.png",
+              "webp": "ministry-of-housing-and-urban-planning/bilingual-normal.webp",
+              "png_2048": "ministry-of-housing-and-urban-planning/bilingual-normal-2048.png"
+            },
+            "black": {
+              "svg": "ministry-of-housing-and-urban-planning/bilingual-black.svg",
+              "pdf": "ministry-of-housing-and-urban-planning/bilingual-black.pdf",
+              "png_2048": "ministry-of-housing-and-urban-planning/bilingual-black-2048.png",
+              "webp": "ministry-of-housing-and-urban-planning/bilingual-black.webp"
+            },
+            "white": {
+              "svg": "ministry-of-housing-and-urban-planning/bilingual-white.svg",
+              "pdf": "ministry-of-housing-and-urban-planning/bilingual-white.pdf",
+              "png_2048": "ministry-of-housing-and-urban-planning/bilingual-white-2048.png",
+              "webp": "ministry-of-housing-and-urban-planning/bilingual-white.webp"
+            }
+          }
+        },
+        "arabic": {
+          "crop": [
+            376.5,
+            505.5,
+            544.0,
+            594.0
+          ],
+          "assets": {
+            "normal": {
+              "svg": "ministry-of-housing-and-urban-planning/arabic-normal.svg",
+              "pdf": "ministry-of-housing-and-urban-planning/arabic-normal.pdf",
+              "png_512": "ministry-of-housing-and-urban-planning/arabic-normal-512.png",
+              "png_1024": "ministry-of-housing-and-urban-planning/arabic-normal-1024.png",
+              "webp": "ministry-of-housing-and-urban-planning/arabic-normal.webp",
+              "png_2048": "ministry-of-housing-and-urban-planning/arabic-normal-2048.png"
+            },
+            "black": {
+              "svg": "ministry-of-housing-and-urban-planning/arabic-black.svg",
+              "pdf": "ministry-of-housing-and-urban-planning/arabic-black.pdf",
+              "png_2048": "ministry-of-housing-and-urban-planning/arabic-black-2048.png",
+              "webp": "ministry-of-housing-and-urban-planning/arabic-black.webp"
+            },
+            "white": {
+              "svg": "ministry-of-housing-and-urban-planning/arabic-white.svg",
+              "pdf": "ministry-of-housing-and-urban-planning/arabic-white.pdf",
+              "png_2048": "ministry-of-housing-and-urban-planning/arabic-white-2048.png",
+              "webp": "ministry-of-housing-and-urban-planning/arabic-white.webp"
+            }
+          }
+        }
+      }
+    },
+    {
+      "key": "ministry-of-justice-and-legal-affairs",
+      "name_en": "Ministry of Justice and Legal Affairs",
+      "name_ar": "وزارة العدل والشؤون القانونية",
+      "company_id": 2484,
+      "slug": "ministry-of-justice-and-legal-affairs-e17b",
+      "pdf_page": 27,
+      "printed_pages": [
+        52,
+        53
+      ],
+      "layouts": {
+        "bilingual": {
+          "crop": [
+            696.0,
+            206.0,
+            909.0,
+            268.0
+          ],
+          "assets": {
+            "normal": {
+              "svg": "ministry-of-justice-and-legal-affairs/bilingual-normal.svg",
+              "pdf": "ministry-of-justice-and-legal-affairs/bilingual-normal.pdf",
+              "png_512": "ministry-of-justice-and-legal-affairs/bilingual-normal-512.png",
+              "png_1024": "ministry-of-justice-and-legal-affairs/bilingual-normal-1024.png",
+              "webp": "ministry-of-justice-and-legal-affairs/bilingual-normal.webp",
+              "png_2048": "ministry-of-justice-and-legal-affairs/bilingual-normal-2048.png"
+            },
+            "black": {
+              "svg": "ministry-of-justice-and-legal-affairs/bilingual-black.svg",
+              "pdf": "ministry-of-justice-and-legal-affairs/bilingual-black.pdf",
+              "png_2048": "ministry-of-justice-and-legal-affairs/bilingual-black-2048.png",
+              "webp": "ministry-of-justice-and-legal-affairs/bilingual-black.webp"
+            },
+            "white": {
+              "svg": "ministry-of-justice-and-legal-affairs/bilingual-white.svg",
+              "pdf": "ministry-of-justice-and-legal-affairs/bilingual-white.pdf",
+              "png_2048": "ministry-of-justice-and-legal-affairs/bilingual-white-2048.png",
+              "webp": "ministry-of-justice-and-legal-affairs/bilingual-white.webp"
+            }
+          }
+        },
+        "arabic": {
+          "crop": [
+            971.0,
+            180.5,
+            1120.0,
+            267.5
+          ],
+          "assets": {
+            "normal": {
+              "svg": "ministry-of-justice-and-legal-affairs/arabic-normal.svg",
+              "pdf": "ministry-of-justice-and-legal-affairs/arabic-normal.pdf",
+              "png_512": "ministry-of-justice-and-legal-affairs/arabic-normal-512.png",
+              "png_1024": "ministry-of-justice-and-legal-affairs/arabic-normal-1024.png",
+              "webp": "ministry-of-justice-and-legal-affairs/arabic-normal.webp",
+              "png_2048": "ministry-of-justice-and-legal-affairs/arabic-normal-2048.png"
+            },
+            "black": {
+              "svg": "ministry-of-justice-and-legal-affairs/arabic-black.svg",
+              "pdf": "ministry-of-justice-and-legal-affairs/arabic-black.pdf",
+              "png_2048": "ministry-of-justice-and-legal-affairs/arabic-black-2048.png",
+              "webp": "ministry-of-justice-and-legal-affairs/arabic-black.webp"
+            },
+            "white": {
+              "svg": "ministry-of-justice-and-legal-affairs/arabic-white.svg",
+              "pdf": "ministry-of-justice-and-legal-affairs/arabic-white.pdf",
+              "png_2048": "ministry-of-justice-and-legal-affairs/arabic-white-2048.png",
+              "webp": "ministry-of-justice-and-legal-affairs/arabic-white.webp"
+            }
+          }
+        }
+      }
+    },
+    {
+      "key": "ministry-of-labour",
+      "name_en": "Ministry of Labour",
+      "name_ar": "وزارة العمل",
+      "company_id": 2485,
+      "slug": "ministry-of-labour-ee36",
+      "pdf_page": 27,
+      "printed_pages": [
+        52,
+        53
+      ],
+      "layouts": {
+        "bilingual": {
+          "crop": [
+            764.0,
+            372.5,
+            909.0,
+            434.5
+          ],
+          "assets": {
+            "normal": {
+              "svg": "ministry-of-labour/bilingual-normal.svg",
+              "pdf": "ministry-of-labour/bilingual-normal.pdf",
+              "png_512": "ministry-of-labour/bilingual-normal-512.png",
+              "png_1024": "ministry-of-labour/bilingual-normal-1024.png",
+              "webp": "ministry-of-labour/bilingual-normal.webp",
+              "png_2048": "ministry-of-labour/bilingual-normal-2048.png"
+            },
+            "black": {
+              "svg": "ministry-of-labour/bilingual-black.svg",
+              "pdf": "ministry-of-labour/bilingual-black.pdf",
+              "png_2048": "ministry-of-labour/bilingual-black-2048.png",
+              "webp": "ministry-of-labour/bilingual-black.webp"
+            },
+            "white": {
+              "svg": "ministry-of-labour/bilingual-white.svg",
+              "pdf": "ministry-of-labour/bilingual-white.pdf",
+              "png_2048": "ministry-of-labour/bilingual-white-2048.png",
+              "webp": "ministry-of-labour/bilingual-white.webp"
+            }
+          }
+        },
+        "arabic": {
+          "crop": [
+            1009.0,
+            346.5,
+            1082.5,
+            433.5
+          ],
+          "assets": {
+            "normal": {
+              "svg": "ministry-of-labour/arabic-normal.svg",
+              "pdf": "ministry-of-labour/arabic-normal.pdf",
+              "png_512": "ministry-of-labour/arabic-normal-512.png",
+              "png_1024": "ministry-of-labour/arabic-normal-1024.png",
+              "webp": "ministry-of-labour/arabic-normal.webp",
+              "png_2048": "ministry-of-labour/arabic-normal-2048.png"
+            },
+            "black": {
+              "svg": "ministry-of-labour/arabic-black.svg",
+              "pdf": "ministry-of-labour/arabic-black.pdf",
+              "png_2048": "ministry-of-labour/arabic-black-2048.png",
+              "webp": "ministry-of-labour/arabic-black.webp"
+            },
+            "white": {
+              "svg": "ministry-of-labour/arabic-white.svg",
+              "pdf": "ministry-of-labour/arabic-white.pdf",
+              "png_2048": "ministry-of-labour/arabic-white-2048.png",
+              "webp": "ministry-of-labour/arabic-white.webp"
+            }
+          }
+        }
+      }
+    },
+    {
+      "key": "ministry-of-transport-communications-and-information-technology",
+      "name_en": "Ministry of Transport, Communications and Information Technology",
+      "name_ar": "وزارة النقل والاتصالات وتقنية المعلومات",
+      "company_id": 2486,
+      "slug": "ministry-of-transport-communications-and-information-technology-3b25",
+      "pdf_page": 27,
+      "printed_pages": [
+        52,
+        53
+      ],
+      "layouts": {
+        "bilingual": {
+          "crop": [
+            656.5,
+            530.5,
+            909.0,
+            594.0
+          ],
+          "assets": {
+            "normal": {
+              "svg": "ministry-of-transport-communications-and-information-technology/bilingual-normal.svg",
+              "pdf": "ministry-of-transport-communications-and-information-technology/bilingual-normal.pdf",
+              "png_512": "ministry-of-transport-communications-and-information-technology/bilingual-normal-512.png",
+              "png_1024": "ministry-of-transport-communications-and-information-technology/bilingual-normal-1024.png",
+              "webp": "ministry-of-transport-communications-and-information-technology/bilingual-normal.webp",
+              "png_2048": "ministry-of-transport-communications-and-information-technology/bilingual-normal-2048.png"
+            },
+            "black": {
+              "svg": "ministry-of-transport-communications-and-information-technology/bilingual-black.svg",
+              "pdf": "ministry-of-transport-communications-and-information-technology/bilingual-black.pdf",
+              "png_2048": "ministry-of-transport-communications-and-information-technology/bilingual-black-2048.png",
+              "webp": "ministry-of-transport-communications-and-information-technology/bilingual-black.webp"
+            },
+            "white": {
+              "svg": "ministry-of-transport-communications-and-information-technology/bilingual-white.svg",
+              "pdf": "ministry-of-transport-communications-and-information-technology/bilingual-white.pdf",
+              "png_2048": "ministry-of-transport-communications-and-information-technology/bilingual-white-2048.png",
+              "webp": "ministry-of-transport-communications-and-information-technology/bilingual-white.webp"
+            }
+          }
+        },
+        "arabic": {
+          "crop": [
+            984.5,
+            484.0,
+            1107.0,
+            594.0
+          ],
+          "assets": {
+            "normal": {
+              "svg": "ministry-of-transport-communications-and-information-technology/arabic-normal.svg",
+              "pdf": "ministry-of-transport-communications-and-information-technology/arabic-normal.pdf",
+              "png_512": "ministry-of-transport-communications-and-information-technology/arabic-normal-512.png",
+              "png_1024": "ministry-of-transport-communications-and-information-technology/arabic-normal-1024.png",
+              "webp": "ministry-of-transport-communications-and-information-technology/arabic-normal.webp",
+              "png_2048": "ministry-of-transport-communications-and-information-technology/arabic-normal-2048.png"
+            },
+            "black": {
+              "svg": "ministry-of-transport-communications-and-information-technology/arabic-black.svg",
+              "pdf": "ministry-of-transport-communications-and-information-technology/arabic-black.pdf",
+              "png_2048": "ministry-of-transport-communications-and-information-technology/arabic-black-2048.png",
+              "webp": "ministry-of-transport-communications-and-information-technology/arabic-black.webp"
+            },
+            "white": {
+              "svg": "ministry-of-transport-communications-and-information-technology/arabic-white.svg",
+              "pdf": "ministry-of-transport-communications-and-information-technology/arabic-white.pdf",
+              "png_2048": "ministry-of-transport-communications-and-information-technology/arabic-white-2048.png",
+              "webp": "ministry-of-transport-communications-and-information-technology/arabic-white.webp"
+            }
+          }
+        }
+      }
+    },
+    {
+      "key": "ministry-of-higher-education-research-and-innovation",
+      "name_en": "Ministry of Higher Education, Research and Innovation",
+      "name_ar": "وزارة التعليم العالي والبحث العلمي والابتكار",
+      "company_id": 2478,
+      "slug": "ministry-of-higher-education-research-and-innovation-ba45",
+      "pdf_page": 28,
+      "printed_pages": [
+        54,
+        55
+      ],
+      "layouts": {
+        "bilingual": {
+          "crop": [
+            51.5,
+            217.0,
+            343.5,
+            279.0
+          ],
+          "assets": {
+            "normal": {
+              "svg": "ministry-of-higher-education-research-and-innovation/bilingual-normal.svg",
+              "pdf": "ministry-of-higher-education-research-and-innovation/bilingual-normal.pdf",
+              "png_512": "ministry-of-higher-education-research-and-innovation/bilingual-normal-512.png",
+              "png_1024": "ministry-of-higher-education-research-and-innovation/bilingual-normal-1024.png",
+              "webp": "ministry-of-higher-education-research-and-innovation/bilingual-normal.webp",
+              "png_2048": "ministry-of-higher-education-research-and-innovation/bilingual-normal-2048.png"
+            },
+            "black": {
+              "svg": "ministry-of-higher-education-research-and-innovation/bilingual-black.svg",
+              "pdf": "ministry-of-higher-education-research-and-innovation/bilingual-black.pdf",
+              "png_2048": "ministry-of-higher-education-research-and-innovation/bilingual-black-2048.png",
+              "webp": "ministry-of-higher-education-research-and-innovation/bilingual-black.webp"
+            },
+            "white": {
+              "svg": "ministry-of-higher-education-research-and-innovation/bilingual-white.svg",
+              "pdf": "ministry-of-higher-education-research-and-innovation/bilingual-white.pdf",
+              "png_2048": "ministry-of-higher-education-research-and-innovation/bilingual-white-2048.png",
+              "webp": "ministry-of-higher-education-research-and-innovation/bilingual-white.webp"
+            }
+          }
+        },
+        "arabic": {
+          "crop": [
+            382.0,
+            169.0,
+            510.0,
+            277.5
+          ],
+          "assets": {
+            "normal": {
+              "svg": "ministry-of-higher-education-research-and-innovation/arabic-normal.svg",
+              "pdf": "ministry-of-higher-education-research-and-innovation/arabic-normal.pdf",
+              "png_512": "ministry-of-higher-education-research-and-innovation/arabic-normal-512.png",
+              "png_1024": "ministry-of-higher-education-research-and-innovation/arabic-normal-1024.png",
+              "webp": "ministry-of-higher-education-research-and-innovation/arabic-normal.webp",
+              "png_2048": "ministry-of-higher-education-research-and-innovation/arabic-normal-2048.png"
+            },
+            "black": {
+              "svg": "ministry-of-higher-education-research-and-innovation/arabic-black.svg",
+              "pdf": "ministry-of-higher-education-research-and-innovation/arabic-black.pdf",
+              "png_2048": "ministry-of-higher-education-research-and-innovation/arabic-black-2048.png",
+              "webp": "ministry-of-higher-education-research-and-innovation/arabic-black.webp"
+            },
+            "white": {
+              "svg": "ministry-of-higher-education-research-and-innovation/arabic-white.svg",
+              "pdf": "ministry-of-higher-education-research-and-innovation/arabic-white.pdf",
+              "png_2048": "ministry-of-higher-education-research-and-innovation/arabic-white-2048.png",
+              "webp": "ministry-of-higher-education-research-and-innovation/arabic-white.webp"
+            }
+          }
+        }
+      }
+    },
+    {
+      "key": "ministry-of-health",
+      "name_en": "Ministry of Health",
+      "name_ar": "وزارة الصحة",
+      "company_id": 2435,
+      "slug": "ministry-of-health-81fc",
+      "pdf_page": 28,
+      "printed_pages": [
+        54,
+        55
+      ],
+      "layouts": {
+        "bilingual": {
+          "crop": [
+            200.0,
+            367.5,
+            343.0,
+            429.5
+          ],
+          "assets": {
+            "normal": {
+              "svg": "ministry-of-health/bilingual-normal.svg",
+              "pdf": "ministry-of-health/bilingual-normal.pdf",
+              "png_512": "ministry-of-health/bilingual-normal-512.png",
+              "png_1024": "ministry-of-health/bilingual-normal-1024.png",
+              "webp": "ministry-of-health/bilingual-normal.webp",
+              "png_2048": "ministry-of-health/bilingual-normal-2048.png"
+            },
+            "black": {
+              "svg": "ministry-of-health/bilingual-black.svg",
+              "pdf": "ministry-of-health/bilingual-black.pdf",
+              "png_2048": "ministry-of-health/bilingual-black-2048.png",
+              "webp": "ministry-of-health/bilingual-black.webp"
+            },
+            "white": {
+              "svg": "ministry-of-health/bilingual-white.svg",
+              "pdf": "ministry-of-health/bilingual-white.pdf",
+              "png_2048": "ministry-of-health/bilingual-white-2048.png",
+              "webp": "ministry-of-health/bilingual-white.webp"
+            }
+          }
+        },
+        "arabic": {
+          "crop": [
+            405.0,
+            342.5,
+            487.0,
+            428.5
+          ],
+          "assets": {
+            "normal": {
+              "svg": "ministry-of-health/arabic-normal.svg",
+              "pdf": "ministry-of-health/arabic-normal.pdf",
+              "png_512": "ministry-of-health/arabic-normal-512.png",
+              "png_1024": "ministry-of-health/arabic-normal-1024.png",
+              "webp": "ministry-of-health/arabic-normal.webp",
+              "png_2048": "ministry-of-health/arabic-normal-2048.png"
+            },
+            "black": {
+              "svg": "ministry-of-health/arabic-black.svg",
+              "pdf": "ministry-of-health/arabic-black.pdf",
+              "png_2048": "ministry-of-health/arabic-black-2048.png",
+              "webp": "ministry-of-health/arabic-black.webp"
+            },
+            "white": {
+              "svg": "ministry-of-health/arabic-white.svg",
+              "pdf": "ministry-of-health/arabic-white.pdf",
+              "png_2048": "ministry-of-health/arabic-white-2048.png",
+              "webp": "ministry-of-health/arabic-white.webp"
+            }
+          }
+        },
+        "international": {
+          "crop": [
+            705.5,
+            423.0,
+            867.5,
+            485.5
+          ],
+          "assets": {
+            "normal": {
+              "svg": "ministry-of-health/international-normal.svg",
+              "pdf": "ministry-of-health/international-normal.pdf",
+              "png_512": "ministry-of-health/international-normal-512.png",
+              "png_1024": "ministry-of-health/international-normal-1024.png",
+              "webp": "ministry-of-health/international-normal.webp",
+              "png_2048": "ministry-of-health/international-normal-2048.png"
+            },
+            "black": {
+              "svg": "ministry-of-health/international-black.svg",
+              "pdf": "ministry-of-health/international-black.pdf",
+              "png_2048": "ministry-of-health/international-black-2048.png",
+              "webp": "ministry-of-health/international-black.webp"
+            },
+            "white": {
+              "svg": "ministry-of-health/international-white.svg",
+              "pdf": "ministry-of-health/international-white.pdf",
+              "png_2048": "ministry-of-health/international-white-2048.png",
+              "webp": "ministry-of-health/international-white.webp"
+            }
+          },
+          "pdf_page": 33,
+          "usage": "Outside the Sultanate of Oman only"
+        }
+      }
+    },
+    {
+      "key": "ministry-of-social-development",
+      "name_en": "Ministry of Social Development",
+      "name_ar": "وزارة التنمية الاجتماعية",
+      "company_id": 2477,
+      "slug": "ministry-of-social-development-bfba",
+      "pdf_page": 28,
+      "printed_pages": [
+        54,
+        55
+      ],
+      "layouts": {
+        "bilingual": {
+          "crop": [
+            148.5,
+            520.5,
+            342.5,
+            580.0
+          ],
+          "assets": {
+            "normal": {
+              "svg": "ministry-of-social-development/bilingual-normal.svg",
+              "pdf": "ministry-of-social-development/bilingual-normal.pdf",
+              "png_512": "ministry-of-social-development/bilingual-normal-512.png",
+              "png_1024": "ministry-of-social-development/bilingual-normal-1024.png",
+              "webp": "ministry-of-social-development/bilingual-normal.webp",
+              "png_2048": "ministry-of-social-development/bilingual-normal-2048.png"
+            },
+            "black": {
+              "svg": "ministry-of-social-development/bilingual-black.svg",
+              "pdf": "ministry-of-social-development/bilingual-black.pdf",
+              "png_2048": "ministry-of-social-development/bilingual-black-2048.png",
+              "webp": "ministry-of-social-development/bilingual-black.webp"
+            },
+            "white": {
+              "svg": "ministry-of-social-development/bilingual-white.svg",
+              "pdf": "ministry-of-social-development/bilingual-white.pdf",
+              "png_2048": "ministry-of-social-development/bilingual-white-2048.png",
+              "webp": "ministry-of-social-development/bilingual-white.webp"
+            }
+          }
+        },
+        "arabic": {
+          "crop": [
+            387.0,
+            494.0,
+            505.0,
+            580.0
+          ],
+          "assets": {
+            "normal": {
+              "svg": "ministry-of-social-development/arabic-normal.svg",
+              "pdf": "ministry-of-social-development/arabic-normal.pdf",
+              "png_512": "ministry-of-social-development/arabic-normal-512.png",
+              "png_1024": "ministry-of-social-development/arabic-normal-1024.png",
+              "webp": "ministry-of-social-development/arabic-normal.webp",
+              "png_2048": "ministry-of-social-development/arabic-normal-2048.png"
+            },
+            "black": {
+              "svg": "ministry-of-social-development/arabic-black.svg",
+              "pdf": "ministry-of-social-development/arabic-black.pdf",
+              "png_2048": "ministry-of-social-development/arabic-black-2048.png",
+              "webp": "ministry-of-social-development/arabic-black.webp"
+            },
+            "white": {
+              "svg": "ministry-of-social-development/arabic-white.svg",
+              "pdf": "ministry-of-social-development/arabic-white.pdf",
+              "png_2048": "ministry-of-social-development/arabic-white-2048.png",
+              "webp": "ministry-of-social-development/arabic-white.webp"
+            }
+          }
+        }
+      }
+    },
+    {
+      "key": "ministry-of-economy",
+      "name_en": "Ministry of Economy",
+      "name_ar": "وزارة الاقتصاد",
+      "company_id": 2474,
+      "slug": "ministry-of-economy-c99f",
+      "pdf_page": 28,
+      "printed_pages": [
+        54,
+        55
+      ],
+      "layouts": {
+        "bilingual": {
+          "crop": [
+            755.5,
+            217.5,
+            909.0,
+            279.5
+          ],
+          "assets": {
+            "normal": {
+              "svg": "ministry-of-economy/bilingual-normal.svg",
+              "pdf": "ministry-of-economy/bilingual-normal.pdf",
+              "png_512": "ministry-of-economy/bilingual-normal-512.png",
+              "png_1024": "ministry-of-economy/bilingual-normal-1024.png",
+              "webp": "ministry-of-economy/bilingual-normal.webp",
+              "png_2048": "ministry-of-economy/bilingual-normal-2048.png"
+            },
+            "black": {
+              "svg": "ministry-of-economy/bilingual-black.svg",
+              "pdf": "ministry-of-economy/bilingual-black.pdf",
+              "png_2048": "ministry-of-economy/bilingual-black-2048.png",
+              "webp": "ministry-of-economy/bilingual-black.webp"
+            },
+            "white": {
+              "svg": "ministry-of-economy/bilingual-white.svg",
+              "pdf": "ministry-of-economy/bilingual-white.pdf",
+              "png_2048": "ministry-of-economy/bilingual-white-2048.png",
+              "webp": "ministry-of-economy/bilingual-white.webp"
+            }
+          }
+        },
+        "arabic": {
+          "crop": [
+            1014.0,
+            192.0,
+            1096.5,
+            277.5
+          ],
+          "assets": {
+            "normal": {
+              "svg": "ministry-of-economy/arabic-normal.svg",
+              "pdf": "ministry-of-economy/arabic-normal.pdf",
+              "png_512": "ministry-of-economy/arabic-normal-512.png",
+              "png_1024": "ministry-of-economy/arabic-normal-1024.png",
+              "webp": "ministry-of-economy/arabic-normal.webp",
+              "png_2048": "ministry-of-economy/arabic-normal-2048.png"
+            },
+            "black": {
+              "svg": "ministry-of-economy/arabic-black.svg",
+              "pdf": "ministry-of-economy/arabic-black.pdf",
+              "png_2048": "ministry-of-economy/arabic-black-2048.png",
+              "webp": "ministry-of-economy/arabic-black.webp"
+            },
+            "white": {
+              "svg": "ministry-of-economy/arabic-white.svg",
+              "pdf": "ministry-of-economy/arabic-white.pdf",
+              "png_2048": "ministry-of-economy/arabic-white-2048.png",
+              "webp": "ministry-of-economy/arabic-white.webp"
+            }
+          }
+        }
+      }
+    },
+    {
+      "key": "ministry-of-information",
+      "name_en": "Ministry of Information",
+      "name_ar": "وزارة الإعلام",
+      "company_id": 2473,
+      "slug": "ministry-of-information-38e1",
+      "pdf_page": 28,
+      "printed_pages": [
+        54,
+        55
+      ],
+      "layouts": {
+        "bilingual": {
+          "crop": [
+            743.5,
+            368.5,
+            909.0,
+            430.5
+          ],
+          "assets": {
+            "normal": {
+              "svg": "ministry-of-information/bilingual-normal.svg",
+              "pdf": "ministry-of-information/bilingual-normal.pdf",
+              "png_512": "ministry-of-information/bilingual-normal-512.png",
+              "png_1024": "ministry-of-information/bilingual-normal-1024.png",
+              "webp": "ministry-of-information/bilingual-normal.webp",
+              "png_2048": "ministry-of-information/bilingual-normal-2048.png"
+            },
+            "black": {
+              "svg": "ministry-of-information/bilingual-black.svg",
+              "pdf": "ministry-of-information/bilingual-black.pdf",
+              "png_2048": "ministry-of-information/bilingual-black-2048.png",
+              "webp": "ministry-of-information/bilingual-black.webp"
+            },
+            "white": {
+              "svg": "ministry-of-information/bilingual-white.svg",
+              "pdf": "ministry-of-information/bilingual-white.pdf",
+              "png_2048": "ministry-of-information/bilingual-white-2048.png",
+              "webp": "ministry-of-information/bilingual-white.webp"
+            }
+          }
+        },
+        "arabic": {
+          "crop": [
+            1014.0,
+            341.5,
+            1096.5,
+            428.5
+          ],
+          "assets": {
+            "normal": {
+              "svg": "ministry-of-information/arabic-normal.svg",
+              "pdf": "ministry-of-information/arabic-normal.pdf",
+              "png_512": "ministry-of-information/arabic-normal-512.png",
+              "png_1024": "ministry-of-information/arabic-normal-1024.png",
+              "webp": "ministry-of-information/arabic-normal.webp",
+              "png_2048": "ministry-of-information/arabic-normal-2048.png"
+            },
+            "black": {
+              "svg": "ministry-of-information/arabic-black.svg",
+              "pdf": "ministry-of-information/arabic-black.pdf",
+              "png_2048": "ministry-of-information/arabic-black-2048.png",
+              "webp": "ministry-of-information/arabic-black.webp"
+            },
+            "white": {
+              "svg": "ministry-of-information/arabic-white.svg",
+              "pdf": "ministry-of-information/arabic-white.pdf",
+              "png_2048": "ministry-of-information/arabic-white-2048.png",
+              "webp": "ministry-of-information/arabic-white.webp"
+            }
+          }
+        }
+      }
+    },
+    {
+      "key": "ministry-of-energy-and-minerals",
+      "name_en": "Ministry of Energy and Minerals",
+      "name_ar": "وزارة الطاقة والمعادن",
+      "company_id": 2483,
+      "slug": "ministry-of-energy-and-minerals-3462",
+      "pdf_page": 28,
+      "printed_pages": [
+        54,
+        55
+      ],
+      "layouts": {
+        "bilingual": {
+          "crop": [
+            709.5,
+            520.5,
+            907.5,
+            580.0
+          ],
+          "assets": {
+            "normal": {
+              "svg": "ministry-of-energy-and-minerals/bilingual-normal.svg",
+              "pdf": "ministry-of-energy-and-minerals/bilingual-normal.pdf",
+              "png_512": "ministry-of-energy-and-minerals/bilingual-normal-512.png",
+              "png_1024": "ministry-of-energy-and-minerals/bilingual-normal-1024.png",
+              "webp": "ministry-of-energy-and-minerals/bilingual-normal.webp",
+              "png_2048": "ministry-of-energy-and-minerals/bilingual-normal-2048.png"
+            },
+            "black": {
+              "svg": "ministry-of-energy-and-minerals/bilingual-black.svg",
+              "pdf": "ministry-of-energy-and-minerals/bilingual-black.pdf",
+              "png_2048": "ministry-of-energy-and-minerals/bilingual-black-2048.png",
+              "webp": "ministry-of-energy-and-minerals/bilingual-black.webp"
+            },
+            "white": {
+              "svg": "ministry-of-energy-and-minerals/bilingual-white.svg",
+              "pdf": "ministry-of-energy-and-minerals/bilingual-white.pdf",
+              "png_2048": "ministry-of-energy-and-minerals/bilingual-white-2048.png",
+              "webp": "ministry-of-energy-and-minerals/bilingual-white.webp"
+            }
+          }
+        },
+        "arabic": {
+          "crop": [
+            999.5,
+            494.0,
+            1111.0,
+            580.0
+          ],
+          "assets": {
+            "normal": {
+              "svg": "ministry-of-energy-and-minerals/arabic-normal.svg",
+              "pdf": "ministry-of-energy-and-minerals/arabic-normal.pdf",
+              "png_512": "ministry-of-energy-and-minerals/arabic-normal-512.png",
+              "png_1024": "ministry-of-energy-and-minerals/arabic-normal-1024.png",
+              "webp": "ministry-of-energy-and-minerals/arabic-normal.webp",
+              "png_2048": "ministry-of-energy-and-minerals/arabic-normal-2048.png"
+            },
+            "black": {
+              "svg": "ministry-of-energy-and-minerals/arabic-black.svg",
+              "pdf": "ministry-of-energy-and-minerals/arabic-black.pdf",
+              "png_2048": "ministry-of-energy-and-minerals/arabic-black-2048.png",
+              "webp": "ministry-of-energy-and-minerals/arabic-black.webp"
+            },
+            "white": {
+              "svg": "ministry-of-energy-and-minerals/arabic-white.svg",
+              "pdf": "ministry-of-energy-and-minerals/arabic-white.pdf",
+              "png_2048": "ministry-of-energy-and-minerals/arabic-white-2048.png",
+              "webp": "ministry-of-energy-and-minerals/arabic-white.webp"
+            }
+          }
+        }
+      }
+    },
+    {
+      "key": "ministry-of-commerce-industry-and-investment-promotion",
+      "name_en": "Ministry of Commerce Industry and Investment Promotion",
+      "name_ar": "وزارة التجارة والصناعة وترويج الاستثمار",
+      "company_id": 2434,
+      "slug": "ministry-of-commerce-industry-and-investment-promotion-02b7",
+      "pdf_page": 28,
+      "printed_pages": [
+        54,
+        55
+      ],
+      "layouts": {
+        "bilingual": {
+          "crop": [
+            652.5,
+            682.5,
+            908.5,
+            744.5
+          ],
+          "assets": {
+            "normal": {
+              "svg": "ministry-of-commerce-industry-and-investment-promotion/bilingual-normal.svg",
+              "pdf": "ministry-of-commerce-industry-and-investment-promotion/bilingual-normal.pdf",
+              "png_512": "ministry-of-commerce-industry-and-investment-promotion/bilingual-normal-512.png",
+              "png_1024": "ministry-of-commerce-industry-and-investment-promotion/bilingual-normal-1024.png",
+              "webp": "ministry-of-commerce-industry-and-investment-promotion/bilingual-normal.webp",
+              "png_2048": "ministry-of-commerce-industry-and-investment-promotion/bilingual-normal-2048.png"
+            },
+            "black": {
+              "svg": "ministry-of-commerce-industry-and-investment-promotion/bilingual-black.svg",
+              "pdf": "ministry-of-commerce-industry-and-investment-promotion/bilingual-black.pdf",
+              "png_2048": "ministry-of-commerce-industry-and-investment-promotion/bilingual-black-2048.png",
+              "webp": "ministry-of-commerce-industry-and-investment-promotion/bilingual-black.webp"
+            },
+            "white": {
+              "svg": "ministry-of-commerce-industry-and-investment-promotion/bilingual-white.svg",
+              "pdf": "ministry-of-commerce-industry-and-investment-promotion/bilingual-white.pdf",
+              "png_2048": "ministry-of-commerce-industry-and-investment-promotion/bilingual-white-2048.png",
+              "webp": "ministry-of-commerce-industry-and-investment-promotion/bilingual-white.webp"
+            }
+          }
+        },
+        "arabic": {
+          "crop": [
+            995.5,
+            634.0,
+            1115.0,
+            743.5
+          ],
+          "assets": {
+            "normal": {
+              "svg": "ministry-of-commerce-industry-and-investment-promotion/arabic-normal.svg",
+              "pdf": "ministry-of-commerce-industry-and-investment-promotion/arabic-normal.pdf",
+              "png_512": "ministry-of-commerce-industry-and-investment-promotion/arabic-normal-512.png",
+              "png_1024": "ministry-of-commerce-industry-and-investment-promotion/arabic-normal-1024.png",
+              "webp": "ministry-of-commerce-industry-and-investment-promotion/arabic-normal.webp",
+              "png_2048": "ministry-of-commerce-industry-and-investment-promotion/arabic-normal-2048.png"
+            },
+            "black": {
+              "svg": "ministry-of-commerce-industry-and-investment-promotion/arabic-black.svg",
+              "pdf": "ministry-of-commerce-industry-and-investment-promotion/arabic-black.pdf",
+              "png_2048": "ministry-of-commerce-industry-and-investment-promotion/arabic-black-2048.png",
+              "webp": "ministry-of-commerce-industry-and-investment-promotion/arabic-black.webp"
+            },
+            "white": {
+              "svg": "ministry-of-commerce-industry-and-investment-promotion/arabic-white.svg",
+              "pdf": "ministry-of-commerce-industry-and-investment-promotion/arabic-white.pdf",
+              "png_2048": "ministry-of-commerce-industry-and-investment-promotion/arabic-white-2048.png",
+              "webp": "ministry-of-commerce-industry-and-investment-promotion/arabic-white.webp"
+            }
+          },
+          "pdf_page": 28
+        }
+      }
+    },
+    {
+      "key": "muscat-governorate",
+      "name_en": "Muscat Governorate",
+      "name_ar": "محافظة مسقط",
+      "company_id": null,
+      "slug": null,
+      "pdf_page": 29,
+      "printed_pages": [
+        56,
+        57
+      ],
+      "layouts": {
+        "bilingual": {
+          "crop": [
+            151.5,
+            363.0,
+            303.0,
+            425.0
+          ],
+          "assets": {
+            "normal": {
+              "svg": "muscat-governorate/bilingual-normal.svg",
+              "pdf": "muscat-governorate/bilingual-normal.pdf",
+              "png_512": "muscat-governorate/bilingual-normal-512.png",
+              "png_1024": "muscat-governorate/bilingual-normal-1024.png",
+              "webp": "muscat-governorate/bilingual-normal.webp",
+              "png_2048": "muscat-governorate/bilingual-normal-2048.png"
+            },
+            "black": {
+              "svg": "muscat-governorate/bilingual-black.svg",
+              "pdf": "muscat-governorate/bilingual-black.pdf",
+              "png_2048": "muscat-governorate/bilingual-black-2048.png",
+              "webp": "muscat-governorate/bilingual-black.webp"
+            },
+            "white": {
+              "svg": "muscat-governorate/bilingual-white.svg",
+              "pdf": "muscat-governorate/bilingual-white.pdf",
+              "png_2048": "muscat-governorate/bilingual-white-2048.png",
+              "webp": "muscat-governorate/bilingual-white.webp"
+            }
+          }
+        },
+        "arabic": {
+          "crop": [
+            401.5,
+            336.5,
+            487.0,
+            423.5
+          ],
+          "assets": {
+            "normal": {
+              "svg": "muscat-governorate/arabic-normal.svg",
+              "pdf": "muscat-governorate/arabic-normal.pdf",
+              "png_512": "muscat-governorate/arabic-normal-512.png",
+              "png_1024": "muscat-governorate/arabic-normal-1024.png",
+              "webp": "muscat-governorate/arabic-normal.webp",
+              "png_2048": "muscat-governorate/arabic-normal-2048.png"
+            },
+            "black": {
+              "svg": "muscat-governorate/arabic-black.svg",
+              "pdf": "muscat-governorate/arabic-black.pdf",
+              "png_2048": "muscat-governorate/arabic-black-2048.png",
+              "webp": "muscat-governorate/arabic-black.webp"
+            },
+            "white": {
+              "svg": "muscat-governorate/arabic-white.svg",
+              "pdf": "muscat-governorate/arabic-white.pdf",
+              "png_2048": "muscat-governorate/arabic-white-2048.png",
+              "webp": "muscat-governorate/arabic-white.webp"
+            }
+          }
+        }
+      }
+    },
+    {
+      "key": "dhofar-governorate",
+      "name_en": "Dhofar Governorate",
+      "name_ar": "محافظة ظفار",
+      "company_id": null,
+      "slug": null,
+      "pdf_page": 29,
+      "printed_pages": [
+        56,
+        57
+      ],
+      "layouts": {
+        "bilingual": {
+          "crop": [
+            153.5,
+            524.5,
+            303.0,
+            586.5
+          ],
+          "assets": {
+            "normal": {
+              "svg": "dhofar-governorate/bilingual-normal.svg",
+              "pdf": "dhofar-governorate/bilingual-normal.pdf",
+              "png_512": "dhofar-governorate/bilingual-normal-512.png",
+              "png_1024": "dhofar-governorate/bilingual-normal-1024.png",
+              "webp": "dhofar-governorate/bilingual-normal.webp",
+              "png_2048": "dhofar-governorate/bilingual-normal-2048.png"
+            },
+            "black": {
+              "svg": "dhofar-governorate/bilingual-black.svg",
+              "pdf": "dhofar-governorate/bilingual-black.pdf",
+              "png_2048": "dhofar-governorate/bilingual-black-2048.png",
+              "webp": "dhofar-governorate/bilingual-black.webp"
+            },
+            "white": {
+              "svg": "dhofar-governorate/bilingual-white.svg",
+              "pdf": "dhofar-governorate/bilingual-white.pdf",
+              "png_2048": "dhofar-governorate/bilingual-white-2048.png",
+              "webp": "dhofar-governorate/bilingual-white.webp"
+            }
+          }
+        },
+        "arabic": {
+          "crop": [
+            399.5,
+            498.0,
+            489.0,
+            585.0
+          ],
+          "assets": {
+            "normal": {
+              "svg": "dhofar-governorate/arabic-normal.svg",
+              "pdf": "dhofar-governorate/arabic-normal.pdf",
+              "png_512": "dhofar-governorate/arabic-normal-512.png",
+              "png_1024": "dhofar-governorate/arabic-normal-1024.png",
+              "webp": "dhofar-governorate/arabic-normal.webp",
+              "png_2048": "dhofar-governorate/arabic-normal-2048.png"
+            },
+            "black": {
+              "svg": "dhofar-governorate/arabic-black.svg",
+              "pdf": "dhofar-governorate/arabic-black.pdf",
+              "png_2048": "dhofar-governorate/arabic-black-2048.png",
+              "webp": "dhofar-governorate/arabic-black.webp"
+            },
+            "white": {
+              "svg": "dhofar-governorate/arabic-white.svg",
+              "pdf": "dhofar-governorate/arabic-white.pdf",
+              "png_2048": "dhofar-governorate/arabic-white-2048.png",
+              "webp": "dhofar-governorate/arabic-white.webp"
+            }
+          }
+        }
+      }
+    },
+    {
+      "key": "musandam-governorate",
+      "name_en": "Musandam Governorate",
+      "name_ar": "محافظة مسندم",
+      "company_id": null,
+      "slug": null,
+      "pdf_page": 29,
+      "printed_pages": [
+        56,
+        57
+      ],
+      "layouts": {
+        "bilingual": {
+          "crop": [
+            134.5,
+            691.0,
+            303.0,
+            753.0
+          ],
+          "assets": {
+            "normal": {
+              "svg": "musandam-governorate/bilingual-normal.svg",
+              "pdf": "musandam-governorate/bilingual-normal.pdf",
+              "png_512": "musandam-governorate/bilingual-normal-512.png",
+              "png_1024": "musandam-governorate/bilingual-normal-1024.png",
+              "webp": "musandam-governorate/bilingual-normal.webp",
+              "png_2048": "musandam-governorate/bilingual-normal-2048.png"
+            },
+            "black": {
+              "svg": "musandam-governorate/bilingual-black.svg",
+              "pdf": "musandam-governorate/bilingual-black.pdf",
+              "png_2048": "musandam-governorate/bilingual-black-2048.png",
+              "webp": "musandam-governorate/bilingual-black.webp"
+            },
+            "white": {
+              "svg": "musandam-governorate/bilingual-white.svg",
+              "pdf": "musandam-governorate/bilingual-white.pdf",
+              "png_2048": "musandam-governorate/bilingual-white-2048.png",
+              "webp": "musandam-governorate/bilingual-white.webp"
+            }
+          }
+        },
+        "arabic": {
+          "crop": [
+            395.0,
+            664.5,
+            493.5,
+            751.5
+          ],
+          "assets": {
+            "normal": {
+              "svg": "musandam-governorate/arabic-normal.svg",
+              "pdf": "musandam-governorate/arabic-normal.pdf",
+              "png_512": "musandam-governorate/arabic-normal-512.png",
+              "png_1024": "musandam-governorate/arabic-normal-1024.png",
+              "webp": "musandam-governorate/arabic-normal.webp",
+              "png_2048": "musandam-governorate/arabic-normal-2048.png"
+            },
+            "black": {
+              "svg": "musandam-governorate/arabic-black.svg",
+              "pdf": "musandam-governorate/arabic-black.pdf",
+              "png_2048": "musandam-governorate/arabic-black-2048.png",
+              "webp": "musandam-governorate/arabic-black.webp"
+            },
+            "white": {
+              "svg": "musandam-governorate/arabic-white.svg",
+              "pdf": "musandam-governorate/arabic-white.pdf",
+              "png_2048": "musandam-governorate/arabic-white-2048.png",
+              "webp": "musandam-governorate/arabic-white.webp"
+            }
+          }
+        }
+      }
+    },
+    {
+      "key": "ministry-of-education",
+      "name_en": "Ministry of Education",
+      "name_ar": "وزارة التربية والتعليم",
+      "company_id": 2476,
+      "slug": "ministry-of-education-d217",
+      "pdf_page": 29,
+      "printed_pages": [
+        56,
+        57
+      ],
+      "layouts": {
+        "bilingual": {
+          "crop": [
+            724.5,
+            363.5,
+            897.0,
+            425.5
+          ],
+          "assets": {
+            "normal": {
+              "svg": "ministry-of-education/bilingual-normal.svg",
+              "pdf": "ministry-of-education/bilingual-normal.pdf",
+              "png_512": "ministry-of-education/bilingual-normal-512.png",
+              "png_1024": "ministry-of-education/bilingual-normal-1024.png",
+              "webp": "ministry-of-education/bilingual-normal.webp",
+              "png_2048": "ministry-of-education/bilingual-normal-2048.png"
+            },
+            "black": {
+              "svg": "ministry-of-education/bilingual-black.svg",
+              "pdf": "ministry-of-education/bilingual-black.pdf",
+              "png_2048": "ministry-of-education/bilingual-black-2048.png",
+              "webp": "ministry-of-education/bilingual-black.webp"
+            },
+            "white": {
+              "svg": "ministry-of-education/bilingual-white.svg",
+              "pdf": "ministry-of-education/bilingual-white.pdf",
+              "png_2048": "ministry-of-education/bilingual-white-2048.png",
+              "webp": "ministry-of-education/bilingual-white.webp"
+            }
+          }
+        },
+        "arabic": {
+          "crop": [
+            987.5,
+            336.5,
+            1102.0,
+            423.5
+          ],
+          "assets": {
+            "normal": {
+              "svg": "ministry-of-education/arabic-normal.svg",
+              "pdf": "ministry-of-education/arabic-normal.pdf",
+              "png_512": "ministry-of-education/arabic-normal-512.png",
+              "png_1024": "ministry-of-education/arabic-normal-1024.png",
+              "webp": "ministry-of-education/arabic-normal.webp",
+              "png_2048": "ministry-of-education/arabic-normal-2048.png"
+            },
+            "black": {
+              "svg": "ministry-of-education/arabic-black.svg",
+              "pdf": "ministry-of-education/arabic-black.pdf",
+              "png_2048": "ministry-of-education/arabic-black-2048.png",
+              "webp": "ministry-of-education/arabic-black.webp"
+            },
+            "white": {
+              "svg": "ministry-of-education/arabic-white.svg",
+              "pdf": "ministry-of-education/arabic-white.pdf",
+              "png_2048": "ministry-of-education/arabic-white-2048.png",
+              "webp": "ministry-of-education/arabic-white.webp"
+            }
+          }
+        }
+      }
+    },
+    {
+      "key": "ministry-of-endowments-and-religious-affairs",
+      "name_en": "Ministry of Endowments and Religious Affairs",
+      "name_ar": "وزارة الأوقاف والشؤون الدينية",
+      "company_id": 2471,
+      "slug": "ministry-of-endowments-and-religious-affairs-7dc8",
+      "pdf_page": 29,
+      "printed_pages": [
+        56,
+        57
+      ],
+      "layouts": {
+        "bilingual": {
+          "crop": [
+            695.5,
+            522.5,
+            897.0,
+            585.0
+          ],
+          "assets": {
+            "normal": {
+              "svg": "ministry-of-endowments-and-religious-affairs/bilingual-normal.svg",
+              "pdf": "ministry-of-endowments-and-religious-affairs/bilingual-normal.pdf",
+              "png_512": "ministry-of-endowments-and-religious-affairs/bilingual-normal-512.png",
+              "png_1024": "ministry-of-endowments-and-religious-affairs/bilingual-normal-1024.png",
+              "webp": "ministry-of-endowments-and-religious-affairs/bilingual-normal.webp",
+              "png_2048": "ministry-of-endowments-and-religious-affairs/bilingual-normal-2048.png"
+            },
+            "black": {
+              "svg": "ministry-of-endowments-and-religious-affairs/bilingual-black.svg",
+              "pdf": "ministry-of-endowments-and-religious-affairs/bilingual-black.pdf",
+              "png_2048": "ministry-of-endowments-and-religious-affairs/bilingual-black-2048.png",
+              "webp": "ministry-of-endowments-and-religious-affairs/bilingual-black.webp"
+            },
+            "white": {
+              "svg": "ministry-of-endowments-and-religious-affairs/bilingual-white.svg",
+              "pdf": "ministry-of-endowments-and-religious-affairs/bilingual-white.pdf",
+              "png_2048": "ministry-of-endowments-and-religious-affairs/bilingual-white-2048.png",
+              "webp": "ministry-of-endowments-and-religious-affairs/bilingual-white.webp"
+            }
+          }
+        },
+        "arabic": {
+          "crop": [
+            973.5,
+            498.5,
+            1116.5,
+            585.0
+          ],
+          "assets": {
+            "normal": {
+              "svg": "ministry-of-endowments-and-religious-affairs/arabic-normal.svg",
+              "pdf": "ministry-of-endowments-and-religious-affairs/arabic-normal.pdf",
+              "png_512": "ministry-of-endowments-and-religious-affairs/arabic-normal-512.png",
+              "png_1024": "ministry-of-endowments-and-religious-affairs/arabic-normal-1024.png",
+              "webp": "ministry-of-endowments-and-religious-affairs/arabic-normal.webp",
+              "png_2048": "ministry-of-endowments-and-religious-affairs/arabic-normal-2048.png"
+            },
+            "black": {
+              "svg": "ministry-of-endowments-and-religious-affairs/arabic-black.svg",
+              "pdf": "ministry-of-endowments-and-religious-affairs/arabic-black.pdf",
+              "png_2048": "ministry-of-endowments-and-religious-affairs/arabic-black-2048.png",
+              "webp": "ministry-of-endowments-and-religious-affairs/arabic-black.webp"
+            },
+            "white": {
+              "svg": "ministry-of-endowments-and-religious-affairs/arabic-white.svg",
+              "pdf": "ministry-of-endowments-and-religious-affairs/arabic-white.pdf",
+              "png_2048": "ministry-of-endowments-and-religious-affairs/arabic-white-2048.png",
+              "webp": "ministry-of-endowments-and-religious-affairs/arabic-white.webp"
+            }
+          }
+        }
+      }
+    },
+    {
+      "key": "ministry-of-defence",
+      "name_en": "Ministry of Defence",
+      "name_ar": "وزارة الدفاع",
+      "company_id": 2482,
+      "slug": "ministry-of-defence-125a",
+      "pdf_page": 29,
+      "printed_pages": [
+        56,
+        57
+      ],
+      "layouts": {
+        "bilingual": {
+          "crop": [
+            749.0,
+            691.0,
+            897.0,
+            753.0
+          ],
+          "assets": {
+            "normal": {
+              "svg": "ministry-of-defence/bilingual-normal.svg",
+              "pdf": "ministry-of-defence/bilingual-normal.pdf",
+              "png_512": "ministry-of-defence/bilingual-normal-512.png",
+              "png_1024": "ministry-of-defence/bilingual-normal-1024.png",
+              "webp": "ministry-of-defence/bilingual-normal.webp",
+              "png_2048": "ministry-of-defence/bilingual-normal-2048.png"
+            },
+            "black": {
+              "svg": "ministry-of-defence/bilingual-black.svg",
+              "pdf": "ministry-of-defence/bilingual-black.pdf",
+              "png_2048": "ministry-of-defence/bilingual-black-2048.png",
+              "webp": "ministry-of-defence/bilingual-black.webp"
+            },
+            "white": {
+              "svg": "ministry-of-defence/bilingual-white.svg",
+              "pdf": "ministry-of-defence/bilingual-white.pdf",
+              "png_2048": "ministry-of-defence/bilingual-white-2048.png",
+              "webp": "ministry-of-defence/bilingual-white.webp"
+            }
+          }
+        },
+        "arabic": {
+          "crop": [
+            1007.0,
+            663.0,
+            1083.0,
+            751.5
+          ],
+          "assets": {
+            "normal": {
+              "svg": "ministry-of-defence/arabic-normal.svg",
+              "pdf": "ministry-of-defence/arabic-normal.pdf",
+              "png_512": "ministry-of-defence/arabic-normal-512.png",
+              "png_1024": "ministry-of-defence/arabic-normal-1024.png",
+              "webp": "ministry-of-defence/arabic-normal.webp",
+              "png_2048": "ministry-of-defence/arabic-normal-2048.png"
+            },
+            "black": {
+              "svg": "ministry-of-defence/arabic-black.svg",
+              "pdf": "ministry-of-defence/arabic-black.pdf",
+              "png_2048": "ministry-of-defence/arabic-black-2048.png",
+              "webp": "ministry-of-defence/arabic-black.webp"
+            },
+            "white": {
+              "svg": "ministry-of-defence/arabic-white.svg",
+              "pdf": "ministry-of-defence/arabic-white.pdf",
+              "png_2048": "ministry-of-defence/arabic-white-2048.png",
+              "webp": "ministry-of-defence/arabic-white.webp"
+            }
+          }
+        }
+      }
+    },
+    {
+      "key": "al-sharqiyah-south-governorate",
+      "name_en": "Al Sharqiyah South Governorate",
+      "name_ar": "محافظة جنوب الشرقية",
+      "company_id": null,
+      "slug": null,
+      "pdf_page": 30,
+      "printed_pages": [
+        58,
+        59
+      ],
+      "layouts": {
+        "bilingual": {
+          "crop": [
+            91.0,
+            208.5,
+            290.5,
+            270.5
+          ],
+          "assets": {
+            "normal": {
+              "svg": "al-sharqiyah-south-governorate/bilingual-normal.svg",
+              "pdf": "al-sharqiyah-south-governorate/bilingual-normal.pdf",
+              "png_512": "al-sharqiyah-south-governorate/bilingual-normal-512.png",
+              "png_1024": "al-sharqiyah-south-governorate/bilingual-normal-1024.png",
+              "webp": "al-sharqiyah-south-governorate/bilingual-normal.webp",
+              "png_2048": "al-sharqiyah-south-governorate/bilingual-normal-2048.png"
+            },
+            "black": {
+              "svg": "al-sharqiyah-south-governorate/bilingual-black.svg",
+              "pdf": "al-sharqiyah-south-governorate/bilingual-black.pdf",
+              "png_2048": "al-sharqiyah-south-governorate/bilingual-black-2048.png",
+              "webp": "al-sharqiyah-south-governorate/bilingual-black.webp"
+            },
+            "white": {
+              "svg": "al-sharqiyah-south-governorate/bilingual-white.svg",
+              "pdf": "al-sharqiyah-south-governorate/bilingual-white.pdf",
+              "png_2048": "al-sharqiyah-south-governorate/bilingual-white-2048.png",
+              "webp": "al-sharqiyah-south-governorate/bilingual-white.webp"
+            }
+          }
+        },
+        "arabic": {
+          "crop": [
+            380.5,
+            181.5,
+            510.5,
+            269.0
+          ],
+          "assets": {
+            "normal": {
+              "svg": "al-sharqiyah-south-governorate/arabic-normal.svg",
+              "pdf": "al-sharqiyah-south-governorate/arabic-normal.pdf",
+              "png_512": "al-sharqiyah-south-governorate/arabic-normal-512.png",
+              "png_1024": "al-sharqiyah-south-governorate/arabic-normal-1024.png",
+              "webp": "al-sharqiyah-south-governorate/arabic-normal.webp",
+              "png_2048": "al-sharqiyah-south-governorate/arabic-normal-2048.png"
+            },
+            "black": {
+              "svg": "al-sharqiyah-south-governorate/arabic-black.svg",
+              "pdf": "al-sharqiyah-south-governorate/arabic-black.pdf",
+              "png_2048": "al-sharqiyah-south-governorate/arabic-black-2048.png",
+              "webp": "al-sharqiyah-south-governorate/arabic-black.webp"
+            },
+            "white": {
+              "svg": "al-sharqiyah-south-governorate/arabic-white.svg",
+              "pdf": "al-sharqiyah-south-governorate/arabic-white.pdf",
+              "png_2048": "al-sharqiyah-south-governorate/arabic-white-2048.png",
+              "webp": "al-sharqiyah-south-governorate/arabic-white.webp"
+            }
+          }
+        }
+      }
+    },
+    {
+      "key": "al-sharqiyah-north-governorate",
+      "name_en": "Al Sharqiyah North Governorate",
+      "name_ar": "محافظة شمال الشرقية",
+      "company_id": null,
+      "slug": null,
+      "pdf_page": 30,
+      "printed_pages": [
+        58,
+        59
+      ],
+      "layouts": {
+        "bilingual": {
+          "crop": [
+            91.0,
+            377.0,
+            291.0,
+            439.0
+          ],
+          "assets": {
+            "normal": {
+              "svg": "al-sharqiyah-north-governorate/bilingual-normal.svg",
+              "pdf": "al-sharqiyah-north-governorate/bilingual-normal.pdf",
+              "png_512": "al-sharqiyah-north-governorate/bilingual-normal-512.png",
+              "png_1024": "al-sharqiyah-north-governorate/bilingual-normal-1024.png",
+              "webp": "al-sharqiyah-north-governorate/bilingual-normal.webp",
+              "png_2048": "al-sharqiyah-north-governorate/bilingual-normal-2048.png"
+            },
+            "black": {
+              "svg": "al-sharqiyah-north-governorate/bilingual-black.svg",
+              "pdf": "al-sharqiyah-north-governorate/bilingual-black.pdf",
+              "png_2048": "al-sharqiyah-north-governorate/bilingual-black-2048.png",
+              "webp": "al-sharqiyah-north-governorate/bilingual-black.webp"
+            },
+            "white": {
+              "svg": "al-sharqiyah-north-governorate/bilingual-white.svg",
+              "pdf": "al-sharqiyah-north-governorate/bilingual-white.pdf",
+              "png_2048": "al-sharqiyah-north-governorate/bilingual-white-2048.png",
+              "webp": "al-sharqiyah-north-governorate/bilingual-white.webp"
+            }
+          }
+        },
+        "arabic": {
+          "crop": [
+            385.0,
+            350.0,
+            506.0,
+            437.5
+          ],
+          "assets": {
+            "normal": {
+              "svg": "al-sharqiyah-north-governorate/arabic-normal.svg",
+              "pdf": "al-sharqiyah-north-governorate/arabic-normal.pdf",
+              "png_512": "al-sharqiyah-north-governorate/arabic-normal-512.png",
+              "png_1024": "al-sharqiyah-north-governorate/arabic-normal-1024.png",
+              "webp": "al-sharqiyah-north-governorate/arabic-normal.webp",
+              "png_2048": "al-sharqiyah-north-governorate/arabic-normal-2048.png"
+            },
+            "black": {
+              "svg": "al-sharqiyah-north-governorate/arabic-black.svg",
+              "pdf": "al-sharqiyah-north-governorate/arabic-black.pdf",
+              "png_2048": "al-sharqiyah-north-governorate/arabic-black-2048.png",
+              "webp": "al-sharqiyah-north-governorate/arabic-black.webp"
+            },
+            "white": {
+              "svg": "al-sharqiyah-north-governorate/arabic-white.svg",
+              "pdf": "al-sharqiyah-north-governorate/arabic-white.pdf",
+              "png_2048": "al-sharqiyah-north-governorate/arabic-white-2048.png",
+              "webp": "al-sharqiyah-north-governorate/arabic-white.webp"
+            }
+          }
+        }
+      }
+    },
+    {
+      "key": "al-wusta-governorate",
+      "name_en": "Al Wusta Governorate",
+      "name_ar": "محافظة الوسطى",
+      "company_id": null,
+      "slug": null,
+      "pdf_page": 30,
+      "printed_pages": [
+        58,
+        59
+      ],
+      "layouts": {
+        "bilingual": {
+          "crop": [
+            131.5,
+            524.0,
+            290.5,
+            586.0
+          ],
+          "assets": {
+            "normal": {
+              "svg": "al-wusta-governorate/bilingual-normal.svg",
+              "pdf": "al-wusta-governorate/bilingual-normal.pdf",
+              "png_512": "al-wusta-governorate/bilingual-normal-512.png",
+              "png_1024": "al-wusta-governorate/bilingual-normal-1024.png",
+              "webp": "al-wusta-governorate/bilingual-normal.webp",
+              "png_2048": "al-wusta-governorate/bilingual-normal-2048.png"
+            },
+            "black": {
+              "svg": "al-wusta-governorate/bilingual-black.svg",
+              "pdf": "al-wusta-governorate/bilingual-black.pdf",
+              "png_2048": "al-wusta-governorate/bilingual-black-2048.png",
+              "webp": "al-wusta-governorate/bilingual-black.webp"
+            },
+            "white": {
+              "svg": "al-wusta-governorate/bilingual-white.svg",
+              "pdf": "al-wusta-governorate/bilingual-white.pdf",
+              "png_2048": "al-wusta-governorate/bilingual-white-2048.png",
+              "webp": "al-wusta-governorate/bilingual-white.webp"
+            }
+          }
+        },
+        "arabic": {
+          "crop": [
+            400.5,
+            497.5,
+            490.5,
+            584.5
+          ],
+          "assets": {
+            "normal": {
+              "svg": "al-wusta-governorate/arabic-normal.svg",
+              "pdf": "al-wusta-governorate/arabic-normal.pdf",
+              "png_512": "al-wusta-governorate/arabic-normal-512.png",
+              "png_1024": "al-wusta-governorate/arabic-normal-1024.png",
+              "webp": "al-wusta-governorate/arabic-normal.webp",
+              "png_2048": "al-wusta-governorate/arabic-normal-2048.png"
+            },
+            "black": {
+              "svg": "al-wusta-governorate/arabic-black.svg",
+              "pdf": "al-wusta-governorate/arabic-black.pdf",
+              "png_2048": "al-wusta-governorate/arabic-black-2048.png",
+              "webp": "al-wusta-governorate/arabic-black.webp"
+            },
+            "white": {
+              "svg": "al-wusta-governorate/arabic-white.svg",
+              "pdf": "al-wusta-governorate/arabic-white.pdf",
+              "png_2048": "al-wusta-governorate/arabic-white-2048.png",
+              "webp": "al-wusta-governorate/arabic-white.webp"
+            }
+          }
+        }
+      }
+    },
+    {
+      "key": "al-dhahirah-governorate",
+      "name_en": "Al Dhahirah Governorate",
+      "name_ar": "محافظة الظاهرة",
+      "company_id": null,
+      "slug": null,
+      "pdf_page": 30,
+      "printed_pages": [
+        58,
+        59
+      ],
+      "layouts": {
+        "bilingual": {
+          "crop": [
+            120.0,
+            685.0,
+            291.0,
+            747.0
+          ],
+          "assets": {
+            "normal": {
+              "svg": "al-dhahirah-governorate/bilingual-normal.svg",
+              "pdf": "al-dhahirah-governorate/bilingual-normal.pdf",
+              "png_512": "al-dhahirah-governorate/bilingual-normal-512.png",
+              "png_1024": "al-dhahirah-governorate/bilingual-normal-1024.png",
+              "webp": "al-dhahirah-governorate/bilingual-normal.webp",
+              "png_2048": "al-dhahirah-governorate/bilingual-normal-2048.png"
+            },
+            "black": {
+              "svg": "al-dhahirah-governorate/bilingual-black.svg",
+              "pdf": "al-dhahirah-governorate/bilingual-black.pdf",
+              "png_2048": "al-dhahirah-governorate/bilingual-black-2048.png",
+              "webp": "al-dhahirah-governorate/bilingual-black.webp"
+            },
+            "white": {
+              "svg": "al-dhahirah-governorate/bilingual-white.svg",
+              "pdf": "al-dhahirah-governorate/bilingual-white.pdf",
+              "png_2048": "al-dhahirah-governorate/bilingual-white-2048.png",
+              "webp": "al-dhahirah-governorate/bilingual-white.webp"
+            }
+          }
+        },
+        "arabic": {
+          "crop": [
+            401.5,
+            658.0,
+            489.5,
+            745.5
+          ],
+          "assets": {
+            "normal": {
+              "svg": "al-dhahirah-governorate/arabic-normal.svg",
+              "pdf": "al-dhahirah-governorate/arabic-normal.pdf",
+              "png_512": "al-dhahirah-governorate/arabic-normal-512.png",
+              "png_1024": "al-dhahirah-governorate/arabic-normal-1024.png",
+              "webp": "al-dhahirah-governorate/arabic-normal.webp",
+              "png_2048": "al-dhahirah-governorate/arabic-normal-2048.png"
+            },
+            "black": {
+              "svg": "al-dhahirah-governorate/arabic-black.svg",
+              "pdf": "al-dhahirah-governorate/arabic-black.pdf",
+              "png_2048": "al-dhahirah-governorate/arabic-black-2048.png",
+              "webp": "al-dhahirah-governorate/arabic-black.webp"
+            },
+            "white": {
+              "svg": "al-dhahirah-governorate/arabic-white.svg",
+              "pdf": "al-dhahirah-governorate/arabic-white.pdf",
+              "png_2048": "al-dhahirah-governorate/arabic-white-2048.png",
+              "webp": "al-dhahirah-governorate/arabic-white.webp"
+            }
+          }
+        }
+      }
+    },
+    {
+      "key": "al-buraimi-governorate",
+      "name_en": "Al Buraimi Governorate",
+      "name_ar": "محافظة البريمي",
+      "company_id": null,
+      "slug": null,
+      "pdf_page": 30,
+      "printed_pages": [
+        58,
+        59
+      ],
+      "layouts": {
+        "bilingual": {
+          "crop": [
+            727.5,
+            207.5,
+            892.5,
+            269.5
+          ],
+          "assets": {
+            "normal": {
+              "svg": "al-buraimi-governorate/bilingual-normal.svg",
+              "pdf": "al-buraimi-governorate/bilingual-normal.pdf",
+              "png_512": "al-buraimi-governorate/bilingual-normal-512.png",
+              "png_1024": "al-buraimi-governorate/bilingual-normal-1024.png",
+              "webp": "al-buraimi-governorate/bilingual-normal.webp",
+              "png_2048": "al-buraimi-governorate/bilingual-normal-2048.png"
+            },
+            "black": {
+              "svg": "al-buraimi-governorate/bilingual-black.svg",
+              "pdf": "al-buraimi-governorate/bilingual-black.pdf",
+              "png_2048": "al-buraimi-governorate/bilingual-black-2048.png",
+              "webp": "al-buraimi-governorate/bilingual-black.webp"
+            },
+            "white": {
+              "svg": "al-buraimi-governorate/bilingual-white.svg",
+              "pdf": "al-buraimi-governorate/bilingual-white.pdf",
+              "png_2048": "al-buraimi-governorate/bilingual-white-2048.png",
+              "webp": "al-buraimi-governorate/bilingual-white.webp"
+            }
+          }
+        },
+        "arabic": {
+          "crop": [
+            982.5,
+            181.0,
+            1080.5,
+            269.0
+          ],
+          "assets": {
+            "normal": {
+              "svg": "al-buraimi-governorate/arabic-normal.svg",
+              "pdf": "al-buraimi-governorate/arabic-normal.pdf",
+              "png_512": "al-buraimi-governorate/arabic-normal-512.png",
+              "png_1024": "al-buraimi-governorate/arabic-normal-1024.png",
+              "webp": "al-buraimi-governorate/arabic-normal.webp",
+              "png_2048": "al-buraimi-governorate/arabic-normal-2048.png"
+            },
+            "black": {
+              "svg": "al-buraimi-governorate/arabic-black.svg",
+              "pdf": "al-buraimi-governorate/arabic-black.pdf",
+              "png_2048": "al-buraimi-governorate/arabic-black-2048.png",
+              "webp": "al-buraimi-governorate/arabic-black.webp"
+            },
+            "white": {
+              "svg": "al-buraimi-governorate/arabic-white.svg",
+              "pdf": "al-buraimi-governorate/arabic-white.pdf",
+              "png_2048": "al-buraimi-governorate/arabic-white-2048.png",
+              "webp": "al-buraimi-governorate/arabic-white.webp"
+            }
+          }
+        }
+      }
+    },
+    {
+      "key": "al-dakhiliyah-governorate",
+      "name_en": "Al Dakhiliyah Governorate",
+      "name_ar": "محافظة الداخلية",
+      "company_id": null,
+      "slug": null,
+      "pdf_page": 30,
+      "printed_pages": [
+        58,
+        59
+      ],
+      "layouts": {
+        "bilingual": {
+          "crop": [
+            715.5,
+            377.0,
+            892.5,
+            439.0
+          ],
+          "assets": {
+            "normal": {
+              "svg": "al-dakhiliyah-governorate/bilingual-normal.svg",
+              "pdf": "al-dakhiliyah-governorate/bilingual-normal.pdf",
+              "png_512": "al-dakhiliyah-governorate/bilingual-normal-512.png",
+              "png_1024": "al-dakhiliyah-governorate/bilingual-normal-1024.png",
+              "webp": "al-dakhiliyah-governorate/bilingual-normal.webp",
+              "png_2048": "al-dakhiliyah-governorate/bilingual-normal-2048.png"
+            },
+            "black": {
+              "svg": "al-dakhiliyah-governorate/bilingual-black.svg",
+              "pdf": "al-dakhiliyah-governorate/bilingual-black.pdf",
+              "png_2048": "al-dakhiliyah-governorate/bilingual-black-2048.png",
+              "webp": "al-dakhiliyah-governorate/bilingual-black.webp"
+            },
+            "white": {
+              "svg": "al-dakhiliyah-governorate/bilingual-white.svg",
+              "pdf": "al-dakhiliyah-governorate/bilingual-white.pdf",
+              "png_2048": "al-dakhiliyah-governorate/bilingual-white-2048.png",
+              "webp": "al-dakhiliyah-governorate/bilingual-white.webp"
+            }
+          }
+        },
+        "arabic": {
+          "crop": [
+            984.0,
+            349.5,
+            1079.0,
+            437.5
+          ],
+          "assets": {
+            "normal": {
+              "svg": "al-dakhiliyah-governorate/arabic-normal.svg",
+              "pdf": "al-dakhiliyah-governorate/arabic-normal.pdf",
+              "png_512": "al-dakhiliyah-governorate/arabic-normal-512.png",
+              "png_1024": "al-dakhiliyah-governorate/arabic-normal-1024.png",
+              "webp": "al-dakhiliyah-governorate/arabic-normal.webp",
+              "png_2048": "al-dakhiliyah-governorate/arabic-normal-2048.png"
+            },
+            "black": {
+              "svg": "al-dakhiliyah-governorate/arabic-black.svg",
+              "pdf": "al-dakhiliyah-governorate/arabic-black.pdf",
+              "png_2048": "al-dakhiliyah-governorate/arabic-black-2048.png",
+              "webp": "al-dakhiliyah-governorate/arabic-black.webp"
+            },
+            "white": {
+              "svg": "al-dakhiliyah-governorate/arabic-white.svg",
+              "pdf": "al-dakhiliyah-governorate/arabic-white.pdf",
+              "png_2048": "al-dakhiliyah-governorate/arabic-white-2048.png",
+              "webp": "al-dakhiliyah-governorate/arabic-white.webp"
+            }
+          }
+        }
+      }
+    },
+    {
+      "key": "al-batinah-north-governorate",
+      "name_en": "Al Batinah North Governorate",
+      "name_ar": "محافظة شمال الباطنة",
+      "company_id": null,
+      "slug": null,
+      "pdf_page": 30,
+      "printed_pages": [
+        58,
+        59
+      ],
+      "layouts": {
+        "bilingual": {
+          "crop": [
+            701.5,
+            524.0,
+            892.0,
+            586.0
+          ],
+          "assets": {
+            "normal": {
+              "svg": "al-batinah-north-governorate/bilingual-normal.svg",
+              "pdf": "al-batinah-north-governorate/bilingual-normal.pdf",
+              "png_512": "al-batinah-north-governorate/bilingual-normal-512.png",
+              "png_1024": "al-batinah-north-governorate/bilingual-normal-1024.png",
+              "webp": "al-batinah-north-governorate/bilingual-normal.webp",
+              "png_2048": "al-batinah-north-governorate/bilingual-normal-2048.png"
+            },
+            "black": {
+              "svg": "al-batinah-north-governorate/bilingual-black.svg",
+              "pdf": "al-batinah-north-governorate/bilingual-black.pdf",
+              "png_2048": "al-batinah-north-governorate/bilingual-black-2048.png",
+              "webp": "al-batinah-north-governorate/bilingual-black.webp"
+            },
+            "white": {
+              "svg": "al-batinah-north-governorate/bilingual-white.svg",
+              "pdf": "al-batinah-north-governorate/bilingual-white.pdf",
+              "png_2048": "al-batinah-north-governorate/bilingual-white-2048.png",
+              "webp": "al-batinah-north-governorate/bilingual-white.webp"
+            }
+          }
+        },
+        "arabic": {
+          "crop": [
+            972.5,
+            496.5,
+            1091.0,
+            584.5
+          ],
+          "assets": {
+            "normal": {
+              "svg": "al-batinah-north-governorate/arabic-normal.svg",
+              "pdf": "al-batinah-north-governorate/arabic-normal.pdf",
+              "png_512": "al-batinah-north-governorate/arabic-normal-512.png",
+              "png_1024": "al-batinah-north-governorate/arabic-normal-1024.png",
+              "webp": "al-batinah-north-governorate/arabic-normal.webp",
+              "png_2048": "al-batinah-north-governorate/arabic-normal-2048.png"
+            },
+            "black": {
+              "svg": "al-batinah-north-governorate/arabic-black.svg",
+              "pdf": "al-batinah-north-governorate/arabic-black.pdf",
+              "png_2048": "al-batinah-north-governorate/arabic-black-2048.png",
+              "webp": "al-batinah-north-governorate/arabic-black.webp"
+            },
+            "white": {
+              "svg": "al-batinah-north-governorate/arabic-white.svg",
+              "pdf": "al-batinah-north-governorate/arabic-white.pdf",
+              "png_2048": "al-batinah-north-governorate/arabic-white-2048.png",
+              "webp": "al-batinah-north-governorate/arabic-white.webp"
+            }
+          }
+        }
+      }
+    },
+    {
+      "key": "al-batinah-south-governorate",
+      "name_en": "Al Batinah South Governorate",
+      "name_ar": "محافظة جنوب الباطنة",
+      "company_id": null,
+      "slug": null,
+      "pdf_page": 30,
+      "printed_pages": [
+        58,
+        59
+      ],
+      "layouts": {
+        "bilingual": {
+          "crop": [
+            701.5,
+            685.0,
+            892.0,
+            747.0
+          ],
+          "assets": {
+            "normal": {
+              "svg": "al-batinah-south-governorate/bilingual-normal.svg",
+              "pdf": "al-batinah-south-governorate/bilingual-normal.pdf",
+              "png_512": "al-batinah-south-governorate/bilingual-normal-512.png",
+              "png_1024": "al-batinah-south-governorate/bilingual-normal-1024.png",
+              "webp": "al-batinah-south-governorate/bilingual-normal.webp",
+              "png_2048": "al-batinah-south-governorate/bilingual-normal-2048.png"
+            },
+            "black": {
+              "svg": "al-batinah-south-governorate/bilingual-black.svg",
+              "pdf": "al-batinah-south-governorate/bilingual-black.pdf",
+              "png_2048": "al-batinah-south-governorate/bilingual-black-2048.png",
+              "webp": "al-batinah-south-governorate/bilingual-black.webp"
+            },
+            "white": {
+              "svg": "al-batinah-south-governorate/bilingual-white.svg",
+              "pdf": "al-batinah-south-governorate/bilingual-white.pdf",
+              "png_2048": "al-batinah-south-governorate/bilingual-white-2048.png",
+              "webp": "al-batinah-south-governorate/bilingual-white.webp"
+            }
+          }
+        },
+        "arabic": {
+          "crop": [
+            969.5,
+            657.0,
+            1094.0,
+            745.5
+          ],
+          "assets": {
+            "normal": {
+              "svg": "al-batinah-south-governorate/arabic-normal.svg",
+              "pdf": "al-batinah-south-governorate/arabic-normal.pdf",
+              "png_512": "al-batinah-south-governorate/arabic-normal-512.png",
+              "png_1024": "al-batinah-south-governorate/arabic-normal-1024.png",
+              "webp": "al-batinah-south-governorate/arabic-normal.webp",
+              "png_2048": "al-batinah-south-governorate/arabic-normal-2048.png"
+            },
+            "black": {
+              "svg": "al-batinah-south-governorate/arabic-black.svg",
+              "pdf": "al-batinah-south-governorate/arabic-black.pdf",
+              "png_2048": "al-batinah-south-governorate/arabic-black-2048.png",
+              "webp": "al-batinah-south-governorate/arabic-black.webp"
+            },
+            "white": {
+              "svg": "al-batinah-south-governorate/arabic-white.svg",
+              "pdf": "al-batinah-south-governorate/arabic-white.pdf",
+              "png_2048": "al-batinah-south-governorate/arabic-white-2048.png",
+              "webp": "al-batinah-south-governorate/arabic-white.webp"
+            }
+          }
+        }
+      }
+    },
+    {
+      "key": "tax-authority",
+      "name_en": "Tax Authority",
+      "name_ar": "جهاز الضرائب",
+      "company_id": 2421,
+      "slug": "tax-authority-01-d7f3",
+      "pdf_page": 31,
+      "printed_pages": [
+        60,
+        61
+      ],
+      "layouts": {
+        "bilingual": {
+          "crop": [
+            193.5,
+            374.0,
+            329.5,
+            436.0
+          ],
+          "assets": {
+            "normal": {
+              "svg": "tax-authority/bilingual-normal.svg",
+              "pdf": "tax-authority/bilingual-normal.pdf",
+              "png_512": "tax-authority/bilingual-normal-512.png",
+              "png_1024": "tax-authority/bilingual-normal-1024.png",
+              "webp": "tax-authority/bilingual-normal.webp",
+              "png_2048": "tax-authority/bilingual-normal-2048.png"
+            },
+            "black": {
+              "svg": "tax-authority/bilingual-black.svg",
+              "pdf": "tax-authority/bilingual-black.pdf",
+              "png_2048": "tax-authority/bilingual-black-2048.png",
+              "webp": "tax-authority/bilingual-black.webp"
+            },
+            "white": {
+              "svg": "tax-authority/bilingual-white.svg",
+              "pdf": "tax-authority/bilingual-white.pdf",
+              "png_2048": "tax-authority/bilingual-white-2048.png",
+              "webp": "tax-authority/bilingual-white.webp"
+            }
+          }
+        },
+        "arabic": {
+          "crop": [
+            416.0,
+            347.5,
+            493.5,
+            434.5
+          ],
+          "assets": {
+            "normal": {
+              "svg": "tax-authority/arabic-normal.svg",
+              "pdf": "tax-authority/arabic-normal.pdf",
+              "png_512": "tax-authority/arabic-normal-512.png",
+              "png_1024": "tax-authority/arabic-normal-1024.png",
+              "webp": "tax-authority/arabic-normal.webp",
+              "png_2048": "tax-authority/arabic-normal-2048.png"
+            },
+            "black": {
+              "svg": "tax-authority/arabic-black.svg",
+              "pdf": "tax-authority/arabic-black.pdf",
+              "png_2048": "tax-authority/arabic-black-2048.png",
+              "webp": "tax-authority/arabic-black.webp"
+            },
+            "white": {
+              "svg": "tax-authority/arabic-white.svg",
+              "pdf": "tax-authority/arabic-white.pdf",
+              "png_2048": "tax-authority/arabic-white-2048.png",
+              "webp": "tax-authority/arabic-white.webp"
+            }
+          }
+        }
+      }
+    },
+    {
+      "key": "oman-investment-authority",
+      "name_en": "Oman Investment Authority",
+      "name_ar": "جهاز الاستثمار العُماني",
+      "company_id": 2469,
+      "slug": "oman-investment-authority-8019",
+      "pdf_page": 31,
+      "printed_pages": [
+        60,
+        61
+      ],
+      "layouts": {
+        "bilingual": {
+          "crop": [
+            148.0,
+            523.5,
+            329.5,
+            585.5
+          ],
+          "assets": {
+            "normal": {
+              "svg": "oman-investment-authority/bilingual-normal.svg",
+              "pdf": "oman-investment-authority/bilingual-normal.pdf",
+              "png_512": "oman-investment-authority/bilingual-normal-512.png",
+              "png_1024": "oman-investment-authority/bilingual-normal-1024.png",
+              "webp": "oman-investment-authority/bilingual-normal.webp",
+              "png_2048": "oman-investment-authority/bilingual-normal-2048.png"
+            },
+            "black": {
+              "svg": "oman-investment-authority/bilingual-black.svg",
+              "pdf": "oman-investment-authority/bilingual-black.pdf",
+              "png_2048": "oman-investment-authority/bilingual-black-2048.png",
+              "webp": "oman-investment-authority/bilingual-black.webp"
+            },
+            "white": {
+              "svg": "oman-investment-authority/bilingual-white.svg",
+              "pdf": "oman-investment-authority/bilingual-white.pdf",
+              "png_2048": "oman-investment-authority/bilingual-white-2048.png",
+              "webp": "oman-investment-authority/bilingual-white.webp"
+            }
+          }
+        },
+        "arabic": {
+          "crop": [
+            394.0,
+            496.5,
+            515.5,
+            584.0
+          ],
+          "assets": {
+            "normal": {
+              "svg": "oman-investment-authority/arabic-normal.svg",
+              "pdf": "oman-investment-authority/arabic-normal.pdf",
+              "png_512": "oman-investment-authority/arabic-normal-512.png",
+              "png_1024": "oman-investment-authority/arabic-normal-1024.png",
+              "webp": "oman-investment-authority/arabic-normal.webp",
+              "png_2048": "oman-investment-authority/arabic-normal-2048.png"
+            },
+            "black": {
+              "svg": "oman-investment-authority/arabic-black.svg",
+              "pdf": "oman-investment-authority/arabic-black.pdf",
+              "png_2048": "oman-investment-authority/arabic-black-2048.png",
+              "webp": "oman-investment-authority/arabic-black.webp"
+            },
+            "white": {
+              "svg": "oman-investment-authority/arabic-white.svg",
+              "pdf": "oman-investment-authority/arabic-white.pdf",
+              "png_2048": "oman-investment-authority/arabic-white-2048.png",
+              "webp": "oman-investment-authority/arabic-white.webp"
+            }
+          }
+        },
+        "international": {
+          "crop": [
+            679.5,
+            582.5,
+            867.5,
+            645.5
+          ],
+          "assets": {
+            "normal": {
+              "svg": "oman-investment-authority/international-normal.svg",
+              "pdf": "oman-investment-authority/international-normal.pdf",
+              "png_512": "oman-investment-authority/international-normal-512.png",
+              "png_1024": "oman-investment-authority/international-normal-1024.png",
+              "webp": "oman-investment-authority/international-normal.webp",
+              "png_2048": "oman-investment-authority/international-normal-2048.png"
+            },
+            "black": {
+              "svg": "oman-investment-authority/international-black.svg",
+              "pdf": "oman-investment-authority/international-black.pdf",
+              "png_2048": "oman-investment-authority/international-black-2048.png",
+              "webp": "oman-investment-authority/international-black.webp"
+            },
+            "white": {
+              "svg": "oman-investment-authority/international-white.svg",
+              "pdf": "oman-investment-authority/international-white.pdf",
+              "png_2048": "oman-investment-authority/international-white-2048.png",
+              "webp": "oman-investment-authority/international-white.webp"
+            }
+          },
+          "pdf_page": 33,
+          "usage": "Outside the Sultanate of Oman only"
+        }
+      }
+    },
+    {
+      "key": "national-centre-for-statistics-and-information",
+      "name_en": "National Centre for Statistics and Information",
+      "name_ar": "المركز الوطني للإحصاء والمعلومات",
+      "company_id": 2489,
+      "slug": "national-centre-for-statistics-and-information-d0a3",
+      "pdf_page": 31,
+      "printed_pages": [
+        60,
+        61
+      ],
+      "layouts": {
+        "bilingual": {
+          "crop": [
+            77.5,
+            682.5,
+            329.5,
+            744.5
+          ],
+          "assets": {
+            "normal": {
+              "svg": "national-centre-for-statistics-and-information/bilingual-normal.svg",
+              "pdf": "national-centre-for-statistics-and-information/bilingual-normal.pdf",
+              "png_512": "national-centre-for-statistics-and-information/bilingual-normal-512.png",
+              "png_1024": "national-centre-for-statistics-and-information/bilingual-normal-1024.png",
+              "webp": "national-centre-for-statistics-and-information/bilingual-normal.webp",
+              "png_2048": "national-centre-for-statistics-and-information/bilingual-normal-2048.png"
+            },
+            "black": {
+              "svg": "national-centre-for-statistics-and-information/bilingual-black.svg",
+              "pdf": "national-centre-for-statistics-and-information/bilingual-black.pdf",
+              "png_2048": "national-centre-for-statistics-and-information/bilingual-black-2048.png",
+              "webp": "national-centre-for-statistics-and-information/bilingual-black.webp"
+            },
+            "white": {
+              "svg": "national-centre-for-statistics-and-information/bilingual-white.svg",
+              "pdf": "national-centre-for-statistics-and-information/bilingual-white.pdf",
+              "png_2048": "national-centre-for-statistics-and-information/bilingual-white-2048.png",
+              "webp": "national-centre-for-statistics-and-information/bilingual-white.webp"
+            }
+          }
+        },
+        "arabic": {
+          "crop": [
+            366.0,
+            655.0,
+            544.0,
+            743.0
+          ],
+          "assets": {
+            "normal": {
+              "svg": "national-centre-for-statistics-and-information/arabic-normal.svg",
+              "pdf": "national-centre-for-statistics-and-information/arabic-normal.pdf",
+              "png_512": "national-centre-for-statistics-and-information/arabic-normal-512.png",
+              "png_1024": "national-centre-for-statistics-and-information/arabic-normal-1024.png",
+              "webp": "national-centre-for-statistics-and-information/arabic-normal.webp",
+              "png_2048": "national-centre-for-statistics-and-information/arabic-normal-2048.png"
+            },
+            "black": {
+              "svg": "national-centre-for-statistics-and-information/arabic-black.svg",
+              "pdf": "national-centre-for-statistics-and-information/arabic-black.pdf",
+              "png_2048": "national-centre-for-statistics-and-information/arabic-black-2048.png",
+              "webp": "national-centre-for-statistics-and-information/arabic-black.webp"
+            },
+            "white": {
+              "svg": "national-centre-for-statistics-and-information/arabic-white.svg",
+              "pdf": "national-centre-for-statistics-and-information/arabic-white.pdf",
+              "png_2048": "national-centre-for-statistics-and-information/arabic-white-2048.png",
+              "webp": "national-centre-for-statistics-and-information/arabic-white.webp"
+            }
+          },
+          "pdf_page": 31
+        }
+      }
+    },
+    {
+      "key": "board-of-governors-of-the-central-bank-of-oman",
+      "name_en": "Board of Governors of the Central Bank of Oman",
+      "name_ar": "مجلس محافظي البنك المركزي العُماني",
+      "company_id": null,
+      "slug": null,
+      "pdf_page": 31,
+      "printed_pages": [
+        60,
+        61
+      ],
+      "layouts": {
+        "bilingual": {
+          "crop": [
+            673.5,
+            374.0,
+            935.0,
+            436.0
+          ],
+          "assets": {
+            "normal": {
+              "svg": "board-of-governors-of-the-central-bank-of-oman/bilingual-normal.svg",
+              "pdf": "board-of-governors-of-the-central-bank-of-oman/bilingual-normal.pdf",
+              "png_512": "board-of-governors-of-the-central-bank-of-oman/bilingual-normal-512.png",
+              "png_1024": "board-of-governors-of-the-central-bank-of-oman/bilingual-normal-1024.png",
+              "webp": "board-of-governors-of-the-central-bank-of-oman/bilingual-normal.webp",
+              "png_2048": "board-of-governors-of-the-central-bank-of-oman/bilingual-normal-2048.png"
+            },
+            "black": {
+              "svg": "board-of-governors-of-the-central-bank-of-oman/bilingual-black.svg",
+              "pdf": "board-of-governors-of-the-central-bank-of-oman/bilingual-black.pdf",
+              "png_2048": "board-of-governors-of-the-central-bank-of-oman/bilingual-black-2048.png",
+              "webp": "board-of-governors-of-the-central-bank-of-oman/bilingual-black.webp"
+            },
+            "white": {
+              "svg": "board-of-governors-of-the-central-bank-of-oman/bilingual-white.svg",
+              "pdf": "board-of-governors-of-the-central-bank-of-oman/bilingual-white.pdf",
+              "png_2048": "board-of-governors-of-the-central-bank-of-oman/bilingual-white-2048.png",
+              "webp": "board-of-governors-of-the-central-bank-of-oman/bilingual-white.webp"
+            }
+          }
+        },
+        "arabic": {
+          "crop": [
+            985.0,
+            326.0,
+            1115.0,
+            434.5
+          ],
+          "assets": {
+            "normal": {
+              "svg": "board-of-governors-of-the-central-bank-of-oman/arabic-normal.svg",
+              "pdf": "board-of-governors-of-the-central-bank-of-oman/arabic-normal.pdf",
+              "png_512": "board-of-governors-of-the-central-bank-of-oman/arabic-normal-512.png",
+              "png_1024": "board-of-governors-of-the-central-bank-of-oman/arabic-normal-1024.png",
+              "webp": "board-of-governors-of-the-central-bank-of-oman/arabic-normal.webp",
+              "png_2048": "board-of-governors-of-the-central-bank-of-oman/arabic-normal-2048.png"
+            },
+            "black": {
+              "svg": "board-of-governors-of-the-central-bank-of-oman/arabic-black.svg",
+              "pdf": "board-of-governors-of-the-central-bank-of-oman/arabic-black.pdf",
+              "png_2048": "board-of-governors-of-the-central-bank-of-oman/arabic-black-2048.png",
+              "webp": "board-of-governors-of-the-central-bank-of-oman/arabic-black.webp"
+            },
+            "white": {
+              "svg": "board-of-governors-of-the-central-bank-of-oman/arabic-white.svg",
+              "pdf": "board-of-governors-of-the-central-bank-of-oman/arabic-white.pdf",
+              "png_2048": "board-of-governors-of-the-central-bank-of-oman/arabic-white-2048.png",
+              "webp": "board-of-governors-of-the-central-bank-of-oman/arabic-white.webp"
+            }
+          }
+        }
+      }
+    },
+    {
+      "key": "oman-medical-speciality-board",
+      "name_en": "Oman Medical Speciality Board",
+      "name_ar": "المجلس العُماني للاختصاصات الطبية",
+      "company_id": null,
+      "slug": null,
+      "pdf_page": 31,
+      "printed_pages": [
+        60,
+        61
+      ],
+      "layouts": {
+        "bilingual": {
+          "crop": [
+            693.5,
+            522.0,
+            936.0,
+            584.0
+          ],
+          "assets": {
+            "normal": {
+              "svg": "oman-medical-speciality-board/bilingual-normal.svg",
+              "pdf": "oman-medical-speciality-board/bilingual-normal.pdf",
+              "png_512": "oman-medical-speciality-board/bilingual-normal-512.png",
+              "png_1024": "oman-medical-speciality-board/bilingual-normal-1024.png",
+              "webp": "oman-medical-speciality-board/bilingual-normal.webp",
+              "png_2048": "oman-medical-speciality-board/bilingual-normal-2048.png"
+            },
+            "black": {
+              "svg": "oman-medical-speciality-board/bilingual-black.svg",
+              "pdf": "oman-medical-speciality-board/bilingual-black.pdf",
+              "png_2048": "oman-medical-speciality-board/bilingual-black-2048.png",
+              "webp": "oman-medical-speciality-board/bilingual-black.webp"
+            },
+            "white": {
+              "svg": "oman-medical-speciality-board/bilingual-white.svg",
+              "pdf": "oman-medical-speciality-board/bilingual-white.pdf",
+              "png_2048": "oman-medical-speciality-board/bilingual-white-2048.png",
+              "webp": "oman-medical-speciality-board/bilingual-white.webp"
+            }
+          }
+        },
+        "arabic": {
+          "crop": [
+            953.5,
+            494.0,
+            1146.5,
+            584.0
+          ],
+          "assets": {
+            "normal": {
+              "svg": "oman-medical-speciality-board/arabic-normal.svg",
+              "pdf": "oman-medical-speciality-board/arabic-normal.pdf",
+              "png_512": "oman-medical-speciality-board/arabic-normal-512.png",
+              "png_1024": "oman-medical-speciality-board/arabic-normal-1024.png",
+              "webp": "oman-medical-speciality-board/arabic-normal.webp",
+              "png_2048": "oman-medical-speciality-board/arabic-normal-2048.png"
+            },
+            "black": {
+              "svg": "oman-medical-speciality-board/arabic-black.svg",
+              "pdf": "oman-medical-speciality-board/arabic-black.pdf",
+              "png_2048": "oman-medical-speciality-board/arabic-black-2048.png",
+              "webp": "oman-medical-speciality-board/arabic-black.webp"
+            },
+            "white": {
+              "svg": "oman-medical-speciality-board/arabic-white.svg",
+              "pdf": "oman-medical-speciality-board/arabic-white.pdf",
+              "png_2048": "oman-medical-speciality-board/arabic-white-2048.png",
+              "webp": "oman-medical-speciality-board/arabic-white.webp"
+            }
+          }
+        }
+      }
+    },
+    {
+      "key": "state-financial-and-administrative-audit-authority",
+      "name_en": "State Financial and Administrative Audit Authority",
+      "name_ar": "جهاز الرقابة المالية والإدارية للدولة",
+      "company_id": 2468,
+      "slug": "state-financial-and-administrative-audit-authority-d23e",
+      "pdf_page": 31,
+      "printed_pages": [
+        60,
+        61
+      ],
+      "layouts": {
+        "bilingual": {
+          "crop": [
+            650.5,
+            682.5,
+            936.0,
+            744.5
+          ],
+          "assets": {
+            "normal": {
+              "svg": "state-financial-and-administrative-audit-authority/bilingual-normal.svg",
+              "pdf": "state-financial-and-administrative-audit-authority/bilingual-normal.pdf",
+              "png_512": "state-financial-and-administrative-audit-authority/bilingual-normal-512.png",
+              "png_1024": "state-financial-and-administrative-audit-authority/bilingual-normal-1024.png",
+              "webp": "state-financial-and-administrative-audit-authority/bilingual-normal.webp",
+              "png_2048": "state-financial-and-administrative-audit-authority/bilingual-normal-2048.png"
+            },
+            "black": {
+              "svg": "state-financial-and-administrative-audit-authority/bilingual-black.svg",
+              "pdf": "state-financial-and-administrative-audit-authority/bilingual-black.pdf",
+              "png_2048": "state-financial-and-administrative-audit-authority/bilingual-black-2048.png",
+              "webp": "state-financial-and-administrative-audit-authority/bilingual-black.webp"
+            },
+            "white": {
+              "svg": "state-financial-and-administrative-audit-authority/bilingual-white.svg",
+              "pdf": "state-financial-and-administrative-audit-authority/bilingual-white.pdf",
+              "png_2048": "state-financial-and-administrative-audit-authority/bilingual-white-2048.png",
+              "webp": "state-financial-and-administrative-audit-authority/bilingual-white.webp"
+            }
+          }
+        },
+        "arabic": {
+          "crop": [
+            995.5,
+            635.5,
+            1104.5,
+            743.0
+          ],
+          "assets": {
+            "normal": {
+              "svg": "state-financial-and-administrative-audit-authority/arabic-normal.svg",
+              "pdf": "state-financial-and-administrative-audit-authority/arabic-normal.pdf",
+              "png_512": "state-financial-and-administrative-audit-authority/arabic-normal-512.png",
+              "png_1024": "state-financial-and-administrative-audit-authority/arabic-normal-1024.png",
+              "webp": "state-financial-and-administrative-audit-authority/arabic-normal.webp",
+              "png_2048": "state-financial-and-administrative-audit-authority/arabic-normal-2048.png"
+            },
+            "black": {
+              "svg": "state-financial-and-administrative-audit-authority/arabic-black.svg",
+              "pdf": "state-financial-and-administrative-audit-authority/arabic-black.pdf",
+              "png_2048": "state-financial-and-administrative-audit-authority/arabic-black-2048.png",
+              "webp": "state-financial-and-administrative-audit-authority/arabic-black.webp"
+            },
+            "white": {
+              "svg": "state-financial-and-administrative-audit-authority/arabic-white.svg",
+              "pdf": "state-financial-and-administrative-audit-authority/arabic-white.pdf",
+              "png_2048": "state-financial-and-administrative-audit-authority/arabic-white-2048.png",
+              "webp": "state-financial-and-administrative-audit-authority/arabic-white.webp"
+            }
+          },
+          "pdf_page": 31
+        }
+      }
+    },
+    {
+      "key": "sultanate-of-oman",
+      "name_en": "Sultanate of Oman",
+      "name_ar": "سلطنة عُمان",
+      "company_id": null,
+      "slug": null,
+      "pdf_page": 9,
+      "printed_pages": [
+        16,
+        17
+      ],
+      "layouts": {
+        "bilingual": {
+          "crop": [
+            105.0,
+            335.0,
+            509.5,
+            496.5
+          ],
+          "assets": {
+            "normal": {
+              "svg": "sultanate-of-oman/bilingual-normal.svg",
+              "pdf": "sultanate-of-oman/bilingual-normal.pdf",
+              "png_512": "sultanate-of-oman/bilingual-normal-512.png",
+              "png_1024": "sultanate-of-oman/bilingual-normal-1024.png",
+              "webp": "sultanate-of-oman/bilingual-normal.webp",
+              "png_2048": "sultanate-of-oman/bilingual-normal-2048.png"
+            },
+            "black": {
+              "svg": "sultanate-of-oman/bilingual-black.svg",
+              "pdf": "sultanate-of-oman/bilingual-black.pdf",
+              "png_2048": "sultanate-of-oman/bilingual-black-2048.png",
+              "webp": "sultanate-of-oman/bilingual-black.webp"
+            },
+            "white": {
+              "svg": "sultanate-of-oman/bilingual-white.svg",
+              "pdf": "sultanate-of-oman/bilingual-white.pdf",
+              "png_2048": "sultanate-of-oman/bilingual-white-2048.png",
+              "webp": "sultanate-of-oman/bilingual-white.webp"
+            }
+          },
+          "pdf_page": 9
+        },
+        "arabic": {
+          "crop": [
+            778.0,
+            298.5,
+            1000.5,
+            534.5
+          ],
+          "assets": {
+            "normal": {
+              "svg": "sultanate-of-oman/arabic-normal.svg",
+              "pdf": "sultanate-of-oman/arabic-normal.pdf",
+              "png_512": "sultanate-of-oman/arabic-normal-512.png",
+              "png_1024": "sultanate-of-oman/arabic-normal-1024.png",
+              "webp": "sultanate-of-oman/arabic-normal.webp",
+              "png_2048": "sultanate-of-oman/arabic-normal-2048.png"
+            },
+            "black": {
+              "svg": "sultanate-of-oman/arabic-black.svg",
+              "pdf": "sultanate-of-oman/arabic-black.pdf",
+              "png_2048": "sultanate-of-oman/arabic-black-2048.png",
+              "webp": "sultanate-of-oman/arabic-black.webp"
+            },
+            "white": {
+              "svg": "sultanate-of-oman/arabic-white.svg",
+              "pdf": "sultanate-of-oman/arabic-white.pdf",
+              "png_2048": "sultanate-of-oman/arabic-white-2048.png",
+              "webp": "sultanate-of-oman/arabic-white.webp"
+            }
+          },
+          "pdf_page": 9
+        }
+      }
+    }
+  ]
+}

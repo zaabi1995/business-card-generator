@@ -24,6 +24,38 @@ class LogoLibrary {
         ];
     }
 
+    /** Reviewed alternate layouts and PDF assets, stored beside the original columns. */
+    public static function identityAssets(array $company): array {
+        $data = json_decode((string) ($company['logo_identity_assets'] ?? ''), true);
+        return is_array($data) ? $data : [];
+    }
+
+    public static function downloadPaths(array $company): array {
+        $paths = [
+            'svg' => $company['logo_svg_path'] ?? null,
+            'png_1024' => $company['logo_png_path'] ?? null,
+            'png_512' => $company['logo_png_512_path'] ?? null,
+            'png_2048' => $company['logo_png_2048_path'] ?? null,
+            'webp' => $company['logo_webp_path'] ?? null,
+        ];
+        foreach (['dark', 'white'] as $tone) {
+            foreach (['svg', 'png', 'webp'] as $format) {
+                $paths["{$format}_{$tone}"] = $company["logo_{$format}_{$tone}_path"] ?? null;
+            }
+        }
+        $identity = self::identityAssets($company);
+        foreach (['bilingual' => '', 'arabic' => 'ar_', 'international' => 'int_'] as $layout => $prefix) {
+            foreach (['normal' => '', 'black' => '_dark', 'white' => '_white'] as $tone => $suffix) {
+                $assets = $identity['layouts'][$layout]['assets'][$tone] ?? [];
+                foreach (['svg', 'pdf', 'webp', 'png_2048'] as $format) {
+                    $name = $format === 'png_2048' ? ($suffix ? 'png' : 'png_2048') : $format;
+                    if (!empty($assets[$format])) $paths[$prefix . $name . $suffix] = $assets[$format];
+                }
+            }
+        }
+        return $paths;
+    }
+
     public static function storageDir(string $status, int $companyId): string {
         $status = in_array($status, ['indexed','verified','pending'], true) ? $status : 'indexed';
         $base = dirname(__DIR__) . '/storage/logos/' . $status;
