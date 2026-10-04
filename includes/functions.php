@@ -606,6 +606,24 @@ function clearCompanyContext() {
     unset($_SESSION['company_name']);
 }
 
+/**
+ * The sign-in URL that brings the visitor back to this page afterwards
+ * (/login?redirect=...). One sign-in for cardify.om (5 Oct 2026): the guards
+ * used to send people to a bare login.php, so they lost the page they wanted.
+ * Only GET pages with a path login.php accepts are carried back.
+ */
+if (!function_exists('loginUrlReturningHere')) {
+    function loginUrlReturningHere(): string {
+        $url = getBasePath() . 'login.php';
+        $here = (string) ($_SERVER['REQUEST_URI'] ?? '');
+        if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'GET' && preg_match('#^/[a-zA-Z0-9/_.\-?&=%]*$#', $here)
+            && !preg_match('#^/(login|logout)#', $here)) {
+            $url .= '?redirect=' . rawurlencode($here);
+        }
+        return $url;
+    }
+}
+
 function requireAdmin() {
     // Auto-load Auth so callers don't all need to require it first. Some
     // admin pages (e.g. auto_generate.php) call requireAdmin BEFORE pulling
@@ -618,7 +636,7 @@ function requireAdmin() {
 
     // Check if logged in
     if (!class_exists('Auth') || !Auth::isLoggedIn()) {
-        header('Location: ' . getBasePath() . 'login.php');
+        header('Location: ' . loginUrlReturningHere());
         exit;
     }
 

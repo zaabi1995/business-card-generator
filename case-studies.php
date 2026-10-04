@@ -127,6 +127,7 @@ if ($activeCase) {
 <main class="bg-gray-50 min-h-screen pt-24 pb-16">
     <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
 
+    <?php if ($activeCase) { $p = $activeCase['key_prefix']; } // the detail view's translation keys ?>
     <?php if (!$activeCase): // --- LIST VIEW --- ?>
         <header class="text-center mb-12">
             <p class="text-sm font-semibold uppercase tracking-wider text-blue-600 mb-3"><?= htmlspecialchars(t('case_studies.hero_eyebrow')) ?></p>

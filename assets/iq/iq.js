@@ -258,30 +258,7 @@
   /* ---------- account ---------- */
 
   function account() {
-    var otp = document.getElementById('iq-otp');
-    if (otp) {
-      var msg = otp.querySelector('.iqx-msg');
-      otp.addEventListener('submit', function (e) {
-        e.preventDefault();
-        var btn = otp.querySelector('button[type=submit]');
-        btn.disabled = true;
-        msg.textContent = '';
-        api('otp_send', { identifier: otp.identifier.value.trim() }).then(function () {
-          otp.querySelector('.iqx-code').hidden = false;
-          msg.textContent = S.code_sent;
-          otp.code.focus();
-          setTimeout(function () { btn.disabled = false; }, 30000);
-        }).catch(function (err) { msg.textContent = errText(err.code); btn.disabled = false; });
-      });
-      var verify = function () {
-        api('otp_verify', { code: otp.code.value.trim() }).then(function () {
-          var next = otp.getAttribute('data-next');
-          location.href = next ? D.base + next : D.base + '/account';
-        }).catch(function (err) { msg.textContent = errText(err.code); });
-      };
-      otp.querySelector('[data-iq-verify]').addEventListener('click', verify);
-      otp.code.addEventListener('input', function () { if (/^\d{6}$/.test(otp.code.value)) verify(); });
-    }
+    // Sign-in is /login for all of cardify.om (one sign-in, 4 Oct 2026).
     var prof = document.getElementById('iq-profile');
     if (prof) {
       prof.addEventListener('submit', function (e) {

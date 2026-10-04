@@ -17,7 +17,7 @@ declare(strict_types=1);
  *   /iq/certificate/{id} certificate PDF (paid or IQ Pro)
  *   /iq/og/{id}          share image for a result
  *   /iq/leaderboard      public leaderboard
- *   /iq/account          sign in (code by email or WhatsApp), profile, history, purchases
+ *   /iq/account          profile, history, purchases (sign-in is the site's /login)
  *   /iq/practice         practice mode (IQ Pro)
  *   /iq/api/{action}     JSON
  */
@@ -918,11 +918,8 @@ function api(string $action): void
             api_out(['ok' => true]);
         case 'logout':
             // One sign-in, one sign-out: this ends the Cardify session too.
-            IqStore::signOut();
-            require_once INCLUDES_DIR . '/LogoAccess.php';
-            LogoAccess::signOut();
-            require_once INCLUDES_DIR . '/Auth.php';
-            Auth::logout();
+            require_once INCLUDES_DIR . '/SignOut.php';
+            SignOut::all();
             api_out(['ok' => true]);
         case 'checkout':
             $u = IqStore::user();

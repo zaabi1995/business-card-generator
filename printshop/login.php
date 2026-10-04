@@ -24,6 +24,10 @@ if ($ctx['shop']) {
 // Only when nobody is signed in: a Cardify user who is not an operator would
 // otherwise bounce between /login and the dashboard forever.
 require_once INCLUDES_DIR . '/Auth.php';
+if (Auth::isLoggedIn() && PrintShopAuth::attachForSignedInUser()) {
+    header('Location: ' . getBasePath() . 'printshop/dashboard.php');
+    exit;
+}
 if (!Auth::isLoggedIn()) {
     header('Location: ' . getBasePath() . 'login?' . http_build_query(['method' => 'code', 'redirect' => '/printshop/dashboard.php']), true, 302);
     exit;

@@ -448,7 +448,7 @@ button[disabled]{opacity:.5;cursor:not-allowed}
   </div>
 
   <p class="foot">
-    <a href="/?lang=<?= $otherLocale ?>"><?= $otherLocale === 'ar' ? 'العربية' : 'English' ?></a>
+    <a href="/my-card?lang=<?= $otherLocale ?>"><?= $otherLocale === 'ar' ? 'العربية' : 'English' ?></a>
     &middot; <?= htmlspecialchars($companyName) ?>
   </p>
 </div>

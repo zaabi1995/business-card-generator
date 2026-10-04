@@ -81,10 +81,16 @@ class PrintShopBilling {
             'postal_code' => $order['shipping_postal'] ?? ''
         ], $billingData);
 
+        // After a deposit, the payment that finishes the order is the balance,
+        // not the full total again (5 Oct 2026).
+        $amountDue = (float)$order['total'];
+        if (!empty($order['deposit_paid_at']) && (float)($order['balance_due'] ?? 0) > 0) {
+            $amountDue = (float)$order['balance_due'];
+        }
         return Payment::createIntent(
             'print_order',
             (string)$orderId,
-            (float)$order['total'],
+            $amountDue,
             $order['company_id'],
             $billingData,
             $order['currency'] ?? 'OMR'

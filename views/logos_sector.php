@@ -193,11 +193,11 @@ $page = $data['page'];
                             'png_dark'  => $_abs($r['logo_png_dark_path']  ?? null),
                             'webp_dark' => $_abs($r['logo_webp_dark_path'] ?? null),
                         ],
-                        'profile_url'    => '/companies/' . $r['slug'],
+                        'profile_url'    => (function_exists('currentLocale') && currentLocale() === 'ar' ? '/ar' : '') . '/companies/' . $r['slug'],
                     ];
                 ?>
                     <?php $bg = $r['logo_dominant_color'] ?: '#f9fafb'; ?>
-                    <a href="/companies/<?= logos_sector_esc($r['slug']) ?>"
+                    <a href="<?= (function_exists('currentLocale') && currentLocale() === 'ar' ? '/ar' : '') ?>/companies/<?= logos_sector_esc($r['slug']) ?>"
                        class="cardify-logo-card group relative bg-white rounded-xl border border-gray-200 hover:border-gray-300 transition-all duration-200 overflow-hidden hover:-translate-y-0.5 hover:shadow-[0_8px_24px_-8px_rgba(15,23,42,0.18)]"
                        style="--brand-bg: <?= logos_sector_esc($bg) ?>"
                        data-logo='<?= htmlspecialchars(json_encode($_quickJson, JsonLd::SAFE | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE), ENT_QUOTES, "UTF-8") ?>'>
@@ -326,7 +326,7 @@ $page = $data['page'];
             + '<div class="mb-3"><p class="text-xs text-gray-500 mb-1.5">' + escapeAttr(<?= json_encode($isAr ? 'الأصلي' : 'Original') ?>) + '</p><div class="flex flex-wrap gap-1.5">' + (fmtRow || '<span class="text-xs text-gray-400">,</span>') + '</div></div>'
             + (darkRow ? '<div class="mb-4"><p class="text-xs text-gray-500 mb-1.5">' + escapeAttr(<?= json_encode($isAr ? 'داكن (للخلفيات الفاتحة)' : 'Dark (for light backgrounds)') ?>) + '</p><div class="flex flex-wrap gap-1.5">' + darkRow + '</div></div>' : '')
             + '<div class="flex items-center justify-end gap-2 pt-3 border-t border-gray-100">'
-            +   '<a href="' + escapeAttr(row.profile_url || ('/companies/' + (row.slug || ''))) + '" class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">'
+            +   '<a href="' + escapeAttr(row.profile_url || ((isAr ? '/ar' : '') + '/companies/' + (row.slug || ''))) + '" class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">'
             +     escapeAttr(<?= json_encode($isAr ? 'فتح الصفحة الكاملة' : 'Open full page') ?>) + ' <i class="fa-solid fa-arrow-' + (isAr ? 'left' : 'right') + ' text-xs"></i>'
             +   '</a>'
             + '</div>';

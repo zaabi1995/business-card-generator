@@ -28,7 +28,11 @@ $accessReturn = '/logo-access.php?company=' . (int)($logoAccessCompany ?? 0) . '
         $accessHere = (string) ($_SERVER['REQUEST_URI'] ?? '');
         if (!preg_match('#^/[a-zA-Z0-9/_.\-?&=%]*$#', $accessHere)) $accessHere = $accessReturn;
         ?>
+        <?php if (!empty($_SESSION['iq_user_id']) && !LogoAccess::member()): /* signed in by WhatsApp, no email yet */ ?>
+        <a class="logo-access-primary" href="/login?<?= $accessEsc(http_build_query(['method' => 'code', 'need' => 'email', 'redirect' => $accessHere])) ?>"><?= t('logoaccess.add_email') ?></a>
+        <?php else: ?>
         <a class="logo-access-primary" href="/login?<?= $accessEsc(http_build_query(['method' => 'code', 'redirect' => $accessHere])) ?>"><?= t('logoaccess.register') ?></a>
+        <?php endif; ?>
     </div>
 
     <div data-access-member hidden>

@@ -271,7 +271,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     <?= gccEsc(t('gccbi.hero_cta_explore')) ?>
                     <i class="fa-solid fa-arrow-down text-xs"></i>
                 </a>
-                <a href="/oman-business-index" class="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-white border border-gray-300 text-gray-800 font-semibold hover:border-blue-300 hover:text-blue-700 transition">
+                <a href="<?= (function_exists('currentLocale') && currentLocale() === 'ar' ? '/ar' : '') ?>/oman-business-index" class="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-white border border-gray-300 text-gray-800 font-semibold hover:border-blue-300 hover:text-blue-700 transition">
                     <?= gccEsc(t('gccbi.hero_cta_oman')) ?>
                     <i class="fa-solid fa-arrow-right text-xs"></i>
                 </a>

@@ -502,7 +502,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                                 $sectorPct = $stats['total'] > 0 ? round(($secCount / $stats['total']) * 100, 1) : 0;
                             ?>
                                 <li>
-                                    <a href="/companies/sector/<?= obiEscq($secSlug) ?>" class="group block">
+                                    <a href="<?= $isAr ? '/ar' : '' ?>/companies/sector/<?= obiEscq($secSlug) ?>" class="group block">
                                         <div class="flex items-baseline justify-between gap-3">
                                             <span class="text-sm font-semibold text-gray-900 group-hover:text-blue-700">
                                                 <?= ($idx + 1) ?>. <?= obiEscq($secLabel) ?>
@@ -599,7 +599,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                         <p class="mt-2 text-gray-600">
                             <?= t('obi.finding04_body', ['sector' => htmlspecialchars($sLabel), 'count' => number_format($sCount), 'plural' => ($sCount === 1 ? '' : 's')]) ?>
                         </p>
-                        <a href="/companies/sector/<?= obiEscq($sSlug) ?>" class="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-blue-700 hover:text-blue-800">
+                        <a href="<?= $isAr ? '/ar' : '' ?>/companies/sector/<?= obiEscq($sSlug) ?>" class="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-blue-700 hover:text-blue-800">
                             <?= htmlspecialchars(t('obi.finding04_browse', ['sector' => $sLabel])) ?>
                             <i class="fa-solid fa-arrow-right text-xs"></i>
                         </a>
@@ -698,7 +698,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
         <div class="mt-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             <?php foreach ($SECTORS as $slug => $labels): ?>
                 <?php $count = $sectorCounts[$slug] ?? 0; ?>
-                <a href="/companies/sector/<?= obiEscq($slug) ?>" class="group flex items-center justify-between gap-4 p-4 rounded-xl border border-gray-200 bg-white hover:border-blue-300 hover:shadow-sm transition">
+                <a href="<?= $isAr ? '/ar' : '' ?>/companies/sector/<?= obiEscq($slug) ?>" class="group flex items-center justify-between gap-4 p-4 rounded-xl border border-gray-200 bg-white hover:border-blue-300 hover:shadow-sm transition">
                     <div class="min-w-0">
                         <div class="font-semibold text-gray-900 group-hover:text-blue-700 truncate"><?= obiEscq($isAr ? $labels['ar'] : $labels['en']) ?></div>
                         <div class="text-xs text-gray-500 <?= $isAr ? '' : 'font-arabic' ?> truncate" <?= $isAr ? 'dir="ltr"' : 'dir="rtl"' ?>><?= obiEscq($isAr ? $labels['en'] : $labels['ar']) ?></div>
@@ -908,7 +908,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                         <?= htmlspecialchars(t('obi.lib_body', ['count' => number_format($logoTotal)])) ?>
                     </p>
                 </div>
-                <a href="/logos"
+                <a href="<?= $isAr ? '/ar' : '' ?>/logos"
                    class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-lg shadow-blue-600/20 whitespace-nowrap self-start md:self-end">
                     <?= htmlspecialchars(t('obi.lib_cta')) ?>
                     <i class="fa-solid fa-arrow-right text-xs"></i>
@@ -956,7 +956,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                             ['slug' => 'real-estate',           'key' => 'obi.sc_real_estate'],
                         ];
                         foreach ($sectorLinks as $s): ?>
-                        <a href="/logos/<?= obiEscq($s['slug']) ?>"
+                        <a href="<?= $isAr ? '/ar' : '' ?>/logos/<?= obiEscq($s['slug']) ?>"
                            class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 rounded-full text-sm text-gray-700 hover:border-blue-300 hover:text-blue-600 transition">
                             <?= obiEscq(t($s['key'])) ?>
                             <i class="fa-solid fa-arrow-up-right-from-square text-[9px] text-gray-400"></i>

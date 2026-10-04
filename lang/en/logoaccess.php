@@ -49,4 +49,5 @@ return [
     'ap_confirmed' => 'Payment submitted. Checking confirmation...',
     'ap_declined' => 'Payment was declined. Please choose another payment method.',
     'ap_failed' => 'Payment could not be completed. Please choose another payment method.',
+    'add_email' => 'Add your email to get 10 free downloads',
 ];

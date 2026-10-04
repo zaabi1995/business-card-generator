@@ -91,6 +91,21 @@ final class IqStore
     /** Signs in by verified email or phone, creating the account the first time. */
     public static function signIn(string $identifier, string $channel): array
     {
+        // Already signed in and this email/phone is new to everyone: add it to the
+        // current account instead of opening a second one (WhatsApp first, then an
+        // email for logo downloads, or the other way round).
+        $current = self::userId();
+        if ($current !== null) {
+            $db = Database::getInstance();
+            $col = $channel === 'email' ? 'email' : 'phone';
+            $mine = $db->fetchOne('SELECT * FROM iq_users WHERE id = :id', ['id' => $current]);
+            $taken = $db->fetchOne("SELECT id FROM iq_users WHERE $col = :v", ['v' => $identifier]);
+            if ($mine && (string)($mine[$col] ?? '') === '' && !$taken) {
+                $db->update('iq_users', [$col => $identifier], 'id = :id', ['id' => $current]);
+                return $db->fetchOne('SELECT * FROM iq_users WHERE id = :id', ['id' => $current]);
+            }
+            if ($mine && (string)($mine[$col] ?? '') === $identifier) return $mine;
+        }
         return self::attach($identifier, $channel, true);
     }
 

@@ -526,18 +526,31 @@ class Payment {
         $status = $isSuccess ? 'paid' : 'failed';
         $paymentMethod = $data['source_data_type'] ?? null;
 
-        // Update payment record
-        $db->update('payments',
-            [
-                'status' => $status,
-                'paymob_order_id' => $orderId,
-                'paymob_transaction_id' => $transactionId,
-                'payment_method' => $paymentMethod,
-                'callback_data' => json_encode($data)
-            ],
-            'id = :id',
-            ['id' => $payment['id']]
-        );
+        // Update payment record under a row lock. Paymob sends the browser redirect
+        // and the server webhook at nearly the same time; without the lock both
+        // passed the status check above and fulfilment ran twice (5 Oct 2026).
+        $conn = $db->getConnection();
+        $conn->beginTransaction();
+        try {
+            $lock = $conn->prepare('SELECT status FROM payments WHERE id = :id FOR UPDATE');
+            $lock->execute([':id' => $payment['id']]);
+            if ($lock->fetchColumn() === 'paid') {
+                $conn->commit();
+                return [
+                    'success' => true, 'payment_id' => $payment['id'], 'type' => $payment['type'],
+                    'reference_id' => $payment['reference_id'], 'status' => 'paid', 'idempotent' => true,
+                ];
+            }
+            $conn->prepare('UPDATE payments SET status = :s, paymob_order_id = :o, paymob_transaction_id = :t,
+                                   payment_method = :m, callback_data = :d WHERE id = :id')
+                ->execute([':s' => $status, ':o' => $orderId, ':t' => $transactionId, ':m' => $paymentMethod,
+                           ':d' => json_encode($data), ':id' => $payment['id']]);
+            $conn->commit();
+        } catch (Throwable $e) {
+            if ($conn->inTransaction()) $conn->rollBack();
+            error_log('Payment callback: status update failed for ' . $merchantOrderId . ': ' . $e->getMessage());
+            return ['success' => false, 'error' => 'Server error'];
+        }
 
         // Clear session
         unset($_SESSION["paymob_payment_{$merchantOrderId}"]);
@@ -747,8 +760,26 @@ class Payment {
         $db = Database::getInstance();
         $orderId = $payment['reference_id'];
 
+        // A deposit (admin/order-checkout.php, 10-90%) confirms the order but does
+        // not pay it: record the deposit, keep the balance due, and leave the
+        // ERP invoice for the payment that clears it. Before 5 Oct 2026 a
+        // deposit marked the whole order paid and synced the full sale.
+        $order = $db->fetchOne("SELECT total, deposit_amount, balance_due, deposit_paid_at FROM print_orders WHERE id = :id", ['id' => $orderId]);
+        $paid  = round((float) ($payment['amount'] ?? 0), 3);
+        $total = round((float) ($order['total'] ?? 0), 3);
+        $isDeposit = $order && empty($order['deposit_paid_at']) && (float) ($order['deposit_amount'] ?? 0) > 0
+            && $paid + 0.0005 < $total && abs($paid - round((float) $order['deposit_amount'], 3)) < 0.0005;
+        if ($isDeposit) {
+            $db->query(
+                "UPDATE print_orders SET payment_method = 'online', payment_id = :pid, status = 'confirmed', deposit_paid_at = NOW() WHERE id = :id",
+                ['pid' => $payment['id'], 'id' => $orderId]
+            );
+            error_log("Print order {$orderId}: deposit {$paid} of {$total} received; balance still due");
+            return;
+        }
         $db->query(
-            "UPDATE print_orders SET payment_status = 'paid', payment_method = 'online', payment_id = :pid, status = 'confirmed' WHERE id = :id",
+            "UPDATE print_orders SET payment_status = 'paid', payment_method = 'online', payment_id = :pid, status = 'confirmed',
+                    balance_due = 0, balance_paid_at = IF(deposit_paid_at IS NULL, balance_paid_at, NOW()) WHERE id = :id",
             ['pid' => $payment['id'], 'id' => $orderId]
         );
 

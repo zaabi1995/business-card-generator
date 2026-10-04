@@ -131,7 +131,13 @@ final class IqPay
             $a = $db->fetchOne('SELECT public_id FROM iq_attempts WHERE id = :id', ['id' => $pay['attempt_id']]);
             $out['attempt'] = $a['public_id'] ?? null;
         }
-        if ($pay['status'] === 'paid') return ['success' => true, 'idempotent' => true] + $out;
+        // Paymob sends the same callback again for a refund or void (is_refunded /
+        // is_voided) and marks unfinished payments pending. Same rule as LogoAccess.
+        $truth = static fn($v): bool => $v === true || $v === 'true' || $v === 1 || $v === '1';
+        $pending  = $truth($data['pending'] ?? false) || $truth($data['is_auth'] ?? false);
+        $refunded = $truth($data['is_refunded'] ?? false) || $truth($data['is_voided'] ?? false);
+        if ($refunded) return self::revoke($pay, $data) + $out;
+        if ($pay['status'] === 'paid' || $pay['status'] === 'refunded') return ['success' => $pay['status'] === 'paid', 'idempotent' => true] + $out;
 
         $orderId = isset($data['order']) ? (string)$data['order'] : null;
         if (!empty($pay['paymob_order_id']) && $orderId !== null && $pay['paymob_order_id'] !== $orderId) {
@@ -141,7 +147,11 @@ final class IqPay
             error_log('[iq] callback amount mismatch for ' . $ref);
             return ['success' => false, 'error' => 'Amount mismatch'] + $out;
         }
-        $ok = ($data['success'] ?? null) === 'true' || ($data['success'] ?? null) === true;
+        $ok = $truth($data['success'] ?? null) && !$pending;
+        if ($pending) {
+            // Not finished yet (3-D Secure, bank review): grant nothing, keep it pending.
+            return ['success' => false, 'pending' => true, 'error' => 'Payment is still pending'] + $out;
+        }
 
         $conn = $db->getConnection();
         $conn->beginTransaction();
@@ -173,6 +183,41 @@ final class IqPay
             return ['success' => false, 'error' => 'Server error'] + $out;
         }
         return ['success' => $ok, 'error' => $ok ? null : 'Payment was not completed'] + $out;
+    }
+
+    /** Takes back what a refunded or voided payment granted. Idempotent. */
+    private static function revoke(array $pay, array $data): array
+    {
+        $conn = Database::getInstance()->getConnection();
+        $conn->beginTransaction();
+        try {
+            $st = $conn->prepare('SELECT status FROM iq_payments WHERE id = :id FOR UPDATE');
+            $st->execute([':id' => $pay['id']]);
+            $was = $st->fetchColumn();
+            if ($was === 'refunded') { $conn->commit(); return ['success' => false, 'refunded' => true, 'idempotent' => true]; }
+            $conn->prepare("UPDATE iq_payments SET status = 'refunded', callback_data = :d WHERE id = :id")
+                ->execute([':d' => json_encode($data), ':id' => $pay['id']]);
+            if ($was === 'paid') {
+                if ($pay['product'] === 'report' && $pay['attempt_id']) {
+                    $conn->prepare("UPDATE iq_attempts SET report_paid = 0, unlocked_by = IF(unlocked_by = 'paid', NULL, unlocked_by) WHERE id = :id")
+                        ->execute([':id' => $pay['attempt_id']]);
+                } elseif ($pay['product'] === 'certificate' && $pay['attempt_id']) {
+                    // The public check page then no longer confirms this certificate.
+                    $conn->prepare('UPDATE iq_attempts SET cert_no = NULL, cert_name = NULL, cert_issued_at = NULL WHERE id = :id')
+                        ->execute([':id' => $pay['attempt_id']]);
+                } elseif ($pay['product'] === 'pro_month') {
+                    $conn->prepare('UPDATE iq_users SET pro_until = DATE_SUB(pro_until, INTERVAL 30 DAY) WHERE id = :u AND pro_until IS NOT NULL')
+                        ->execute([':u' => $pay['user_id']]);
+                }
+            }
+            $conn->commit();
+        } catch (Throwable $e) {
+            $conn->rollBack();
+            error_log('[iq] refund failed: ' . $e->getMessage());
+            return ['success' => false, 'error' => 'Server error'];
+        }
+        error_log('[iq] payment ' . $pay['special_reference'] . ' refunded; grant taken back');
+        return ['success' => false, 'refunded' => true];
     }
 
     /** A certificate number: CIQ-<year>-<8 characters>, no look-alike letters. */

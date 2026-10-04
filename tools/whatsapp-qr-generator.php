@@ -228,7 +228,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
         if (!raw) return '';
         const msg = msgEl.value.trim();
         let url = 'https://api.whatsapp.com/send?phone=' + code + raw;
-        if (msg) url += '?text=' + encodeURIComponent(msg);
+        if (msg) url += '&text=' + encodeURIComponent(msg); // second parameter: & (a second ? lost the message)
         return url;
     }
 

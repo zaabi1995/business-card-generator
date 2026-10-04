@@ -43,9 +43,8 @@ try {
 
     if ($action === 'sign_out') {
         // One sign-out: logo access, the IQ test and the Cardify session together.
-        LogoAccess::signOut();
-        unset($_SESSION['iq_user_id']);
-        Auth::logout();
+        require_once INCLUDES_DIR . '/SignOut.php';
+        SignOut::all();
         if (session_status() === PHP_SESSION_NONE) session_start();
         logoAccessResponse(['success' => true, 'state' => LogoAccess::state()]);
     }

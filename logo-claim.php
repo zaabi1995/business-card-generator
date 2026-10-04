@@ -35,8 +35,8 @@ if (!$company) {
 // Require login
 $user = Auth::getCurrentUser();
 if (!$user) {
-    $_SESSION['redirect_after_login'] = "/logo-claim?company=$companyId";
-    header('Location: /login.php?reason=logo_claim');
+    // Claiming a logo needs a Cardify account; come back here after /login.
+    header('Location: /login?' . http_build_query(['redirect' => "/logo-claim?company=$companyId"]));
     exit;
 }
 

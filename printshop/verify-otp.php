@@ -70,11 +70,12 @@ if (!$shop || ($shop['status'] ?? '') !== 'active') {
 
 PrintShopAuth::loginAsOperator($operator, $shop, $isEmail ? 'email_otp' : 'phone_otp');
 
-if ($remember) {
+$rememberSecret = defined('APP_SECRET') ? (string) APP_SECRET : '';
+if ($remember && strlen($rememberSecret) >= 32) {
     // 30-day refresh token; verified next session by re-issuing OTP-less login
     // when cookie + operator status check still match. Keep this minimal:
     // store an HMAC-signed identifier so the lookup is cheap.
-    $secret = defined('APP_SECRET') ? APP_SECRET : ($_SERVER['APP_SECRET'] ?? 'cardify-default-secret');
+    $secret = $rememberSecret; // never a public fallback (5 Oct 2026)
     $payload = base64_encode(json_encode([
         'op'  => $operator['id'],
         'sh'  => (int) $shop['id'],

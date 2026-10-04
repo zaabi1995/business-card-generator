@@ -101,7 +101,8 @@ companySeoCheck(
     'uncurated profiles cannot inherit generic sector or governorate narratives'
 );
 companySeoCheck(
-    str_contains($companies, "t('companies.profile_snapshot'")
+    // The snapshot line is chosen per profile (company or government guide).
+    str_contains($companies, "'companies.profile_snapshot'")
         && str_contains($companies, "t('companies.profile_independence'")
         && str_contains($companies, "ArTwins::navLink('contact', '/', \$isAr)")
         && str_contains($companies, '<?php if ($aboutParas): ?>')

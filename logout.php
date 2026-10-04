@@ -28,30 +28,16 @@ if ($method === 'POST') {
             'role'  => $_SESSION['user_role'] ?? 'unknown',
         ], $_SESSION['company_id'] ?? null);
     }
-    // Clear print-shop operator session keys and the 30-day remember-me
-    // cookie before the global Auth::logout wipes the session.
-    PrintShopAuth::logout();
-    if (isset($_COOKIE['pso_remember'])) {
-        $secure = !empty($_SERVER['HTTPS']);
-        setcookie('pso_remember', '', [
-            'expires'  => time() - 3600,
-            'path'     => '/printshop/',
-            'secure'   => $secure,
-            'httponly' => true,
-            'samesite' => 'Lax',
-        ]);
-        unset($_COOKIE['pso_remember']);
-    }
-    // One sign-out for cardify.om: logo downloads keep their own cookie, so end it
-    // here too (the IQ test lives in the session that Auth::logout() destroys).
-    require_once INCLUDES_DIR . '/LogoAccess.php';
-    try { LogoAccess::signOut(); } catch (Throwable $e) { error_log('[logout] logo sign-out: ' . $e->getMessage()); }
-    Auth::logout();
+    // One sign-out: Cardify, print shop operator, IQ test and logo downloads.
+    require_once INCLUDES_DIR . '/SignOut.php';
+    SignOut::all();
     header('Location: ' . getBasePath() . 'login.php');
     exit;
 }
 
-if (!Auth::isLoggedIn()) {
+// Signed out of Cardify but maybe still signed in to the IQ test or logo
+// downloads: show the sign-out form for those too, not a silent redirect.
+if (!Auth::isLoggedIn() && empty($_SESSION['iq_user_id']) && empty($_COOKIE['cardify_logo_member']) && empty($_COOKIE['pso_remember'])) {
     header('Location: ' . getBasePath() . 'login.php');
     exit;
 }

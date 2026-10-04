@@ -41,7 +41,12 @@ if (($_GET['error'] ?? '') === 'unauthorized' && Auth::isLoggedIn()) {
 
 // Someone signed in by code with no Cardify account (IQ test only) is signed in
 // too: send them on instead of showing the form again.
-if (!Auth::isLoggedIn() && !empty($_SESSION['iq_user_id'])) {
+// Only for pages an IQ-only sign-in can use (IQ test, logo library): sending
+// them anywhere else, such as /printshop, would bounce straight back here.
+$iqOnlyTargets = '#^/(ar/)?(iq|logos?|logo-(?!claim)|companies|oman-business-index|gcc-business-index)(/|\?|-|$)#';
+$addingEmail = ($_GET['need'] ?? $_POST['need'] ?? '') === 'email';
+if (!Auth::isLoggedIn() && !empty($_SESSION['iq_user_id']) && !$addingEmail
+    && (!$redirectUrl || preg_match($iqOnlyTargets, $redirectUrl))) {
     header('Location: ' . getBasePath() . ltrim($redirectUrl ?: '/iq/account', '/'));
     exit;
 }
@@ -182,8 +187,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $codeMode) {
                 }
             }
             // 3. everyone gets the IQ test and logo downloads on the same sign-in
-            IqStore::signIn($codeState['identifier'], $codeState['channel']);
-            if ($codeState['channel'] === 'email') $attachLogoAccess($codeState['identifier']);
+            if (!empty($cardify['success'])) {
+                // One person, one IQ account: attach by the Cardify account's email
+                // (a WhatsApp code would otherwise open a second, phone-only one).
+                unset($_SESSION['iq_user_id']);
+                IqStore::userId();
+                $attachLogoAccess((string) ($_SESSION['user_email'] ?? ''));
+            } else {
+                IqStore::signIn($codeState['identifier'], $codeState['channel']);
+                $iqEmail = (string) (IqStore::user()['email'] ?? '');
+                $attachLogoAccess($iqEmail !== '' ? $iqEmail : ($codeState['channel'] === 'email' ? $codeState['identifier'] : ''));
+            }
             if ($redirectUrl) {
                 header('Location: ' . getBasePath() . ltrim($redirectUrl, '/'));
             } elseif (!empty($cardify['success'])) {

@@ -131,8 +131,11 @@ class OgImage
             array_unshift($candidates, $theme['logo_path']);
         }
         foreach ($candidates as $rel) {
-            $abs = $root . $rel;
-            if (is_file($abs)) return $abs;
+            // logo_path comes with or without a leading slash and "uploads/".
+            $rel = '/' . ltrim((string) $rel, '/');
+            foreach ([$root . $rel, $root . '/uploads' . $rel] as $abs) {
+                if (is_file($abs)) return $abs;
+            }
         }
         return null;
     }

@@ -4,7 +4,9 @@
  * Routes through Payment.php for new payments, falls back to Billing.php for legacy
  * Handles both GET redirect (user returns) and POST webhook (server-to-server)
  */
-session_start();
+// No session_start() here: config.php starts the app session (CARDIFY_SID).
+// Starting one first opened a stray PHPSESSID session, so the visitor came back
+// from Paymob looking signed out (fixed 5 Oct 2026).
 require_once __DIR__ . '/../config.php';
 require_once INCLUDES_DIR . '/Payment.php';
 
@@ -81,6 +83,8 @@ if ($result['success']) {
     if ($type === 'print_order') {
         $orderId = $result['reference_id'] ?? '';
         header('Location: ' . $baseUrl . getBasePath() . 'admin/order-checkout.php?payment=success&order=' . urlencode($orderId));
+    } elseif ($type === 'card_order') {
+        header('Location: ' . $baseUrl . getBasePath() . 'admin/card-credits.php?payment=success');
     } else {
         header('Location: ' . $baseUrl . getBasePath() . 'admin/billing.php?payment=success');
     }
@@ -89,6 +93,8 @@ if ($result['success']) {
     if ($type === 'print_order') {
         $orderId = $result['reference_id'] ?? '';
         header('Location: ' . $baseUrl . getBasePath() . 'admin/order-checkout.php?payment=error&order=' . urlencode($orderId) . '&message=' . $error);
+    } elseif ($type === 'card_order') {
+        header('Location: ' . $baseUrl . getBasePath() . 'admin/card-credits.php?payment=error&message=' . $error);
     } else {
         $status = $result['status'] ?? 'failed';
         header('Location: ' . $baseUrl . getBasePath() . 'admin/billing.php?payment=error&message=' . $error);

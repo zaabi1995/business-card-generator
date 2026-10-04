@@ -201,7 +201,7 @@ function logos_esc($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8
                     }
                     $fbg = $f['logo_dominant_color'] ?: '#f9fafb';
                 ?>
-                    <a href="/companies/<?= logos_esc($f['slug']) ?>"
+                    <a href="<?= (function_exists('currentLocale') && currentLocale() === 'ar' ? '/ar' : '') ?>/companies/<?= logos_esc($f['slug']) ?>"
                        class="cardify-logo-card group shrink-0 snap-start w-32 sm:w-36 bg-white border border-gray-200 rounded-xl overflow-hidden transition hover:-translate-y-0.5 hover:shadow-[0_8px_24px_-8px_rgba(15,23,42,0.18)]"
                        style="--brand-bg: <?= logos_esc($fbg) ?>"
                        title="<?= logos_esc($f['name_en']) ?>">
@@ -308,7 +308,7 @@ function logos_esc($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8
 
             <?php if (!empty($randomSlug)): ?>
                 <span class="hidden sm:inline-block w-px h-5 bg-gray-200 mx-1"></span>
-                <a href="/companies/<?= logos_esc($randomSlug) ?>"
+                <a href="<?= (function_exists('currentLocale') && currentLocale() === 'ar' ? '/ar' : '') ?>/companies/<?= logos_esc($randomSlug) ?>"
                    id="logos-random-chip"
                    class="cardify-chip inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-gradient-to-r from-purple-50 to-pink-50 text-purple-700 border border-purple-200 hover:border-purple-400 transition"
                    title="<?= logos_esc($isAr ? 'تصفّح علامة عشوائية' : 'Browse a random brand') ?>">
@@ -417,10 +417,10 @@ function logos_esc($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8
                         'png_white'  => $_abs($r['logo_png_white_path'] ?? null),
                         'webp_white' => $_abs($r['logo_webp_white_path'] ?? null),
                     ],
-                    'profile_url'    => '/companies/' . $r['slug'],
+                    'profile_url'    => (function_exists('currentLocale') && currentLocale() === 'ar' ? '/ar' : '') . '/companies/' . $r['slug'],
                 ];
             ?>
-                <a href="/companies/<?= logos_esc($r['slug']) ?>"
+                <a href="<?= (function_exists('currentLocale') && currentLocale() === 'ar' ? '/ar' : '') ?>/companies/<?= logos_esc($r['slug']) ?>"
                    class="cardify-logo-card group relative bg-white rounded-xl border border-gray-200 hover:border-gray-300 transition-all duration-200 overflow-hidden hover:-translate-y-0.5 hover:shadow-[0_8px_24px_-8px_rgba(15,23,42,0.18)]"
                    style="--brand-bg: <?= logos_esc($bg) ?>"
                    data-logo='<?= htmlspecialchars(json_encode($_quickJson, JsonLd::SAFE | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE), ENT_QUOTES, "UTF-8") ?>'>
@@ -659,7 +659,7 @@ function logos_esc($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8
             ? '<img src="' + escapeAttr(src) + '" alt="' + escapeAttr(name) + '" loading="lazy" class="max-h-[70%] max-w-[80%] w-auto h-auto object-contain object-center transition-transform duration-200 group-hover:scale-105">'
             : '<div class="text-gray-300 text-2xl font-bold">' + escapeAttr((name || '').slice(0, 2)) + '</div>';
         return ''
-            + '<a href="/companies/' + escapeAttr(r.slug) + '"'
+            + '<a href="' + (isAr ? '/ar' : '') + '/companies/' + escapeAttr(r.slug) + '"'
             +    ' class="cardify-logo-card group relative bg-white rounded-xl border border-gray-200 hover:border-gray-300 transition-all duration-200 overflow-hidden hover:-translate-y-0.5 hover:shadow-[0_8px_24px_-8px_rgba(15,23,42,0.18)]"'
             +    ' style="--brand-bg: ' + escapeAttr(bg) + '"'
             +    ' data-logo="' + dataLogo + '">'
@@ -847,7 +847,7 @@ function logos_esc($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8
                 .then(function (r) { return r.json(); })
                 .then(function (j) {
                     rndChip.style.opacity = '';
-                    if (j && j.slug) location.href = '/companies/' + j.slug;
+                    if (j && j.slug) location.href = (isAr ? '/ar' : '') + '/companies/' + j.slug;
                     else location.href = rndChip.getAttribute('href');
                 })
                 .catch(function () {
@@ -942,7 +942,7 @@ function logos_esc($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8
             + (darkRow ? '<div class="mb-3"><p class="text-xs text-gray-500 mb-1.5">' + escapeAttr(<?= json_encode($isAr ? 'داكن (للخلفيات الفاتحة)' : 'Dark (for light backgrounds)') ?>) + '</p><div class="flex flex-wrap gap-1.5">' + darkRow + '</div></div>' : '')
             + (whiteRow ? '<div class="mb-4"><p class="text-xs text-gray-500 mb-1.5">' + escapeAttr(<?= json_encode($isAr ? 'فاتح (للخلفيات الداكنة)' : 'White (for dark backgrounds)') ?>) + '</p><div class="flex flex-wrap gap-1.5">' + whiteRow + '</div></div>' : '')
             + '<div class="flex items-center justify-end gap-2 pt-3 border-t border-gray-100">'
-            +   '<a href="' + escapeAttr(row.profile_url || ('/companies/' + (row.slug || ''))) + '" class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">'
+            +   '<a href="' + escapeAttr(row.profile_url || ((isAr ? '/ar' : '') + '/companies/' + (row.slug || ''))) + '" class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">'
             +     escapeAttr(<?= json_encode($isAr ? 'فتح الصفحة الكاملة' : 'Open full page') ?>) + ' <i class="fa-solid fa-arrow-' + (isAr ? 'left' : 'right') + ' text-xs"></i>'
             +   '</a>'
             + '</div>';

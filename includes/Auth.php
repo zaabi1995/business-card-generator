@@ -399,7 +399,9 @@ class Auth {
      */
     public static function requireRole($role) {
         if (!self::hasRole($role)) {
-            header('Location: ' . getBasePath() . 'login.php');
+            // Signed out: come back here after signing in. Signed in with the
+            // wrong role: plain /login (it sends them home), never a loop.
+            header('Location: ' . (!self::isLoggedIn() && function_exists('loginUrlReturningHere') ? loginUrlReturningHere() : getBasePath() . 'login.php'));
             exit;
         }
     }
@@ -409,7 +411,7 @@ class Auth {
      */
     public static function requireLogin() {
         if (!self::isLoggedIn()) {
-            header('Location: ' . getBasePath() . 'login.php');
+            header('Location: ' . (function_exists('loginUrlReturningHere') ? loginUrlReturningHere() : getBasePath() . 'login.php'));
             exit;
         }
     }

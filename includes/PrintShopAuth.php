@@ -33,9 +33,13 @@ class PrintShopAuth {
         // Mirror into the existing user_* keys so AuditLog (which
         // reads $_SESSION['user_id'] / user_role) attributes actions
         // cleanly without a model change.
-        $_SESSION['user_id']    = 'pso:' . $operator['id'];
-        $_SESSION['user_email'] = $operator['email'] ?: ($operator['phone'] ?? '');
-        $_SESSION['user_role']  = 'print_shop_operator';
+        // Someone already signed in to Cardify keeps that session: the operator
+        // keys sit next to it (one sign-in gives both, 5 Oct 2026).
+        if (empty($_SESSION['user_id']) || ($_SESSION['user_role'] ?? '') === 'print_shop_operator') {
+            $_SESSION['user_id']    = 'pso:' . $operator['id'];
+            $_SESSION['user_email'] = $operator['email'] ?: ($operator['phone'] ?? '');
+            $_SESSION['user_role']  = 'print_shop_operator';
+        }
 
         PrintShopOperator::touchLogin($operator['id']);
     }
@@ -110,7 +114,10 @@ class PrintShopAuth {
         $parts = explode('.', $cookie, 2);
         if (count($parts) !== 2) return null;
         [$payloadB64, $sig] = $parts;
-        $secret = defined('APP_SECRET') ? APP_SECRET : ($_SERVER['APP_SECRET'] ?? 'cardify-default-secret');
+        // No secret, no cookie login. The old fallback was a public string, so
+        // anyone who knew an operator id could forge this cookie (fixed 5 Oct 2026).
+        $secret = defined('APP_SECRET') ? (string) APP_SECRET : '';
+        if (strlen($secret) < 32) return null;
         $expected = hash_hmac('sha256', $payloadB64, $secret);
         if (!hash_equals($expected, $sig)) return null;
         $payload = json_decode(base64_decode($payloadB64) ?: '', true);
@@ -125,6 +132,30 @@ class PrintShopAuth {
         // Mint a fresh session so subsequent requests don't re-validate the cookie.
         self::loginAsOperator($op, $shop, 'remember');
         return ['operator' => $op, 'shop' => $shop];
+    }
+
+    /**
+     * The person signed in to Cardify is also a print shop operator (same email,
+     * or the same phone on their user row): add the operator session, no second
+     * code. Returns true when an operator session now exists.
+     */
+    public static function attachForSignedInUser(): bool {
+        if (!empty($_SESSION['ps_operator_id'])) return true;
+        if (empty($_SESSION['user_id'])) return false;
+        require_once __DIR__ . '/PrintShopOperator.php';
+        require_once __DIR__ . '/PrintShop.php';
+        require_once __DIR__ . '/Phone.php';
+        $email = strtolower(trim((string) ($_SESSION['user_email'] ?? '')));
+        $op = filter_var($email, FILTER_VALIDATE_EMAIL) ? PrintShopOperator::getByEmail($email) : null;
+        if (!$op) {
+            $row = Database::getInstance()->fetchOne('SELECT phone FROM users WHERE id = :id', ['id' => (string) $_SESSION['user_id']]);
+            $digits = preg_replace('/\D+/', '', (string) ($row['phone'] ?? ''));
+            if (strlen($digits) >= 10) $op = PrintShopOperator::getByPhone((string) Phone::normalize('+' . $digits));
+        }
+        $shop = $op ? PrintShop::getById((int) $op['print_shop_id']) : null;
+        if (!$op || !$shop || ($shop['status'] ?? '') !== 'active') return false;
+        self::loginAsOperator($op, $shop, 'cardify_session');
+        return true;
     }
 
     public static function logout(): void {

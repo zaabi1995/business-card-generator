@@ -119,7 +119,7 @@ $companyId = (int) ($company['id'] ?? 0);
                         <span class="w-1.5 h-1.5 rounded-full <?= logo_hero_esc($badge['dot']) ?>"></span>
                         <?= logo_hero_esc($badge['label']) ?>
                     </span>
-                    <a href="/logos" class="text-xs text-gray-500 hover:text-blue-600 inline-flex items-center gap-1">
+                    <a href="<?= (function_exists('currentLocale') && currentLocale() === 'ar' ? '/ar' : '') ?>/logos" class="text-xs text-gray-500 hover:text-blue-600 inline-flex items-center gap-1">
                         <i class="fa-solid fa-folder-open text-[10px]"></i>
                         <?= $isAr ? 'من مكتبة الشعارات العمانية' : 'From the Omani Logo Library' ?>
                     </a>
@@ -395,7 +395,7 @@ $companyId = (int) ($company['id'] ?? 0);
                     <div>
                         <dt class="text-xs text-gray-500 mb-0.5"><?= $isAr ? 'الترخيص' : 'License' ?></dt>
                         <dd class="font-semibold text-gray-900">
-                            <a href="/logos/terms" class="text-blue-600 hover:text-blue-700 inline-flex items-center gap-1">
+                            <a href="<?= (function_exists('currentLocale') && currentLocale() === 'ar' ? '/ar' : '') ?>/logos/terms" class="text-blue-600 hover:text-blue-700 inline-flex items-center gap-1">
                                 <?= $isAr ? 'استخدام تعريفي' : 'Nominative use' ?>
                                 <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
                             </a>

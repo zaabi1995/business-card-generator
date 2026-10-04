@@ -417,7 +417,14 @@ if (!empty($tenant['id'])) {
             if (preg_match('/^#[0-9a-fA-F]{6}$/', $theme['secondary_color'] ?? '')) {
                 $brandSecondary = $theme['secondary_color'];
             }
-            if (!$logoUrl && !empty($theme['logo_path']) && is_file(__DIR__ . $theme['logo_path'])) {
+            // logo_path is stored with or without a leading slash and with or
+            // without "uploads/" (see the wallet note in the skill): try both.
+            $tlLogoRel = ltrim((string) ($theme['logo_path'] ?? ''), '/');
+            $tlLogoOk = $tlLogoRel !== '' && (is_file(__DIR__ . '/' . $tlLogoRel) || is_file(__DIR__ . '/uploads/' . $tlLogoRel));
+            if ($tlLogoOk && strpos($tlLogoRel, 'uploads/') !== 0 && !is_file(__DIR__ . '/' . $tlLogoRel)) {
+                $theme['logo_path'] = '/uploads/' . $tlLogoRel;
+            }
+            if (!$logoUrl && $tlLogoOk) {
                 require_once INCLUDES_DIR . '/ThemeImage.php';
                 $logoUrl = ThemeImage::preferWeb($theme['logo_path']);
             }
