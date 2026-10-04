@@ -54,7 +54,10 @@ try {
     }
 
     $ip = getClientIp();
-    if (!RateLimiter::check('scan_otp_verify:' . $identifier, $ip, 10, 900)) {
+    // Per identifier across ALL IPs: the App Store reviewer account has a fixed
+    // code, and a per-IP bucket let rotating IPs guess it without limit.
+    if (!RateLimiter::check('scan_otp_verify:' . $identifier, 'all', 10, 900)
+        || !RateLimiter::check('scan_otp_verify_ip', $ip, 60, 900)) {
         http_response_code(429);
         echo json_encode(['success' => false, 'error' => 'rate_limited']);
         exit;

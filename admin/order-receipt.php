@@ -19,7 +19,7 @@ if (!$orderId) {
 }
 
 $order = $db->fetchOne("
-    SELECT po.*, c.name AS company_name, c.address AS company_address,
+    SELECT po.*, c.name AS company_name, c.default_address_en AS company_address, /* companies has no address column: every receipt was a 500 */
            c.cr_number AS company_cr_number, c.tax_id AS company_tax_id,
            c.vat_registered AS company_vat_registered,
            c.billing_address AS company_billing_address,

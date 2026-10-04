@@ -167,7 +167,7 @@ if ($__registryCss) {
 </div>
 <?php else: ?>
 
-<div class="max-w-2xl mx-auto" x-data="batchGenerator()" x-init="init()">
+<div class="max-w-2xl mx-auto" x-data="batchGenerator()">
     <!-- Layout Selection (pre-designed only) -->
     <?php if (!$hasTemplates): ?>
     <div x-show="!started" class="mb-6">

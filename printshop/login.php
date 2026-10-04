@@ -44,7 +44,7 @@ unset($_SESSION['ps_login_flash']);
 ?>
 
 <div class="min-h-screen flex items-center justify-center px-4 py-12">
-    <div class="w-full max-w-md" x-data="psLogin()" x-init="init()">
+    <div class="w-full max-w-md" x-data="psLogin()">
         <div class="text-center mb-6">
             <h1 class="text-xl font-bold text-gray-900"><?= htmlspecialchars(t('printshopinternal.login_heading')) ?></h1>
             <p class="mt-1 text-sm text-gray-500"><?= htmlspecialchars(t('printshopinternal.login_subheading')) ?></p>

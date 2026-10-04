@@ -141,7 +141,7 @@ class Mailer {
             
             // Create body preview (first 500 chars of plain text)
             $plainText = strip_tags(str_replace(['<br>', '<br/>', '<br />'], "\n", $body));
-            $bodyPreview = substr($plainText, 0, 500);
+            $bodyPreview = mb_substr($plainText, 0, 500, 'UTF-8'); // whole characters: substr cut Arabic letters in half and the log insert failed
             
             $logData = [
                 'recipient_email' => $to,

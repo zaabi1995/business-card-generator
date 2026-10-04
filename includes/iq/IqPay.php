@@ -105,6 +105,13 @@ final class IqPay
             $db->update('iq_payments', ['status' => 'failed', 'callback_data' => json_encode(['http' => $code])], 'id = :id', ['id' => $id]);
             throw new IqError('payments_unavailable', 502);
         }
+        // Bind the payment to Paymob's order now. The order id is signed in every
+        // callback; merchant_order_id is not, so without this one paid callback
+        // could be replayed against another pending payment of the same price.
+        $gatewayOrder = $res['intention_order_id'] ?? ($res['order']['id'] ?? null);
+        if ($gatewayOrder !== null && $gatewayOrder !== '') {
+            $db->update('iq_payments', ['paymob_order_id' => (string)$gatewayOrder], 'id = :id', ['id' => $id]);
+        }
         return 'https://oman.paymob.com/unifiedcheckout/?publicKey=' . urlencode($public) . '&clientSecret=' . urlencode($res['client_secret']);
     }
 
@@ -136,17 +143,19 @@ final class IqPay
         $truth = static fn($v): bool => $v === true || $v === 'true' || $v === 1 || $v === '1';
         $pending  = $truth($data['pending'] ?? false) || $truth($data['is_auth'] ?? false);
         $refunded = $truth($data['is_refunded'] ?? false) || $truth($data['is_voided'] ?? false);
-        if ($refunded) return self::revoke($pay, $data) + $out;
-        if ($pay['status'] === 'paid' || $pay['status'] === 'refunded') return ['success' => $pay['status'] === 'paid', 'idempotent' => true] + $out;
+        if (!$refunded && ($pay['status'] === 'paid' || $pay['status'] === 'refunded')) return ['success' => $pay['status'] === 'paid', 'idempotent' => true] + $out;
 
         $orderId = isset($data['order']) ? (string)$data['order'] : null;
-        if (!empty($pay['paymob_order_id']) && $orderId !== null && $pay['paymob_order_id'] !== $orderId) {
+        if (!empty($pay['paymob_order_id']) && ($orderId === null || (string)$pay['paymob_order_id'] !== $orderId)) {
             return ['success' => false, 'error' => 'Order mismatch'] + $out;
         }
         if (isset($data['amount_cents']) && (int)$data['amount_cents'] !== Payment::toSmallestUnit((float)$pay['amount'], 'OMR')) {
             error_log('[iq] callback amount mismatch for ' . $ref);
             return ['success' => false, 'error' => 'Amount mismatch'] + $out;
         }
+        // Refunds only after the order and amount checks above, so a replayed
+        // refund callback cannot take back someone else's purchase.
+        if ($refunded) return self::revoke($pay, $data) + $out;
         $ok = $truth($data['success'] ?? null) && !$pending;
         if ($pending) {
             // Not finished yet (3-D Secure, bank review): grant nothing, keep it pending.

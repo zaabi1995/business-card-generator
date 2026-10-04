@@ -27,7 +27,7 @@ $dest       = (string) ($_GET['dest'] ?? '');
 
 // Allow-list CTAs that this endpoint will log (no `view`, `qr_scan` here).
 $allowedCta = [
-    'click_phone', 'click_mobile', 'click_whatsapp', 'click_email',
+    'click_phone', 'click_mobile', 'click_whatsapp', 'click_email', 'click_fax',
     'click_website', 'click_map', 'click_social', 'save_contact', 'wallet_add',
     'product_order_click',
     // PDF download CTA, emitted from the public card's bottom bar. Dest
@@ -99,6 +99,31 @@ if (!in_array($cta, $allowedCta, true)) {
     http_response_code(400);
     echo 'Invalid cta.';
     exit;
+}
+
+// 3a. The card's own website: every Website button pointed at a company site
+//     that was not on the fixed list, so it answered 400 (bug hunt, 5 Oct 2026).
+//     Only the website saved on THIS employee (or their company default) is added,
+//     so this is still not an open redirector.
+try {
+    $__emp = findEmployeeById($employeeId);
+    $__sites = [(string) ($__emp['website'] ?? ''), (string) ($__emp['website_en'] ?? '')];
+    if (!empty($__emp['company_id'])) {
+        $__co = Database::getInstance()->fetchOne('SELECT default_website FROM companies WHERE id = :id', ['id' => $__emp['company_id']]);
+        $__sites[] = (string) ($__co['default_website'] ?? '');
+    }
+    foreach ($__sites as $__site) {
+        $__site = trim($__site);
+        if ($__site === '') continue;
+        if (!preg_match('#^https?://#i', $__site)) $__site = 'https://' . $__site;
+        $__host = strtolower((string) parse_url($__site, PHP_URL_HOST));
+        if ($__host !== '' && preg_match('/^[a-z0-9.-]+\.[a-z]{2,}$/', $__host)) {
+            $allowedHttpsHosts[] = $__host;
+            $allowedHttpsHosts[] = strpos($__host, 'www.') === 0 ? substr($__host, 4) : 'www.' . $__host;
+        }
+    }
+} catch (Throwable $e) {
+    error_log('card_click website host lookup failed: ' . $e->getMessage());
 }
 
 // 3. Destination must pass the shared URL allow-list (canonicalised host,

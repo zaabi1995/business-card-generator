@@ -70,7 +70,7 @@ unset($_SESSION['client_pricing_flash']);
 require_once INCLUDES_DIR . '/printshop-layout.php';
 printshopHeader(t('printshopclientpricing.page_title', ['shop' => $printShop['name']]), 'client_pricing');
 ?>
-<div x-data="clientPricing()" x-init="init()">
+<div x-data="clientPricing()">
 
     <!-- Header -->
     <div class="mb-6 flex flex-wrap items-end justify-between gap-4">

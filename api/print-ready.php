@@ -31,6 +31,22 @@ header('Content-Type: application/json');
 
 // Auth gates first so anonymous callers don't learn about server-side
 // dependency state from the error body.
+/**
+ * Who may make or fetch a print sheet for an order: super admin, the company
+ * the order belongs to, or the print shop it was sent to (owner or operator).
+ * Print shop accounts have no company_id, so the old company-only check sent
+ * every print shop "Access denied" on its own tool (bug hunt, 5 Oct 2026).
+ */
+function printReadyCanAccess(?array $order): bool {
+    if (!$order) return false;
+    if (Auth::getCurrentRole() === 'super_admin') return true;
+    if (($_SESSION['company_id'] ?? null) !== null && (string) $_SESSION['company_id'] === (string) ($order['company_id'] ?? '')) return true;
+    if (empty($order['print_shop_id'])) return false;
+    require_once INCLUDES_DIR . '/PrintShopAuth.php';
+    $ctx = PrintShopAuth::context();
+    return !empty($ctx['shop']) && (int) $ctx['shop']['id'] === (int) $order['print_shop_id'];
+}
+
 if (!Auth::isLoggedIn()) {
     http_response_code(401);
     echo json_encode(['success' => false, 'error' => 'Unauthorized - Please log in']);
@@ -38,7 +54,7 @@ if (!Auth::isLoggedIn()) {
 }
 
 $role = Auth::getCurrentRole();
-if (!in_array($role, ['print_shop', 'super_admin', 'company'])) {
+if (!in_array($role, ['print_shop', 'print_shop_operator', 'super_admin', 'company', 'admin', 'company_admin'], true)) { // operators and every company-admin role (5 Oct 2026)
     http_response_code(403);
     echo json_encode(['success' => false, 'error' => 'Access denied']);
     exit;
@@ -138,12 +154,10 @@ function handleDetectRequest() {
         $db = Database::getInstance();
 
         // Get the order to find the company
-        $order = $db->fetchOne("SELECT company_id FROM print_orders WHERE id = ?", [$orderId]);
+        $order = $db->fetchOne("SELECT company_id, print_shop_id FROM print_orders WHERE id = ?", [$orderId]);
 
         // Verify ownership: user must belong to the order's company (or be super_admin)
-        $userRole = Auth::getCurrentRole();
-        $userCompanyId = $_SESSION['company_id'] ?? null;
-        if ($order && $userRole !== 'super_admin' && $userCompanyId !== ($order['company_id'] ?? null)) {
+                if ($order && !printReadyCanAccess($order)) {
             echo json_encode(['success' => false, 'error' => 'Access denied']);
             return;
         }
@@ -236,9 +250,7 @@ function handleGenerateRequest() {
     }
 
     // Verify ownership: user must belong to the order's company (or be super_admin)
-    $userRole = Auth::getCurrentRole();
-    $userCompanyId = $_SESSION['company_id'] ?? null;
-    if ($userRole !== 'super_admin' && $userCompanyId !== ($order['company_id'] ?? null)) {
+        if (!printReadyCanAccess($order)) {
         echo json_encode(['success' => false, 'error' => 'Access denied']);
         return;
     }
@@ -480,10 +492,8 @@ function handleDownloadRequest() {
     if (preg_match('/print-sheet-order-(\d+)-/', $safeFile, $matches)) {
         $orderId = (int)$matches[1];
         $db = Database::getInstance();
-        $order = $db->fetchOne("SELECT company_id FROM print_orders WHERE id = ?", [$orderId]);
-        $userRole = Auth::getCurrentRole();
-        $userCompanyId = $_SESSION['company_id'] ?? null;
-        if ($order && $userRole !== 'super_admin' && $userCompanyId !== ($order['company_id'] ?? null)) {
+        $order = $db->fetchOne("SELECT company_id, print_shop_id FROM print_orders WHERE id = ?", [$orderId]);
+                if ($order && !printReadyCanAccess($order)) {
             http_response_code(403);
             echo json_encode(['success' => false, 'error' => 'Access denied']);
             return;

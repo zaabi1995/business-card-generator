@@ -172,8 +172,7 @@ adminHeader(t('onboarding.welcome_title', ['name' => $companyName]), 'onboarding
          "printUrl" => $printUrl,
          "companyName" => $companyName,
          "companySlug" => $companySlug,
-     ], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>)'
-     x-init="init()">
+     ], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>)'>
 
     <!-- Header -->
     <div class="text-center mb-6">

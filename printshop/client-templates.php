@@ -16,6 +16,15 @@ $operator = $ctx['operator'] ?? [];
 $companyId = trim($_GET['company'] ?? '');
 if ($companyId === '') { header('Location: ' . getBasePath() . 'printshop/clients.php'); exit; }
 
+// Same membership rule as printshop/client.php (security commit 5cd2bb2): a shop
+// works only on client companies attached to it. These pages skipped the check,
+// so ?company= reached any tenant (bug hunt, 5 Oct 2026).
+require_once INCLUDES_DIR . '/PrintShopClients.php';
+if (!PrintShopClients::canAccessCompanyAdmin($shop, (string) $companyId, PrintShopClients::listAttachedCompanyIds((int) $shop['id']))) {
+    header('Location: ' . getBasePath() . 'printshop/clients.php');
+    exit;
+}
+
 $db = Database::getInstance();
 $company = $db->fetchOne("SELECT * FROM companies WHERE id = :id", ['id' => $companyId]);
 if (!$company) { header('Location: ' . getBasePath() . 'printshop/clients.php'); exit; }

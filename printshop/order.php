@@ -117,7 +117,7 @@ try {
     $stmt = $pdo->prepare("
         SELECT po.*, 
                COALESCE(c.name, 'Unknown Company') as company_name, 
-               c.admin_email as company_email,
+               c.admin_email as company_email, c.phone as company_phone,
                COALESCE(e.name_en, e.name_ar, '') as employee_name,
                e.email as employee_email, 
                COALESCE(e.position_en, e.position_ar, '') as employee_position,
@@ -162,7 +162,7 @@ function refreshOrderData($pdo, $orderId) {
     $stmt = $pdo->prepare("
         SELECT po.*, 
                COALESCE(c.name, 'Unknown Company') as company_name, 
-               c.admin_email as company_email,
+               c.admin_email as company_email, c.phone as company_phone,
                COALESCE(e.name_en, e.name_ar, '') as employee_name,
                e.email as employee_email, 
                COALESCE(e.position_en, e.position_ar, '') as employee_position,

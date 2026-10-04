@@ -612,6 +612,33 @@ function clearCompanyContext() {
  * used to send people to a bare login.php, so they lost the page they wanted.
  * Only GET pages with a path login.php accepts are carried back.
  */
+/**
+ * Identities (email or phone digits) this session PROVED with a one-time code.
+ * Only these may link accounts across Cardify, IQ test, logo downloads and
+ * print shops. A Cardify account's own email/phone is NOT proof: sign-up never
+ * verified it, so linking by it let anyone claim someone else's account
+ * (security review, 5 Oct 2026).
+ */
+if (!function_exists('cardifyMarkVerified')) {
+    function cardifyNormaliseIdentity(string $id): string {
+        $id = strtolower(trim($id));
+        if (filter_var($id, FILTER_VALIDATE_EMAIL)) return $id;
+        $d = preg_replace('/\D+/', '', $id);
+        return strlen($d) >= 8 ? $d : '';
+    }
+    function cardifyMarkVerified(string $id): void {
+        $n = cardifyNormaliseIdentity($id);
+        if ($n === '') return;
+        $list = $_SESSION['verified_ids'] ?? [];
+        if (!in_array($n, $list, true)) $list[] = $n;
+        $_SESSION['verified_ids'] = array_slice($list, -10);
+    }
+    function cardifyIsVerified(string $id): bool {
+        $n = cardifyNormaliseIdentity($id);
+        return $n !== '' && in_array($n, $_SESSION['verified_ids'] ?? [], true);
+    }
+}
+
 if (!function_exists('loginUrlReturningHere')) {
     function loginUrlReturningHere(): string {
         $url = getBasePath() . 'login.php';

@@ -1,4 +1,6 @@
 <?php
+// Command line only (security review, 5 Oct 2026).
+if (PHP_SAPI !== 'cli') { http_response_code(403); exit('CLI only'); }
 /**
  * Migrate scan_passes.auth_token from plaintext to AES-256-GCM at rest, and
  * populate the keyed verification HMAC.

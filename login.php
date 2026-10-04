@@ -51,8 +51,10 @@ if (!Auth::isLoggedIn() && !empty($_SESSION['iq_user_id']) && !$addingEmail
     exit;
 }
 
-// Redirect if already logged in
-if (Auth::isLoggedIn()) {
+// Redirect if already logged in, unless they came to prove an email by code
+// (logo downloads link only to a proven email).
+$provingEmail = ($_GET['need'] ?? $_POST['need'] ?? '') === 'email' && ($_GET['method'] ?? $_POST['method'] ?? '') === 'code';
+if (Auth::isLoggedIn() && !$provingEmail) {
     if ($redirectUrl) {
         // Use provided redirect, already validated above
         header('Location: ' . getBasePath() . ltrim($redirectUrl, '/'));
@@ -166,6 +168,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $codeMode) {
             $error = ($r['error'] ?? '') === 'expired_or_missing' ? t('auth.otp_expired') : t('auth.otp_invalid');
         } else {
             unset($_SESSION['login_code']);
+            cardifyMarkVerified($codeState['identifier']); // proven by this code
             // 1. a Cardify account (company, staff, admin)
             $cardify = $codeState['channel'] === 'email'
                 ? Auth::loginByVerifiedEmail($codeState['identifier'])
@@ -187,17 +190,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $codeMode) {
                 }
             }
             // 3. everyone gets the IQ test and logo downloads on the same sign-in
-            if (!empty($cardify['success'])) {
-                // One person, one IQ account: attach by the Cardify account's email
-                // (a WhatsApp code would otherwise open a second, phone-only one).
-                unset($_SESSION['iq_user_id']);
-                IqStore::userId();
-                $attachLogoAccess((string) ($_SESSION['user_email'] ?? ''));
-            } else {
-                IqStore::signIn($codeState['identifier'], $codeState['channel']);
-                $iqEmail = (string) (IqStore::user()['email'] ?? '');
-                $attachLogoAccess($iqEmail !== '' ? $iqEmail : ($codeState['channel'] === 'email' ? $codeState['identifier'] : ''));
-            }
+            // IQ and logo accounts link only to what this code PROVED. The Cardify
+            // account's own email/phone was never verified at sign-up, so linking
+            // by it let anyone claim another person's IQ Pro or logo pass.
+            IqStore::signIn($codeState['identifier'], $codeState['channel']);
+            $iqEmail = (string) (IqStore::user()['email'] ?? '');
+            if ($iqEmail !== '' && cardifyIsVerified($iqEmail)) $attachLogoAccess($iqEmail);
             if ($redirectUrl) {
                 header('Location: ' . getBasePath() . ltrim($redirectUrl, '/'));
             } elseif (!empty($cardify['success'])) {
@@ -231,7 +229,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$codeMode) {
         $result = Auth::unifiedLogin($email, $password);
         
         if ($result['success']) {
-            $attachLogoAccess($email);
+            // A password does not prove the email, so no IQ/logo linking here;
+            // those attach after a code sign-in (security review, 5 Oct 2026).
             // Use provided redirect URL if available (already validated above), otherwise use default
             if ($redirectUrl) {
                 header('Location: ' . getBasePath() . ltrim($redirectUrl, '/'));

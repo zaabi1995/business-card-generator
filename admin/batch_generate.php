@@ -15,6 +15,12 @@ if (!Auth::isLoggedIn()) {
 }
 
 $companyId = getCurrentCompanyId();
+if (!$companyId) {
+    // A super admin with no company has no employees to generate; the page
+    // crashed with a TypeError further down (bug hunt, 5 Oct 2026).
+    header('Location: ' . getBasePath() . 'admin/super/');
+    exit;
+}
 
 // HD batch generation is free for every team since the Apr 2026 pricing reset.
 $planInfo = Billing::getCompanyPlanInfo($companyId);
@@ -221,7 +227,7 @@ if ($__registryCss) {
 </div>
 <?php endif; ?>
 
-<div x-data="batchGenerator()" x-init="init()" class="space-y-6">
+<div x-data="batchGenerator()" class="space-y-6">
     <?php if (!$hasTemplates): ?>
     <div class="bg-white border border-gray-200 rounded-xl p-8 text-center shadow-sm">
         <svg class="w-16 h-16 mx-auto mb-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -374,7 +380,7 @@ function batchGenerator() {
         backTemplate: <?php echo json_encode($backTemplate, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>,
         departmentTemplates: <?php echo json_encode($departmentTemplates ?? [], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>,
         companySlug: '<?php echo $companySlug; ?>',
-        companyName: '<?php echo addslashes($companyName); ?>',
+        companyName: <?php echo json_encode((string) $companyName, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE); ?>,
         baseUrl: '<?php echo $baseUrl; ?>',
         basePath: '<?php echo getBasePath(); ?>',
         adminBasePath: '<?php echo defined("COMPANY_ADMIN_BASE") ? COMPANY_ADMIN_BASE : getBasePath() . "admin/"; ?>',
@@ -382,7 +388,7 @@ function batchGenerator() {
         qualityMultiplier: <?php echo (int)$qualityMultiplier; ?>,
         isFreePlan: <?php echo $isFreePlan ? 'true' : 'false'; ?>,
         hasHighQuality: <?php echo $hasHighQuality ? 'true' : 'false'; ?>,
-        preSelectedEmployeeId: <?php echo $preSelectedEmployeeId ? "'" . addslashes($preSelectedEmployeeId) . "'" : 'null'; ?>,
+        preSelectedEmployeeId: <?php echo $preSelectedEmployeeId ? json_encode((string) $preSelectedEmployeeId, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE) : 'null'; ?>,
         autoGenerate: <?php echo $autoGenerate ? 'true' : 'false'; ?>,
         sendEmail: <?php echo $sendEmail ? 'true' : 'false'; ?>,
         selectedEmployees: [],

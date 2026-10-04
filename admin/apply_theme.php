@@ -67,9 +67,11 @@ if ((int) $_FILES['logo']['size'] > $maxBytes) {
 }
 
 // Save the logo under uploads/companies/<id>/logo.<ext>
-$ext = strtolower(pathinfo($origName, PATHINFO_EXTENSION) ?: 'png');
-$ext = preg_replace('/[^a-z0-9]/', '', $ext);
-if ($ext === '' || strlen($ext) > 5) $ext = 'png';
+// The extension comes from the verified MIME type, never the uploaded name:
+// "x.html" with PNG bytes was saved as logo.html and ran script on cardify.om
+// (security review, 5 Oct 2026; skill rule 7).
+$ext = ['image/png' => 'png', 'image/jpeg' => 'jpg', 'image/jpg' => 'jpg', 'image/svg+xml' => 'svg',
+        'image/gif' => 'gif', 'image/webp' => 'webp'][$mime] ?? 'png';
 
 $companyDir = realpath(__DIR__ . '/..') . '/uploads/companies/' . $companyId;
 @mkdir($companyDir, 0755, true);

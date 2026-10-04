@@ -6,7 +6,7 @@ require_once __DIR__ . '/../config.php';
 
 header('Content-Type: application/json');
 
-$slug = $_GET['slug'] ?? '';
+$slug = is_string($_GET['slug'] ?? null) ? $_GET['slug'] : ''; // a list (slug[]=x) crashed with an empty 500
 
 if (empty($slug)) {
     echo json_encode(['available' => false, 'error' => 'Slug required']);

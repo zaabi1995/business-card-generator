@@ -280,11 +280,12 @@ $brandName = defined('SITE_NAME') ? SITE_NAME : 'Cardify';
             basePath: '<?php echo $basePath; ?>',
             hasFront: <?php echo $frontTemplate ? 'true' : 'false'; ?>,
             hasBack: <?php echo $backTemplate ? 'true' : 'false'; ?>,
-            vcfUrl: '<?php echo addslashes($vcfUrl); ?>',
+            vcfUrl: <?php echo json_encode((string) $vcfUrl, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_UNESCAPED_SLASHES); ?>,
             frontTemplate: <?php echo json_encode($frontTemplate, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>,
             backTemplate: <?php echo json_encode($backTemplate, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>,
-            frontBgUrl: '<?php echo addslashes($frontBgUrl); ?>',
-            backBgUrl: '<?php echo addslashes($backBgUrl); ?>',
+            // json_encode, not addslashes: addslashes does not stop "</script>".
+            frontBgUrl: <?php echo json_encode((string) $frontBgUrl, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_UNESCAPED_SLASHES); ?>,
+            backBgUrl: <?php echo json_encode((string) $backBgUrl, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_UNESCAPED_SLASHES); ?>,
             employee: <?php echo json_encode($employee, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>,
             // Quality settings based on plan
             qualityMultiplier: <?php echo $qualityMultiplier; ?>,

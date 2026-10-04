@@ -30,9 +30,12 @@ if ($raw === false || strlen($raw) > 4096) {
     exit;
 }
 
-$ip = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
-if (class_exists('RateLimiter')) {
-    require_once INCLUDES_DIR . '/RateLimiter.php';
+// The limiter was never loaded (class_exists was always false), so this ran
+// unlimited and could fill the disk; and REMOTE_ADDR is a Cloudflare edge IP.
+require_once INCLUDES_DIR . '/UrlSafety.php';
+require_once INCLUDES_DIR . '/RateLimiter.php';
+$ip = getClientIp();
+{
     if (!RateLimiter::check('webvitals', $ip, 60, 60)) {
         http_response_code(429);
         echo '{"ok":false}';

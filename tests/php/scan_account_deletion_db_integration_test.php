@@ -147,7 +147,8 @@ function deletionDbExecSchema(PDO $pdo): void
             status VARCHAR(20) NOT NULL,
             deleted_at DATETIME NULL,
             scan_pro_until DATETIME NULL,
-            scan_pro_source VARCHAR(50) NULL
+            scan_pro_source VARCHAR(50) NULL,
+            password_hash VARCHAR(255) NULL
         ) ENGINE=InnoDB",
         "CREATE TABLE scan_accounts (
             id CHAR(36) NOT NULL PRIMARY KEY,

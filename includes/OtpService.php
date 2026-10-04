@@ -48,11 +48,15 @@ class OtpService
         if ($identifier === '') return ['ok' => false, 'error' => 'missing identifier'];
         if (!in_array($channel, ['whatsapp','email'], true)) return ['ok' => false, 'error' => 'invalid channel'];
 
-        $ip = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+        // Load the limiter here: callers that forgot to require it ran with no
+        // limit at all. The per-identifier bucket uses one fixed subject, so a
+        // new IP no longer buys a new allowance (bug hunt, 5 Oct 2026).
+        require_once __DIR__ . '/RateLimiter.php';
+        require_once __DIR__ . '/UrlSafety.php';
+        $ip = getClientIp();
 
-        // Rate limit per identifier
         if (class_exists('RateLimiter')) {
-            if (!RateLimiter::check('otp_send_ident:' . $identifier, $ip, self::RATE_PER_IDENTIFIER, self::RATE_PER_IDENTIFIER_WINDOW)) {
+            if (!RateLimiter::check('otp_send_ident:' . strtolower($identifier), 'all', self::RATE_PER_IDENTIFIER, self::RATE_PER_IDENTIFIER_WINDOW)) {
                 return ['ok' => false, 'error' => 'rate_limited_identifier'];
             }
             if (!RateLimiter::check('otp_send_ip', $ip, self::RATE_PER_IP, self::RATE_PER_IP_WINDOW)) {
@@ -114,19 +118,30 @@ class OtpService
         );
 
         if (!$row) return ['ok' => false, 'error' => 'expired_or_missing'];
-        if ((int)$row['attempts'] >= self::MAX_ATTEMPTS) {
+
+        // Lockout across codes: too many wrong guesses for one identifier.
+        require_once __DIR__ . '/RateLimiter.php';
+        $failKey = 'otp_verify_fail:' . strtolower($identifier);
+
+        // Claim one attempt atomically BEFORE comparing. Reading the count and
+        // writing it back let parallel guesses get past MAX_ATTEMPTS.
+        $claim = $db->getConnection()->prepare(
+            'UPDATE otp_codes SET attempts = attempts + 1 WHERE id = :id AND attempts < :max AND consumed_at IS NULL'
+        );
+        $claim->execute([':id' => $row['id'], ':max' => self::MAX_ATTEMPTS]);
+        if ($claim->rowCount() === 0) {
             return ['ok' => false, 'error' => 'too_many_attempts'];
         }
 
         $expected = $row['code_hash'];
         $supplied = hash('sha256', $code);
         if (!hash_equals($expected, $supplied)) {
-            $db->update(
-                'otp_codes',
-                ['attempts' => ((int)$row['attempts']) + 1],
-                'id = :id',
-                ['id' => $row['id']]
-            );
+            if (class_exists('RateLimiter') && !RateLimiter::check($failKey, 'all', 20, 3600)) {
+                // Over 20 wrong codes in an hour: burn every open code for it.
+                $db->getConnection()->prepare('UPDATE otp_codes SET attempts = :max WHERE identifier = :id AND consumed_at IS NULL')
+                    ->execute([':max' => self::MAX_ATTEMPTS, ':id' => $identifier]);
+                return ['ok' => false, 'error' => 'too_many_attempts'];
+            }
             return ['ok' => false, 'error' => 'wrong_code'];
         }
 

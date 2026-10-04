@@ -343,7 +343,7 @@ adminHeader('Subscriptions', 'super');
                         <td class="px-4 py-3">
                             <div>
                                 <p class="font-semibold text-gray-900"><?php echo sanitize($company['name_en'] ?? $company['name'] ?? 'Unnamed'); ?></p>
-                                <p class="text-sm text-gray-500"><?php echo sanitize($company['email']); ?></p>
+                                <p class="text-sm text-gray-500"><?php echo sanitize($company['admin_email'] ?? ''); ?></p>
                             </div>
                         </td>
                         <td class="px-4 py-3">

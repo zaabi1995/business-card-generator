@@ -202,8 +202,7 @@ $pageTitle = t('portal.edit_my_details');
           'csrf'  => $csrf,
           'saveUrl' => '/portal/employee-edit-save.php',
           'locale'  => $locale,
-      ], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>)'
-      x-init="init()">
+      ], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>)'>
 
     <div class="max-w-lg mx-auto p-4 sm:p-6">
         <!-- Header -->

@@ -9,7 +9,8 @@ require_once INCLUDES_DIR . '/Currency.php';
 require_once INCLUDES_DIR . '/Mailer.php';
 require_once INCLUDES_DIR . '/admin-layout.php';
 
-Auth::requireRole(['company', 'super_admin']);
+// 'admin' and 'company_admin' are company admins too (Otech's admins were sent to login).
+Auth::requireRole(['company', 'admin', 'company_admin', 'super_admin']);
 $user = Auth::getCurrentUser();
 $companyId = $_SESSION['company_id'] ?? null;
 

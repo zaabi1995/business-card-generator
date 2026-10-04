@@ -1,4 +1,6 @@
 <?php
+// Command line only: from the web this ran against production (security review, 5 Oct 2026).
+if (PHP_SAPI !== 'cli') { http_response_code(403); exit('CLI only'); }
 /**
  * Pick up card jobs whose invoice could not be raised.
  *

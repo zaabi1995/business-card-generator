@@ -131,7 +131,10 @@ function createPasswordResetToken($db, $email, $userType, $userId) {
     
     // Generate secure token
     $token = bin2hex(random_bytes(32));
-    $expiresAt = date('Y-m-d H:i:s', strtotime('+1 hour'));
+    // UTC, like the NOW() it is checked against: date() wrote Muscat time and
+    // links lived about 5 hours instead of 1 (bug hunt, 5 Oct 2026).
+    require_once INCLUDES_DIR . '/db_time.php';
+    $expiresAt = dbNow(time() + 3600);
     
     try {
         // Store hashed token in DB, send plain token to user via email
@@ -154,7 +157,9 @@ function createPasswordResetToken($db, $email, $userType, $userId) {
  * Send password reset email (via Notifier, email-only, no WhatsApp)
  */
 function sendPasswordResetEmail($email, $name, $token) {
-    $resetUrl = getBaseUrl() . 'reset-password.php?token=' . urlencode($token);
+    // Fixed host, never the request's Host header (a forged Host would send the
+    // reset link to an attacker's domain; skill rule 8).
+    $resetUrl = 'https://' . (defined('APP_HOST') ? APP_HOST : 'cardify.om') . getBasePath() . 'reset-password.php?token=' . urlencode($token);
 
     try {
         require_once INCLUDES_DIR . '/Notifier.php';

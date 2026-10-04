@@ -83,7 +83,7 @@ function getBrowserIcon($browser) {
 adminHeader($pageTitle, 'analytics');
 ?>
 
-<div x-data="analyticsPage()" x-init="init()">
+<div x-data="analyticsPage()">
     <!-- Header -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
         <div>

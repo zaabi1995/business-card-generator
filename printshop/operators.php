@@ -23,7 +23,7 @@ require_once INCLUDES_DIR . '/printshop-layout.php';
 printshopHeader(t('printshopinternal.operators_title', ['shop' => $shop['name']]), 'operators');
 ?>
 <div class="max-w-5xl mx-auto">
-<div x-data="operatorsPage()" x-init="init()">
+<div x-data="operatorsPage()">
     <div class="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
             <h1 class="text-2xl font-bold text-gray-900"><?= htmlspecialchars(t('printshopinternal.operators_heading')) ?></h1>

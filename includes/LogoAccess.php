@@ -53,7 +53,10 @@ final class LogoAccess
         if (!self::$cachedMember && Auth::isLoggedIn()) {
             $user = Auth::getCurrentUser();
             $email = strtolower(trim((string) ($user['email'] ?? '')));
-            if (filter_var($email, FILTER_VALIDATE_EMAIL) && strlen($email) <= 120) {
+            // Only a proven email (code sign-in): a Cardify account's email is
+            // unverified, and a paid pass belongs to the email (5 Oct 2026).
+            if (filter_var($email, FILTER_VALIDATE_EMAIL) && strlen($email) <= 120
+                && function_exists('cardifyIsVerified') && cardifyIsVerified($email)) {
                 self::$cachedMember = $db->fetchOne('SELECT * FROM logo_members WHERE email = :email', ['email' => $email])
                     ?: ['id' => null, 'email' => $email, 'name' => $user['name'] ?? '', 'paid_until' => null];
             }

@@ -69,6 +69,9 @@ final class IqStore
         // A print shop operator signed in by WhatsApp carries a phone number here.
         $ident = strtolower(trim((string)($_SESSION['user_email'] ?? '')));
         if (empty($_SESSION['user_id']) || $ident === '') return null;
+        // Only an identity this session proved with a code: the Cardify account's
+        // own email/phone is unverified, so it cannot claim an IQ account.
+        if (!function_exists('cardifyIsVerified') || !cardifyIsVerified($ident)) return null;
         if (filter_var($ident, FILTER_VALIDATE_EMAIL)) return self::attach($ident, 'email', false)['id'];
         $digits = preg_replace('/\D+/', '', $ident);
         if (strlen($digits) >= 10 && strlen($digits) <= 15) return self::attach($digits, 'whatsapp', false)['id'];
@@ -135,6 +138,7 @@ final class IqStore
         }
         $db->update('iq_users', ['last_login_at' => date('Y-m-d H:i:s')], 'id = :id', ['id' => $u['id']]);
         if ($fresh && session_status() === PHP_SESSION_ACTIVE && !headers_sent()) session_regenerate_id(true);
+        if (function_exists('cardifyMarkVerified')) cardifyMarkVerified($identifier);
         $_SESSION['iq_user_id'] = $u['id'];
         // This browser's guest attempts become the account's.
         $token = self::guestTokenHash();

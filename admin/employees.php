@@ -1327,7 +1327,7 @@ adminHeader(t('employees.page_title'), 'employees');
         $uvSheetUrl    = '/card-sheet.php?i=' . urlencode($emp['id']) . '&uv=1';
         ?>
         <div x-data="{ showMenu:false, showMore:false }"
-             x-show="matchesSearch('<?php echo addslashes($emp['email'] ?? ''); ?>', '<?php echo addslashes($emp['name_en'] ?? ''); ?>', '<?php echo addslashes($emp['name_ar'] ?? ''); ?>', '<?php echo addslashes($emp['department_id'] ?? ''); ?>', <?php echo $cardCount > 0 ? 'true' : 'false'; ?>)"
+             x-show="matchesSearch(<?php echo htmlspecialchars(json_encode((string)($emp['email'] ?? ''), JSON_UNESCAPED_UNICODE), ENT_QUOTES); ?>, <?php echo htmlspecialchars(json_encode((string)($emp['name_en'] ?? ''), JSON_UNESCAPED_UNICODE), ENT_QUOTES); ?>, <?php echo htmlspecialchars(json_encode((string)($emp['name_ar'] ?? ''), JSON_UNESCAPED_UNICODE), ENT_QUOTES); ?>, <?php echo htmlspecialchars(json_encode((string)($emp['department_id'] ?? ''), JSON_UNESCAPED_UNICODE), ENT_QUOTES); ?>, <?php echo $cardCount > 0 ? 'true' : 'false'; ?>)"
              :class="(showMenu || showMore) ? 'relative z-30' : ''"
              class="group bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all flex flex-col">
 

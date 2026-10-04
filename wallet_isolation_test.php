@@ -1,4 +1,6 @@
 <?php
+// Command line only: from the web this ran against production (security review, 5 Oct 2026).
+if (PHP_SAPI !== 'cli') { http_response_code(403); exit('CLI only'); }
 /**
  * Wallet ownership + isolation tests. Server-side authority: a pass token
  * authorizes ONLY its own serial; users cannot cross-access; serials are not

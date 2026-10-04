@@ -5,6 +5,14 @@
  * Read-only, no PII exposed.
  */
 require_once __DIR__ . '/../config.php';
+// Business numbers and ERP details: super admin only (they were public, 5 Oct 2026).
+require_once INCLUDES_DIR . '/Auth.php';
+if (!Auth::isLoggedIn() || Auth::getCurrentRole() !== 'super_admin') {
+    http_response_code(403);
+    header('Content-Type: application/json');
+    echo json_encode(['error' => 'forbidden']);
+    exit;
+}
 
 header('Content-Type: application/json');
 header('Cache-Control: no-cache, no-store, must-revalidate');

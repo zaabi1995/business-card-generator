@@ -66,7 +66,7 @@ $totalScansAll = (int)($statsAll['total_scans'] ?? 0);
 $recentScans = [];
 try {
     $recentScans = $db->fetchAll(
-        "SELECT scanned_at, user_agent, ip_address, country, city
+        "SELECT scanned_at, user_agent, ip_address, country_name AS country, city
          FROM qr_scans WHERE employee_id = :eid ORDER BY scanned_at DESC LIMIT 10",
         ['eid' => $employeeId]
     ) ?: [];

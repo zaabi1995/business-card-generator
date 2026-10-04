@@ -15,6 +15,13 @@ ob_start();
 header('X-Accel-Buffering: no');
 
 set_error_handler(function($severity, $message, $file, $line) {
+    // Warnings and notices are logged, not fatal: one getimagesize() permission
+    // warning took a real card down with a 500 on 4 Oct 2026. Respects "@".
+    if (!(error_reporting() & $severity)) return true;
+    if (in_array($severity, [E_WARNING, E_NOTICE, E_DEPRECATED, E_USER_WARNING, E_USER_NOTICE, E_USER_DEPRECATED], true)) {
+        error_log("digital_card: $message at $file:$line");
+        return true;
+    }
     throw new ErrorException($message, 0, $severity, $file, $line);
 });
 
@@ -93,7 +100,10 @@ require_once INCLUDES_DIR . '/JsonLd.php';
             renderBranded404(null, null);
             exit;
         }
-        throw new Exception('Missing parameters');
+        // No company or person in the URL: nothing to show, a 404, not a 500.
+        http_response_code(404);
+        renderBranded404(null, null);
+        exit;
     }
 
     // Look up company

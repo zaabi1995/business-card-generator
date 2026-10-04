@@ -387,8 +387,11 @@ try {
                 'DELETE FROM scan_passes WHERE employee_id = ?'
             )->execute([$employeeId]);
             $pdo->prepare(
+                // Clear the app password too: app sign-in rebuilt a deleted
+                // account from it as a "legacy password proof" (bug hunt,
+                // 5 Oct 2026). The company's card itself stays untouched.
                 'UPDATE employees
-                 SET scan_pro_until = NULL, scan_pro_source = NULL
+                 SET scan_pro_until = NULL, scan_pro_source = NULL, password_hash = NULL
                  WHERE id = ?'
             )->execute([$employeeId]);
         }

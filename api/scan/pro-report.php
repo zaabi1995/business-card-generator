@@ -1,4 +1,5 @@
 <?php
+require_once dirname(__DIR__, 2) . '/includes/db_time.php';
 /**
  * POST /api/scan/pro-report.php
  * {active:bool, jws?:string, renewal_info_jws?:string}
@@ -198,7 +199,7 @@ if ($active) {
             );
             $statement->execute([
                 'account_id' => $accountId,
-                'valid_until' => date('Y-m-d H:i:s', $until),
+                'valid_until' => dbNow($until) /* UTC: date() wrote Muscat time and Pro ran 4 hours long */,
                 'original_transaction_id' => $originalTransactionId,
                 'latest_transaction_id' => $latestTransactionId !== ''
                     ? $latestTransactionId
@@ -212,7 +213,7 @@ if ($active) {
                      e.scan_pro_source = 'apple'
                  WHERE m.account_id = ?"
             )->execute([
-                date('Y-m-d H:i:s', $until),
+                dbNow($until) /* UTC: date() wrote Muscat time and Pro ran 4 hours long */,
                 $accountId,
             ]);
             $currentUntil = $until;

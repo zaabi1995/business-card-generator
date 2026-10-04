@@ -47,6 +47,106 @@ if (!validateCSRFToken($_POST['csrf_token'] ?? '')) {
     exit;
 }
 
+// The public card-request form posts here without an account, so it is handled
+// BEFORE the print-shop login check (it was behind it and always failed).
+$action = $_POST['action'] ?? '';
+$db = Database::getInstance();
+if ($action === 'submit_request') {
+    // Public form (customize.php): rate-limited per visitor IP.
+    require_once INCLUDES_DIR . '/RateLimiter.php';
+    require_once INCLUDES_DIR . '/UrlSafety.php';
+    if (!RateLimiter::check('shop_template_request', getClientIp(), 10, 3600)) {
+        http_response_code(429);
+        echo json_encode(['success' => false, 'error' => 'Too many requests. Please try again later.']);
+        exit;
+    }
+    $templateId = trim((string) ($_POST['template_id'] ?? ''));
+    $customerName = mb_substr(trim((string) ($_POST['customer_name'] ?? '')), 0, 120);
+    $customerPhone = mb_substr(trim((string) ($_POST['customer_phone'] ?? '')), 0, 32);
+    $customerEmail = mb_substr(trim((string) ($_POST['customer_email'] ?? '')), 0, 190);
+    $fieldValues = $_POST['field_values'] ?? '{}';
+    $canvasSnapshot = $_POST['canvas_snapshot'] ?? '';
+    $quantity = max(1, (int)($_POST['quantity'] ?? 100));
+    $notes = trim($_POST['notes'] ?? '');
+
+    if (!$templateId || !$customerName || !$customerPhone) {
+        echo json_encode(['success' => false, 'error' => 'Please fill in your name and phone number']);
+        exit;
+    }
+
+    // Find template
+    $template = $db->fetchOne("SELECT * FROM shop_templates WHERE id = :id AND is_active = 1", ['id' => $templateId]);
+    if (!$template) {
+        echo json_encode(['success' => false, 'error' => 'Template not found']);
+        exit;
+    }
+
+    // Save preview image if provided
+    $previewPath = null;
+    if (!empty($_POST['preview_data'])) {
+        $previewData = $_POST['preview_data'];
+        if (preg_match('/^data:image\/[a-z]+;base64,/', $previewData)) {
+            $previewBase64 = preg_replace('/^data:image\/[a-z]+;base64,/', '', $previewData);
+            $previewBytes = base64_decode($previewBase64, true);
+            // Only a real PNG/JPEG under 5 MB is saved (it used to save any bytes as .png).
+            $previewInfo = ($previewBytes !== false && strlen($previewBytes) <= 5 * 1024 * 1024) ? @getimagesizefromstring($previewBytes) : false;
+            if ($previewInfo && in_array($previewInfo['mime'] ?? '', ['image/png', 'image/jpeg'], true)) {
+                $previewDir = BASE_DIR . '/uploads/print_shops/' . $template['print_shop_id'] . '/requests';
+                if (!is_dir($previewDir)) mkdir($previewDir, 0755, true);
+                $previewFilename = 'preview_' . uniqid() . '.png';
+                file_put_contents($previewDir . '/' . $previewFilename, $previewBytes);
+                $previewPath = '/uploads/print_shops/' . $template['print_shop_id'] . '/requests/' . $previewFilename;
+            }
+        }
+    }
+
+    $requestId = generateUUID();
+    $db->insert('shop_template_requests', [
+        'id' => $requestId,
+        'template_id' => $templateId,
+        'print_shop_id' => $template['print_shop_id'],
+        'customer_name' => $customerName,
+        'customer_phone' => $customerPhone,
+        'customer_email' => $customerEmail ?: null,
+        'field_values' => $fieldValues,
+        'canvas_snapshot' => $canvasSnapshot ?: null,
+        'preview_image_path' => $previewPath,
+        'quantity' => $quantity,
+        'notes' => $notes ?: null,
+        'status' => 'pending',
+        'created_at' => dbNow(),
+        'updated_at' => dbNow(),
+    ]);
+
+    // Notify BHD via WhatsApp if configured
+    try {
+        $shop = PrintShop::getById($template['print_shop_id']);
+        if ($shop && !empty($shop['whatsapp'])) {
+            require_once INCLUDES_DIR . '/WhatsApp.php';
+            $msg = "New card request from Cardify!\n\n";
+            $msg .= "Customer: {$customerName}\n";
+            $msg .= "Phone: {$customerPhone}\n";
+            if ($customerEmail) $msg .= "Email: {$customerEmail}\n";
+            $msg .= "Template: " . $template['name'] . "\n";
+            $msg .= "Quantity: {$quantity} cards\n";
+            if ($notes) $msg .= "Notes: {$notes}\n";
+            $msg .= "\nView request: " . getBaseUrl() . "printshop/template-requests.php";
+            WhatsApp::send($shop['whatsapp'], $msg);
+        }
+    } catch (Exception $e) {
+        // Notification failure is non-critical
+    }
+
+    echo json_encode([
+        'success' => true,
+        'request_id' => $requestId,
+        'shop_whatsapp' => $template['print_shop_id'] ? (PrintShop::getById($template['print_shop_id'])['whatsapp'] ?? null) : null,
+    ]);
+    exit;
+}
+
+echo json_encode(['success' => false, 'error' => 'Unknown action']);
+
 Auth::requireLogin();
 $user = Auth::getCurrentUser();
 if ($user['role'] !== 'print_shop' && $user['role'] !== 'super_admin') {
@@ -212,88 +312,3 @@ if ($action === 'save') {
 }
 
 // ── SUBMIT REQUEST (customer ordering) ──
-if ($action === 'submit_request') {
-    $templateId = trim($_POST['template_id'] ?? '');
-    $customerName = trim($_POST['customer_name'] ?? '');
-    $customerPhone = trim($_POST['customer_phone'] ?? '');
-    $customerEmail = trim($_POST['customer_email'] ?? '');
-    $fieldValues = $_POST['field_values'] ?? '{}';
-    $canvasSnapshot = $_POST['canvas_snapshot'] ?? '';
-    $quantity = max(1, (int)($_POST['quantity'] ?? 100));
-    $notes = trim($_POST['notes'] ?? '');
-
-    if (!$templateId || !$customerName || !$customerPhone) {
-        echo json_encode(['success' => false, 'error' => 'Please fill in your name and phone number']);
-        exit;
-    }
-
-    // Find template
-    $template = $db->fetchOne("SELECT * FROM shop_templates WHERE id = :id AND is_active = 1", ['id' => $templateId]);
-    if (!$template) {
-        echo json_encode(['success' => false, 'error' => 'Template not found']);
-        exit;
-    }
-
-    // Save preview image if provided
-    $previewPath = null;
-    if (!empty($_POST['preview_data'])) {
-        $previewData = $_POST['preview_data'];
-        if (preg_match('/^data:image\/[a-z]+;base64,/', $previewData)) {
-            $previewBase64 = preg_replace('/^data:image\/[a-z]+;base64,/', '', $previewData);
-            $previewBytes = base64_decode($previewBase64);
-            if ($previewBytes !== false) {
-                $previewDir = BASE_DIR . '/uploads/print_shops/' . $template['print_shop_id'] . '/requests';
-                if (!is_dir($previewDir)) mkdir($previewDir, 0755, true);
-                $previewFilename = 'preview_' . uniqid() . '.png';
-                file_put_contents($previewDir . '/' . $previewFilename, $previewBytes);
-                $previewPath = '/uploads/print_shops/' . $template['print_shop_id'] . '/requests/' . $previewFilename;
-            }
-        }
-    }
-
-    $requestId = generateUUID();
-    $db->insert('shop_template_requests', [
-        'id' => $requestId,
-        'template_id' => $templateId,
-        'print_shop_id' => $template['print_shop_id'],
-        'customer_name' => $customerName,
-        'customer_phone' => $customerPhone,
-        'customer_email' => $customerEmail ?: null,
-        'field_values' => $fieldValues,
-        'canvas_snapshot' => $canvasSnapshot ?: null,
-        'preview_image_path' => $previewPath,
-        'quantity' => $quantity,
-        'notes' => $notes ?: null,
-        'status' => 'pending',
-        'created_at' => dbNow(),
-        'updated_at' => dbNow(),
-    ]);
-
-    // Notify BHD via WhatsApp if configured
-    try {
-        $shop = PrintShop::getById($template['print_shop_id']);
-        if ($shop && !empty($shop['whatsapp'])) {
-            require_once INCLUDES_DIR . '/WhatsApp.php';
-            $msg = "New card request from Cardify!\n\n";
-            $msg .= "Customer: {$customerName}\n";
-            $msg .= "Phone: {$customerPhone}\n";
-            if ($customerEmail) $msg .= "Email: {$customerEmail}\n";
-            $msg .= "Template: " . $template['name'] . "\n";
-            $msg .= "Quantity: {$quantity} cards\n";
-            if ($notes) $msg .= "Notes: {$notes}\n";
-            $msg .= "\nView request: " . getBaseUrl() . "printshop/template-requests.php";
-            WhatsApp::send($shop['whatsapp'], $msg);
-        }
-    } catch (Exception $e) {
-        // Notification failure is non-critical
-    }
-
-    echo json_encode([
-        'success' => true,
-        'request_id' => $requestId,
-        'shop_whatsapp' => $template['print_shop_id'] ? (PrintShop::getById($template['print_shop_id'])['whatsapp'] ?? null) : null,
-    ]);
-    exit;
-}
-
-echo json_encode(['success' => false, 'error' => 'Unknown action']);

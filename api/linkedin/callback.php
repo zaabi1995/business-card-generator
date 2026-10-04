@@ -18,7 +18,9 @@ require_once INCLUDES_DIR . '/Auth.php';
 
 Auth::requireLogin();
 $user = Auth::getCurrentUser();
-if (!in_array($user['role'] ?? '', ['admin', 'super_admin', 'company', 'company_admin'], true)) {
+// The tokens are Cardify's own (one global system_settings row): a customer's
+// admin could overwrite them with their LinkedIn account. Super admin only.
+if (($user['role'] ?? '') !== 'super_admin') {
     http_response_code(403);
     echo '<h1>Forbidden</h1><p>Admin access required.</p>';
     exit;

@@ -900,6 +900,7 @@ function api(string $action): void
             if ($a['status'] === 'in_progress') IqStore::answer($a, $b['index'] ?? null, $b['choice'] ?? null);
             api_out(api_view($a));
         case 'focus':
+            if ($method !== 'POST') api_out(['error' => 'method'], 405); // changes state: POST + CSRF only
             $a = IqStore::current();
             if ($a && IqStore::owns($a)) IqStore::focusLost($a);
             api_out(['ok' => true]);
@@ -917,6 +918,7 @@ function api(string $action): void
             ], 'id = :id', ['id' => $u['id']]);
             api_out(['ok' => true]);
         case 'logout':
+            if ($method !== 'POST') api_out(['error' => 'method'], 405); // a GET link must not sign anyone out
             // One sign-in, one sign-out: this ends the Cardify session too.
             require_once INCLUDES_DIR . '/SignOut.php';
             SignOut::all();

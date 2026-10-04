@@ -12,8 +12,8 @@ header('Content-Type: application/json');
 header('Cache-Control: no-store');
 
 try {
-    $eid = trim($_GET['eid'] ?? '');
-    $date = trim($_GET['date'] ?? '');
+    $eid = trim(is_string($_GET['eid'] ?? null) ? $_GET['eid'] : '');
+    $date = trim(is_string($_GET['date'] ?? null) ? $_GET['date'] : '');
 
     if ($eid === '' || $date === '') {
         http_response_code(400);

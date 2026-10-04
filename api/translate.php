@@ -32,9 +32,11 @@ $rateLimitWindow = 60; // seconds
 $rateLimitMax = Auth::isLoggedIn() ? 20 : 8; // tighter cap for anonymous
 
 // Real client IP behind Cloudflare; falls back to REMOTE_ADDR.
-$clientIp = $_SERVER['HTTP_CF_CONNECTING_IP']
-    ?? trim(explode(',', (string)($_SERVER['HTTP_X_FORWARDED_FOR'] ?? ''))[0])
-    ?: ($_SERVER['REMOTE_ADDR'] ?? 'unknown');
+// getClientIp() trusts CF-Connecting-IP only when the request really came from
+// Cloudflare; reading the header directly let anyone forge a new IP per call and
+// spend the paid AI credit without limit (bug hunt, 5 Oct 2026).
+require_once INCLUDES_DIR . '/UrlSafety.php';
+$clientIp = getClientIp();
 $bucketKey = sha1($clientIp);
 $bucketDir = sys_get_temp_dir() . '/cardify-rate-translate';
 if (!is_dir($bucketDir)) { @mkdir($bucketDir, 0775, true); }
@@ -79,9 +81,10 @@ if (!$input) {
     $input = $_POST;
 }
 
-$text = trim($input['text'] ?? '');
-$targetLang = $input['target'] ?? 'ar'; // ar (Arabic) or en (English)
-$fieldType = $input['field_type'] ?? 'text'; // name, position, address, phone, etc.
+// Strings only: a list here (text[]=x) crashed with an empty 500.
+$text = trim(is_string($input['text'] ?? null) ? $input['text'] : '');
+$targetLang = is_string($input['target'] ?? null) ? $input['target'] : 'ar'; // ar (Arabic) or en (English)
+$fieldType = is_string($input['field_type'] ?? null) ? $input['field_type'] : 'text'; // name, position, address, phone, etc.
 
 if (empty($text)) {
     echo json_encode(['error' => 'No text provided', 'translation' => '']);

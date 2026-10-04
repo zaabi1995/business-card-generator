@@ -165,8 +165,12 @@ function isAllowedRedirectHost(string $dest, array $allowedHttpsHosts): ?string
     }
     // Relative same-origin path
     if ($dest[0] === '/') {
-        // Disallow "//" (protocol-relative), open redirect vector
+        // Disallow "//" (protocol-relative) and any backslash: browsers read
+        // "/\evil.com" as "//evil.com" (open redirect, bug hunt 5 Oct 2026).
         if (isset($dest[1]) && $dest[1] === '/') {
+            return null;
+        }
+        if (strpos($dest, '\\') !== false) {
             return null;
         }
         if (preg_match('/[\r\n]/', $dest)) {

@@ -8,11 +8,14 @@ require_once __DIR__ . '/../config.php';
 require_once INCLUDES_DIR . '/PrintShopAuth.php';
 require_once INCLUDES_DIR . '/CardPresets.php';
 
-PrintShopAuth::requireInternalProvider();
+$__ctx = PrintShopAuth::requireInternalProvider();
+$__shop = $__ctx['shop'] ?? [];
 
 $companyId = trim($_GET['company'] ?? '');
 $preset = preg_replace('/[^a-z_]/', '', (string)($_GET['preset'] ?? ''));
 if ($companyId === '' || !CardPresets::exists($preset)) { http_response_code(404); exit; }
+require_once INCLUDES_DIR . '/PrintShopClients.php';
+if (!PrintShopClients::canAccessCompanyAdmin($__shop, (string) $companyId, PrintShopClients::listAttachedCompanyIds((int) ($__shop['id'] ?? 0)))) { http_response_code(403); exit; }
 
 $db = Database::getInstance();
 $company = $db->fetchOne("SELECT * FROM companies WHERE id = :id", ['id' => $companyId]);

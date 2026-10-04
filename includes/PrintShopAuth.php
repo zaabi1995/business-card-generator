@@ -140,22 +140,26 @@ class PrintShopAuth {
      * code. Returns true when an operator session now exists.
      */
     public static function attachForSignedInUser(): bool {
+        // Only through an email/phone this session PROVED with a code. The
+        // account's own email/phone is never verified, so matching on it let
+        // anyone who registered with an operator's phone become that operator
+        // (security review, 5 Oct 2026).
         if (!empty($_SESSION['ps_operator_id'])) return true;
-        if (empty($_SESSION['user_id'])) return false;
+        if (empty($_SESSION['user_id']) || empty($_SESSION['verified_ids'])) return false;
         require_once __DIR__ . '/PrintShopOperator.php';
         require_once __DIR__ . '/PrintShop.php';
         require_once __DIR__ . '/Phone.php';
-        $email = strtolower(trim((string) ($_SESSION['user_email'] ?? '')));
-        $op = filter_var($email, FILTER_VALIDATE_EMAIL) ? PrintShopOperator::getByEmail($email) : null;
-        if (!$op) {
-            $row = Database::getInstance()->fetchOne('SELECT phone FROM users WHERE id = :id', ['id' => (string) $_SESSION['user_id']]);
-            $digits = preg_replace('/\D+/', '', (string) ($row['phone'] ?? ''));
-            if (strlen($digits) >= 10) $op = PrintShopOperator::getByPhone((string) Phone::normalize('+' . $digits));
+        foreach ((array) $_SESSION['verified_ids'] as $id) {
+            $op = filter_var($id, FILTER_VALIDATE_EMAIL)
+                ? PrintShopOperator::getByEmail((string) $id)
+                : PrintShopOperator::getByPhone((string) Phone::normalize('+' . $id));
+            $shop = $op ? PrintShop::getById((int) $op['print_shop_id']) : null;
+            if ($op && $shop && ($shop['status'] ?? '') === 'active') {
+                self::loginAsOperator($op, $shop, 'cardify_session');
+                return true;
+            }
         }
-        $shop = $op ? PrintShop::getById((int) $op['print_shop_id']) : null;
-        if (!$op || !$shop || ($shop['status'] ?? '') !== 'active') return false;
-        self::loginAsOperator($op, $shop, 'cardify_session');
-        return true;
+        return false;
     }
 
     public static function logout(): void {

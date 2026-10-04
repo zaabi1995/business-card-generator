@@ -39,6 +39,12 @@ try {
     if ($companyId === '') {
         throw new Exception('company_id is required');
     }
+    // Only client companies attached to this shop (security commit 5cd2bb2).
+    require_once INCLUDES_DIR . '/PrintShopClients.php';
+    $__shop = $ctx['shop'] ?? [];
+    if (!PrintShopClients::canAccessCompanyAdmin($__shop, (string) $companyId, PrintShopClients::listAttachedCompanyIds((int) ($__shop['id'] ?? 0)))) {
+        throw new Exception('This company is not one of your clients');
+    }
 
     $db = Database::getInstance();
     $client = $db->fetchOne("SELECT id, name FROM companies WHERE id = :id", ['id' => $companyId]);

@@ -53,6 +53,18 @@ class AppleStoreKitVerify {
         }
         if (openssl_x509_verify($pems[$n - 1], $root) !== 1) return null;
 
+        // 1a) The chain must be Apple's App Store signing chain, not just any
+        //     certificate under Apple's root: leaf carries the receipt-signing
+        //     marker, the intermediate the WWDR marker and CA:TRUE. Without this
+        //     any Apple-issued certificate could sign a fake Pro receipt
+        //     (bug hunt, 5 Oct 2026).
+        $leafExt = (array) ((openssl_x509_parse($pems[0]) ?: [])['extensions'] ?? []);
+        $midInfo = openssl_x509_parse($pems[1]) ?: [];
+        $midExt  = (array) ($midInfo['extensions'] ?? []);
+        if (!array_key_exists('1.2.840.113635.100.6.11.1', $leafExt)) return null;
+        if (!array_key_exists('1.2.840.113635.100.6.2.1', $midExt)) return null;
+        if (stripos((string) ($midExt['basicConstraints'] ?? ''), 'CA:TRUE') === false) return null;
+
         // 1b) Leaf cert must be within its validity window (openssl_x509_verify
         //     checks signatures only, not dates).
         $leafInfo = openssl_x509_parse($pems[0]);

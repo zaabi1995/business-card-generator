@@ -26,6 +26,15 @@ if ($employeeId === '' || $companyId === '') {
     exit;
 }
 
+// Same membership rule as printshop/client.php (security commit 5cd2bb2): a shop
+// works only on client companies attached to it. These pages skipped the check,
+// so ?company= reached any tenant (bug hunt, 5 Oct 2026).
+require_once INCLUDES_DIR . '/PrintShopClients.php';
+if (!PrintShopClients::canAccessCompanyAdmin($shop, (string) $companyId, PrintShopClients::listAttachedCompanyIds((int) $shop['id']))) {
+    header('Location: ' . getBasePath() . 'printshop/clients.php');
+    exit;
+}
+
 $db  = Database::getInstance();
 $pdo = $db->getConnection();
 
@@ -43,8 +52,12 @@ if (!$company || !$employee) {
 }
 
 $cardsBase = getBasePath() . 'uploads/companies/' . $companyId . '/cards/';
-$cardFront = $employee['front_file_path'] ? $cardsBase . $employee['front_file_path'] : '';
-$cardBack  = $employee['back_file_path']  ? $cardsBase . $employee['back_file_path']  : '';
+// Card images live on generated_cards, not employees (the preview was always blank).
+$__gc = Database::getInstance()->fetchOne(
+    "SELECT front_file_path, back_file_path FROM generated_cards WHERE employee_id = :e AND company_id = :c
+      ORDER BY generated_at DESC LIMIT 1", ['e' => $employee['id'], 'c' => $companyId]) ?: [];
+$cardFront = !empty($__gc['front_file_path']) ? $cardsBase . $__gc['front_file_path'] : '';
+$cardBack  = !empty($__gc['back_file_path'])  ? $cardsBase . $__gc['back_file_path']  : '';
 
 // Apply per-client effective pricing for Alpine + server math
 $shop = PrintShop::getById($shopId);
@@ -109,7 +122,7 @@ require_once INCLUDES_DIR . '/printshop-layout.php';
 printshopHeader('Order , ' . $company['name'], 'clients');
 ?>
 <div class="max-w-5xl mx-auto">
-<div x-data="orderForm()" x-init="init()">
+<div x-data="orderForm()">
     <div class="mb-2 text-sm text-gray-500">
         <a href="client.php?company=<?= urlencode($companyId) ?>" class="hover:underline"><i class="fa-solid fa-arrow-left mr-1"></i><?= sanitize($company['name']) ?></a>
     </div>

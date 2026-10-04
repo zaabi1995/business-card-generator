@@ -17,6 +17,14 @@
 require_once __DIR__ . '/../config.php';
 require_once INCLUDES_DIR . '/ERPSync.php';
 require_once INCLUDES_DIR . '/SecurityHeaders.php';
+// Business numbers and ERP details: super admin only (they were public, 5 Oct 2026).
+require_once INCLUDES_DIR . '/Auth.php';
+if (!Auth::isLoggedIn() || Auth::getCurrentRole() !== 'super_admin') {
+    http_response_code(403);
+    header('Content-Type: application/json');
+    echo json_encode(['error' => 'forbidden']);
+    exit;
+}
 
 SecurityHeaders::send();
 header('Content-Type: application/json; charset=utf-8');

@@ -124,6 +124,9 @@ try {
         $source = ($body['source'] ?? 'app'); if (!in_array($source, ['app', 'web', 'preset', 'upload'], true)) $source = 'app';
         $pairId = trim((string) ($body['pair_id'] ?? '')) ?: null;
         $bg = substr(trim((string) ($body['background_image_path'] ?? '')), 0, 500) ?: null;
+        // Only an image path inside uploads/: this value is printed on a public
+        // card page, and raw text there was a stored script injection (5 Oct 2026).
+        if ($bg !== null && !preg_match('#^/?uploads/[A-Za-z0-9/_.\-]+\.(png|jpe?g|webp|gif|svg)$#i', $bg)) $bg = null;
 
         if ($id !== '') {
             // Update, scoped to owner (a foreign id updates nothing).

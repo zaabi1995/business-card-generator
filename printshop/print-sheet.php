@@ -33,6 +33,15 @@ if ($employeeId === '' || $companyId === '') {
     echo 'employee + company required';
     exit;
 }
+// Only client companies attached to this shop (security commit 5cd2bb2).
+require_once INCLUDES_DIR . '/PrintShopClients.php';
+require_once INCLUDES_DIR . '/PrintShopAuth.php';
+$__shop = (PrintShopAuth::context())['shop'] ?? [];
+if (!PrintShopClients::canAccessCompanyAdmin($__shop, (string) $companyId, PrintShopClients::listAttachedCompanyIds((int) ($__shop['id'] ?? 0)))) {
+    http_response_code(403);
+    echo 'not one of your clients';
+    exit;
+}
 
 $db  = Database::getInstance();
 $pdo = $db->getConnection();

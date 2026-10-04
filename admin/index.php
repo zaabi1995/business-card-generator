@@ -1187,7 +1187,7 @@ if ($currentRole !== 'super_admin' && !empty($companySlug)):
 </div>
 
 <!-- Template Editor Section -->
-<div id="template-editor" x-data="templateEditor()" x-init="init()">
+<div id="template-editor" x-data="templateEditor()">
     <!-- Section Header with Tabs -->
     <div class="bg-white rounded-xl border border-gray-100 shadow-sm mb-6">
         <div class="flex items-center justify-between p-4 border-b border-gray-100">

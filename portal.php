@@ -2233,9 +2233,9 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
     <script<?= cspNonceAttr() ?>>
     // Template data from PHP
     const basePath = '<?php echo getBasePath(); ?>';
-    const companyName = '<?php echo addslashes($companyName); ?>';
-    const companySlug = '<?php echo addslashes($companySlug); ?>';
-    const apexHost = '<?php echo addslashes(cardifyApexHost()); ?>';
+    const companyName = <?php echo json_encode((string) $companyName, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE); ?>;
+    const companySlug = <?php echo json_encode((string) $companySlug, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE); ?>;
+    const apexHost = <?php echo json_encode((string) cardifyApexHost(), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE); ?>;
     const frontTemplate = <?php echo json_encode($activeFrontTemplate); ?>;
     const backTemplate = <?php echo json_encode($activeBackTemplate); ?>;
     
