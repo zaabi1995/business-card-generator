@@ -1,6 +1,6 @@
 <?php
 /**
- * Migration 176: the verified IQ certificate (OMR 4.900, Ali, 4 Oct 2026).
+ * Migration 177: the verified IQ certificate (OMR 4.900, Ali, 4 Oct 2026).
  * An attempt gets a certificate number, the name printed on it and the issue date once paid.
  * iq_payments gains the 'certificate' product and a meta column for the name the buyer confirmed.
  */
@@ -19,8 +19,8 @@ try {
         $db->exec('ALTER TABLE iq_payments ADD COLUMN meta JSON NULL');
     }
     $db->exec("INSERT IGNORE INTO iq_settings (`key`, `value`) VALUES ('price_certificate', '4.900')");
-    echo "Migration 176: certificate ready\n";
+    echo "Migration 177: certificate ready\n";
 } catch (Exception $e) {
-    echo "Migration 176 failed: " . $e->getMessage() . "\n";
+    echo "Migration 177 failed: " . $e->getMessage() . "\n";
     exit(1);
 }
