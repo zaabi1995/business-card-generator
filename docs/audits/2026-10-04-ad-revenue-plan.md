@@ -2,13 +2,13 @@ Cardify advertising review, 4 October 2026
 
 Start with the logo library, directory and editorial pages. Use a measured ad experiment alongside clearly labelled direct sponsorship. The main commercial product pages should keep their focus on Cardify subscriptions and print orders.
 
-Observed state
+Observed state and coordinated rollout
 
-- The live /logos page had 68 logo cards and no AdSense or DoubleClick scripts on inspection.
-- /ads.txt returned a 404. There is no publisher ID or ad-slot configuration in the reviewed repository. AdSense approval and account ownership have not been verified.
-- The current Content Security Policy has no allowance for pagead2.googlesyndication.com or DoubleClick ad frames. Adding the ad script alone would be blocked.
+- The initial inspection found 68 logo cards, no AdSense loader and a missing ads.txt. The existing CSP would have blocked a newly inserted ad script.
+- A separate, coordinated advertising release has now installed the real AdSense publisher and responsive unit, ads.txt, localized disclosures and a scoped CSP allowance. The 21 deployment smoke checks passed on 4 October 2026. A published Google consent message is reported by the advertising chat. Google site review was being submitted at the time of this report; approval and serving revenue are not yet confirmed.
+- Initial manually placed ads are limited to public company and logo content. They do not load on private cards, administrative, authentication, payment or purchase flows. This report proposes further placements to evaluate after the baseline is established.
 - The site already has an extensive directory, logo profiles, free tools and a blog, including a government logo guide. These give us contextual inventory.
-- No authenticated GA4 or AdSense revenue data was available for this review. The number of indexed pages is not evidence of monetizable human traffic.
+- No authenticated GA4 or AdSense revenue data was available to this logo review. The number of indexed pages is not evidence of monetizable human traffic.
 
 Proposed placements, applied to Arabic and English URLs
 
@@ -44,9 +44,9 @@ The following are illustrative scenarios in OMR, not traffic estimates or market
 | 100,000 | 50.000 | 150.000 | 300.000 |
 | 500,000 | 250.000 | 750.000 | 1,500.000 |
 
-Before enabling ads
+Remaining measurement and expansion work
 
-1. Confirm an approved AdSense account for cardify.om and read its real publisher ID and ad-unit IDs. Add the exact supplied ads.txt entry. Never use sample IDs from documentation.
+1. Finish Google site review and verify approval, publisher ownership and real ad serving. The real publisher, unit and ads.txt have already been installed by the coordinated advertising release.
 2. Record 28 days of actual human pageviews by page family, device, language, country and engagement. Separate bots and internal traffic. Record logo downloads, lead unlocks, new accounts, paid subscriptions and print-order gross profit.
 3. Review consent requirements for the actual visitor markets and chosen ad setup. Use the required Google-certified CMP where applicable, and align the privacy/cookie disclosures with the installed tracking. See [Google consent management requirements](https://support.google.com/adsense/answer/13554116?hl=en).
 4. Build a feature-flagged, localized ad component with exact slot IDs, a route allowlist, one script loader, responsive dimensions and lazy requests. Give ad containers sufficient width and variable height for in-feed formats, per [Google in-feed placement instructions](https://support.google.com/adsense/answer/9189560?hl=en).
@@ -54,4 +54,4 @@ Before enabling ads
 6. Start with manually placed units and a control cohort. Evaluate total contribution per session: ad revenue + sponsorship revenue + subscription and print gross profit. Monitor viewability, fill rate, page RPM, page speed, download completion and sign-up conversion.
 7. Consider Auto ads after the manually controlled baseline. Use page and area exclusions and test before expanding inventory. [Google Auto ads settings](https://support.google.com/adsense/answer/9261307?hl=en) provide exclusions and an experiment option.
 
-Launch criterion: improved total contribution per session with acceptable page performance and no material drop in downloads or paid conversions. Ad count alone is not the optimization target. Ads are not enabled by this logo release.
+Launch criterion: improved total contribution per session with acceptable page performance and no material drop in downloads or paid conversions. Ad count alone is not the optimization target. The advertising component was published in a separate coordinated release. Revenue depends on Google approval, eligible traffic and actual served impressions.
