@@ -86,6 +86,36 @@ class Auth {
     }
     
     /**
+     * Sign in someone who just proved they own this email with a one-time code
+     * (login.php, "Sign in with a code"). Same three account kinds, same order and
+     * same session as unifiedLogin(); the code stands in for the password.
+     * Returns ['success' => false] when no active Cardify account has this email,
+     * which the caller treats as "IQ account only", never as an error to show.
+     */
+    public static function loginByVerifiedEmail(string $email): array {
+        self::init();
+        if (!self::$db || !self::$db->isConnected()) return ['success' => false];
+        $email = sanitizeEmail($email);
+        if ($email === '') return ['success' => false];
+
+        $user = self::$db->fetchOne("SELECT * FROM users WHERE email = :email AND status = 'active'", ['email' => $email]);
+        if ($user) return self::loginUser($user);
+
+        $employee = self::$db->fetchOne(
+            "SELECT e.*, c.slug as company_slug, c.name as company_name
+             FROM employees e JOIN companies c ON e.company_id = c.id
+             WHERE e.email = :email AND e.status = 'active' AND c.status = 'active'",
+            ['email' => $email]
+        );
+        if ($employee) return self::loginEmployee($employee);
+
+        $company = self::$db->fetchOne("SELECT * FROM companies WHERE admin_email = :email AND status = 'active'", ['email' => $email]);
+        if ($company) return self::loginCompany($company);
+
+        return ['success' => false];
+    }
+
+    /**
      * Legacy login method - kept for backward compatibility
      */
     public static function login($email, $password, $companySlug = null) {

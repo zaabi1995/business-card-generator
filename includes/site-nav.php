@@ -55,6 +55,11 @@ if (!function_exists('renderNavigation')) {
             }
         }
         
+        // Signed in by code with no Cardify account (IQ test only): one sign-in,
+        // so the header shows their account instead of "Sign In".
+        $iqOnly = !$isLoggedIn && !empty($_SESSION['iq_user_id']);
+        $myAccountLabel = function_exists('t') && t('header.my_account') !== 'header.my_account' ? t('header.my_account') : 'My account';
+
         // Default navigation links (used on all non-homepage pages).
         //
         // r79: these were `$basePath . '<slug>'`, and getBasePath() derives the
@@ -146,9 +151,15 @@ if (!function_exists('renderNavigation')) {
                             </a>
                         <?php else: ?>
                             <!-- Logged Out State -->
+                            <?php if ($iqOnly): ?>
+                            <a href="<?php echo getBasePath(); ?>iq/account" class="hidden sm:inline-flex items-center gap-2 px-4 py-2 text-gray-700 hover:text-blue-600 font-medium transition-colors">
+                                <i class="fa-solid fa-circle-user text-blue-600" aria-hidden="true"></i> <?= htmlspecialchars($myAccountLabel) ?>
+                            </a>
+                            <?php else: ?>
                             <a href="<?php echo getBasePath(); ?>login" class="hidden sm:inline-flex items-center px-4 py-2 text-gray-700 hover:text-blue-600 font-medium transition-colors">
                                 <?= function_exists('t') ? htmlspecialchars(t('header.sign_in')) : 'Sign In' ?>
                             </a>
+                            <?php endif; ?>
                             <a href="<?php echo htmlspecialchars($GLOBALS['navCtaHref'] ?? (getBasePath() . 'company/register-otp.php')); ?>" class="hidden sm:inline-flex items-center px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-lg shadow-blue-600/30 transition-all hover:shadow-xl hover:shadow-blue-600/40">
                                 <?= function_exists('t') ? htmlspecialchars(t('header.get_started_free')) : 'Get Started Free' ?>
                             </a>
@@ -194,9 +205,13 @@ if (!function_exists('renderNavigation')) {
                             <?= function_exists('t') ? htmlspecialchars(t('auth.sign_out')) : 'Sign Out' ?>
                         </a>
                     <?php else: ?>
+                        <?php if ($iqOnly): ?>
+                        <a href="<?php echo getBasePath(); ?>iq/account" class="block py-2 text-gray-600 hover:text-blue-600 font-medium"><?= htmlspecialchars($myAccountLabel) ?></a>
+                        <?php else: ?>
                         <a href="<?php echo getBasePath(); ?>login" class="block py-2 text-gray-600 hover:text-blue-600 font-medium">
                             <?= function_exists('t') ? htmlspecialchars(t('header.sign_in')) : 'Sign In' ?>
                         </a>
+                        <?php endif; ?>
                         <a href="<?php echo htmlspecialchars($GLOBALS['navCtaHref'] ?? (getBasePath() . 'company/register-otp.php')); ?>" class="block py-2 text-blue-600 hover:text-blue-700 font-medium">
                             <?= function_exists('t') ? htmlspecialchars(t('header.get_started_free')) : 'Get Started Free' ?>
                         </a>

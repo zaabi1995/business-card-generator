@@ -63,7 +63,14 @@ final class IqStore
 
     public static function userId(): ?string
     {
-        return isset($_SESSION['iq_user_id']) && is_string($_SESSION['iq_user_id']) ? $_SESSION['iq_user_id'] : null;
+        if (isset($_SESSION['iq_user_id']) && is_string($_SESSION['iq_user_id'])) return $_SESSION['iq_user_id'];
+        // One sign-in for Cardify and the IQ test: anyone signed in to Cardify
+        // (password or code) is signed in here too, matched by email.
+        $email = strtolower(trim((string)($_SESSION['user_email'] ?? '')));
+        if (!empty($_SESSION['user_id']) && filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            return self::attach($email, 'email', false)['id'];
+        }
+        return null;
     }
 
     public static function user(): ?array
@@ -81,6 +88,16 @@ final class IqStore
 
     /** Signs in by verified email or phone, creating the account the first time. */
     public static function signIn(string $identifier, string $channel): array
+    {
+        return self::attach($identifier, $channel, true);
+    }
+
+    /**
+     * Finds or creates the IQ account for a verified email or phone and puts it on
+     * the session. $fresh = true for a new sign-in (rotates the session id); false
+     * when attaching to a Cardify session that was already rotated at sign-in.
+     */
+    private static function attach(string $identifier, string $channel, bool $fresh): array
     {
         $db = Database::getInstance();
         $col = $channel === 'email' ? 'email' : 'phone';
@@ -100,7 +117,7 @@ final class IqStore
             $u = $db->fetchOne('SELECT * FROM iq_users WHERE id = :id', ['id' => $id]);
         }
         $db->update('iq_users', ['last_login_at' => date('Y-m-d H:i:s')], 'id = :id', ['id' => $u['id']]);
-        if (session_status() === PHP_SESSION_ACTIVE && !headers_sent()) session_regenerate_id(true);
+        if ($fresh && session_status() === PHP_SESSION_ACTIVE && !headers_sent()) session_regenerate_id(true);
         $_SESSION['iq_user_id'] = $u['id'];
         // This browser's guest attempts become the account's.
         $token = self::guestTokenHash();

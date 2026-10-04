@@ -8,4 +8,5 @@ return [
     'menu'             => 'Menu',
     'close_menu'       => 'Close menu',
     'more'             => 'More',
+    'my_account'       => 'My account',
 ];

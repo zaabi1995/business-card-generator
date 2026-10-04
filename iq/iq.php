@@ -734,31 +734,22 @@ function page_account(): void
     $u = IqStore::user();
     $next = (string)($_GET['next'] ?? '');
     $next = preg_match('~^/[A-Za-z0-9/_-]*$~', $next) ? $next : '';
+    if (!$u) {
+        // One sign-in for cardify.om: the site's /login page, opened on the code
+        // option, then straight back here (and on to ?next).
+        $back = iq_url('/account') . ($next !== '' ? '?next=' . rawurlencode($next) : '');
+        header('Location: /login?' . http_build_query(['method' => 'code', 'redirect' => $back]), true, 302);
+        exit;
+    }
+    if ($next !== '') {
+        header('Location: ' . iq_url($next), true, 302);
+        exit;
+    }
     layout_open(iq_s('account') . ' · ' . iq_s('brand'), '', ['robots' => 'noindex']);
     echo subnav('/account', '/account');
     echo '<section class="iqx-wrap iqx-narrow" id="iq-app">';
     if (!empty($_GET['payment'])) {
         echo '<p class="iqx-note ' . ($_GET['payment'] === 'success' ? 'is-ok' : 'is-bad') . '">' . iq_e($_GET['payment'] === 'success' ? iq_s('payment_success') : iq_s('payment_failed')) . '</p>';
-    }
-    if (!$u) {
-        ?>
-        <article class="iqx-card">
-            <h1 class="iqx-h2"><?= iq_e(iq_s('sign_in')) ?></h1>
-            <p class="iqx-muted"><?= iq_e(iq_s('sign_in_lead')) ?></p>
-            <form id="iq-otp" class="iqx-form" data-next="<?= iq_e($next) ?>">
-                <label><?= iq_e(iq_s('email_or_phone')) ?><input class="iqx-input" name="identifier" autocomplete="email" required dir="ltr"></label>
-                <button class="iqx-btn" type="submit"><?= iq_e(iq_s('send_code')) ?></button>
-                <div class="iqx-code" hidden>
-                    <label><?= iq_e(iq_s('code')) ?><input class="iqx-input" name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" dir="ltr"></label>
-                    <button class="iqx-btn" type="button" data-iq-verify><?= iq_e(iq_s('verify')) ?></button>
-                </div>
-                <p class="iqx-msg" role="status"></p>
-            </form>
-        </article>
-        <?php
-        echo '</section>';
-        layout_close(['page' => 'account']);
-        return;
     }
     $db = Database::getInstance();
     $hist = $db->fetchAll("SELECT public_id, status, iq, started_at, report_paid FROM iq_attempts WHERE user_id = :u ORDER BY id DESC LIMIT 50", ['u' => $u['id']]);
@@ -903,27 +894,6 @@ function api(string $action): void
             $a = IqStore::current();
             if ($a && IqStore::owns($a)) IqStore::focusLost($a);
             api_out(['ok' => true]);
-        case 'otp_send':
-            $id = trim((string)($b['identifier'] ?? ''));
-            [$ident, $channel] = iq_identifier($id);
-            if ($ident === null) api_out(['error' => 'bad_identifier'], 422);
-            require_once INCLUDES_DIR . '/WhatsApp.php';
-            require_once INCLUDES_DIR . '/Mailer.php';
-            require_once INCLUDES_DIR . '/RateLimiter.php';
-            require_once INCLUDES_DIR . '/OtpService.php';
-            $r = OtpService::send($ident, $channel, 'iq_login');
-            if (!$r['ok']) api_out(['error' => $r['error']], 429);
-            $_SESSION['iq_otp'] = ['identifier' => $ident, 'channel' => $channel];
-            api_out(['ok' => true, 'channel' => $channel]);
-        case 'otp_verify':
-            $pending = $_SESSION['iq_otp'] ?? null;
-            if (!$pending) api_out(['error' => 'expired_or_missing'], 409);
-            require_once INCLUDES_DIR . '/OtpService.php';
-            $r = OtpService::verify($pending['identifier'], (string)($b['code'] ?? ''), 'iq_login');
-            if (!$r['ok']) api_out(['error' => $r['error']], 422);
-            unset($_SESSION['iq_otp']);
-            IqStore::signIn($pending['identifier'], $pending['channel']);
-            api_out(['ok' => true]);
         case 'profile':
             $u = IqStore::user();
             if (!$u) api_out(['error' => 'sign_in'], 401);
@@ -938,7 +908,10 @@ function api(string $action): void
             ], 'id = :id', ['id' => $u['id']]);
             api_out(['ok' => true]);
         case 'logout':
+            // One sign-in, one sign-out: this ends the Cardify session too.
             IqStore::signOut();
+            require_once INCLUDES_DIR . '/Auth.php';
+            Auth::logout();
             api_out(['ok' => true]);
         case 'checkout':
             $u = IqStore::user();

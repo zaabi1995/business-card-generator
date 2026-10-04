@@ -87,4 +87,12 @@ return [
     'tenant_kind_phone'        => 'phone',
     'tenant_kind_email'        => 'email',
     'tenant_lang_switch'       => 'العربية',
+    'code_tab' => 'Sign in with a code',
+    'password_tab' => 'Use a password',
+    'email_or_whatsapp' => 'Email or WhatsApp number',
+    'code_lead' => 'We send you a 6-digit code. New here? The code creates your account.',
+    'code_bad_identifier' => 'Enter an email address or a WhatsApp number with its country code.',
+    'code_wait' => 'Please wait a minute before asking for another code.',
+    'code_change' => 'Use a different email or number',
+    'role_iq' => 'IQ test',
 ];

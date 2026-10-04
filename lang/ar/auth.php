@@ -87,4 +87,12 @@ return [
     'tenant_kind_phone'        => 'الرقم',
     'tenant_kind_email'        => 'البريد',
     'tenant_lang_switch'       => 'English',
+    'code_tab' => 'الدخول برمز',
+    'password_tab' => 'استخدام كلمة المرور',
+    'email_or_whatsapp' => 'البريد الإلكتروني أو رقم الواتساب',
+    'code_lead' => 'نرسل لك رمزاً من 6 أرقام. جديد هنا؟ الرمز ينشئ حسابك.',
+    'code_bad_identifier' => 'أدخل بريداً إلكترونياً أو رقم واتساب مع رمز الدولة.',
+    'code_wait' => 'انتظر دقيقة قبل طلب رمز جديد.',
+    'code_change' => 'استخدام بريد أو رقم آخر',
+    'role_iq' => 'اختبار الذكاء',
 ];
