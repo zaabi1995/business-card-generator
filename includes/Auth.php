@@ -348,7 +348,37 @@ class Auth {
      * Only checks for user_id which is only set on successful authentication
      */
     public static function isLoggedIn() {
-        return isset($_SESSION['user_id']) && !empty($_SESSION['user_id']);
+        if (!isset($_SESSION['user_id']) || empty($_SESSION['user_id'])) return false;
+        // Re-check the account every 5 minutes: a suspended or deleted user row
+        // used to stay signed in until the session expired (admin@bhd.om, 5 Oct
+        // 2026). Only rows in `users`; employees and operators keep their checks.
+        $uid = (string) $_SESSION['user_id'];
+        $checked = (int) ($_SESSION['user_status_checked_at'] ?? 0);
+        if (strpos($uid, 'pso:') !== 0 && strpos($uid, 'company_') !== 0 && time() - $checked > 300) {
+            try {
+                self::init();
+                if (self::$db && self::$db->isConnected()) {
+                    $row = self::$db->fetchOne('SELECT status FROM users WHERE id = :id', ['id' => $uid]);
+                    // While impersonating, user_id is the company: check the admin behind it.
+                    $imp = (string) ($_SESSION['impersonator']['admin_id'] ?? '');
+                    if ($imp !== '') {
+                        $adm = self::$db->fetchOne('SELECT status FROM users WHERE id = :id', ['id' => $imp]);
+                        if (!$adm || ($adm['status'] ?? '') !== 'active') $row = ['status' => 'suspended'];
+                    }
+                    if ($row && ($row['status'] ?? '') !== 'active') {
+                        foreach (['user_id', 'user_email', 'user_name', 'user_role', 'user_company_id',
+                                  'company_id', 'company_slug', 'company_name', 'employee_id', 'impersonator'] as $k) {
+                            unset($_SESSION[$k]);
+                        }
+                        return false;
+                    }
+                    $_SESSION['user_status_checked_at'] = time();
+                }
+            } catch (Throwable $e) {
+                error_log('[auth] status re-check failed: ' . $e->getMessage());
+            }
+        }
+        return true;
     }
     
     /**

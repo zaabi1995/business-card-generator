@@ -31,13 +31,12 @@ echo json_encode([
     'wilayat'     => $r['wilayat'],
     'status'      => $r['logo_status'],
     'verified_at' => $r['logo_verified_at'],
+    // Display sizes only; full-size files are the paid download (5 Oct 2026).
     'urls' => [
-        'svg'      => $r['logo_svg_path']      ? $base . $r['logo_svg_path']      : null,
-        'png_1024' => $r['logo_png_path']      ? $base . $r['logo_png_path']      : null,
         'png_512'  => $r['logo_png_512_path']  ? $base . $r['logo_png_512_path']  : null,
-        'png_2048' => $r['logo_png_2048_path'] ? $base . $r['logo_png_2048_path'] : null,
         'webp'     => $r['logo_webp_path']     ? $base . $r['logo_webp_path']     : null,
     ],
+    'download_url' => "$base/companies/{$r['slug']}",
     'profile_url' => "$base/companies/{$r['slug']}",
     'attribution' => 'https://cardify.om/logos',
 ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);

@@ -376,11 +376,10 @@ function logoImageXml($db, $baseUrl) {
     }
     $licenseUrl = "{$baseUrl}/logos/terms";
     foreach ($logos as $l) {
-        // Highest-fidelity public URL for the image loc.
-        $rel = $l['logo_svg_path']
-            ?: $l['logo_png_2048_path']
-            ?: $l['logo_png_path']
-            ?: $l['logo_webp_path'];
+        // The public display image. SVG and 2048 PNG are the paid download and
+        // are no longer served directly (5 Oct 2026).
+        $rel = $l['logo_webp_path']
+            ?: $l['logo_png_path'];
         if (!$rel) continue;
         $caption = trim(($l['name_en'] ?? '') . ' logo');
         $title   = trim(($l['name_en'] ?? '') . ' logo, Omani Logo Library');

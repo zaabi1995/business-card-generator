@@ -100,19 +100,14 @@ $shaped = array_map(function ($r) use ($base) {
         'dominant_color'  => $r['logo_dominant_color'],
         'palette'         => $palette,
         'display_url'     => $displayUrl, // auto-flipped for light-leaning logos
+        // Display sizes only. The full-size files (SVG, 2048 PNG, colour
+        // variants) are the paid download and go through /logo-download with a
+        // ticket; listing them here skipped the paid pass (5 Oct 2026).
         'urls' => [
-            'svg'        => $abs($r['logo_svg_path']),
             'png_512'    => $abs($r['logo_png_512_path']),
-            'png_1024'   => $abs($r['logo_png_path']),
-            'png_2048'   => $abs($r['logo_png_2048_path']),
             'webp'       => $abs($r['logo_webp_path']),
-            'svg_dark'   => $abs($r['logo_svg_dark_path']),
-            'png_dark'   => $abs($r['logo_png_dark_path']),
-            'webp_dark'  => $abs($r['logo_webp_dark_path']),
-            'svg_white'  => $abs($r['logo_svg_white_path']),
-            'png_white'  => $abs($r['logo_png_white_path']),
-            'webp_white' => $abs($r['logo_webp_white_path']),
         ],
+        'download_url'    => "$base/companies/{$r['slug']}",
         'profile_url'     => "$base/companies/{$r['slug']}",
     ];
 }, $rows);
