@@ -314,9 +314,10 @@ if ($company) {
     if (!empty($company['logo_url'])) $orgLd['logo'] = $company['logo_url'];
 
     // Prefer Logo Library sources over deprecated logo_url
-    $libraryLogo = $company['logo_svg_path'] ?? null
-                ?: $company['logo_png_path'] ?? null
-                ?: $company['logo_webp_path'] ?? null;
+    // PNG first (Google prefers it for logos); the SVG is the paid download
+    // and is no longer served directly (5 Oct 2026).
+    $libraryLogo = ($company['logo_png_path'] ?? null)
+                ?: ($company['logo_webp_path'] ?? null);
     if ($libraryLogo) {
         $orgLd['logo'] = $baseUrl . $libraryLogo;
     }
