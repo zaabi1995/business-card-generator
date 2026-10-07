@@ -279,7 +279,7 @@ class CardFulfilment
         }
 
         // 1. The ERP raises the invoice, the sales order and the delivery note.
-        $inv = ERPSync::convertQuoteToInvoice($orderId, 'po');
+        $inv = ERPSync::convertQuoteToInvoice($orderId, 'po', (string)($job['po_number'] ?? ''));
         if (empty($inv['success'])) {
             $reason = (string)($inv['message'] ?? 'unknown');
             $out['errors'][] = 'invoice: ' . $reason;

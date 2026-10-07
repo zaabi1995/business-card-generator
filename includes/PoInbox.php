@@ -233,12 +233,25 @@ class PoInbox
                     'reason' => 'sender is not this customer', 'transient' => false];
         }
 
-        $pdf = null;
+        $pdfs = [];
         foreach (($message['attachments'] ?? []) as $a) {
-            if (preg_match('/\.pdf$/i', (string)($a['name'] ?? ''))) { $pdf = $a; break; }
+            if (preg_match('/\.pdf$/i', (string)($a['name'] ?? ''))) { $pdfs[] = $a; }
         }
-        if (!$pdf) {
+        if (!$pdfs) {
             return ['matched' => false, 'ref' => $ref, 'reason' => 'no pdf attached'];
+        }
+
+        // MHD forward our own quotation and card design back with the purchase
+        // order, so the first PDF is often ours (MHD-B7A111, 7 Oct 2026: the PO
+        // was the third of three and the reply was skipped for good). Take the
+        // PDF that carries a purchase-order number, by its name first and then
+        // by its own text.
+        [$pdf, $po] = self::pickPoPdf($pdfs);
+        if (!$pdf) {
+            // No PDF names a number. The covering note may, as before.
+            $pdf = $pdfs[0];
+            $po  = self::extractPoNumber((string)($message['subject'] ?? '')
+                                         . ' ' . (string)($message['body'] ?? ''));
         }
 
         $dir = self::poDir() . '/' . date('Y/m');
@@ -252,13 +265,6 @@ class PoInbox
         @chmod($path, 0640);
         self::ownedByTheWebUser($dir, $path);
 
-        // The number is on the document itself more often than in the covering
-        // note, so read the PDF's own text last rather than give up.
-        $po = self::extractPoNumber($pdf['name'] . ' ' . (string)($message['subject'] ?? '')
-                                    . ' ' . (string)($message['body'] ?? ''));
-        if (!$po) {
-            $po = self::extractPoNumber(self::pdfText($path));
-        }
         // A PDF with no purchase-order number anywhere in it is not a purchase
         // order. Filing one used to raise a real invoice off any attachment.
         if (!$po) {
@@ -405,6 +411,33 @@ class PoInbox
             @chown($p, 'www');
             @chgrp($p, 'www');
         }
+    }
+
+    /**
+     * The attached PDF that is the purchase order, and its number.
+     *
+     * A name that carries a number wins over a number found only in the text,
+     * so a PO named "4141010870.pdf" is taken ahead of a quotation whose text
+     * happens to quote an older PO.
+     *
+     * @param  array $pdfs [['name','data'], ...]
+     * @return array [?array $pdf, ?string $po]
+     */
+    public static function pickPoPdf(array $pdfs): array
+    {
+        foreach ($pdfs as $a) {
+            $po = self::extractPoNumber((string)($a['name'] ?? ''));
+            if ($po) { return [$a, $po]; }
+        }
+        foreach ($pdfs as $a) {
+            $tmp = tempnam(sys_get_temp_dir(), 'po');
+            if ($tmp === false) { continue; }
+            file_put_contents($tmp, (string)($a['data'] ?? ''));
+            $po = self::extractPoNumber(self::pdfText($tmp));
+            @unlink($tmp);
+            if ($po) { return [$a, $po]; }
+        }
+        return [null, null];
     }
 
     private static function pdfText(string $path): string

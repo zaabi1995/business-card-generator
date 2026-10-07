@@ -61,7 +61,7 @@ t('a real customer sender is not refused as ours',
   PoInbox::isOwnSender('Devanand V <devanand.v@mhd.co.om>') === false);
 
 t('no ref is refused',
-  (PoInbox::ingest(['subject' => 'RE: business cards'])['reason'] ?? '') === 'no job ref in subject');
+  (PoInbox::ingest(['subject' => 'RE: business cards'])['reason'] ?? '') === 'no job ref in subject or thread');
 t('an unknown ref is refused',
   (PoInbox::ingest(['subject' => '[MHD-ZZZZZZ] po attached'])['reason'] ?? '') === 'no such job');
 
@@ -112,16 +112,30 @@ t('a stranger who knows the job ref is refused', (function () use ($ref) {
     return ($r['reason'] ?? '') === 'sender is not this customer';
 })());
 
+// MHD forward our quotation and the card design back with the purchase order.
+// The PO is then not the first PDF (MHD-B7A111, 7 Oct 2026: third of three).
+$three = [
+    ['name' => 'QUO-6627-2026.pdf',              'data' => "%PDF-1.4\n quotation\n"],
+    ['name' => 'MHD-B7A111-card-design.pdf',     'data' => "%PDF-1.4\n card\n"],
+    ['name' => '4191000258 Business Cards.pdf',  'data' => "%PDF-1.4\n purchase order 4191000258\n"],
+];
+[$picked, $pickedPo] = PoInbox::pickPoPdf($three);
+t('the PO is picked out of three PDFs', ($picked['name'] ?? '') === '4191000258 Business Cards.pdf');
+t('with its number',                    $pickedPo === '4191000258');
+[$none, $nonePo] = PoInbox::pickPoPdf(array_slice($three, 0, 2));
+t('two PDFs of ours carry no PO',       $none === null && $nonePo === null);
+
 // With a PDF it files, takes the number off the document and moves the job on.
-$pdf = "%PDF-1.4\n purchase order 4191000258\n";
 $r = PoInbox::ingest([
     'subject' => "RE: [{$ref}] Quotation", 'from' => 'Devanand V <devanand.v@mhd.co.om>',
     'message_id' => '<selftest@mhd.co.om>', 'body' => 'PO attached',
-    'attachments' => [['name' => 'PO 4191000258 - Business Cards.pdf', 'data' => $pdf]],
+    'attachments' => $three,
 ]);
 t('a PO with a PDF is filed',  ($r['matched'] ?? false) === true);
 t('the PO number is read',     ($r['po'] ?? '') === '4191000258');
 $row = $db->fetchOne("SELECT fulfilment_state, po_number, po_file FROM card_requests WHERE id = ?", [$rid]);
+t('the filed document is the PO, not our quotation',
+  strpos(basename((string)($row['po_file'] ?? '')), '4191000258') !== false);
 t('the job reached po_received', ($row['fulfilment_state'] ?? '') === 'po_received');
 t('the PO number is stored',     ($row['po_number'] ?? '') === '4191000258');
 t('the file is kept where nginx will not serve it',

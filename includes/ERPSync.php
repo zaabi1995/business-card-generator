@@ -681,7 +681,7 @@ class ERPSync {
      *
      * @return array { success, message, data?:{ invoiceId, invoiceNumber, salesOrderId, deliveryNoteId } }
      */
-    public static function convertQuoteToInvoice(int $orderId, string $trigger = 'po'): array
+    public static function convertQuoteToInvoice(int $orderId, string $trigger = 'po', string $poNumber = ''): array
     {
         if (!self::isEnabled()) {
             return ['success' => false, 'message' => 'ERP sync disabled'];
@@ -689,7 +689,7 @@ class ERPSync {
         $settings = self::getSettings();
         $db = Database::getInstance();
         $order = $db->fetchOne(
-            "SELECT id, order_number, erp_quote_id, erp_invoice_id FROM print_orders WHERE id = :id",
+            "SELECT id, order_number, erp_quote_id, erp_invoice_id, po_number FROM print_orders WHERE id = :id",
             ['id' => $orderId]
         );
         if (!$order) {
@@ -707,6 +707,12 @@ class ERPSync {
             'orderNumber' => $order['order_number'],
             'trigger'     => $trigger === 'payment' ? 'payment' : 'po',
         ];
+        // The client's purchase-order number, so the ERP prints it on the
+        // invoice and the delivery note. MHD match their payment to it.
+        $poNumber = trim($poNumber) !== '' ? trim($poNumber) : trim((string)($order['po_number'] ?? ''));
+        if ($poNumber !== '') {
+            $payload['poNumber'] = $poNumber;
+        }
 
         $apiUrl = rtrim($settings['erp_api_url'], '/') . '/api/admin/cardify/convert-quote';
         $token  = $settings['erp_api_token'];
