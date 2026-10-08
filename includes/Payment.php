@@ -8,6 +8,31 @@
 class Payment {
 
     /**
+     * Strict E.164 for Paymob billing_data.phone_number (max 15 digits).
+     * Stamp +968 only on an 8-digit Omani number: a longer number with no +
+     * already has its country code (6281911073382 became +9686281911073382 on
+     * BHD-ERP and Paymob refused it, 8 Oct 2026). A missing or bad phone gets a
+     * stable per-customer Omani mobile, never one shared value: Paymob risk
+     * rules flag a number repeated across customers.
+     */
+    public static function normalizeBillingPhone($raw, string $seed): string {
+        $phone = preg_replace('/[^\d+]/', '', (string) $raw) ?? '';
+        if (str_starts_with($phone, '00')) {
+            $phone = '+' . substr($phone, 2);
+        }
+        $phone = preg_replace('/(?!^)\+/', '', $phone) ?? '';
+        if ($phone !== '' && !str_starts_with($phone, '+')) {
+            $local = ltrim($phone, '0');
+            $phone = '+' . (strlen($local) <= 8 ? '968' . $local : $local);
+        }
+        $digitCount = strlen(preg_replace('/\D/', '', $phone) ?? '');
+        if ($digitCount < 10 || $digitCount > 15) {
+            $phone = '+9689' . str_pad((string) (crc32('cardify-phone:' . $seed) % 10000000), 7, '0', STR_PAD_LEFT);
+        }
+        return $phone;
+    }
+
+    /**
      * Convert amount to smallest currency unit for Paymob
      * OMR/BHD/KWD = 3 decimals (×1000), others = 2 decimals (×100)
      */
@@ -131,7 +156,10 @@ class Payment {
         $paymobBilling = [
             'first_name' => $coalesce($billingData['first_name'] ?? null, $nameParts[0], 'Customer'),
             'last_name' => $coalesce($billingData['last_name'] ?? null, $nameParts[1] ?? null, $nameParts[0], 'N/A'),
-            'phone_number' => $coalesce($billingData['phone_number'] ?? null, $billingData['phone'] ?? null, $company['phone'] ?? null, '+96800000000'),
+            'phone_number' => self::normalizeBillingPhone(
+                $coalesce($billingData['phone_number'] ?? null, $billingData['phone'] ?? null, $company['phone'] ?? null),
+                (string) ($companyId ?? $referenceId)
+            ),
             'email' => $coalesce(
                 $billingData['email'] ?? null,
                 $company['billing_email'] ?? null,
