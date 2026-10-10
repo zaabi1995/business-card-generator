@@ -139,6 +139,11 @@ class Payment {
         $currency = 'OMR';
 
         $amountCents = self::toSmallestUnit($amount, $currency);
+        // Paymob refuses an amount under 1 baisa ("Ensure this value is greater than or equal to 1"), and the refusal
+        // was saved as a failed payment (GSIBD print order 3 at 0.000 OMR, 22 Jul 2026). Nothing to pay is not a payment.
+        if ($amountCents < 1) {
+            return ['error' => 'Nothing to pay: the amount is 0.000 OMR.'];
+        }
         $prefix = ($type === 'subscription') ? 'SUB' : 'PO';
         $specialReference = "{$prefix}_{$companyId}_{$referenceId}_" . time();
         if ($type === 'logo_pass') $specialReference = 'LOGO_' . $referenceId . '_' . bin2hex(random_bytes(8));
